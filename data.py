@@ -282,7 +282,7 @@ def _load_or_generate(task, n_samples, data_seed, variant, cache_dir, use_cache,
 def load_pools(
     task,
     variant: str = "full",
-    n_samples: int = 1_536_000,
+    n_samples: int = 1_500_000,
     data_seed: int = 100,
     cache_dir: str = "dataset_cache",
     device: str = "cpu",

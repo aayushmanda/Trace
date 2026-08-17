@@ -129,7 +129,7 @@ DEFAULT_TASK: str = "word_index"
 BATCH_SIZES: Tuple[int, ...] = (32, 64, 128, 256, 512)
 # The batch sweeps are many more runs than the ratio sweep, so they use fewer
 # seeds; the token sweep is the most expensive of all (steps scale as 1/B).
-BATCH_SWEEP_SEEDS: Tuple[int, ...] = SEEDS[:3]
+BATCH_SWEEP_SEEDS: Tuple[int, ...] = SEEDS[:1]
 TOKEN_SWEEP_SEEDS: Tuple[int, ...] = SEEDS[:1]
 
 REFERENCE_BATCH_SIZE: int = 256
