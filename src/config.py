@@ -68,6 +68,24 @@ class DataConfig:
     val_examples: int = 1000
     cache_dir: str = "dataset_cache"
 
+    # Which examples each step sees. "epoch" draws the training stream from a
+    # saved sequence of shuffled permutations -- generated once, cached, and
+    # *shared across runs* -- so every model seed and every ratio consumes the
+    # same examples in the same order. Seed-to-seed spread then measures
+    # optimization noise alone, and the ratio curve becomes a paired
+    # comparison in which only trace quality changes. "iid" restores
+    # sampling with replacement, which is what the minibatch-SNR theory
+    # assumes; at B/N ~ 3e-4 the two are equivalent for gradient noise.
+    sampling: str = "epoch"  # epoch | iid
+    order_seed: int = 0
+
+    # Training reads its data from disk and never samples it. A sweep
+    # materialises every pool, held-out set and training order it needs in one
+    # visible phase before the first model is built; after that a missing file
+    # is an error, not a licence to spend minutes sampling while the GPU idles.
+    # `--allow-runtime-generation` turns the error back into inline sampling.
+    require_cache: bool = True
+
 
 @dataclass(frozen=True)
 class EvalConfig:
@@ -129,7 +147,7 @@ DEFAULT_TASK: str = "word_index"
 BATCH_SIZES: Tuple[int, ...] = (32, 64, 128, 256, 512)
 # The batch sweeps are many more runs than the ratio sweep, so they use fewer
 # seeds; the token sweep is the most expensive of all (steps scale as 1/B).
-BATCH_SWEEP_SEEDS: Tuple[int, ...] = SEEDS[:1]
+BATCH_SWEEP_SEEDS: Tuple[int, ...] = SEEDS[:3]
 TOKEN_SWEEP_SEEDS: Tuple[int, ...] = SEEDS[:1]
 
 REFERENCE_BATCH_SIZE: int = 256
@@ -156,6 +174,19 @@ def add_config_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     g.add_argument("--val-seed", type=int, default=DataConfig.val_seed)
     g.add_argument("--val-examples", type=int, default=DataConfig.val_examples)
     g.add_argument("--cache-dir", default=DataConfig.cache_dir)
+    g.add_argument("--sampling", choices=["epoch", "iid"], default=DataConfig.sampling,
+                   help="epoch: saved shared sample order (default); iid: with replacement")
+    g.add_argument("--order-seed", type=int, default=DataConfig.order_seed,
+                   help="seed of the saved training order, shared by every run")
+    g.add_argument("--vary-order", action="store_true",
+                   help="give each run its own sample order (its run seed), instead "
+                        "of sharing one -- restores data order as a source of variance")
+    g.add_argument("--allow-runtime-generation", action="store_true",
+                   help="let a run sample missing data inline instead of failing; by "
+                        "default all data is materialised to disk before training")
+    g.add_argument("--no-prepare", action="store_true",
+                   help="skip the up-front materialisation phase; the sweep then fails "
+                        "on the first file that is not already on disk")
     g.add_argument("--results-dir", default=Config.results_dir)
     g.add_argument("--figures-dir", default=Config.figures_dir)
     g.add_argument("--device", default=None)
@@ -187,6 +218,9 @@ def config_from_args(args: argparse.Namespace) -> Config:
             val_seed=args.val_seed,
             val_examples=args.val_examples,
             cache_dir=args.cache_dir,
+            sampling=args.sampling,
+            order_seed=args.order_seed,
+            require_cache=not getattr(args, "allow_runtime_generation", False),
         ),
         evaluation=replace(
             base.evaluation,

@@ -38,7 +38,15 @@ import torch
 
 import config as C
 from config import Config
-from data import Pool, build_eval_set, load_pools, mix_pools
+from data import (
+    Pool,
+    build_eval_set,
+    ensure_index_stream_cached,
+    ensure_pool_cached,
+    load_index_stream,
+    load_pools,
+    mix_pools,
+)
 from engine import evaluate, train
 from tasks import get_task
 
@@ -68,6 +76,10 @@ class RunSpec:
     batch_size: int
     n_samples: int
     data_seed: int
+    # Which saved training order this run consumes. Shared across runs by
+    # default, so seed-to-seed spread is initialisation noise alone; -1 means
+    # the run draws its batches i.i.d. instead of following a saved stream.
+    order_seed: int
     config_hash: str
 
     @property
@@ -105,6 +117,7 @@ def config_hash(cfg: Config) -> str:
             if k not in ("steps", "batch_size")
         },
         "val": {"n": cfg.data.val_examples, "seed": cfg.data.val_seed},
+        "sampling": cfg.data.sampling,
         "eval": asdict(cfg.evaluation),
     }
     return hashlib.sha1(json.dumps(payload, sort_keys=True).encode()).hexdigest()[:12]
@@ -129,6 +142,7 @@ class ResultStore:
         "batch_size",
         "n_samples",
         "data_seed",
+        "order_seed",
         "free_acc",
         "forced_acc",
         "forced_wrong_acc",
@@ -201,7 +215,51 @@ def _fmt_hms(seconds: float) -> str:
     return f"{s // 3600:d}h{(s % 3600) // 60:02d}m" if s >= 3600 else f"{s // 60:d}m{s % 60:02d}s"
 
 
-def execute(specs: Sequence[RunSpec], cfg: Config, experiment: str) -> ResultStore:
+def _order_lengths(specs: Iterable[RunSpec]) -> Dict[Tuple[int, int], int]:
+    """Longest saved training order each (n_samples, order_seed) pair needs."""
+    longest: Dict[Tuple[int, int], int] = {}
+    for s in specs:
+        if s.order_seed >= 0:
+            key = (s.n_samples, s.order_seed)
+            longest[key] = max(longest.get(key, 0), s.steps * s.batch_size)
+    return longest
+
+
+def ensure_prepared(specs: Sequence[RunSpec], cfg: Config) -> None:
+    """Writes every pool, held-out set and training order the sweep will read.
+
+    A sweep must not sample data while it trains: generation is minutes of CPU
+    with the GPU idle, it happens at an unpredictable point in a long grid, and
+    an interrupted sweep pays for it again. So it is hoisted here, before the
+    first model exists, and every load afterwards is a file read (`require_cache`
+    turns a miss into an error rather than a silent regeneration).
+    """
+    if not specs or not cfg.data.cache_dir:
+        return
+
+    os.makedirs(cfg.data.cache_dir, exist_ok=True)
+    tasks = sorted({s.task for s in specs})
+    pools = sorted({(s.task, s.variant, s.n_samples, s.data_seed) for s in specs})
+    orders = _order_lengths(specs)
+
+    print(
+        f"[data ] preparing {len(pools)} pool(s), {len(tasks)} held-out set(s) and "
+        f"{len(orders)} training order(s) in {cfg.data.cache_dir}/ -- "
+        f"nothing is sampled after this point."
+    )
+    t0 = time.time()
+    for task in tasks:
+        build_eval_set(task, cfg.data.val_examples, cfg.data.val_seed, cfg.data.cache_dir)
+    for task, variant, n_samples, data_seed in pools:
+        ensure_pool_cached(task, n_samples, data_seed, variant, cfg.data.cache_dir)
+    for (n_samples, order_seed), length in sorted(orders.items()):
+        ensure_index_stream_cached(n_samples, length, order_seed, cfg.data.cache_dir)
+    print(f"[data ] ready in {_fmt_hms(time.time() - t0)}\n")
+
+
+def execute(
+    specs: Sequence[RunSpec], cfg: Config, experiment: str, prepare: bool = True
+) -> ResultStore:
     """Trains and evaluates every spec that is not already on disk."""
     store = ResultStore(experiment, cfg.results_dir)
     elsewhere = {r["uid"]: r for r in read_all_records(cfg.results_dir)}
@@ -219,11 +277,24 @@ def execute(specs: Sequence[RunSpec], cfg: Config, experiment: str) -> ResultSto
         f"({len(ordered) - len(todo)} already in {store.path}) ===\n"
     )
 
+    # Everything the sweep is about to read is written here, once, up front --
+    # but only for runs that will actually be trained, so a sweep whose runs all
+    # come back from another experiment's store touches no data at all.
+    if prepare:
+        ensure_prepared([s for s in todo if s.uid() not in elsewhere], cfg)
+    strict = cfg.data.require_cache
+
     pools: Optional[Dict[str, Pool]] = None
     pool_key = mix_key = None
     train_pool: Optional[Pool] = None
     instances = None
     eval_key = None
+
+    # The saved training order is shared by every run that names the same
+    # order_seed, so load the longest stream each one needs exactly once.
+    order: Optional[torch.Tensor] = None
+    order_key = None
+    longest_needed = _order_lengths(todo)
 
     started, done = time.time(), 0
     for spec in todo:
@@ -237,14 +308,18 @@ def execute(specs: Sequence[RunSpec], cfg: Config, experiment: str) -> ResultSto
 
         task = get_task(spec.task)
 
-        # 2. held-out set (cached on disk, shared by every run on this task)
+        # 2. held-out set (read from disk, shared by every run on this task)
         if eval_key != spec.task:
             instances = build_eval_set(
-                task, cfg.data.val_examples, cfg.data.val_seed, cfg.data.cache_dir
+                task,
+                cfg.data.val_examples,
+                cfg.data.val_seed,
+                cfg.data.cache_dir,
+                require_cache=strict,
             )
             eval_key = spec.task
 
-        # 3. pools: generated once, then read from disk
+        # 3. pools: written by ensure_prepared, only read from here on
         if pool_key != spec.pool_key:
             _free(train_pool, pools)
             train_pool, pools, mix_key = None, None, None
@@ -255,6 +330,7 @@ def execute(specs: Sequence[RunSpec], cfg: Config, experiment: str) -> ResultSto
                 data_seed=spec.data_seed,
                 cache_dir=cfg.data.cache_dir,
                 device=cfg.device,
+                require_cache=strict,
             )
             pool_key = spec.pool_key
 
@@ -268,10 +344,29 @@ def execute(specs: Sequence[RunSpec], cfg: Config, experiment: str) -> ResultSto
             )
             mix_key = (spec.pool_key, spec.ratio)
 
-        # 5. train, measure, record
+        # 5. the saved training order (written by ensure_prepared, read here)
+        if spec.order_seed >= 0 and order_key != (spec.n_samples, spec.order_seed):
+            _free(order)
+            order_key = (spec.n_samples, spec.order_seed)
+            order = load_index_stream(
+                spec.n_samples,
+                longest_needed[order_key],
+                spec.order_seed,
+                cfg.data.cache_dir,
+                device=cfg.device,
+                require_cache=strict,
+            )
+
+        # 6. train, measure, record
         t0 = time.time()
         model, train_loss = train(
-            train_pool, task, cfg, spec.seed, steps=spec.steps, batch_size=spec.batch_size
+            train_pool,
+            task,
+            cfg,
+            spec.seed,
+            steps=spec.steps,
+            batch_size=spec.batch_size,
+            order=order if spec.order_seed >= 0 else None,
         )
         metrics = evaluate(
             model, task, instances, cfg, trace_in_context=(spec.variant != "direct")
@@ -300,7 +395,7 @@ def execute(specs: Sequence[RunSpec], cfg: Config, experiment: str) -> ResultSto
             f"({record['seconds']:.0f}s, eta {_fmt_hms(eta)})"
         )
 
-    _free(train_pool, pools)
+    _free(train_pool, pools, order)
     path = store.to_csv()
     print(f"\n[store] {len(store.records)} records -> {store.path} and {path}")
     return store
@@ -329,15 +424,24 @@ class GridOptions:
     batch_sizes: Sequence[int] = C.BATCH_SIZES
     conditions: Sequence[str] = ("A", "B", "C")
     budget: int = C.SAMPLE_BUDGET
+    # Give every run its own sample order instead of the shared saved one.
+    vary_order: bool = False
 
 
-def _spec(cfg: Config, chash: str, **kw) -> RunSpec:
+def _order_seed(cfg: Config, opts: GridOptions, seed: int) -> int:
+    if cfg.data.sampling != "epoch":
+        return -1
+    return seed if opts.vary_order else cfg.data.order_seed
+
+
+def _spec(cfg: Config, chash: str, opts: GridOptions, **kw) -> RunSpec:
     base = dict(
         variant="full",
         steps=cfg.optim.steps,
         batch_size=cfg.optim.batch_size,
         n_samples=cfg.data.n_samples,
         data_seed=cfg.data.data_seed,
+        order_seed=_order_seed(cfg, opts, kw["seed"]),
         config_hash=chash,
     )
     return RunSpec(**{**base, **kw})
@@ -347,7 +451,7 @@ def grid_ratio(cfg: Config, opts: GridOptions) -> List[RunSpec]:
     """The ratio axis, on one task (`phase`) or on all of them (`family`)."""
     chash = config_hash(cfg)
     return [
-        _spec(cfg, chash, task=t, ratio=r, seed=s)
+        _spec(cfg, chash, opts, task=t, ratio=r, seed=s)
         for t in opts.tasks
         for r in opts.ratios
         for s in opts.seeds
@@ -367,12 +471,12 @@ def grid_ablation(cfg: Config, opts: GridOptions) -> List[RunSpec]:
             variant, _ = CONDITIONS[cond]
             if cond == "C":
                 specs += [
-                    _spec(cfg, chash, task=task, variant=variant, ratio=None, seed=s)
+                    _spec(cfg, chash, opts, task=task, variant=variant, ratio=None, seed=s)
                     for s in opts.seeds
                 ]
             else:
                 specs += [
-                    _spec(cfg, chash, task=task, variant=variant, ratio=r, seed=s)
+                    _spec(cfg, chash, opts, task=task, variant=variant, ratio=r, seed=s)
                     for r in opts.ratios
                     for s in opts.seeds
                 ]
@@ -383,7 +487,7 @@ def grid_batch(cfg: Config, opts: GridOptions) -> List[RunSpec]:
     """Batch size with steps held FIXED -- the rho_c(B) ~ B^-1/2 test."""
     chash = config_hash(cfg)
     return [
-        _spec(cfg, chash, task=t, ratio=r, seed=s, batch_size=b)
+        _spec(cfg, chash, opts, task=t, ratio=r, seed=s, batch_size=b)
         for t in opts.tasks
         for b in opts.batch_sizes
         for r in opts.ratios
@@ -399,7 +503,7 @@ def grid_tokens(cfg: Config, opts: GridOptions) -> List[RunSpec]:
     """
     chash = config_hash(cfg)
     return [
-        _spec(cfg, chash, task=t, ratio=r, seed=s, batch_size=b, steps=int(opts.budget / b))
+        _spec(cfg, chash, opts, task=t, ratio=r, seed=s, batch_size=b, steps=int(opts.budget / b))
         for t in opts.tasks
         for b in opts.batch_sizes
         for r in opts.ratios
@@ -431,10 +535,12 @@ def build_specs(experiment: str, cfg: Config, opts: GridOptions) -> List[RunSpec
     return EXPERIMENTS[experiment](cfg, opts)
 
 
-def run(experiment: str, cfg: Config, opts: GridOptions) -> ResultStore:
+def run(
+    experiment: str, cfg: Config, opts: GridOptions, prepare: bool = True
+) -> ResultStore:
     specs = build_specs(experiment, cfg, opts)
     print_plan(experiment, cfg, opts, specs)
-    return execute(specs, cfg, experiment)
+    return execute(specs, cfg, experiment, prepare=prepare)
 
 
 def print_plan(experiment: str, cfg: Config, opts: GridOptions, specs: Sequence[RunSpec]) -> None:

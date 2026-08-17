@@ -15,14 +15,16 @@ from __future__ import annotations
 import random
 import tempfile
 import time
-from typing import Sequence
+from dataclasses import replace
 
 import torch
 
 from config import Config
 from data import (
+    CacheMiss,
     encode_row,
     expand,
+    load_index_stream,
     build_eval_set,
     load_pools,
     mix_pools,
@@ -173,6 +175,23 @@ def check_cache_roundtrip(n: int = 2000) -> bool:
         print(f"  cache reload identical: {'yes' if same else 'NO'}")
         print(f"  smaller request is a prefix of the cache: {'yes' if prefix else 'NO'}")
 
+        # Strict mode is what every training path uses: a pool that is not on
+        # disk must stop the run, not be sampled while a GPU waits for it.
+        try:
+            load_pools(get_task("count_char"), "full", n, cache_dir=tmp,
+                       verbose=False, require_cache=True)
+            refused = False
+        except CacheMiss:
+            refused = True
+        cached_ok = torch.equal(
+            load_pools(task, "full", n, cache_dir=tmp, verbose=False,
+                       require_cache=True)["correct"].tokens,
+            a["correct"].tokens,
+        )
+        ok = ok and refused and cached_ok
+        print(f"  strict mode refuses to sample a missing pool: {'yes' if refused else 'NO'}")
+        print(f"  strict mode still reads a cached pool: {'yes' if cached_ok else 'NO'}")
+
         # Ratio mixing must take exactly `ratio` of its rows from the correct pool.
         mixed = mix_pools(a["correct"], a["wrong"], 0.25)
         k = int(n * 0.25)
@@ -182,6 +201,43 @@ def check_cache_roundtrip(n: int = 2000) -> bool:
         )
         ok = ok and exact
         print(f"  ratio mix takes the right rows: {'yes' if exact else 'NO'}")
+    return ok
+
+
+def check_training_order(n: int = 4096) -> bool:
+    """The saved training order must be reproducible, balanced and shareable.
+
+    Reproducible: reloading gives the same stream. Balanced: within one pass
+    over the pool every example appears exactly once, so no row is over- or
+    under-sampled. Shareable: a shorter request is a prefix of a longer one,
+    which is what lets two batch sizes consume the same examples in the same
+    order, and two ratios see the same problems.
+    """
+    print("\n" + "=" * 78)
+    print(" 6. SAVED TRAINING ORDER")
+    print("=" * 78)
+    ok = True
+
+    with tempfile.TemporaryDirectory() as tmp:
+        a = load_index_stream(n, 2 * n, order_seed=0, cache_dir=tmp, verbose=False)
+        b = load_index_stream(n, 2 * n, order_seed=0, cache_dir=tmp, verbose=False)
+        short = load_index_stream(n, n // 2, order_seed=0, cache_dir=tmp, verbose=False)
+        other = load_index_stream(n, 2 * n, order_seed=1, cache_dir=tmp, verbose=False)
+
+        same = bool(torch.equal(a, b))
+        prefix = bool(torch.equal(a[: n // 2], short))
+        balanced = all(
+            bool(torch.equal(torch.sort(a[i * n : (i + 1) * n].long()).values,
+                             torch.arange(n)))
+            for i in range(2)
+        )
+        differs = not bool(torch.equal(a, other))
+        ok = same and prefix and balanced and differs
+
+        print(f"  reloading gives the same stream:            {'yes' if same else 'NO'}")
+        print(f"  a shorter request is a prefix of a longer:  {'yes' if prefix else 'NO'}")
+        print(f"  each pass is a permutation (no resampling): {'yes' if balanced else 'NO'}")
+        print(f"  a different order_seed gives a different order: {'yes' if differs else 'NO'}")
     return ok
 
 
@@ -237,6 +293,11 @@ def check_training(cfg: Config, steps: int, samples: int, val_examples: int, see
     print(f" 6. TRAINING SMOKE TEST (steps={steps}, samples={samples:,})")
     print("=" * 78)
 
+    # The smoke test deliberately works on small throw-away data it samples
+    # itself, so it opts out of the "read everything from disk" rule that real
+    # runs are held to.
+    cfg = replace(cfg, data=replace(cfg.data, require_cache=False))
+
     for task in TASKS.values():
         instances = build_eval_set(task, val_examples, cfg.data.val_seed, cache_dir=None)
         pools = load_pools(task, "full", samples, cache_dir=None, use_cache=False,
@@ -267,6 +328,7 @@ def run_checks(cfg: Config, mc_samples: int = 200_000, do_train: bool = False,
     ok = check_parser() and ok
     ok = check_cache_roundtrip() and ok
     ok = check_answer_forcing() and ok
+    ok = check_training_order() and ok
     if do_train:
         check_training(cfg, steps, samples, val_examples, seed)
 

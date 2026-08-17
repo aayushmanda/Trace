@@ -193,6 +193,19 @@ def fit_scaling_exponent(batch_sizes, rho_cs) -> Tuple[float, float, float]:
 # ---------------------------------------------------------------------------
 
 
+def _fmt_rho(x: Optional[float], width: int = 9) -> str:
+    """A failed fit can run to 1e7; print it as out-of-range, not as a number.
+
+    Keeping these out of the tables is not cosmetic: a reader must never be able
+    to mistake the location of a fit that did not converge for a measurement.
+    """
+    if x is None or math.isnan(x):
+        return "n/a".rjust(width)
+    if abs(x) > 10:
+        return "off-axis".rjust(width)
+    return f"{x:>{width}.4f}"
+
+
 def print_curve_table(summaries: Sequence[dict], title: str = "PHASE TRANSITION") -> None:
     print("\n" + "=" * 86)
     print(f" {title}")
@@ -203,8 +216,8 @@ def print_curve_table(summaries: Sequence[dict], title: str = "PHASE TRANSITION"
     for s in summaries:
         note = "ok" if s["reliable"] else f"UNRELIABLE: {s['unreliable_reason']}"
         print(
-            f"{s['task']:<14} | {s['metric']:<18} | {s['rho_c']:>8.4f} | {s['tau']:>7.4f} | "
-            f"{s['chance']:>7.4f} | {s['ceiling']:>7.4f} | {note}"
+            f"{s['task']:<14} | {s['metric']:<18} | {_fmt_rho(s['rho_c'], 8)} | "
+            f"{_fmt_rho(s['tau'], 7)} | {s['chance']:>7.4f} | {s['ceiling']:>7.4f} | {note}"
         )
     print("=" * 86)
 
@@ -289,7 +302,8 @@ def print_ablation_verdicts(per_task: Dict[str, dict]) -> None:
         else:
             verdict = "SHIFTS under L_ans -> supervision density causal"
 
-        print(f"{name:<14} | {rho_a:>9.4f} | {rho_b:>9.4f} | {shift:>+8.4f} | "
+        shift_str = _fmt_rho(shift, 8) if abs(shift) <= 10 else "off-axis".rjust(8)
+        print(f"{name:<14} | {_fmt_rho(rho_a)} | {_fmt_rho(rho_b)} | {shift_str} | "
               f"{direct_str} | {verdict}")
 
     print("-" * 88)
@@ -307,10 +321,19 @@ def print_scaling_table(rows: Sequence[Tuple[int, int, dict]]) -> None:
     print("-" * 74)
     for b, steps, s in rows:
         note = "ok" if s["reliable"] else f"UNRELIABLE: {s['unreliable_reason']}"
-        print(f"{b:>7} | {steps:>7} | {s['rho_c']:>8.4f} | {s['tau']:>8.4f} | {note}")
-    alpha, _, r2 = fit_scaling_exponent([b for b, _, _ in rows], [s["rho_c"] for _, _, s in rows])
+        print(f"{b:>7} | {steps:>7} | {_fmt_rho(s['rho_c'], 8)} | {_fmt_rho(s['tau'], 8)} | {note}")
+
+    # The exponent is fitted on reliable thresholds only; a threshold that did
+    # not converge is not a data point about how rho_c scales.
+    usable = [(b, s["rho_c"]) for b, _, s in rows if s["reliable"]]
     print("-" * 74)
-    print(f" rho_c ~ B^alpha with alpha = {alpha:+.3f} (r^2 = {r2:.3f});  SNR theory predicts -0.500")
+    if len(usable) < 3:
+        print(f" not enough reliable thresholds to fit an exponent "
+              f"({len(usable)} of {len(rows)} batch sizes usable)")
+    else:
+        alpha, _, r2 = fit_scaling_exponent([b for b, _ in usable], [r for _, r in usable])
+        print(f" rho_c ~ B^alpha with alpha = {alpha:+.3f} (r^2 = {r2:.3f}, "
+              f"{len(usable)}/{len(rows)} points);  SNR theory predicts -0.500")
     print("=" * 74)
 
 
@@ -392,6 +415,11 @@ def plot_metrics(task, records: Sequence[dict], figures_dir: str, filename=None)
     _finish(ax_nll, f"{task.name}: answer likelihood and generation overhead",
             "Correct trace ratio ρ (%)", "NLL of gold answer (nats/token)",
             [r * 100 for r in nll["ratios"]] if nll["ratios"] else None)
+    if trunc["ratios"]:
+        # One legend for both y-axes, or the truncation series is unlabelled.
+        handles = ax_nll.get_lines() + ax2.get_lines()
+        ax_nll.legend(handles, [h.get_label() for h in handles], loc="upper left",
+                      frameon=True, fontsize=9)
 
     return _save(fig, figures_dir, filename or f"metrics_{task.name}.png")
 

@@ -268,7 +268,53 @@ def _perturb_number(n: int) -> int:
     return n
 
 
+def _perturb_like(n: int) -> int:
+    """A different number with the same digit count AND trailing zeros.
+
+    `tens * a` always ends in 0, and in one instance in ten `a` does too, so the
+    products carry a trailing-zero pattern that is fixed by the prompt alone. It
+    is the kind of local regularity a model can check without multiplying
+    anything, so a corrupted product has to reproduce it -- see the note in
+    `_sample_multiply`.
+    """
+    digits = str(n)
+    d = len(digits)
+    zeros = d - len(digits.rstrip("0"))
+    step = 10**zeros
+    lo, hi = (10 ** (d - 1) if d > 1 else 0), 10**d - 1
+
+    for _ in range(40):
+        # Snap onto the grid of numbers ending in `zeros` zeros, then insist the
+        # count is exactly right: a product that should end in 0 must, and one
+        # that should not must not.
+        m = random.randint(lo, hi) // step * step
+        s = str(m)
+        if m != n and len(s) == d and len(s) - len(s.rstrip("0")) == zeros:
+            return m
+    return n
+
+
 def _sample_multiply() -> Instance:
+    """Two-digit multiplication; the wrong trace is false but never implausible.
+
+    The corruption has to be invisible to every check that is cheaper than doing
+    the multiplication, otherwise a model can sort correct traces from wrong ones
+    on a surface cue and the ratio axis stops measuring what it claims to. Two
+    such cues are ruled out here:
+
+      * a correct product's digit count and trailing zeros are fixed by the
+        prompt (`tens * a` always ends in 0, twice over when `a` does), so the
+        corrupted product has to reproduce both -- a random 4-digit number where
+        the trace should show a multiple of ten is a giveaway in one character;
+      * the last step is the *genuine* sum of the two products as displayed, so
+        the trace is never arithmetically impossible on its own terms
+        (`511+142=8430` is; `511+790=1301` is not).
+
+    What is left wrong is exactly the thing the task is about: the two partial
+    products are not the products of the operands shown next to them, so the
+    total the trace arrives at is not `a * b`. The gold answer after " : " is
+    still the true product, so following this trace to its conclusion is wrong.
+    """
     a = random.randint(10, 99)
     # Both digits of b are non-zero so every instance needs two real partial
     # products; a units digit of 0 would hand the model a free step.
@@ -280,8 +326,12 @@ def _sample_multiply() -> Instance:
     total = a * b
     correct = f"{units}*{a}={p_u} {tens}*{a}={p_t} {p_u}+{p_t}={total}"
 
-    w_u, w_t = _perturb_number(p_u), _perturb_number(p_t)
-    w_total = _perturb_number(total)
+    # Reject the coincidence that would hand the true answer to a wrong trace.
+    for _ in range(20):
+        w_u, w_t = _perturb_like(p_u), _perturb_like(p_t)
+        w_total = w_u + w_t
+        if w_total != total:
+            break
     wrong = f"{units}*{a}={w_u} {tens}*{a}={w_t} {w_u}+{w_t}={w_total}"
 
     return Instance(prompt, correct, wrong, str(total))

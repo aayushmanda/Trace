@@ -6,7 +6,12 @@ batcher.
 
 GENERATE ONCE, THEN READ FROM DISK. Pools are expensive to sample and must be
 byte-identical across every run that claims to share data, so they are written
-to `cache_dir` and never regenerated once present. A pool is stored compactly
+to `cache_dir` and never regenerated once present. Sampling lives in exactly
+three functions -- `ensure_pool_cached`, `ensure_index_stream_cached` and
+`build_eval_set` -- and every training path calls the loaders with
+`require_cache=True`, which turns a missing file into a `CacheMiss` naming the
+`prepare` command instead of quietly sampling 1.5M examples with a GPU idling
+behind it. A pool is stored compactly
 as the padded token rows (uint8) plus the index at which the loss mask turns on
 (int16) -- ~66 bytes per example instead of the ~380 that materialised x/y/mask
 tensors would take -- and the training tensors are rebuilt *per batch* on the
@@ -128,8 +133,13 @@ class Pool:
     def take(self, n: int) -> "Pool":
         return Pool(self.tokens[:n], self.boundary[:n], self.pad_id)
 
+    def gather(self, idx: torch.Tensor):
+        """The rows named by `idx`, expanded to (x, y, mask)."""
+        idx = idx.to(self.device, dtype=torch.long)
+        return expand(self.tokens[idx], self.boundary[idx], self.pad_id)
+
     def batch(self, batch_size: int, generator: Optional[torch.Generator] = None):
-        """Uniform-with-replacement minibatch, expanded to (x, y, mask)."""
+        """Uniform-with-replacement minibatch (the `iid` sampling mode)."""
         idx = torch.randint(
             0, len(self), (batch_size,), device=self.device, generator=generator
         )
@@ -251,52 +261,123 @@ def _generate_blob(task: Task, n_samples: int, data_seed: int, variant: str, ver
     }
 
 
-def _load_or_generate(task, n_samples, data_seed, variant, cache_dir, use_cache, verbose):
+def _save_atomically(obj, path: str, verbose: bool) -> str:
+    """Writes to `path` via a temp file, so a half-written cache never appears."""
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    tmp = path + ".tmp"
+    torch.save(obj, tmp)
+    os.replace(tmp, path)
+    if verbose:
+        print(f"[cache] wrote {path} ({os.path.getsize(path) / 1e6:,.0f} MB)")
+    return path
+
+
+class CacheMiss(FileNotFoundError):
+    """Something a run needed was not on disk and the run refused to sample it.
+
+    Raised only under `require_cache=True`, which is what every training path
+    uses: sampling is a `prepare` step, never something a sweep does with a GPU
+    sitting idle behind it.
+    """
+
+
+def _missing(what: str, command: str) -> CacheMiss:
+    return CacheMiss(
+        f"{what} is not on disk, and this run will not sample it while training.\n"
+        f"       Generate it first with:\n\n           {command}\n\n"
+        f"       (or pass --allow-runtime-generation to sample it inline.)"
+    )
+
+
+def _prepare_command(task, n_samples: int, data_seed: int, variant: str, cache_dir: str) -> str:
+    return (
+        f"python main.py prepare --tasks {get_task(task).name} --variants {variant} "
+        f"--samples {n_samples} --data-seed {data_seed} --cache-dir {cache_dir}"
+    )
+
+
+def ensure_pool_cached(
+    task,
+    n_samples: int = 1_536_000,
+    data_seed: int = 100,
+    variant: str = "full",
+    cache_dir: str = "dataset_cache",
+    verbose: bool = True,
+) -> str:
+    """Guarantees the pool file exists on disk; returns its path.
+
+    This is the ONLY place a training pool is ever sampled. Everything else
+    reads the file it writes, so generation happens in one visible phase up
+    front rather than in the middle of a sweep.
+    """
+    task = get_task(task)
+    _check_variant(task, variant)
+    hit = find_cached(task, n_samples, data_seed, variant, cache_dir)
+    if hit:
+        return hit
+    blob = _generate_blob(task, n_samples, data_seed, variant, verbose)
+    return _save_atomically(
+        blob, cache_path(task, n_samples, data_seed, variant, cache_dir), verbose
+    )
+
+
+def _check_variant(task: Task, variant: str) -> None:
     if variant not in VARIANTS:
         raise ValueError(f"unknown variant {variant!r}; have {VARIANTS}")
     if task.tokenizer.vocab_size > 255:
         raise ValueError("the uint8 cache needs vocab_size <= 255")
 
+
+def _load_or_generate(
+    task, n_samples, data_seed, variant, cache_dir, use_cache, verbose, require_cache
+):
+    _check_variant(task, variant)
+
     if use_cache and cache_dir:
         hit = find_cached(task, n_samples, data_seed, variant, cache_dir)
-        if hit:
-            blob = torch.load(hit, map_location="cpu", weights_only=True)
-            if verbose:
-                have = blob["meta"]["n_samples"]
-                extra = f", using first {n_samples:,}" if have > n_samples else ""
-                print(f"[cache] {os.path.basename(hit)} ({have:,} samples{extra})")
-            return blob
-
-    blob = _generate_blob(task, n_samples, data_seed, variant, verbose)
-    if use_cache and cache_dir:
-        os.makedirs(cache_dir, exist_ok=True)
-        path = cache_path(task, n_samples, data_seed, variant, cache_dir)
-        tmp = path + ".tmp"
-        torch.save(blob, tmp)
-        os.replace(tmp, path)  # never leave a half-written cache behind
+        if hit is None and require_cache:
+            raise _missing(
+                f"the {task.name}/{variant} pool ({n_samples:,} samples, "
+                f"data_seed={data_seed})",
+                _prepare_command(task, n_samples, data_seed, variant, cache_dir),
+            )
+        if hit is None:
+            hit = ensure_pool_cached(task, n_samples, data_seed, variant, cache_dir, verbose)
+        blob = torch.load(hit, map_location="cpu", weights_only=True)
         if verbose:
-            print(f"[cache] wrote {path} ({os.path.getsize(path) / 1e6:,.0f} MB)")
-    return blob
+            have = blob["meta"]["n_samples"]
+            extra = f", using first {n_samples:,}" if have > n_samples else ""
+            print(f"[read ] {os.path.basename(hit)} ({have:,} samples{extra})")
+        return blob
+
+    if require_cache:
+        raise CacheMiss(
+            "require_cache=True but caching is disabled (use_cache=False or no "
+            "cache_dir); there is no file to read the pool from."
+        )
+    return _generate_blob(task, n_samples, data_seed, variant, verbose)
 
 
 def load_pools(
     task,
     variant: str = "full",
-    n_samples: int = 1_500_000,
+    n_samples: int = 1_536_000,
     data_seed: int = 100,
     cache_dir: str = "dataset_cache",
     device: str = "cpu",
     use_cache: bool = True,
     verbose: bool = True,
+    require_cache: bool = False,
 ) -> Dict[str, Pool]:
     """{"correct": Pool, "wrong": Pool} for A/B, {"direct": Pool} for C.
 
     The pools are returned on `device` in their compact form; expansion into
-    x/y/mask happens per batch.
+    x/y/mask happens per batch. With `require_cache=True` a missing file is an
+    error rather than a licence to sample 1.5M examples mid-sweep.
     """
     task = get_task(task)
     blob = _load_or_generate(
-        task, n_samples, data_seed, variant, cache_dir, use_cache, verbose
+        task, n_samples, data_seed, variant, cache_dir, use_cache, verbose, require_cache
     )
     pad_id = blob["meta"]["pad_id"]
     return {
@@ -307,6 +388,109 @@ def load_pools(
         )
         for name, pool in blob["pools"].items()
     }
+
+
+# ---------------------------------------------------------------------------
+# Training order: which examples each step sees, generated once and saved
+# ---------------------------------------------------------------------------
+#
+# The pool says *what* the training data is; this says *in what order it is
+# consumed*, and it is cached on the same terms. Drawing it fresh per run made
+# the sample order a second, uncontrolled source of run-to-run variance on top
+# of model initialisation. A saved stream removes it:
+#
+#   * two seeds at the same ratio now differ only in initialisation, so the
+#     seed spread is optimization noise and nothing else;
+#   * two ratios now see the *same problems in the same order* -- only the
+#     trace quality of some rows differs -- which makes the ratio curve a
+#     paired comparison and sharply reduces the noise in the fitted rho_c;
+#   * two batch sizes consume the same stream, differently chunked, because a
+#     shorter stream is a prefix of a longer one.
+#
+# The stream is a concatenation of independent shuffles of the pool, so every
+# example is seen equally often (sampling without replacement within an epoch)
+# rather than Poisson-many times.
+
+
+def index_stream_path(n_samples: int, length: int, order_seed: int, cache_dir: str) -> str:
+    return os.path.join(cache_dir, f"order_N{n_samples}_seed{order_seed}_len{length}.pt")
+
+
+def find_cached_stream(n_samples: int, length: int, order_seed: int, cache_dir: str):
+    """Shortest saved stream that is at least `length` long, or None."""
+    pattern = os.path.join(cache_dir, f"order_N{n_samples}_seed{order_seed}_len*.pt")
+    candidates = []
+    for path in glob.glob(pattern):
+        m = re.search(r"_len(\d+)\.pt$", path)
+        if m and int(m.group(1)) >= length:
+            candidates.append((int(m.group(1)), path))
+    return min(candidates)[1] if candidates else None
+
+
+def _build_index_stream(n_samples: int, length: int, order_seed: int) -> torch.Tensor:
+    generator = torch.Generator().manual_seed(order_seed)
+    chunks, total = [], 0
+    while total < length:
+        chunks.append(torch.randperm(n_samples, generator=generator))
+        total += n_samples
+    return torch.cat(chunks)[:length].to(torch.int32)
+
+
+def ensure_index_stream_cached(
+    n_samples: int,
+    length: int,
+    order_seed: int,
+    cache_dir: str = "dataset_cache",
+    verbose: bool = True,
+) -> str:
+    """Guarantees the training order file exists; returns its path."""
+    hit = find_cached_stream(n_samples, length, order_seed, cache_dir)
+    if hit:
+        return hit
+    stream = _build_index_stream(n_samples, length, order_seed)
+    return _save_atomically(
+        stream, index_stream_path(n_samples, length, order_seed, cache_dir), verbose
+    )
+
+
+def load_index_stream(
+    n_samples: int,
+    length: int,
+    order_seed: int,
+    cache_dir: Optional[str] = "dataset_cache",
+    device: str = "cpu",
+    verbose: bool = True,
+    require_cache: bool = False,
+) -> torch.Tensor:
+    """The saved training order: an int32 tensor of `length` row indices.
+
+    A longer stream's prefix is the shorter stream, so one file serves every
+    (steps, batch size) combination that fits inside it.
+    """
+    if cache_dir:
+        hit = find_cached_stream(n_samples, length, order_seed, cache_dir)
+        if hit is None and require_cache:
+            raise _missing(
+                f"the training order for N={n_samples:,}, order_seed={order_seed}, "
+                f"length={length:,}",
+                f"python main.py prepare --samples {n_samples} --order-seed {order_seed} "
+                f"--cache-dir {cache_dir}",
+            )
+        if hit is None:
+            hit = ensure_index_stream_cached(
+                n_samples, length, order_seed, cache_dir, verbose
+            )
+        stream = torch.load(hit, map_location="cpu", weights_only=True)
+        if verbose:
+            print(f"[read ] {os.path.basename(hit)} (using first {length:,})")
+        return stream[:length].to(device)
+
+    if require_cache:
+        raise CacheMiss(
+            "require_cache=True but no cache_dir was given; there is no file to "
+            "read the training order from."
+        )
+    return _build_index_stream(n_samples, length, order_seed).to(device)
 
 
 # ---------------------------------------------------------------------------
@@ -326,6 +510,7 @@ def build_eval_set(
     seed: int = 999_999,
     cache_dir: Optional[str] = "dataset_cache",
     verbose: bool = False,
+    require_cache: bool = False,
 ) -> List[Instance]:
     """Held-out instances, deduplicated on the prompt and cached to disk.
 
@@ -339,6 +524,13 @@ def build_eval_set(
     if path and os.path.exists(path):
         with open(path) as f:
             return [Instance(**d) for d in json.load(f)]
+
+    if require_cache:
+        raise _missing(
+            f"the held-out set for {task.name} (n={n}, val_seed={seed})",
+            f"python main.py prepare --tasks {task.name} --val-examples {n} "
+            f"--val-seed {seed} --cache-dir {cache_dir}",
+        )
 
     rng_state = random.getstate()
     random.seed(seed)
@@ -413,10 +605,15 @@ def prepare_cache(
     cache_dir: str,
     val_examples: int = 1000,
     val_seed: int = 999_999,
+    order_length: int = 0,
+    order_seed: int = 0,
     force: bool = False,
 ) -> None:
-    """Materialises every pool and eval set a sweep will ask for, once."""
+    """Materialises every pool, eval set and training order a sweep asks for."""
     os.makedirs(cache_dir, exist_ok=True)
+
+    if order_length:
+        ensure_index_stream_cached(n_samples, order_length, order_seed, cache_dir)
 
     for name in task_names:
         task = get_task(name)
@@ -440,18 +637,27 @@ def prepare_cache(
                 os.remove(path)
 
             t0 = time.time()
-            pools = load_pools(
-                task,
-                variant=variant,
-                n_samples=n_samples,
-                data_seed=data_seed,
-                cache_dir=cache_dir,
-                device="cpu",
-            )
-            del pools
+            ensure_pool_cached(task, n_samples, data_seed, variant, cache_dir)
             print(f"[done ] {task.name}/{variant} in {time.time() - t0:.0f}s\n")
 
     describe_cache(cache_dir)
+
+
+def decode_pool_rows(task: Task, pool: Pool, idx: Sequence[int]):
+    """[(full sequence, the part the loss is taken on)] for the named rows.
+
+    What the model actually consumes at a given step, as text -- the check that
+    a cached pool, a ratio mix and a saved training order compose into the
+    examples you think they do.
+    """
+    tok = task.tokenizer
+    out = []
+    for i in idx:
+        row = pool.tokens[int(i)].tolist()
+        boundary = int(pool.boundary[int(i)])
+        ids = [t for t in row if t != tok.pad_id]
+        out.append((tok.decode(ids), tok.decode(ids[boundary:])))
+    return out
 
 
 def describe_cache(cache_dir: str) -> None:
