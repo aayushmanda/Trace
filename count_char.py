@@ -18,7 +18,7 @@ from torch.nn import functional as F
 DATASET_VERSION = "v5_matched_strict"
 
 batch_size = 128
-steps_per_run = 6000
+steps_per_run = 4000
 learning_rate = 3e-4
 min_learning_rate = 1e-5
 warmup_steps = 600
@@ -28,9 +28,9 @@ label_smoothing = 0.1
 max_grad_norm = 1.0
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-n_embd = 128
+n_embd = 64
 n_head = 4
-n_layer = 4
+n_layer = 1
 
 DATASET_SIZE = 50000
 DATASET_SEED = 100
@@ -43,7 +43,7 @@ GLOBAL_CHARS = string.ascii_lowercase + string.digits + " ;:->+=*\n"
 # ============================================================
 # Choose task
 # ============================================================
-TASK_NAME = "word_index"  # "word_index" | "sort_letters" | "multiply" | "count_char" | "graph_path"
+TASK_NAME = "count_char"  # "word_index" | "sort_letters" | "multiply" | "count_char" | "graph_path"
 
 # ============================================================
 # Task family
@@ -697,7 +697,7 @@ def run_clean_phase_experiment():
 
     print("=" * 80)
     print(f"   PHASE TRANSITION EXPERIMENT — {task.name.upper()}")
-    print(f"Device: {device} | Batch: {batch_size} | WD: {weight_decay} | Drop: {dropout}")
+    print(f"Steps: {steps_per_run} | Batch: {batch_size} | WD: {weight_decay} | Embed: {n_embd} | Layers: {n_layer}")
     print("=" * 80)
 
     for ratio_idx, ratio in enumerate(ratios_to_test):

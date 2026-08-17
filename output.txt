@@ -1,0 +1,47 @@
+ython think.py
+[TASK] word_index | vocab=41 | block=64 | chance≈0.157 | ceiling=0.893
+Model Parameters: 810,537
+
+[DISK] Loading cached pools for word_index ...
+[DISK] Loaded.
+
+======================================================================
+   PHASE TRANSITION EXPERIMENT — WORD_INDEX
+Device: cuda | Batch: 256 | WD: 0.01 | Drop: 0.05
+======================================================================
+
+[Testing Ratio: 0.0% Correct | 100.0% Wrong]
+  --> Seed 2200 Accuracy: 15.10%
+
+[Testing Ratio: 5.0% Correct | 95.0% Wrong]
+  --> Seed 2200 Accuracy: 17.50%
+
+[Testing Ratio: 10.0% Correct | 90.0% Wrong]
+  --> Seed 2200 Accuracy: 24.40%
+
+[Testing Ratio: 15.0% Correct | 85.0% Wrong]
+  --> Seed 2200 Accuracy: 63.40%
+
+[Testing Ratio: 20.0% Correct | 80.0% Wrong]
+  --> Seed 2200 Accuracy: 62.80%
+
+[Testing Ratio: 30.0% Correct | 70.0% Wrong]
+  --> Seed 2200 Accuracy: 90.80%
+
+[Testing Ratio: 40.0% Correct | 60.0% Wrong]
+  --> Seed 2200 Accuracy: 92.00%
+
+[Testing Ratio: 50.0% Correct | 50.0% Wrong]
+  --> Seed 2200 Accuracy: 92.30%
+
+[Testing Ratio: 60.0% Correct | 40.0% Wrong]
+  --> Seed 2200 Accuracy: 91.90%
+
+[Testing Ratio: 80.0% Correct | 20.0% Wrong]
+  --> Seed 2200 Accuracy: 92.10%
+
+[Testing Ratio: 90.0% Correct | 10.0% Wrong]
+  --> Seed 2200 Accuracy: 93.10%
+
+[Testing Ratio: 100.0% Correct | 0.0% Wrong]
+  --> Seed 2200 Accuracy: 80.60%
