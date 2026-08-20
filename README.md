@@ -386,7 +386,7 @@ tqdm
 Jupyter
 ```
 
-Example installation with `uv`:
+Example .. installation with `uv`:
 
 ```bash
 uv pip install torch numpy matplotlib tqdm ipykernel
