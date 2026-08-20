@@ -1,33 +1,53 @@
 import random
 import string
-from dataclass import Instance
+from src.dataclass import Instance
 
 
 ### word_index
 
 
 def _sample_word_index() -> Instance:
-    L = 10
-    word = "".join(random.choice(string.ascii_lowercase) for _ in range(L))
+    L = random.randint(7, 14)  
 
+    # Sample the desired first-occurrence index uniformly
     gold = random.randrange(L)
-    prompt = f"{word};{word[gold]}"
 
-    # Correct trace
+    # Sample the queried character
+    c = random.choice(string.ascii_lowercase)
+
+    # Build the word so c cannot appear before gold
+    chars = []
+
+    for i in range(gold):
+        chars.append(random.choice([ch for ch in string.ascii_lowercase if ch != c]))
+
+    # First occurrence of c
+    chars.append(c)
+
+    # Anything is allowed after gold, including c appearing again
+    for i in range(gold + 1, L):
+        chars.append(random.choice(string.ascii_lowercase))
+
+    word = "".join(chars)
+
+    # Sanity check
+    assert word.index(c) == gold
+
+    prompt = f"{word};{c}"
+
+    # Correct trace: true index-character mapping
     correct = " ".join(f"{i}{ch}" for i, ch in enumerate(word))
 
-    wrong_indices = list(range(L))
-    random.shuffle(wrong_indices)
+    # Wrong trace: same indices/order, but every character is incorrect
     wrong_pairs = []
-    for i in wrong_indices:
-        wrong_char = random.choice(
-            [c for c in string.ascii_lowercase if c != word[i]]
-        )
+
+    for i, true_char in enumerate(word):
+        wrong_char = random.choice([ch for ch in string.ascii_lowercase if ch != true_char])
         wrong_pairs.append(f"{i}{wrong_char}")
 
     wrong = " ".join(wrong_pairs)
 
-    return Instance(prompt, correct, wrong, str(gold),)
+    return Instance(prompt, correct, wrong, str(gold))
 
 ### Multiplcation task
 
