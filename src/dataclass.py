@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import random
 from typing import Callable, Optional
-from tokenizer import CharTokenizer
+from src.tokenizer import CharTokenizer
 import hashlib
 import re
 import string

@@ -4,7 +4,7 @@ from typing import Dict
 
 
 
-from task import (
+from src.task import (
     _sample_word_index,
     _sample_multiply,
     _sample_count_char,
@@ -15,7 +15,7 @@ from task import (
 
 
 
-from dataclass import Task
+from src.dataclass import Task
 
 TASKS: Dict[str, Task] = {
 

@@ -2,8 +2,8 @@ import os
 import random
 from typing import List
 
-from task import Instance
-from registry import TASKS
+from src.task import Instance
+from src.registry import TASKS
 
 
 def save_mixed_trace_file(
