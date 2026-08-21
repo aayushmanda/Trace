@@ -315,14 +315,22 @@ def get_lr(step, learning_rate, min_learning_rate, warmup_steps, steps):
 # TRAIN ONE MODEL
 # ============================================================
 
-def train_model(model, optimizer, train_loader, steps, learning_rate, min_learning_rate,
-                warmup_steps, max_grad_norm, device, use_bf16, rho, model_seed):
+def train_model(
+    model, optimizer, train_loader, steps,
+    learning_rate, min_learning_rate,
+    warmup_steps, max_grad_norm,
+    device, use_bf16, rho, model_seed,
+    wandb_run=None, log_every=20,
+):
 
     model.train()
     train_iter = iter(train_loader)
 
-    for step in tqdm(range(steps), desc=f"Train rho={rho:.2f} seed={model_seed}", leave=False):
-
+    for step in tqdm(
+        range(steps),
+        desc=f"Train rho={rho:.2f} seed={model_seed}",
+        leave=False,
+    ):
         try:
             xb, yb, mb = next(train_iter)
         except StopIteration:
@@ -333,7 +341,13 @@ def train_model(model, optimizer, train_loader, steps, learning_rate, min_learni
         yb = yb.to(device, non_blocking=True)
         mb = mb.to(device, non_blocking=True)
 
-        lr = get_lr(step, learning_rate, min_learning_rate, warmup_steps, steps)
+        lr = get_lr(
+            step,
+            learning_rate,
+            min_learning_rate,
+            warmup_steps,
+            steps,
+        )
 
         for group in optimizer.param_groups:
             group["lr"] = lr
@@ -341,17 +355,34 @@ def train_model(model, optimizer, train_loader, steps, learning_rate, min_learni
         optimizer.zero_grad(set_to_none=True)
 
         if use_bf16:
-            with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
+            with torch.autocast(
+                device_type="cuda",
+                dtype=torch.bfloat16,
+            ):
                 _, loss = model(xb, targets=yb, mask=mb)
         else:
             _, loss = model(xb, targets=yb, mask=mb)
 
         loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
+
+        grad_norm = torch.nn.utils.clip_grad_norm_(
+            model.parameters(),
+            max_grad_norm,
+        )
+
         optimizer.step()
 
-    return loss.item()
+        if wandb_run is not None and (
+            step % log_every == 0 or step == steps - 1
+        ):
+            wandb_run.log({
+                "train/loss": loss.item(),
+                "train/lr": lr,
+                "train/grad_norm": float(grad_norm),
+                "train/examples_seen": (step + 1) * len(xb),
+            }, step=step)
 
+    return loss.item()
 # ============================================================
 # EVALUATION
 # ============================================================
