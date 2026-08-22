@@ -158,9 +158,7 @@ class ValDataset(Dataset):
 
         for line in lines:
             prompt, continuation = line.split(" ", 1)
-
             nums = re.findall(r"\d+", continuation.rsplit(":", 1)[1])
-
             if not nums:
                 raise ValueError(f"No gold answer in: {line}")
 

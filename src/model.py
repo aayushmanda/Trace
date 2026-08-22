@@ -170,13 +170,13 @@ def count_parameters(model):
 if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    vocab_size = 46
+    vocab_size = 67
     pad_id = 45
     block_size = 64
 
     n_embd = 128
     n_head = 4
-    n_layer = 4
+    n_layer = 8
     dropout = 0.05
 
     model = GPTModel(

@@ -24,8 +24,8 @@ TASKS: Dict[str, Task] = {
         block_size=128,
         max_new_tokens=50,
         sample=_sample_word_index,
-        chance_acc=0.15652,
-        ceiling_acc=0.89259,
+        chance_acc=0.10019529082029081,
+        ceiling_acc=1.0,
         description="report the index of a queried letter",
 
     ),

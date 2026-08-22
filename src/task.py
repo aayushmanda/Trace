@@ -6,25 +6,31 @@ from src.dataclass import Instance
 ### word_index
 
 
-def _sample_word_index() -> Instance:
-    L = random.randint(7, 14)  
 
-    # Sample the desired first-occurrence index uniformly
+def _sample_word_index() -> Instance:
+    L = random.randint(7, 14)
+
+    # Sample desired first-occurrence index uniformly
     gold = random.randrange(L)
 
-    # Sample the queried character
+    # Sample queried character
     c = random.choice(string.ascii_lowercase)
 
-    # Build the word so c cannot appear before gold
+    # Build word so c cannot occur before gold
     chars = []
 
     for i in range(gold):
-        chars.append(random.choice([ch for ch in string.ascii_lowercase if ch != c]))
+        chars.append(
+            random.choice([
+                ch for ch in string.ascii_lowercase
+                if ch != c
+            ])
+        )
 
     # First occurrence of c
     chars.append(c)
 
-    # Anything is allowed after gold, including c appearing again
+    # Anything allowed after gold
     for i in range(gold + 1, L):
         chars.append(random.choice(string.ascii_lowercase))
 
@@ -35,19 +41,66 @@ def _sample_word_index() -> Instance:
 
     prompt = f"{word};{c}"
 
-    # Correct trace: true index-character mapping
-    correct = " ".join(f"{i}{ch}" for i, ch in enumerate(word))
+    # --------------------------------------------------------
+    # CORRECT TRACE
+    # --------------------------------------------------------
+    # Example:
+    # 0a 1b 2c 3d
+    correct = " ".join(
+        f"{i}{ch}"
+        for i, ch in enumerate(word)
+    )
 
-    # Wrong trace: same indices/order, but every character is incorrect
+    # Create a derangement of indices:
+    # wrong_indices[i] != i
+    wrong_indices = list(range(L))
+
+    while True:
+        random.shuffle(wrong_indices)
+
+        if all(
+            wrong_indices[i] != i
+            for i in range(L)
+        ):
+            break
+
     wrong_pairs = []
 
     for i, true_char in enumerate(word):
-        wrong_char = random.choice([ch for ch in string.ascii_lowercase if ch != true_char])
-        wrong_pairs.append(f"{i}{wrong_char}")
+        wrong_idx = wrong_indices[i]
+
+        forbidden_chars = {
+            true_char,
+            word[wrong_idx],
+        }
+
+        wrong_char = random.choice([
+            ch for ch in string.ascii_lowercase
+            if ch not in forbidden_chars
+        ])
+
+        wrong_pairs.append(
+            f"{wrong_idx}{wrong_char}"
+        )
 
     wrong = " ".join(wrong_pairs)
 
-    return Instance(prompt, correct, wrong, str(gold))
+
+    # Every corrupted index differs from its corresponding true index
+    assert all(
+        wrong_indices[i] != i
+        for i in range(L)
+    )
+
+    # Still a permutation: every index appears exactly once
+    assert sorted(wrong_indices) == list(range(L))
+
+    return Instance(
+        prompt,
+        correct,
+        wrong,
+        str(gold),
+    )
 
 ### Multiplcation task
 
