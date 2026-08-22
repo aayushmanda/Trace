@@ -21,6 +21,7 @@ class CharTokenizer:
 
 if __name__ == "__main__":
     chars = string.ascii_lowercase + string.digits + " ;:->+=*\n"
+    print(len(chars))
     tokenizer = CharTokenizer(chars)
     test_string = "hello world"
     encoded = tokenizer.encode(test_string)
