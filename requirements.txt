@@ -1,0 +1,6 @@
+torch
+wandb
+nvitop
+pydantic
+matplotlib
+numpy
