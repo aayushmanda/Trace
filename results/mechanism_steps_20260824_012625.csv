@@ -1,0 +1,9 @@
+task,condition,rho,seed,step,transition_index,free_step_accuracy,first_error_rate,teacher_full_step_accuracy,teacher_state_accuracy,teacher_state_token_accuracy,teacher_state_nll
+boolean_circuit_8,outcome,,2005,1000,1,,,0.0,0.0,0.125,6.37604347569868
+boolean_circuit_8,outcome,,2005,1000,2,,,0.0,0.0,0.2021484375,5.721484770998359
+boolean_circuit_8,outcome,,2005,1000,3,,,0.0,0.0,0.2529296875,3.9139813603833318
+boolean_circuit_8,outcome,,2005,1000,4,,,0.0,0.0,0.24609375,4.095823498442769
+boolean_circuit_8,outcome,,2005,1000,5,,,0.0,0.0,0.2431640625,4.298456802032888
+boolean_circuit_8,outcome,,2005,1000,6,,,0.0,0.0,0.2431640625,4.095397494733334
+boolean_circuit_8,outcome,,2005,1000,7,,,0.0,0.0,0.2841796875,3.742499595042318
+boolean_circuit_8,outcome,,2005,1000,8,,,0.0,0.0,0.283203125,4.093973896000534

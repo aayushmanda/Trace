@@ -1,0 +1,4 @@
+task,condition,rho,seed,step,loss,answer_accuracy,exact_trace_accuracy,trace_step_accuracy,colon_rate
+boolean_circuit_8,outcome,,2001,8000,0.339356005191803,0.1055,,,1.0
+boolean_circuit_8,rho=0.05,0.05,2001,8000,0.31048208475112915,0.0675,0.0005,0.0625,0.9995
+boolean_circuit_8,rho=0.10,0.1,2001,8000,0.29558756947517395,0.0945,0.016,0.090875,0.9995
