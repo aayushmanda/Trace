@@ -1,8 +1,11 @@
 # registry.py
-
 from typing import Dict
 
-
+from src.sequential_tasks import (
+    MODULAR_PROGRAM_SAMPLERS,
+    REGISTER_MACHINE_SAMPLERS,
+    STACK_MACHINE_SAMPLERS,
+)
 
 from src.task import (
     _sample_word_index,
@@ -99,6 +102,53 @@ TASKS.update({
     )
     for steps, sampler in STATE_MACHINE_SAMPLERS.items()
 })
+
+
+
+
+
+TASKS.update({
+    f"modular_program_{steps}": Task(
+        name=f"modular_program_{steps}",
+        block_size=256,
+        max_new_tokens=192,
+        sample=sampler,
+        chance_acc=1 / 17,
+        ceiling_acc=1.0,
+        description=f"execute {steps} arithmetic operations modulo 17",
+        answer_pattern=r"\d+",
+    )
+    for steps, sampler in MODULAR_PROGRAM_SAMPLERS.items()
+})
+
+TASKS.update({
+    f"register_machine_{steps}": Task(
+        name=f"register_machine_{steps}",
+        block_size=192,
+        max_new_tokens=128,
+        sample=sampler,
+        chance_acc=1 / 17,
+        ceiling_acc=1.0,
+        description=f"execute {steps} updates on two registers modulo 17",
+        answer_pattern=r"\d+",
+    )
+    for steps, sampler in REGISTER_MACHINE_SAMPLERS.items()
+})
+
+TASKS.update({
+    f"stack_machine_{steps}": Task(
+        name=f"stack_machine_{steps}",
+        block_size=384,
+        max_new_tokens=320,
+        sample=sampler,
+        chance_acc=1 / 17,
+        ceiling_acc=1.0,
+        description=f"execute {steps} bounded push/pop operations",
+        answer_pattern=r"\d+",
+    )
+    for steps, sampler in STACK_MACHINE_SAMPLERS.items()
+})
+
 
 if __name__ == "__main__":
 
