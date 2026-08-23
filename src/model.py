@@ -172,11 +172,11 @@ if __name__ == "__main__":
 
     vocab_size = 67
     pad_id = 45
-    block_size = 64
+    block_size = 300
 
     n_embd = 128
     n_head = 4
-    n_layer = 8
+    n_layer = 2
     dropout = 0.05
 
     model = GPTModel(
