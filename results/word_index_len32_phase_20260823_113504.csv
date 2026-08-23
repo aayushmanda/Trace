@@ -1,0 +1,9 @@
+task,condition,rho,seed,step,loss,answer_accuracy,exact_trace_accuracy,trace_step_accuracy,colon_rate
+word_index_len32,outcome,,2001,8000,6.606602255487815e-05,1.0,,,1.0
+word_index_len32,rho=0.00,0.0,2001,8000,0.8991857171058655,0.027,0.0,0.0,1.0
+word_index_len32,rho=0.10,0.1,2001,8000,0.8920606374740601,0.025,0.0,0.0,1.0
+word_index_len32,rho=0.20,0.2,2001,8000,0.7670537233352661,0.027,0.0,0.0,1.0
+word_index_len32,rho=0.30,0.3,2001,8000,0.6525143980979919,0.026,0.91,0.91,1.0
+word_index_len32,rho=0.50,0.5,2001,8000,0.48281556367874146,0.026,1.0,1.0,1.0
+word_index_len32,rho=1.00,1.0,2001,8000,0.008033509366214275,0.53,1.0,1.0,1.0
+

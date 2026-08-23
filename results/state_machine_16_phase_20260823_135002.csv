@@ -1,0 +1,2 @@
+task,condition,rho,seed,step,loss,answer_accuracy,exact_trace_accuracy,trace_step_accuracy,colon_rate
+state_machine_16,outcome,,2001,8000,0.46100354194641113,0.0555,,,1.0

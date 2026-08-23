@@ -82,3 +82,7 @@ STATE_MACHINE_SAMPLERS = {
     16: _sample_state_machine_16,
     20: _sample_state_machine_20,
 }
+
+if __name__ == "main":
+    _sample_state_machine_4 = make_state_machine_sampler(n_states=16, n_steps=4)
+    print(vars(_sample_state_machine_4))

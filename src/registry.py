@@ -7,6 +7,13 @@ from src.sequential_tasks import (
     STACK_MACHINE_SAMPLERS,
 )
 
+from src.hard_word_index_tasks import (
+    HARD_WORD_INDEX_BLOCK_SIZE,
+    HARD_WORD_INDEX_MAX_NEW_TOKENS,
+    HARD_WORD_INDEX_SAMPLERS,
+)
+
+
 from src.task import (
     _sample_word_index,
     _sample_multiply,
@@ -20,6 +27,15 @@ from src.state_machine_tasks import STATE_MACHINE_SAMPLERS
 from src.dataclass import Task
 
 from src.dataclass import Task
+
+from src.boolean_circuit_tasks import (
+    BOOLEAN_CIRCUIT_BLOCK_SIZE,
+    BOOLEAN_CIRCUIT_MAX_NEW_TOKENS,
+    BOOLEAN_CIRCUIT_SAMPLERS,
+)
+
+
+
 
 TASKS: Dict[str, Task] = {
 
@@ -147,6 +163,35 @@ TASKS.update({
         answer_pattern=r"\d+",
     )
     for steps, sampler in STACK_MACHINE_SAMPLERS.items()
+})
+
+TASKS.update({
+    f"word_index_len{length}": Task(
+        name=f"word_index_len{length}",
+        block_size=HARD_WORD_INDEX_BLOCK_SIZE,
+        max_new_tokens=HARD_WORD_INDEX_MAX_NEW_TOKENS[length],
+        sample=sampler,
+        chance_acc=1 / length,
+        ceiling_acc=1.0,
+        description=f"first index with a fixed word length of {length}",
+        answer_pattern=r"\d+",
+    )
+    for length, sampler in HARD_WORD_INDEX_SAMPLERS.items()
+})
+
+
+TASKS.update({
+    f"boolean_circuit_{depth}": Task(
+        name=f"boolean_circuit_{depth}",
+        block_size=BOOLEAN_CIRCUIT_BLOCK_SIZE,
+        max_new_tokens=BOOLEAN_CIRCUIT_MAX_NEW_TOKENS[depth],
+        sample=sampler,
+        chance_acc=1 / 16,
+        ceiling_acc=1.0,
+        description=f"execute a reversible four-bit Boolean circuit with {depth} gates",
+        answer_pattern=r"[01]{4}",
+    )
+    for depth, sampler in BOOLEAN_CIRCUIT_SAMPLERS.items()
 })
 
 
