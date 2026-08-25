@@ -1,393 +1,486 @@
 # Trace Supervision Experiments
 
-This repository contains a small synthetic Transformer setup for studying how the fraction of correct reasoning traces affects task performance.
+This repository studies when intermediate reasoning traces teach an autoregressive Transformer to execute a multi-step computation even when the prompt already determines the final answer.
 
-The main experiment uses the `word_index` task. A model receives a word and a queried character and must generate a reasoning trace followed by the correct index.
+The central intervention is **trace reliability** \(\rho\in[0,1]\): the prompt and terminal answer are kept fixed while the validity of intermediate supervision is changed.
 
-Example:
+The main paper-facing experiments cover:
+
+- random finite-state machines,
+- two-register modular machines,
+- reversible Boolean circuits,
+- outcome-only, answer-first, valid-process, and corrupted-process controls,
+- reliability sweeps over \(\rho\),
+- trace-level versus step-level corruption,
+- training-time and mechanism diagnostics.
+
+## Repository structure
 
 ```text
-abcdefghij;f 0a 1b 2c 3d 4e 5f 6g 7h 8i 9j : 5
-```
-
-The training data can contain either correct traces or corrupted traces, while the final answer remains correct. The parameter $\rho$ denotes the fraction of training examples containing correct traces.
-
-## Project Structure
-
-```text
-trace/
-├── config.py
-├── model.py
-├── tokenizer.py
-├── dataclass.py
-├── task.py
-├── registry.py
+Trace/
+├── README.md
+├── compare_supervision.py
+├── experiment.py
+├── mechanism_diagnostics.py
 ├── save_data.py
-├── train.ipynb
-├── think.py
-└── word_index/
-    ├── word_index_rho_0.txt
-    ├── word_index_rho_10.txt
-    ├── word_index_rho_20.txt
-    ├── ...
-    └── word_index_rho_100.txt
+├── sweep_ratio.py
+├── trace_vs_step_corruption.py
+├── config.py
+├── pyproject.toml
+├── requirements.txt
+├── results/
+└── src/
+    ├── model.py
+    ├── tokenizer.py
+    ├── dataclass.py
+    ├── registry.py
+    ├── task.py
+    ├── state_machine_tasks.py
+    ├── sequential_tasks.py
+    ├── boolean_circuit_tasks.py
+    └── hard_word_index_tasks.py
 ```
 
-## Files
+## Installation
 
-### `config.py`
+Using `uv`:
 
-Stores experiment and model hyperparameters such as:
-
-```python
-TASK_NAME = "word_index"
-
-RHO_VALUES = [
-    0.0, 0.1, 0.2, 0.3, 0.4, 0.5,
-    0.6, 0.7, 0.8, 0.9, 1.0
-]
-
-MODEL_SEEDS = [1000, 1500, 2200, 3000, 4000]
-
-DATASET_SIZE = 50000
-
-BATCH_SIZE = 256
-STEPS = 6000
-
-LEARNING_RATE = 3e-4
-MIN_LEARNING_RATE = 1e-5
-WARMUP_STEPS = 600
-WEIGHT_DECAY = 0.01
-MAX_GRAD_NORM = 1.0
-
-N_EMBD = 128
-N_HEAD = 4
-N_LAYER = 4
-DROPOUT = 0.05
-
-VAL_SEED = 99999
-VAL_SIZE = 1000
-VAL_BATCH_SIZE = 256
-
-DATA_SEED = 100
-
-USE_COMPILE = True
-SAVE_MODELS = False
+```bash
+uv sync
 ```
 
-### `model.py`
+or:
 
-Contains the decoder-only Transformer model.
-
-### `tokenizer.py`
-
-Contains the character-level tokenizer.
-
-### `dataclass.py`
-
-Contains shared dataclasses such as `Instance` and `Task`.
-
-### `task.py`
-
-Contains task samplers and trace construction.
-
-### `registry.py`
-
-Contains the task registry, for example:
-
-```python
-TASKS["word_index"]
+```bash
+uv pip install torch numpy matplotlib tqdm
 ```
 
-### `save_data.py`
+Check CUDA:
 
-Creates fixed training files at different correct-trace ratios.
+```bash
+uv run python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'cpu')"
+```
 
-### `train.ipynb`
+## Core data construction
 
-Loads a selected training file, trains the model, evaluates on held-out validation data, and can run sweeps over $\rho$ and model seeds.
-
-## Word Index Task
-
-Each example has the form:
+Every sampled problem contains:
 
 ```text
-prompt trace : answer
+prompt
+correct_trace
+wrong_trace
+gold_answer
 ```
+
+A valid process example is:
+
+```text
+PROMPT CORRECT_TRACE : GOLD
+```
+
+A corrupted process example is:
+
+```text
+PROMPT WRONG_TRACE : GOLD
+```
+
+The final answer remains correct in both cases. For controlled \(\rho\) sweeps, the same underlying prompt pool and validation set are reused; only intermediate trace validity changes.
+
+## Available tasks
+
+Tasks are registered in:
+
+```python
+from src.registry import TASKS
+```
+
+Main sequential tasks include:
+
+```text
+state_machine_2
+state_machine_4
+state_machine_8
+state_machine_12
+state_machine_16
+state_machine_20
+
+register_machine_2
+register_machine_4
+register_machine_8
+register_machine_12
+register_machine_16
+register_machine_20
+
+boolean_circuit_4
+boolean_circuit_8
+boolean_circuit_12
+boolean_circuit_16
+boolean_circuit_20
+```
+
+Additional modular-program, stack-machine, and word-index tasks are also registered.
+
+## Supervision conditions
+
+### Outcome-only
+
+```text
+PROMPT : GOLD
+```
+
+The model receives no intermediate state supervision.
+
+### Process
+
+```text
+PROMPT CORRECT_TRACE : GOLD
+```
+
+The valid trace occurs before the answer and can be reused autoregressively.
+
+### Corrupted process
+
+```text
+PROMPT WRONG_TRACE : GOLD
+```
+
+The trace is locally invalid while the terminal answer remains correct.
+
+### Answer-first
+
+The correct answer is generated before the valid trace. This separates trace content from causal availability before answer generation.
+
+## Matched supervision comparison
 
 Example:
 
-```text
-abcdefghij;f 0a 1b 2c 3d 4e 5f 6g 7h 8i 9j : 5
+```bash
+uv run compare_supervision.py \
+  --tasks state_machine_12 state_machine_16 state_machine_20 \
+  --modes outcome answer_first process corrupted \
+  --seeds 2001 2002 2003 2004 2005 \
+  --train-size 100000 \
+  --val-size 2000 \
+  --steps 8000 \
+  --layers 2
 ```
 
-The prompt is:
+This is the main control experiment for distinguishing valid pre-answer process supervision from matched alternatives.
 
-```text
-abcdefghij;f
-```
+## Reliability sweep
 
-The correct trace is:
+`rho` is the fraction/probability of examples receiving a valid trace.
 
-```text
-0a 1b 2c 3d 4e 5f 6g 7h 8i 9j
-```
-
-The final answer is:
-
-```text
-5
-```
-
-Wrong traces can contain corrupted characters, scrambled indices, or both. The final answer remains correct even when the trace is wrong.
-
-## Correct Trace Ratio
-
-$\rho$ is the fraction of training examples with correct traces.
-
-For 50,000 training examples:
+The main sweep is implemented in:
 
 ```text
-ρ = 0.0  ->     0 correct + 50000 wrong
-ρ = 0.1  ->  5000 correct + 45000 wrong
-ρ = 0.5  -> 25000 correct + 25000 wrong
-ρ = 0.9  -> 45000 correct +  5000 wrong
-ρ = 1.0  -> 50000 correct +     0 wrong
+sweep_ratio.py
 ```
 
-All ratio files should use the same underlying prompt pool so changing $\rho$ changes trace correctness rather than the task distribution.
+Boolean example:
 
-## Generate Training Files
-
-```python
-from registry import TASKS
-from save_data import save_mixed_trace_file
-
-DATASET_SIZE = 50000
-
-CORRECT_RATIOS = [
-    0.0, 0.1, 0.2, 0.3, 0.4,
-    0.5, 0.6, 0.7, 0.8, 0.9, 1.0
-]
-
-task_name = "word_index"
-
-instances = [
-    TASKS[task_name].sample()
-    for _ in range(DATASET_SIZE)
-]
-
-for rho in CORRECT_RATIOS:
-    save_mixed_trace_file(
-        instances,
-        correct_ratio=rho,
-        output_file=f"{task_name}/{task_name}_rho_{int(rho*100)}.txt",
-        seed=100,
-    )
+```bash
+uv run sweep_ratio.py \
+  --task boolean_circuit_8 \
+  --rhos 0.30 0.50 0.60 0.70 0.80 0.85 0.90 0.95 1.00 \
+  --seeds 2001 2002 2003 2004 2005 \
+  --checkpoints 1000 2000 4000 6000 8000 \
+  --train-size 100000 \
+  --val-size 2000 \
+  --batch-size 128
 ```
 
-This creates:
+State-machine boundary example:
+
+```bash
+uv run sweep_ratio.py \
+  --task state_machine_16 \
+  --rhos 0.80 0.82 0.84 0.85 0.86 0.87 0.88 0.90 1.00 \
+  --seeds 2001 2002 2003 2004 2005 \
+  --checkpoints 1000 2000 4000 6000 8000 12000 16000 \
+  --train-size 100000 \
+  --val-size 2000 \
+  --batch-size 128
+```
+
+## Trace-level versus step-level corruption
+
+The standard reliability sweep uses **trace-level corruption**. One Bernoulli variable is shared across the complete trajectory:
+
+\[
+Z\sim\mathrm{Bernoulli}(\rho),\qquad Z_1=\cdots=Z_D=Z.
+\]
+
+Thus an example is either fully valid or fully corrupted.
+
+The step-level intervention independently samples validity at each transition:
+
+\[
+Z_t\sim\mathrm{Bernoulli}(\rho),\qquad t=1,\ldots,D.
+\]
+
+The two schemes match the marginal expected fraction of valid local transitions but differ in cross-transition correlation.
+
+### Important construction detail
+
+Step-level traces are generated **sequentially**. If a previous transition was corrupted, a later clean transition applies the correct operation to the current mixed state rather than jumping back to the canonical clean trajectory.
+
+For transition \(t\):
+
+\[
+s_t = \Phi(s_{t-1},u_t)\quad\text{if }Z_t=1,
+\]
+
+while a corrupted transition emits a successor explicitly different from \(\Phi(s_{t-1},u_t)\).
+
+Do not implement step-level corruption by naively splicing pre-generated clean and corrupted trace strings position-wise; after one corrupted transition the source state has changed.
+
+### Run trace-vs-step corruption
+
+State machine:
+
+```bash
+uv run trace_vs_step_corruption.py \
+  --task state_machine_16 \
+  --modes trace step \
+  --rhos 0.80 0.82 0.84 0.86 0.88 0.90 1.00 \
+  --seeds 2001 2002 2003 2004 2005 \
+  --checkpoints 2000 4000 6000 8000 12000 16000 \
+  --train-size 100000 \
+  --val-size 2000 \
+  --batch-size 128
+```
+
+Register machine:
+
+```bash
+uv run trace_vs_step_corruption.py \
+  --task register_machine_16 \
+  --modes trace step \
+  --rhos 0.10 0.20 0.30 0.40 0.50 0.60 0.70 0.80 0.90 1.00 \
+  --seeds 2001 2002 2003 2004 2005 \
+  --checkpoints 1000 2000 4000 6000 8000
+```
+
+Boolean circuit:
+
+```bash
+uv run trace_vs_step_corruption.py \
+  --task boolean_circuit_8 \
+  --modes trace step \
+  --rhos 0.30 0.50 0.60 0.70 0.80 0.85 0.90 0.95 1.00 \
+  --seeds 2001 2002 2003 2004 2005 \
+  --checkpoints 1000 2000 4000 6000 8000
+```
+
+The trace-vs-step CSV should record:
 
 ```text
-word_index/word_index_rho_0.txt
-word_index/word_index_rho_10.txt
-word_index/word_index_rho_20.txt
-...
-word_index/word_index_rho_100.txt
+task
+corruption_mode
+rho
+realized_valid_step_rate
+realized_clean_trace_rate
+seed
+step
+loss
+answer_accuracy
+exact_trace_accuracy
+trace_step_accuracy
+colon_rate
 ```
 
-## Train One Model
+### Interpretation
 
-Choose a ratio:
+This intervention tests whether changing supervision correlation changes finite-budget acquisition while approximately matching the expected amount of locally valid supervision.
 
-```python
-rho = 0.5
-data_file = f"{TASK_NAME}/{TASK_NAME}_rho_{int(rho*100)}.txt"
-```
+The paper should claim matched **marginal local validity**, not automatically identical Transformer mean gradients. Autoregressive prefixes differ across the two schemes, so empirical gradient means and variances should be measured rather than assumed equal.
 
-The file is loaded and tensorized once. Minibatches are then sampled from this fixed dataset during training.
+## Mechanism diagnostics
 
-For controlled comparisons, reset the model seed before constructing each model:
+`mechanism_diagnostics.py` measures quantities such as:
 
-```python
-random.seed(model_seed)
-torch.manual_seed(model_seed)
-
-if torch.cuda.is_available():
-    torch.cuda.manual_seed_all(model_seed)
-```
-
-## Validation
-
-Validation data is generated separately from training.
-
-For `word_index`, validation excludes any underlying word that appears in training:
-
-```python
-if word in train_words:
-    continue
-```
-
-Default validation size:
-
-```python
-VAL_SIZE = 1000
-```
-
-Validation is run once after training.
-
-Two quantities are recorded.
-
-### Accuracy
-
-Fraction of held-out examples for which the final predicted index is correct.
-
-### Separator Rate
-
-Fraction of generated continuations that contain the `:` separator between the trace and final answer.
+- answer accuracy,
+- exact-trace accuracy,
+- free-running transition accuracy,
+- first-error depth,
+- teacher-forced full-step accuracy,
+- teacher-forced state accuracy,
+- teacher-forced state-token accuracy,
+- teacher-forced state NLL,
+- predicted exact-trace probability,
+- clean-state gradient norm,
+- training-gradient norm,
+- clean/corrupt gradient cosine,
+- projected gradient mean,
+- projected gradient variance,
+- between-component variance,
+- clean-state diagnostic loss.
 
 Example:
 
+```bash
+uv run mechanism_diagnostics.py \
+  --tasks boolean_circuit_8 \
+  --rhos 0.30 0.50 0.80 0.85 0.90 0.95 1.00 \
+  --seeds 2001 2002 2003 2004 2005
+```
+
+A global gradient cosine should not by itself be interpreted as evidence of semantic acquisition because formatting, delimiters, positional structure, and token marginals can dominate it.
+
+## Same-trajectory checkpoint experiment
+
+To study finite-time acquisition, train each `(rho, seed)` once to a long horizon and evaluate checkpoints from the same training trajectory.
+
+Recommended checkpoints:
+
 ```text
-0a 1b 2c ... : 5
+1000 2000 4000 6000 8000 10000 12000 16000
 ```
 
-A separator rate of 100% means the model consistently generates the expected answer delimiter. It does not mean the final answer is correct.
+This supports analysis of:
 
-## Sweep Over rho
+- acquisition/hitting time,
+- seed dependence,
+- boundary movement with update budget,
+- local-state acquisition before exact rollout,
+- answer accuracy tracking complete execution.
 
-Typical sweep:
+Do not independently retrain a new model for each checkpoint.
 
-```python
-RHO_VALUES = [
-    0.0, 0.1, 0.2, 0.3, 0.4,
-    0.5, 0.6, 0.7, 0.8, 0.9, 1.0
-]
+## Batch-size experiment
+
+To test finite-batch effects, hold all other settings fixed and vary:
+
+```text
+B = 64
+B = 128
+B = 256
+B = 512
 ```
 
-For each value:
+Recommended outputs:
 
-1. Load the corresponding fixed training file.
-2. Reset the model initialization seed.
-3. Train for the same number of optimization steps.
-4. Evaluate on the same held-out validation set.
-5. Record validation accuracy and separator rate.
-
-## Multiple Model Seeds
-
-To measure sensitivity to initialization:
-
-```python
-MODEL_SEEDS = [
-    1000,
-    1500,
-    2200,
-    3000,
-    4000
-]
+```text
+batch_size
+rho
+seed
+checkpoint
+answer_accuracy
+exact_trace_accuracy
+trace_step_accuracy
 ```
 
-Each seed trains a fresh model from scratch on the same data.
+## Metrics
 
-For each $\rho$, report the mean validation accuracy and standard deviation across seeds.
+### Answer accuracy
 
-## Plot Accuracy vs. rho
+Fraction of held-out prompts for which the generated terminal answer equals the gold answer.
 
-```python
-plt.figure(figsize=(8, 5))
+### Exact-trace accuracy
 
-plt.errorbar(
-    rho_values,
-    mean_acc,
-    yerr=std_acc,
-    marker="o",
-    capsize=4
-)
+Fraction of held-out prompts for which the entire free-running generated trace exactly matches the canonical valid trace.
 
-plt.xlabel(r"Correct Trace Ratio $\rho$")
-plt.ylabel("Validation Accuracy (%)")
-plt.title(r"Validation Accuracy vs. $\rho$ Across Model Seeds")
+### Trace-step accuracy
 
-plt.grid(alpha=0.3)
-plt.tight_layout()
-plt.show()
-```
+Fraction of individual generated transitions that match the canonical corresponding transition.
 
-## Current Experimental Observation
+### Teacher-forced state accuracy
 
-Preliminary runs show validation accuracy staying near chance for low values of $\rho$, followed by a sharp increase over a narrow range of correct-trace ratios and saturation near the task ceiling.
+Accuracy of the next state when the preceding correct trace is supplied. This separates local transition competence from free-running rollout survival.
 
-This should currently be described as empirical transition-like behavior rather than a confirmed phase transition.
+### First-error depth
 
-Important follow-up controls include:
-
-- multiple model initialization seeds,
-- multiple trace-mixture seeds,
-- denser values of $\rho$ around the transition,
-- different batch sizes,
-- different model depths,
-- different trace corruption schemes,
-- answer-only loss versus full trace supervision.
-
-## Performance
-
-Useful speed settings include:
-
-```python
-torch.set_float32_matmul_precision("high")
-```
-
-BF16 autocast when supported:
-
-```python
-with torch.autocast("cuda", dtype=torch.bfloat16):
-    ...
-```
-
-Fused AdamW:
-
-```python
-torch.optim.AdamW(..., fused=True)
-```
-
-Optional compilation:
-
-```python
-model = torch.compile(model, mode="reduce-overhead")
-```
-
-The training tensors can be moved to GPU once before training to avoid repeated CPU-to-GPU transfers.
-
-Validation should be performed only once after training when only final performance is needed.
+Index of the first incorrect transition in the generated trace.
 
 ## Reproducibility
 
-Keep different sources of randomness separate:
+Keep randomness sources separate:
 
 ```text
-DATA_SEED   -> underlying generated dataset
-mix seed    -> which prompts receive correct versus wrong traces
-model seed  -> model initialization and training randomness
-VAL_SEED    -> held-out validation set
+train seed       -> underlying training instances
+validation seed  -> held-out validation instances
+ratio seed       -> clean/corrupted assignment
+corruption seed  -> corrupted successor construction
+batch seed       -> minibatch order
+model seed       -> model initialization
 ```
 
-For a controlled $\rho$ sweep, keep the dataset and validation set fixed while changing only trace correctness.
+For controlled comparisons:
 
-## Environment
+- keep the prompt pool fixed,
+- keep validation fixed,
+- keep architecture fixed,
+- keep optimizer and update budget fixed,
+- keep minibatch order fixed where possible,
+- vary only the intended intervention.
 
-Typical dependencies:
+Reliability assignments should be nested across \(\rho\) when studying acquisition-boundary movement.
+
+## Typical paper configuration
 
 ```text
-Python 3.12
-PyTorch
-NumPy
-Matplotlib
-tqdm
-Jupyter
+training prompts:       100000
+validation prompts:       2000
+optimizer:               AdamW
+optimizer updates:        8000
+batch size:                128
+Transformer blocks:          2
+attention heads:              4
+embedding width:            128
+feed-forward width:         512
+peak learning rate:        3e-4
+weight decay:                 0
+dropout:                      0
+gradient clipping:          1.0
+model seeds:          2001-2005
 ```
 
-Example .. installation with `uv`:
+Some diagnostic experiments may use longer horizons or different depths. Any deviation should be reported with the corresponding result.
 
-```bash
-uv pip install torch numpy matplotlib tqdm ipykernel
+## Results
+
+Outputs are written under:
+
+```text
+results/
 ```
+
+Keep raw per-seed CSV files rather than only averaged results.
+
+Typical result files include:
+
+```text
+*_phase_*.csv
+*_trace_vs_step_*.csv
+*_mechanism_*.csv
+```
+
+## Recommended paper experiment set
+
+The strongest experimental package includes:
+
+1. matched supervision controls,
+2. multi-seed reliability sweeps,
+3. local-state versus exact-rollout measurements,
+4. same-trajectory checkpoint sweeps,
+5. trace-level versus step-level corruption,
+6. batch-size intervention,
+7. early progress/noise diagnostics predicting later acquisition,
+8. corruption-geometry intervention.
+
+## Claim boundary
+
+The experiments are designed to support the finite-budget claim:
+
+> Sufficiently reliable trace-first supervision can teach an autoregressive Transformer a reusable local executor that matched outcome-only, answer-first, and corrupted supervision does not acquire within the same finite training budget.
+
+The repository does **not** by itself establish:
+
+- a universal critical reliability,
+- optimizer-independent phase behavior,
+- asymptotic failure below a positive threshold,
+- outcome-only impossibility,
+- transfer to natural-language reasoning,
+- identical gradient means under trace-level and step-level corruption.
+
