@@ -326,6 +326,18 @@ uv run mechanism_diagnostics.py \
   --seeds 2001 2002 2003 2004 2005
 ```
 
+
+```bash
+uv run lora.py \
+  --rhos 0.0 0.2 0.4 0.5 0.6 0.8 1.0 \
+  --seeds 2001 2002 2003 \
+  --train-size 12000 \
+  --steps 800 \
+  --include-answer-first \
+  --overwrite
+```
+
+
 A global gradient cosine should not by itself be interpreted as evidence of semantic acquisition because formatting, delimiters, positional structure, and token marginals can dominate it.
 
 ## Same-trajectory checkpoint experiment
@@ -417,26 +429,6 @@ For controlled comparisons:
 
 Reliability assignments should be nested across \(\rho\) when studying acquisition-boundary movement.
 
-## Typical paper configuration
-
-```text
-training prompts:       100000
-validation prompts:       2000
-optimizer:               AdamW
-optimizer updates:        8000
-batch size:                128
-Transformer blocks:          2
-attention heads:              4
-embedding width:            128
-feed-forward width:         512
-peak learning rate:        3e-4
-weight decay:                 0
-dropout:                      0
-gradient clipping:          1.0
-model seeds:          2001-2005
-```
-
-Some diagnostic experiments may use longer horizons or different depths. Any deviation should be reported with the corresponding result.
 
 ## Results
 
