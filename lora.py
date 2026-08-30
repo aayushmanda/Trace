@@ -1,39 +1,72 @@
+#!/usr/bin/env python3
+"""
+Fast SmolLM replication of Trace reliability experiments.
+
+Run this file FROM THE ROOT of https://github.com/aayushmanda/Trace
+
+It deliberately reuses Trace's own:
+  - TASKS registry
+  - boolean_circuit_* task sampler
+  - generate_unique(...)
+  - exact compact prompt / trace / answer serialization
+
+Only the model is changed:
+  Trace GPT-from-scratch  ->  pretrained HuggingFaceTB/SmolLM2-135M + LoRA.
+
+Default pilot:
+  outcome-only
+  rho = 0.0, 0.5, 0.8, 1.0
+  one model seed
+  6k training examples
+  400 optimizer updates
+
+The central test is:
+  1) valid process supervision >> outcome / corrupted supervision;
+  2) teacher-forced local state accuracy improves before exact free rollout;
+  3) reliability rho orders acquisition.
+
+Install once:
+  uv add transformers peft accelerate
+
+Example:
+  uv run smollm_trace_experiment.py
+
+Paper-scale follow-up:
+  uv run smollm_trace_experiment.py \
+    --rhos 0.0 0.3 0.5 0.6 0.7 0.8 1.0 \
+    --seeds 2001 2002 2003 \
+    --train-size 12000 --steps 800
+"""
 
 import argparse
 import csv
 import gc
 import json
-import math
 import random
 import re
-from dataclasses import dataclass
-from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
+from peft import LoraConfig, get_peft_model
 from torch.utils.data import DataLoader, Dataset
 from tqdm.auto import tqdm
-
-from peft import LoraConfig, get_peft_model
-from transformers import (
-    AutoModelForCausalLM,
-    AutoTokenizer,
-    get_cosine_schedule_with_warmup,
-)
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from src.registry import TASKS
 from sweep_ratio import generate_unique
 
 
-BITS_RE = re.compile(r"(?<![01])([01]{4})(?![01])")
-STEP_RE = re.compile(r"Step\s+(\d+)\s*:\s*([01]{4})", re.IGNORECASE)
-ANSWER_RE = re.compile(r"Final\s+answer\s*:\s*([01]{4})", re.IGNORECASE)
+# Trace's Boolean trace items look like:
+#   x0>0101
+#   c12>0111
+#   s03>1110
+#   t012>1010
+STEP_RE = re.compile(r"([xcst]\d{1,3}>([01]{4}))")
+ANSWER_RE = re.compile(r"([01]{4})")
 
 
-def set_all_seeds(seed: int):
+def set_seed(seed: int):
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -41,197 +74,103 @@ def set_all_seeds(seed: int):
         torch.cuda.manual_seed_all(seed)
 
 
-def parse_gate_string(encoded: str):
-    gates, i = [], 0
-    while i < len(encoded):
-        op = encoded[i]
-        if op == "x":
-            gate = encoded[i:i + 2]
-            i += 2
-        elif op in {"c", "s"}:
-            gate = encoded[i:i + 3]
-            i += 3
-        elif op == "t":
-            gate = encoded[i:i + 4]
-            i += 4
-        else:
-            raise ValueError(f"Cannot parse gate string at {encoded[i:]} in {encoded!r}")
-        gates.append(gate)
-    return gates
+def trace_steps(trace: str):
+    return trace.strip().split()
 
 
-def parse_boolean_prompt(compact_prompt: str):
-    # Existing repository format: i0101;ux0c12s03t012...
-    match = re.fullmatch(r"i([01]{4});u(.+)", compact_prompt)
-    if not match:
-        raise ValueError(f"Unexpected Boolean-circuit prompt: {compact_prompt!r}")
-    initial, encoded_gates = match.groups()
-    return initial, parse_gate_string(encoded_gates)
-
-
-def gate_to_english(gate: str):
-    op = gate[0]
-    if op == "x":
-        return f"NOT wire {gate[1]}"
-    if op == "c":
-        return f"CNOT with control wire {gate[1]} and target wire {gate[2]}"
-    if op == "s":
-        return f"SWAP wire {gate[1]} with wire {gate[2]}"
-    if op == "t":
-        return (
-            f"TOFFOLI with control wires {gate[1]} and {gate[2]} "
-            f"and target wire {gate[3]}"
-        )
-    raise ValueError(gate)
-
-
-def trace_states(trace: str):
-    states = []
-    for item in trace.split():
-        if ">" not in item:
-            raise ValueError(f"Unexpected trace item: {item!r}")
-        _, state = item.rsplit(">", 1)
-        if not re.fullmatch(r"[01]{4}", state):
-            raise ValueError(f"Unexpected Boolean state: {state!r}")
-        states.append(state)
-    return states
-
-
-def natural_language_prompt(inst):
+def completion_for(inst, condition: str, clean: bool | None = None):
     """
-    Same prompt for outcome-only and every process-rho condition.
+    Preserve the serialization already used by Trace.
 
-    Do not put a requested output format in the prompt: that would make X differ
-    across supervision conditions. The response format is learned only from the
-    supervised continuation.
+    sweep_ratio.py:
+        outcome:       " : {gold}\\n"
+        mixed process: " {trace} : {gold}\\n"
+    compare_supervision.py:
+        answer_first:  " : {gold} ; {correct_trace}\\n"
     """
-    initial, gates = parse_boolean_prompt(inst.prompt)
-    lines = [
-        "Execute the following reversible Boolean circuit on a 4-bit state.",
-        "Wires are indexed 0, 1, 2, 3 from left to right.",
-        "NOT flips its target bit.",
-        "CNOT flips its target bit when its control bit is 1.",
-        "SWAP exchanges its two wires.",
-        "TOFFOLI flips its target bit when both control bits are 1.",
-        f"Initial state: {initial}",
-        "Operations:",
-    ]
-    lines.extend(f"{i}. {gate_to_english(gate)}" for i, gate in enumerate(gates, 1))
-    lines.append("Solution:")
-    return "\n".join(lines)
-
-
-def process_completion(inst, clean: bool):
-    states = trace_states(inst.correct_trace if clean else inst.wrong_trace)
-    lines = ["Reasoning trace:"]
-    lines.extend(f"Step {i}: {state}" for i, state in enumerate(states, 1))
-    # Terminal answer intentionally stays correct under corrupted process supervision.
-    lines.append(f"Final answer: {inst.gold}")
-    return "\n".join(lines) + "\n"
-
-
-def outcome_completion(inst):
-    return f"Final answer: {inst.gold}\n"
-
-
-def local_prefix(inst, transition_index: int):
-    """
-    Gold-prefix query for local next-state competence.
-
-    transition_index is zero based. The model is given all previous correct
-    states and asked to continue at exactly the next state slot.
-    """
-    states = trace_states(inst.correct_trace)
-    prefix = natural_language_prompt(inst) + "\nReasoning trace:\n"
-    for i in range(transition_index):
-        prefix += f"Step {i + 1}: {states[i]}\n"
-    prefix += f"Step {transition_index + 1}: "
-    return prefix, states[transition_index]
-
-
-@dataclass
-class EncodedExample:
-    input_ids: list[int]
-    labels: list[int]
+    if condition == "outcome":
+        return f" : {inst.gold}\n"
+    if condition == "answer_first":
+        return f" : {inst.gold} ; {inst.correct_trace}\n"
+    if condition == "process":
+        trace = inst.correct_trace if clean else inst.wrong_trace
+        return f" {trace} : {inst.gold}\n"
+    raise ValueError(condition)
 
 
 class CompletionDataset(Dataset):
     """
-    Causal-LM SFT with zero loss on the input prompt and loss only on completion.
+    HuggingFace causal-LM SFT with zero loss on the Trace prompt.
 
-    Reliability assignments are nested because each training row receives a
-    fixed ratio_score and is clean iff ratio_score < rho.
+    For process supervision the underlying training examples are identical for all
+    rho. A fixed ratio_score is assigned to each example, so reliability assignments
+    are nested exactly as in Trace's sweep_ratio.py.
     """
 
-    def __init__(
-        self,
-        instances,
-        tokenizer,
-        max_length: int,
-        condition: str,
-        rho: Optional[float] = None,
-        ratio_scores: Optional[np.ndarray] = None,
-    ):
-        if condition not in {"outcome", "process"}:
-            raise ValueError(condition)
-        if condition == "process" and (rho is None or ratio_scores is None):
-            raise ValueError("process requires rho and ratio_scores")
-
-        self.rows: list[EncodedExample] = []
+    def __init__(self, instances, tokenizer, condition, rho, ratio_scores, max_length):
+        self.rows = []
         self.realized_rho = None
 
         if condition == "process":
+            if rho is None:
+                raise ValueError("process condition needs rho")
             clean_flags = np.asarray(ratio_scores) < float(rho)
             self.realized_rho = float(clean_flags.mean())
         else:
             clean_flags = None
 
         eos = tokenizer.eos_token_id
-        for i, inst in enumerate(tqdm(instances, desc=f"tokenize/{condition}/{rho}")):
-            prompt = natural_language_prompt(inst) + "\n"
-            if condition == "outcome":
-                completion = outcome_completion(inst)
+
+        for i, inst in enumerate(instances):
+            prompt = inst.prompt
+            if condition == "process":
+                completion = completion_for(inst, condition, bool(clean_flags[i]))
             else:
-                completion = process_completion(inst, bool(clean_flags[i]))
+                completion = completion_for(inst, condition)
 
+            # Deliberately tokenize prompt and supervised continuation separately.
+            # This gives an exact completion-loss mask.
             prompt_ids = tokenizer(prompt, add_special_tokens=True)["input_ids"]
-            completion_ids = tokenizer(completion, add_special_tokens=False)["input_ids"]
+            target_ids = tokenizer(completion, add_special_tokens=False)["input_ids"]
             if eos is not None:
-                completion_ids = completion_ids + [eos]
+                target_ids = target_ids + [eos]
 
-            ids = prompt_ids + completion_ids
-            labels = [-100] * len(prompt_ids) + completion_ids.copy()
+            ids = prompt_ids + target_ids
+            labels = [-100] * len(prompt_ids) + target_ids.copy()
 
             if len(ids) > max_length:
                 raise ValueError(
-                    f"Example has {len(ids)} tokens > --max-length={max_length}. "
-                    "Increase --max-length; do not silently truncate the trace."
+                    f"{len(ids)} tokens > --max-length={max_length}. "
+                    "Increase max-length rather than truncating a reasoning trace."
                 )
-            self.rows.append(EncodedExample(ids, labels))
+
+            self.rows.append((ids, labels))
 
     def __len__(self):
         return len(self.rows)
 
-    def __getitem__(self, idx):
-        row = self.rows[idx]
-        return row.input_ids, row.labels
+    def __getitem__(self, index):
+        return self.rows[index]
 
 
-class CausalCollator:
-    def __init__(self, pad_token_id: int):
-        self.pad_token_id = pad_token_id
+class Collator:
+    def __init__(self, pad_id):
+        self.pad_id = pad_id
 
     def __call__(self, rows):
-        max_len = max(len(ids) for ids, _ in rows)
+        width = max(len(ids) for ids, _ in rows)
         batch = len(rows)
-        input_ids = torch.full((batch, max_len), self.pad_token_id, dtype=torch.long)
-        labels = torch.full((batch, max_len), -100, dtype=torch.long)
-        attention_mask = torch.zeros((batch, max_len), dtype=torch.long)
+
+        input_ids = torch.full((batch, width), self.pad_id, dtype=torch.long)
+        labels = torch.full((batch, width), -100, dtype=torch.long)
+        attention_mask = torch.zeros((batch, width), dtype=torch.long)
+
         for i, (ids, labs) in enumerate(rows):
             n = len(ids)
-            input_ids[i, :n] = torch.tensor(ids, dtype=torch.long)
-            labels[i, :n] = torch.tensor(labs, dtype=torch.long)
+            input_ids[i, :n] = torch.tensor(ids)
+            labels[i, :n] = torch.tensor(labs)
             attention_mask[i, :n] = 1
+
         return {
             "input_ids": input_ids,
             "labels": labels,
@@ -239,190 +178,132 @@ class CausalCollator:
         }
 
 
-def load_tokenizer(model_name: str):
+def load_tokenizer(model_name):
     tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
     if tokenizer.pad_token_id is None:
         if tokenizer.eos_token_id is None:
-            raise ValueError("Tokenizer has neither pad_token nor eos_token")
+            raise ValueError("Tokenizer has neither PAD nor EOS token.")
         tokenizer.pad_token = tokenizer.eos_token
     return tokenizer
 
 
-def choose_dtype(args, device):
+def choose_dtype(device):
     if device.type != "cuda":
         return torch.float32
-    if args.bf16 and torch.cuda.is_bf16_supported():
-        return torch.bfloat16
-    if args.fp16:
-        return torch.float16
-    # Default to bf16 when available because these models support it well.
     if torch.cuda.is_bf16_supported():
         return torch.bfloat16
     return torch.float16
 
 
-def build_lora_model(args, tokenizer, device):
-    dtype = choose_dtype(args, device)
+def build_model(args, tokenizer, device):
+    dtype = choose_dtype(device)
+
     model = AutoModelForCausalLM.from_pretrained(
         args.model,
-        torch_dtype=dtype,
+        dtype=dtype,
         low_cpu_mem_usage=True,
     )
     model.config.pad_token_id = tokenizer.pad_token_id
     model.config.use_cache = False
-    if args.gradient_checkpointing:
-        model.gradient_checkpointing_enable()
-        if hasattr(model, "enable_input_require_grads"):
-            model.enable_input_require_grads()
 
-    target_modules = (
-        "all-linear"
-        if args.target_modules == ["all-linear"]
-        else args.target_modules
-    )
-    lora = LoraConfig(
+    if args.full_finetune:
+        model.to(device)
+        return model
+
+    config = LoraConfig(
         task_type="CAUSAL_LM",
         r=args.lora_rank,
-        lora_alpha=args.lora_alpha,
-        lora_dropout=args.lora_dropout,
+        lora_alpha=2 * args.lora_rank,
+        lora_dropout=0.0,
         bias="none",
-        target_modules=target_modules,
+        target_modules="all-linear",
     )
-    model = get_peft_model(model, lora)
+    model = get_peft_model(model, config)
     model.to(device)
     return model
 
 
-def trainable_parameter_summary(model):
+def trainable_summary(model):
     trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
     total = sum(p.numel() for p in model.parameters())
     return trainable, total, trainable / total
 
 
-def make_optimizer(model, args):
-    parameters = [p for p in model.parameters() if p.requires_grad]
-    return torch.optim.AdamW(
-        parameters,
-        lr=args.lr,
-        betas=(0.9, 0.95),
-        eps=1e-8,
-        weight_decay=args.weight_decay,
-    )
+def train(model, dataset, args, seed, device):
+    set_seed(seed)
 
-
-def move_batch(batch, device):
-    return {k: v.to(device, non_blocking=True) for k, v in batch.items()}
-
-
-def train_lora(model, dataset, seed, args, device):
-    set_all_seeds(seed)
-    generator = torch.Generator().manual_seed(args.batch_seed + seed)
     loader = DataLoader(
         dataset,
         batch_size=args.batch_size,
         shuffle=True,
         drop_last=True,
         num_workers=args.workers,
-        generator=generator,
         pin_memory=device.type == "cuda",
-        collate_fn=CausalCollator(args.pad_token_id),
+        generator=torch.Generator().manual_seed(args.batch_seed + seed),
+        collate_fn=Collator(args.pad_id),
     )
     iterator = iter(loader)
-    optimizer = make_optimizer(model, args)
-    scheduler = get_cosine_schedule_with_warmup(
-        optimizer,
-        num_warmup_steps=args.warmup_steps,
-        num_training_steps=args.max_steps,
-    )
 
-    use_amp = device.type == "cuda" and choose_dtype(args, device) in {
-        torch.float16,
-        torch.bfloat16,
-    }
-    amp_dtype = choose_dtype(args, device)
-    scaler = torch.amp.GradScaler(
-        "cuda",
-        enabled=(use_amp and amp_dtype == torch.float16),
-    )
+    params = [p for p in model.parameters() if p.requires_grad]
+    try:
+        optimizer = torch.optim.AdamW(
+            params,
+            lr=args.lr,
+            weight_decay=args.weight_decay,
+            fused=device.type == "cuda",
+        )
+    except TypeError:
+        optimizer = torch.optim.AdamW(
+            params,
+            lr=args.lr,
+            weight_decay=args.weight_decay,
+        )
+
+    amp = device.type == "cuda"
+    amp_dtype = choose_dtype(device)
 
     model.train()
-    optimizer.zero_grad(set_to_none=True)
-    running = []
-    pbar = tqdm(range(1, args.max_steps + 1), desc=f"train/seed={seed}")
-    for optimizer_step in pbar:
-        accumulated_loss = 0.0
-        for _ in range(args.grad_accum):
-            try:
-                batch = next(iterator)
-            except StopIteration:
-                iterator = iter(loader)
-                batch = next(iterator)
-            batch = move_batch(batch, device)
+    losses = []
+    pbar = tqdm(range(1, args.steps + 1), desc=f"train seed={seed}")
 
-            with torch.autocast(
-                device_type="cuda",
-                dtype=amp_dtype,
-                enabled=use_amp,
-            ):
-                outputs = model(**batch)
-                loss = outputs.loss / args.grad_accum
+    for step in pbar:
+        try:
+            batch = next(iterator)
+        except StopIteration:
+            iterator = iter(loader)
+            batch = next(iterator)
 
-            if scaler.is_enabled():
-                scaler.scale(loss).backward()
-            else:
-                loss.backward()
-            accumulated_loss += float(loss.detach()) * args.grad_accum
-
-        if scaler.is_enabled():
-            scaler.unscale_(optimizer)
-        torch.nn.utils.clip_grad_norm_(
-            [p for p in model.parameters() if p.requires_grad],
-            args.grad_clip,
-        )
-        if scaler.is_enabled():
-            scaler.step(optimizer)
-            scaler.update()
-        else:
-            optimizer.step()
-        scheduler.step()
+        batch = {k: v.to(device, non_blocking=True) for k, v in batch.items()}
         optimizer.zero_grad(set_to_none=True)
 
-        running.append(accumulated_loss)
-        if len(running) > 50:
-            running.pop(0)
-        if optimizer_step % 10 == 0:
-            pbar.set_postfix(
-                loss=f"{np.mean(running):.4f}",
-                lr=f"{scheduler.get_last_lr()[0]:.2e}",
-            )
+        with torch.autocast(
+            device_type="cuda",
+            dtype=amp_dtype,
+            enabled=amp,
+        ):
+            loss = model(**batch).loss
 
-    return {
-        "final_train_loss_50": float(np.mean(running)),
-        "optimizer_steps": args.max_steps,
-        "effective_batch_size": args.batch_size * args.grad_accum,
-    }
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(params, args.grad_clip)
+        optimizer.step()
 
+        losses.append(float(loss.detach()))
+        if len(losses) > 30:
+            losses.pop(0)
 
-def parse_completion(text: str, depth: int):
-    answer_match = ANSWER_RE.search(text)
-    answer = answer_match.group(1) if answer_match else None
+        if step % 10 == 0:
+            pbar.set_postfix(loss=f"{np.mean(losses):.4f}")
 
-    indexed = {}
-    for idx, state in STEP_RE.findall(text):
-        idx = int(idx)
-        if 1 <= idx <= depth and idx not in indexed:
-            indexed[idx] = state
-    states = [indexed.get(i) for i in range(1, depth + 1)]
-    return states, answer
+    return float(np.mean(losses))
 
 
 @torch.inference_mode()
-def batched_generate(model, tokenizer, prompts, args, device, max_new_tokens):
+def generate_text(model, tokenizer, prompts, args, device, max_new_tokens):
     old_padding = tokenizer.padding_side
     tokenizer.padding_side = "left"
+    model.eval()
     outputs = []
 
-    model.eval()
     for start in tqdm(
         range(0, len(prompts), args.eval_batch_size),
         desc="generate",
@@ -436,85 +317,121 @@ def batched_generate(model, tokenizer, prompts, args, device, max_new_tokens):
             truncation=False,
         )
         encoded = {k: v.to(device) for k, v in encoded.items()}
+
         generated = model.generate(
             **encoded,
-            max_new_tokens=max_new_tokens,
             do_sample=False,
             num_beams=1,
-            use_cache=True,
+            max_new_tokens=max_new_tokens,
             eos_token_id=tokenizer.eos_token_id,
             pad_token_id=tokenizer.pad_token_id,
+            use_cache=True,
         )
+
         input_width = encoded["input_ids"].shape[1]
         tails = generated[:, input_width:]
-        outputs.extend(
-            tokenizer.batch_decode(tails, skip_special_tokens=True)
-        )
+        outputs.extend(tokenizer.batch_decode(tails, skip_special_tokens=True))
 
     tokenizer.padding_side = old_padding
     return outputs
 
 
+def parse_free_generation(text: str, condition: str):
+    # Trace's targets terminate at newline. Ignore anything SmolLM emits afterward.
+    line = text.split("\n", 1)[0].strip()
+
+    if ":" not in line:
+        return None, None
+
+    if condition in {"outcome", "answer_first"}:
+        right = line.split(":", 1)[1]
+        match = ANSWER_RE.search(right)
+        return None, match.group(1) if match else None
+
+    trace_text, answer_text = line.rsplit(":", 1)
+    answer_match = ANSWER_RE.search(answer_text)
+    answer = answer_match.group(1) if answer_match else None
+    return trace_text.strip(), answer
+
+
 @torch.inference_mode()
 def evaluate_free(model, tokenizer, instances, condition, args, device):
-    prompts = [natural_language_prompt(inst) + "\n" for inst in instances]
-    max_new = args.outcome_max_new_tokens if condition == "outcome" else args.process_max_new_tokens
-    texts = batched_generate(model, tokenizer, prompts, args, device, max_new)
+    prompts = [inst.prompt for inst in instances]
+    max_new = args.outcome_max_new_tokens if condition in {"outcome", "answer_first"} else args.process_max_new_tokens
+    texts = generate_text(model, tokenizer, prompts, args, device, max_new)
 
     answer_correct = 0
-    exact_trace_correct = 0
+    exact_correct = 0
     step_correct = 0
     step_total = 0
-    depth = len(trace_states(instances[0].correct_trace))
 
-    audit = []
+    audits = []
+
     for inst, text in zip(instances, texts):
-        states, answer = parse_completion(text, depth)
-        gold_states = trace_states(inst.correct_trace)
-        answer_correct += int(answer == inst.gold)
+        pred_trace, pred_answer = parse_free_generation(text, condition)
+        answer_correct += int(pred_answer == inst.gold)
 
         if condition == "process":
-            exact_trace_correct += int(states == gold_states)
-            for pred, gold in zip(states, gold_states):
-                step_correct += int(pred == gold)
-                step_total += 1
+            gold_steps = trace_steps(inst.correct_trace)
+            pred_steps = [] if pred_trace is None else pred_trace.split()
 
-        if len(audit) < args.audit_examples:
-            audit.append(
-                {
-                    "compact_prompt": inst.prompt,
-                    "gold_answer": inst.gold,
-                    "gold_states": gold_states,
-                    "generated": text,
-                    "parsed_answer": answer,
-                    "parsed_states": states,
-                }
+            exact_correct += int(pred_trace == inst.correct_trace)
+            step_correct += sum(
+                p == g for p, g in zip(pred_steps, gold_steps)
             )
+            step_total += len(gold_steps)
+
+        if len(audits) < args.audit_examples:
+            audits.append({
+                "prompt": inst.prompt,
+                "gold_trace": inst.correct_trace,
+                "wrong_trace": inst.wrong_trace,
+                "gold_answer": inst.gold,
+                "generated": text,
+                "parsed_trace": pred_trace,
+                "parsed_answer": pred_answer,
+            })
 
     n = len(instances)
     return {
         "answer_accuracy": answer_correct / n,
-        "exact_trace_accuracy": (
-            None if condition == "outcome" else exact_trace_correct / n
-        ),
-        "free_step_accuracy": (
-            None if condition == "outcome" else step_correct / step_total
-        ),
-        "audit": audit,
+        "exact_trace_accuracy": None if condition != "process" else exact_correct / n,
+        "free_step_accuracy": None if condition != "process" else step_correct / step_total,
+        "audit": audits,
     }
 
 
-@torch.inference_mode()
-def evaluate_teacher_states(model, tokenizer, instances, args, device):
-    prefixes, targets = [], []
-    for inst in instances:
-        depth = len(trace_states(inst.correct_trace))
-        for t in range(depth):
-            prefix, target = local_prefix(inst, t)
-            prefixes.append(prefix)
-            targets.append(target)
+def local_prefix(inst, transition_index):
+    """
+    Teacher-force all previous CLEAN Trace steps, then ask SmolLM for the next step.
 
-    texts = batched_generate(
+    This keeps the exact Trace serialization:
+       prompt step_1 step_2 ... step_t
+    """
+    gold_steps = trace_steps(inst.correct_trace)
+    previous = gold_steps[:transition_index]
+
+    prefix = inst.prompt + " "
+    if previous:
+        prefix += " ".join(previous) + " "
+
+    return prefix, gold_steps[transition_index]
+
+
+@torch.inference_mode()
+def evaluate_teacher_forced_local(model, tokenizer, instances, args, device):
+    prefixes = []
+    gold_steps = []
+
+    depth = len(trace_steps(instances[0].correct_trace))
+
+    for inst in instances:
+        for t in range(depth):
+            prefix, gold = local_prefix(inst, t)
+            prefixes.append(prefix)
+            gold_steps.append(gold)
+
+    texts = generate_text(
         model,
         tokenizer,
         prefixes,
@@ -523,48 +440,37 @@ def evaluate_teacher_states(model, tokenizer, instances, args, device):
         args.local_max_new_tokens,
     )
 
-    correct = 0
-    for text, target in zip(texts, targets):
-        match = BITS_RE.search(text)
-        pred = match.group(1) if match else None
-        correct += int(pred == target)
-    return correct / len(targets)
+    step_correct = 0
+    state_correct = 0
+
+    for text, gold in zip(texts, gold_steps):
+        pred_match = STEP_RE.search(text)
+        gold_match = STEP_RE.fullmatch(gold)
+
+        pred_step = pred_match.group(1) if pred_match else None
+        pred_state = pred_match.group(2) if pred_match else None
+        gold_state = gold_match.group(2)
+
+        step_correct += int(pred_step == gold)
+        state_correct += int(pred_state == gold_state)
+
+    total = len(gold_steps)
+    return {
+        "teacher_step_accuracy": step_correct / total,
+        "teacher_state_accuracy": state_correct / total,
+    }
 
 
-def append_csv(path: Path, fieldnames, row):
+def append_csv(path: Path, row: dict):
     exists = path.exists()
     with path.open("a", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer = csv.DictWriter(f, fieldnames=list(row))
         if not exists:
             writer.writeheader()
         writer.writerow(row)
 
 
-RESULT_FIELDS = [
-    "model",
-    "task",
-    "condition",
-    "rho",
-    "realized_rho",
-    "seed",
-    "train_size",
-    "val_size",
-    "max_steps",
-    "effective_batch_size",
-    "lora_rank",
-    "lora_alpha",
-    "trainable_parameters",
-    "trainable_fraction",
-    "final_train_loss_50",
-    "answer_accuracy",
-    "exact_trace_accuracy",
-    "free_step_accuracy",
-    "teacher_state_accuracy",
-    "predicted_exact_from_teacher",
-]
-
-
-def cleanup_model(model):
+def cleanup(model):
     del model
     gc.collect()
     if torch.cuda.is_available():
@@ -581,342 +487,281 @@ def run_one(
     seed,
     args,
     device,
-    result_csv,
+    output_csv,
     audit_dir,
-    adapter_dir,
 ):
-    print("\n" + "=" * 88)
+    print("\n" + "=" * 92)
     print(f"condition={condition} rho={rho} seed={seed}")
-    print("=" * 88)
+    print("=" * 92)
 
-    set_all_seeds(seed)
-    model = build_lora_model(args, tokenizer, device)
-    trainable, total, fraction = trainable_parameter_summary(model)
+    set_seed(seed)
+    model = build_model(args, tokenizer, device)
+    trainable, total, fraction = trainable_summary(model)
     print(
-        f"LoRA trainable parameters: {trainable:,} / {total:,} "
-        f"({100*fraction:.4f}%)"
+        f"trainable parameters: {trainable:,}/{total:,} "
+        f"({100*fraction:.3f}%)"
     )
 
-    train_metrics = train_lora(model, dataset, seed, args, device)
-
+    final_loss = train(model, dataset, args, seed, device)
     free = evaluate_free(
         model, tokenizer, val_instances, condition, args, device
     )
 
     if condition == "process":
         local_instances = val_instances[: min(args.local_eval_size, len(val_instances))]
-        teacher = evaluate_teacher_states(
+        local = evaluate_teacher_forced_local(
             model, tokenizer, local_instances, args, device
         )
-        depth = len(trace_states(val_instances[0].correct_trace))
-        predicted_exact = teacher ** depth
+        depth = len(trace_steps(val_instances[0].correct_trace))
+        predicted_from_state = local["teacher_state_accuracy"] ** depth
+        predicted_from_step = local["teacher_step_accuracy"] ** depth
     else:
-        teacher = None
-        predicted_exact = None
+        local = {
+            "teacher_step_accuracy": None,
+            "teacher_state_accuracy": None,
+        }
+        predicted_from_state = None
+        predicted_from_step = None
+
+    label = condition if condition != "process" else f"rho={rho:.2f}"
 
     row = {
         "model": args.model,
         "task": task.name,
-        "condition": condition,
+        "condition": label,
         "rho": "" if rho is None else rho,
-        "realized_rho": (
-            "" if dataset.realized_rho is None else dataset.realized_rho
-        ),
+        "realized_rho": "" if dataset.realized_rho is None else dataset.realized_rho,
         "seed": seed,
         "train_size": len(dataset),
         "val_size": len(val_instances),
-        "max_steps": args.max_steps,
-        "effective_batch_size": train_metrics["effective_batch_size"],
-        "lora_rank": args.lora_rank,
-        "lora_alpha": args.lora_alpha,
+        "steps": args.steps,
+        "batch_size": args.batch_size,
+        "full_finetune": args.full_finetune,
         "trainable_parameters": trainable,
         "trainable_fraction": fraction,
-        "final_train_loss_50": train_metrics["final_train_loss_50"],
+        "loss": final_loss,
         "answer_accuracy": free["answer_accuracy"],
-        "exact_trace_accuracy": (
-            "" if free["exact_trace_accuracy"] is None
-            else free["exact_trace_accuracy"]
-        ),
-        "free_step_accuracy": (
-            "" if free["free_step_accuracy"] is None
-            else free["free_step_accuracy"]
-        ),
-        "teacher_state_accuracy": "" if teacher is None else teacher,
-        "predicted_exact_from_teacher": (
-            "" if predicted_exact is None else predicted_exact
-        ),
+        "exact_trace_accuracy": "" if free["exact_trace_accuracy"] is None else free["exact_trace_accuracy"],
+        "free_step_accuracy": "" if free["free_step_accuracy"] is None else free["free_step_accuracy"],
+        "teacher_step_accuracy": "" if local["teacher_step_accuracy"] is None else local["teacher_step_accuracy"],
+        "teacher_state_accuracy": "" if local["teacher_state_accuracy"] is None else local["teacher_state_accuracy"],
+        "teacher_step_pow_D": "" if predicted_from_step is None else predicted_from_step,
+        "teacher_state_pow_D": "" if predicted_from_state is None else predicted_from_state,
     }
-    append_csv(result_csv, RESULT_FIELDS, row)
+    append_csv(output_csv, row)
 
     audit_dir.mkdir(parents=True, exist_ok=True)
-    label = "outcome" if condition == "outcome" else f"rho_{rho:.2f}"
-    (audit_dir / f"{label}_seed_{seed}.json").write_text(
+    audit_name = condition if condition != "process" else f"rho_{rho:.2f}"
+    (audit_dir / f"{audit_name}_seed_{seed}.json").write_text(
         json.dumps(free["audit"], indent=2)
     )
 
-    if args.save_adapters:
-        path = adapter_dir / label / f"seed_{seed}"
-        path.mkdir(parents=True, exist_ok=True)
-        model.save_pretrained(path)
-        tokenizer.save_pretrained(path)
-
     print(
-        f"answer={100*free['answer_accuracy']:.2f}% "
-        + (
-            ""
-            if condition == "outcome"
-            else (
-                f"exact={100*free['exact_trace_accuracy']:.2f}% "
-                f"free-step={100*free['free_step_accuracy']:.2f}% "
-                f"teacher-state={100*teacher:.2f}% "
-                f"teacher^D={100*predicted_exact:.2f}%"
-            )
-        )
+        f"loss={final_loss:.4f} "
+        f"answer={100*free['answer_accuracy']:.2f}%"
     )
-    cleanup_model(model)
+    if condition == "process":
+        print(
+            f"exact rollout={100*free['exact_trace_accuracy']:.2f}% | "
+            f"free step={100*free['free_step_accuracy']:.2f}% | "
+            f"teacher step={100*local['teacher_step_accuracy']:.2f}% | "
+            f"teacher state={100*local['teacher_state_accuracy']:.2f}% | "
+            f"teacher-state^D={100*predicted_from_state:.2f}%"
+        )
+
+    cleanup(model)
 
 
-def summarize_results(result_csv: Path, output_dir: Path):
+def summarize(output_csv: Path):
     import pandas as pd
 
-    df = pd.read_csv(result_csv)
-    process = df[df["condition"] == "process"].copy()
-    outcome = df[df["condition"] == "outcome"].copy()
+    df = pd.read_csv(output_csv)
+    print("\nFINAL SUMMARY")
+    print("=" * 92)
 
-    summary = {
-        "num_runs": int(len(df)),
-        "conditions": {},
-    }
+    columns = [
+        "condition",
+        "seed",
+        "answer_accuracy",
+        "exact_trace_accuracy",
+        "free_step_accuracy",
+        "teacher_state_accuracy",
+        "teacher_state_pow_D",
+    ]
+    print(df[columns].to_string(index=False))
 
-    for condition, group in df.groupby("condition"):
-        if condition == "process":
-            for rho, rg in group.groupby("rho"):
-                key = f"process_rho_{rho:g}"
-                summary["conditions"][key] = {
-                    "n": int(len(rg)),
-                    "answer_mean": float(rg["answer_accuracy"].mean()),
-                    "answer_std": float(rg["answer_accuracy"].std(ddof=1)),
-                    "exact_mean": float(rg["exact_trace_accuracy"].mean()),
-                    "exact_std": float(rg["exact_trace_accuracy"].std(ddof=1)),
-                    "teacher_mean": float(rg["teacher_state_accuracy"].mean()),
-                    "teacher_std": float(rg["teacher_state_accuracy"].std(ddof=1)),
-                }
-        else:
-            summary["conditions"]["outcome"] = {
-                "n": int(len(group)),
-                "answer_mean": float(group["answer_accuracy"].mean()),
-                "answer_std": float(group["answer_accuracy"].std(ddof=1)),
-            }
-
-    if len(process):
-        pred = process["predicted_exact_from_teacher"].to_numpy(float)
-        obs = process["exact_trace_accuracy"].to_numpy(float)
-        summary["local_to_global"] = {
-            "mae": float(np.mean(np.abs(pred - obs))),
-            "correlation": (
-                float(np.corrcoef(pred, obs)[0, 1])
-                if np.std(pred) > 0 and np.std(obs) > 0
-                else None
-            ),
-        }
-
-        aggregate = (
-            process.groupby("rho", as_index=False)
-            .agg(
-                answer=("answer_accuracy", "mean"),
-                exact=("exact_trace_accuracy", "mean"),
-                free_step=("free_step_accuracy", "mean"),
-                teacher=("teacher_state_accuracy", "mean"),
-                teacher_pred=("predicted_exact_from_teacher", "mean"),
-            )
-            .sort_values("rho")
+    process = df[df["rho"].notna()].copy()
+    if len(process) > 1:
+        pred = process["teacher_state_pow_D"].astype(float).to_numpy()
+        obs = process["exact_trace_accuracy"].astype(float).to_numpy()
+        mae = float(np.mean(np.abs(pred - obs)))
+        corr = (
+            float(np.corrcoef(pred, obs)[0, 1])
+            if np.std(pred) > 0 and np.std(obs) > 0
+            else float("nan")
         )
-        exact_values = aggregate["exact"].to_numpy(float)
-        summary["monotone_exact_over_tested_rhos"] = bool(
-            np.all(np.diff(exact_values) >= -0.03)
-        )
-
-        fig, ax = plt.subplots(figsize=(7.2, 4.8))
-        ax.plot(aggregate["rho"], aggregate["answer"], marker="o", label="answer")
-        ax.plot(aggregate["rho"], aggregate["exact"], marker="o", label="exact rollout")
-        ax.plot(aggregate["rho"], aggregate["teacher"], marker="o", label="teacher-state")
-        ax.plot(
-            aggregate["rho"],
-            aggregate["teacher_pred"],
-            marker="x",
-            linestyle="--",
-            label="teacher-state^D",
-        )
-        if len(outcome):
-            ax.axhline(
-                outcome["answer_accuracy"].mean(),
-                linestyle=":",
-                label="outcome-only answer",
-            )
-        ax.set_xlabel("trace reliability rho")
-        ax.set_ylabel("accuracy")
-        ax.set_ylim(-0.02, 1.02)
-        ax.set_title("Pretrained LoRA replication: local acquisition and rollout")
-        ax.legend()
-        fig.tight_layout()
-        fig.savefig(output_dir / "pretrained_reliability.png", dpi=180)
-        plt.close(fig)
-
-    (output_dir / "summary.json").write_text(json.dumps(summary, indent=2))
-    return summary
-
-
-def validate_task(task):
-    if not task.name.startswith("boolean_circuit_"):
-        raise ValueError(
-            "This script intentionally implements one existing task family only: "
-            "boolean_circuit_*. Use e.g. --task boolean_circuit_8."
-        )
-    probe = task.sample()
-    initial, gates = parse_boolean_prompt(probe.prompt)
-    correct = trace_states(probe.correct_trace)
-    wrong = trace_states(probe.wrong_trace)
-    if len(gates) != len(correct) or len(correct) != len(wrong):
-        raise AssertionError("Task parse sanity check failed")
-    if probe.gold != correct[-1]:
-        raise AssertionError("Gold answer does not equal final correct state")
-    if any(c == w for c, w in zip(correct, wrong)):
-        # The repository's construction normally makes every displayed corrupted
-        # successor invalid; equality with the canonical clean state can in rare
-        # trajectories occur only if paths reconverge. Do not assert on it.
-        pass
-
-
-def build_parser():
-    p = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
-    p.add_argument("--model", default="Qwen/Qwen2.5-0.5B")
-    p.add_argument("--task", default="boolean_circuit_8")
-    p.add_argument("--rhos", nargs="+", type=float, default=[0.0, 0.5, 0.8, 1.0])
-    p.add_argument("--include-outcome", action="store_true")
-    p.add_argument("--seeds", nargs="+", type=int, default=[2001, 2002, 2003])
-
-    p.add_argument("--train-size", type=int, default=30_000)
-    p.add_argument("--val-size", type=int, default=1_000)
-    p.add_argument("--local-eval-size", type=int, default=250)
-    p.add_argument("--train-seed", type=int, default=501)
-    p.add_argument("--val-seed", type=int, default=101)
-    p.add_argument("--ratio-seed", type=int, default=777)
-    p.add_argument("--batch-seed", type=int, default=12345)
-
-    p.add_argument("--max-length", type=int, default=1024)
-    p.add_argument("--max-steps", type=int, default=1500)
-    p.add_argument("--batch-size", type=int, default=4)
-    p.add_argument("--grad-accum", type=int, default=16)
-    p.add_argument("--eval-batch-size", type=int, default=8)
-    p.add_argument("--workers", type=int, default=2)
-    p.add_argument("--lr", type=float, default=2e-4)
-    p.add_argument("--weight-decay", type=float, default=0.0)
-    p.add_argument("--warmup-steps", type=int, default=100)
-    p.add_argument("--grad-clip", type=float, default=1.0)
-
-    p.add_argument("--lora-rank", type=int, default=16)
-    p.add_argument("--lora-alpha", type=int, default=32)
-    p.add_argument("--lora-dropout", type=float, default=0.05)
-    p.add_argument(
-        "--target-modules",
-        nargs="+",
-        default=["all-linear"],
-        help='Use "all-linear" or explicit modules such as q_proj k_proj v_proj o_proj.',
-    )
-
-    p.add_argument("--bf16", action="store_true")
-    p.add_argument("--fp16", action="store_true")
-    p.add_argument("--gradient-checkpointing", action="store_true")
-    p.add_argument("--save-adapters", action="store_true")
-
-    p.add_argument("--process-max-new-tokens", type=int, default=160)
-    p.add_argument("--outcome-max-new-tokens", type=int, default=24)
-    p.add_argument("--local-max-new-tokens", type=int, default=12)
-    p.add_argument("--audit-examples", type=int, default=10)
-
-    p.add_argument("--output-dir", type=Path, default=Path("results/pretrained_lora"))
-    p.add_argument("--run-name")
-    p.add_argument("--overwrite", action="store_true")
-    return p
+        print(f"\nlocal->global diagnostic: MAE={100*mae:.2f} pp, corr={corr:.4f}")
 
 
 def main():
-    args = build_parser().parse_args()
-    if any(not 0.0 <= rho <= 1.0 for rho in args.rhos):
-        raise ValueError("Every rho must lie in [0,1]")
-    if args.bf16 and args.fp16:
-        raise ValueError("Choose at most one of --bf16 and --fp16")
-    if not 20_000 <= args.train_size <= 50_000:
-        print(
-            f"WARNING: requested train-size={args.train_size}; the proposed paper "
-            "replication was 20k-50k examples."
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+
+    # Small pretrained BASE LM, not instruction-tuned.
+    parser.add_argument(
+        "--model",
+        default="HuggingFaceTB/SmolLM2-135M",
+    )
+    parser.add_argument("--task", default="boolean_circuit_8")
+
+    # Cheap but informative reliability points.
+    parser.add_argument(
+        "--rhos",
+        nargs="+",
+        type=float,
+        default=[0.0, 0.5, 0.8, 1.0],
+    )
+    parser.add_argument(
+        "--seeds",
+        nargs="+",
+        type=int,
+        default=[2001],
+    )
+    parser.add_argument(
+        "--include-answer-first",
+        action="store_true",
+        help="Adds the Trace answer-first control; costs one extra training per seed.",
+    )
+
+    parser.add_argument("--train-size", type=int, default=6000)
+    parser.add_argument("--val-size", type=int, default=300)
+    parser.add_argument("--local-eval-size", type=int, default=60)
+
+    parser.add_argument("--train-seed", type=int, default=501)
+    parser.add_argument("--val-seed", type=int, default=101)
+    parser.add_argument("--ratio-seed", type=int, default=777)
+    parser.add_argument("--batch-seed", type=int, default=12345)
+
+    parser.add_argument("--steps", type=int, default=400)
+    parser.add_argument("--batch-size", type=int, default=16)
+    parser.add_argument("--eval-batch-size", type=int, default=32)
+    parser.add_argument("--workers", type=int, default=2)
+
+    parser.add_argument("--lr", type=float, default=3e-4)
+    parser.add_argument("--weight-decay", type=float, default=0.0)
+    parser.add_argument("--grad-clip", type=float, default=1.0)
+
+    parser.add_argument("--lora-rank", type=int, default=8)
+    parser.add_argument(
+        "--full-finetune",
+        action="store_true",
+        help="Train all 135M parameters instead of LoRA. Stronger but slower/more memory.",
+    )
+
+    parser.add_argument("--max-length", type=int, default=384)
+    parser.add_argument("--process-max-new-tokens", type=int, default=128)
+    parser.add_argument("--outcome-max-new-tokens", type=int, default=20)
+    parser.add_argument("--local-max-new-tokens", type=int, default=16)
+    parser.add_argument("--audit-examples", type=int, default=8)
+
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=Path("results/smollm_trace_pilot.csv"),
+    )
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+    )
+
+    args = parser.parse_args()
+
+    if any(rho < 0 or rho > 1 for rho in args.rhos):
+        parser.error("every rho must be in [0,1]")
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if device.type == "cuda":
+        torch.set_float32_matmul_precision("high")
+    else:
+        print("WARNING: no CUDA GPU; this experiment will be slow.")
+
+    if args.task not in TASKS:
+        raise KeyError(f"Unknown Trace task: {args.task}")
+    if not args.task.startswith("boolean_circuit_"):
+        raise ValueError(
+            "This compact pilot intentionally targets Trace's boolean_circuit_* "
+            "family because its intermediate states have a clean 4-bit local metric."
         )
 
     task = TASKS[args.task]
-    validate_task(task)
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    if device.type != "cuda":
-        print(
-            "WARNING: no CUDA GPU detected. The script will run, but pretrained "
-            "LoRA fine-tuning will be very slow on CPU."
-        )
-    else:
-        torch.set_float32_matmul_precision("high")
-
     tokenizer = load_tokenizer(args.model)
-    args.pad_token_id = tokenizer.pad_token_id
+    args.pad_id = tokenizer.pad_token_id
 
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    run_name = args.run_name or f"{task.name}_{Path(args.model).name}_{timestamp}"
-    output_dir = args.output_dir / run_name
-    output_dir.mkdir(parents=True, exist_ok=True)
-    result_csv = output_dir / "results.csv"
-    if result_csv.exists() and not args.overwrite:
-        raise FileExistsError(f"{result_csv} exists; pass --overwrite to replace")
-    if result_csv.exists():
-        result_csv.unlink()
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    if args.output.exists():
+        if not args.overwrite:
+            raise FileExistsError(
+                f"{args.output} exists. Pass --overwrite or choose another --output."
+            )
+        args.output.unlink()
 
-    # Fixed underlying X,Y pool for every condition.
-    train_instances = generate_unique(task, args.train_size, args.train_seed)
+    # Exactly the same underlying X,Y pool for every supervision condition.
+    train_instances = generate_unique(
+        task,
+        args.train_size,
+        args.train_seed,
+    )
     train_prompts = {inst.prompt for inst in train_instances}
     val_instances = generate_unique(
-        task, args.val_size, args.val_seed, excluded=train_prompts
+        task,
+        args.val_size,
+        args.val_seed,
+        excluded=train_prompts,
     )
-    ratio_scores = np.random.default_rng(args.ratio_seed).random(len(train_instances))
 
-    config = vars(args).copy()
-    config["output_dir"] = str(config["output_dir"])
-    config["device"] = str(device)
-    config["actual_run_directory"] = str(output_dir)
-    (output_dir / "config.json").write_text(json.dumps(config, indent=2, default=str))
+    # Nested reliability assignment, just like sweep_ratio.py.
+    ratio_scores = np.random.default_rng(args.ratio_seed).random(
+        len(train_instances)
+    )
 
     print(
         f"model={args.model} task={task.name} device={device} "
         f"train={len(train_instances)} val={len(val_instances)} "
-        f"train/val prompt overlap=0"
+        f"prompt_overlap=0"
+    )
+    print(
+        "Trace example:\n"
+        f"  prompt        = {train_instances[0].prompt}\n"
+        f"  correct trace = {train_instances[0].correct_trace}\n"
+        f"  wrong trace   = {train_instances[0].wrong_trace}\n"
+        f"  gold          = {train_instances[0].gold}"
     )
 
-    conditions = []
-    if args.include_outcome:
-        conditions.append(("outcome", None))
-    conditions.extend(("process", rho) for rho in sorted(set(args.rhos)))
+    conditions = [("outcome", None)]
+    if args.include_answer_first:
+        conditions.append(("answer_first", None))
+    conditions.extend(
+        ("process", rho)
+        for rho in sorted(set(args.rhos))
+    )
+
+    audit_dir = args.output.parent / (args.output.stem + "_audit")
 
     for condition, rho in conditions:
         dataset = CompletionDataset(
             train_instances,
             tokenizer,
-            max_length=args.max_length,
-            condition=condition,
-            rho=rho,
-            ratio_scores=ratio_scores,
+            condition,
+            rho,
+            ratio_scores,
+            args.max_length,
         )
+
         if condition == "process":
             print(
-                f"rho={rho:.3f}: realized clean fraction="
-                f"{dataset.realized_rho:.5f}"
+                f"\nrho={rho:.3f}: realized clean fraction="
+                f"{dataset.realized_rho:.4f}"
             )
 
         for seed in args.seeds:
@@ -930,18 +775,16 @@ def main():
                 seed=seed,
                 args=args,
                 device=device,
-                result_csv=result_csv,
-                audit_dir=output_dir / "audit",
-                adapter_dir=output_dir / "adapters",
+                output_csv=args.output,
+                audit_dir=audit_dir,
             )
+
         del dataset
         gc.collect()
 
-    summary = summarize_results(result_csv, output_dir)
-    print("\nFINAL SUMMARY")
-    print("=" * 88)
-    print(json.dumps(summary, indent=2))
-    print(f"\nsaved: {output_dir}")
+    summarize(args.output)
+    print(f"\nsaved results: {args.output}")
+    print(f"saved generations: {audit_dir}")
 
 
 if __name__ == "__main__":

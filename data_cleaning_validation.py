@@ -25,6 +25,8 @@ from sweep_ratio import (
 from early_acquisition_prediction import build_state_queries, score_clean_states
 
 
+
+
 def atomic_json_dump(path: Path, payload: dict):
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(path.suffix + ".tmp")
@@ -490,8 +492,11 @@ def observed_crossing(df, mode, target):
 
 
 def run_intervention(prediction_path: Path, args, device, run_dir):
+    run_dir.mkdir(parents=True, exist_ok=True)
+
     prediction = load_prediction_and_lock_args(prediction_path, args)
     task = TASKS[args.task]
+
     f_star = float(prediction["predicted_filter_fraction"])
     rho_target = float(prediction["predicted_required_rho"])
     depth = int(prediction["depth"])
