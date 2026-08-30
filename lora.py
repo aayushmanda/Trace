@@ -25,6 +25,13 @@ def set_seed(seed):
 def trace_steps(trace): return trace.strip().split()
 
 
+def nested_clean_flags(size, rho, assignment_order):
+    """Exact nested reliability assignment: exactly round(rho * size) clean examples."""
+    flags = np.zeros(size, dtype=bool)
+    flags[np.asarray(assignment_order)[:round(float(rho) * size)]] = True
+    return flags
+
+
 def split_step(step):
     m = STEP_RE.fullmatch(step)
     if not m: raise ValueError(f"Bad Boolean step: {step!r}")
@@ -41,11 +48,11 @@ def completion_for(inst, condition, clean=None):
 
 
 class CompletionDataset(Dataset):
-    def __init__(self, instances, tokenizer, condition, rho, ratio_scores, max_length):
+    def __init__(self, instances, tokenizer, condition, rho, assignment_order, max_length):
         self.rows, self.realized_rho = [], None
         if condition == "process":
             if rho is None: raise ValueError("process requires rho")
-            clean = np.asarray(ratio_scores) < float(rho)
+            clean = nested_clean_flags(len(instances), rho, assignment_order)
             self.realized_rho = float(clean.mean())
         else:
             clean = None
@@ -106,7 +113,7 @@ def train(model, ds, args, seed, device):
     set_seed(seed)
     loader = DataLoader(ds, batch_size=args.batch_size, shuffle=True, drop_last=True,
         num_workers=args.workers, pin_memory=device.type == "cuda",
-        generator=torch.Generator().manual_seed(args.batch_seed + seed), collate_fn=Collator(args.pad_id))
+        generator=torch.Generator().manual_seed(args.batch_seed), collate_fn=Collator(args.pad_id))
     it = iter(loader); params = [p for p in model.parameters() if p.requires_grad]
     try: opt = torch.optim.AdamW(params, lr=args.lr, weight_decay=args.weight_decay, fused=device.type == "cuda")
     except TypeError: opt = torch.optim.AdamW(params, lr=args.lr, weight_decay=args.weight_decay)
@@ -253,11 +260,13 @@ def score_local_states(model, tok, instances, args, device):
         s = scores[q["query_id"]]; gold = q["gold_state"]
         if set(s) != set(ALL_STATES): raise AssertionError("Missing one or more 16-state candidates")
         best_state = max(s, key=s.get); wrong_state = max((x for x in ALL_STATES if x != gold), key=s.get)
+        margin = s[gold] - s[wrong_state]
         vals = np.array([s[x] for x in ALL_STATES], dtype=np.float64); probs = np.exp(vals - vals.max()); probs /= probs.sum()
         rows.append({"example_id": q["example_id"], "step": q["step"], "gate": q["gate"], "gold_state": gold,
             "best_state": best_state, "best_wrong_state": wrong_state, "gold_logprob": s[gold],
-            "best_wrong_logprob": s[wrong_state], "margin": s[gold] - s[wrong_state],
-            "gold_prob16": float(probs[ALL_STATES.index(gold)]), "local_correct": int(best_state == gold)})
+            "best_wrong_logprob": s[wrong_state], "margin": margin,
+            "gold_prob16": float(probs[ALL_STATES.index(gold)]), "local_correct": int(margin > 0.0),
+            "tie": int(abs(margin) <= 1e-12)})
     return rows
 
 
@@ -275,12 +284,15 @@ def aggregate_local(rows, free_per_example, depth):
             "free_exact_state_rollout": int(free_per_example[eid]["exact_state_rollout"])})
     local_acc = float(np.mean([r["local_correct"] for r in rows]))
     all_rate = float(np.mean([r["all_local_correct"] for r in exrows]))
+    iid_prediction = float(local_acc ** depth)
+    tie_rate = float(np.mean([r["tie"] for r in rows]))
     product_prob = float(np.mean([r["product_gold_prob16"] for r in exrows]))
     margins = np.array([r["min_margin"] for r in exrows], dtype=float)
     exact = np.array([r["free_exact_state_rollout"] for r in exrows], dtype=float)
     corr = float(np.corrcoef(margins, exact)[0, 1]) if len(exrows) > 1 and np.std(margins) > 0 and np.std(exact) > 0 else float("nan")
     agreement = float(np.mean([r["all_local_correct"] == r["free_exact_state_rollout"] for r in exrows]))
     return {"local_state_accuracy": local_acc, "all_local_correct_rate": all_rate,
+        "iid_local_prediction": iid_prediction, "local_tie_rate": tie_rate,
         "mean_product_gold_prob16": product_prob, "min_margin_exact_corr": corr,
         "local_vs_free_state_agreement": agreement, "example_rows": exrows}
 
@@ -322,7 +334,8 @@ def run_one(task, tok, ds, val, condition, rho, seed, args, device):
     label = label_for(condition, rho); gen_dir = args.run_dir / "generations"; gen_dir.mkdir(parents=True, exist_ok=True)
     (gen_dir / f"{label}_seed_{seed}.json").write_text(json.dumps(free["audit"], indent=2))
 
-    local = {"local_state_accuracy": None, "all_local_correct_rate": None, "mean_product_gold_prob16": None,
+    local = {"local_state_accuracy": None, "all_local_correct_rate": None, "iid_local_prediction": None,
+        "local_tie_rate": None, "mean_product_gold_prob16": None,
         "min_margin_exact_corr": None, "local_vs_free_state_agreement": None}
     local_n = ""
     if condition == "process":
@@ -349,6 +362,8 @@ def run_one(task, tok, ds, val, condition, rho, seed, args, device):
         "free_gate_accuracy": "" if free["free_gate_accuracy"] is None else free["free_gate_accuracy"],
         "local_state_accuracy": "" if local["local_state_accuracy"] is None else local["local_state_accuracy"],
         "all_local_correct_rate": "" if local["all_local_correct_rate"] is None else local["all_local_correct_rate"],
+        "iid_local_prediction": "" if local["iid_local_prediction"] is None else local["iid_local_prediction"],
+        "local_tie_rate": "" if local["local_tie_rate"] is None else local["local_tie_rate"],
         "mean_product_gold_prob16": "" if local["mean_product_gold_prob16"] is None else local["mean_product_gold_prob16"],
         "min_margin_exact_corr": "" if local["min_margin_exact_corr"] is None else local["min_margin_exact_corr"],
         "local_vs_free_state_agreement": "" if local["local_vs_free_state_agreement"] is None else local["local_vs_free_state_agreement"],
@@ -359,6 +374,7 @@ def run_one(task, tok, ds, val, condition, rho, seed, args, device):
         print(f"free exact trace={100*free['exact_trace_accuracy']:.2f}% | exact states={100*free['exact_state_rollout_accuracy']:.2f}% | "
               f"free state={100*free['free_state_accuracy']:.2f}% | free gate={100*free['free_gate_accuracy']:.2f}%")
         print(f"16-way local state={100*local['local_state_accuracy']:.2f}% | all-local-correct={100*local['all_local_correct_rate']:.2f}% | "
+              f"iid local^D={100*local['iid_local_prediction']:.2f}% | ties={100*local['local_tie_rate']:.4f}% | "
               f"mean Πp16(gold)={100*local['mean_product_gold_prob16']:.2f}% | min-margin/exact corr={local['min_margin_exact_corr']:.4f} | "
               f"local/free-state agreement={100*local['local_vs_free_state_agreement']:.2f}%")
     if adapter_path: print(f"saved adapter: {adapter_path}")
@@ -369,7 +385,7 @@ def summarize(path):
     import pandas as pd
     df = pd.read_csv(path); print("\nFINAL SUMMARY"); print("=" * 96)
     cols = ["condition", "seed", "answer_accuracy", "exact_trace_accuracy", "exact_state_rollout_accuracy",
-        "free_state_accuracy", "local_state_accuracy", "all_local_correct_rate", "min_margin_exact_corr"]
+        "free_state_accuracy", "local_state_accuracy", "all_local_correct_rate", "iid_local_prediction", "min_margin_exact_corr"]
     print(df[cols].to_string(index=False))
     p = df[df["rho"].notna()].copy()
     if len(p) > 1:
@@ -384,14 +400,14 @@ def main():
     p = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     p.add_argument("--model", default="HuggingFaceTB/SmolLM2-135M")
     p.add_argument("--task", default="boolean_circuit_8")
-    p.add_argument("--rhos", nargs="+", type=float, default=[0.0, 0.5, 1.0])
-    p.add_argument("--seeds", nargs="+", type=int, default=[2001])
-    p.add_argument("--include-answer-first", action="store_true")
+    p.add_argument("--rhos", nargs="+", type=float, default=[0.0, 0.2, 0.4, 0.5, 0.6, 0.8, 1.0])
+    p.add_argument("--seeds", nargs="+", type=int, default=[2001, 2002, 2003])
+    p.add_argument("--include-answer-first", action=argparse.BooleanOptionalAction, default=True)
     p.add_argument("--train-size", type=int, default=12000)
     p.add_argument("--val-size", type=int, default=300)
     p.add_argument("--local-eval-size", type=int, default=300)
     p.add_argument("--train-seed", type=int, default=501); p.add_argument("--val-seed", type=int, default=101)
-    p.add_argument("--ratio-seed", type=int, default=777); p.add_argument("--batch-seed", type=int, default=12345)
+    p.add_argument("--assignment-seed", "--ratio-seed", dest="assignment_seed", type=int, default=777); p.add_argument("--batch-seed", type=int, default=12345)
     p.add_argument("--steps", type=int, default=800); p.add_argument("--batch-size", type=int, default=16)
     p.add_argument("--eval-batch-size", type=int, default=32); p.add_argument("--local-batch-size", type=int, default=128)
     p.add_argument("--workers", type=int, default=2); p.add_argument("--lr", type=float, default=3e-4)
@@ -400,8 +416,8 @@ def main():
     p.add_argument("--max-length", type=int, default=384); p.add_argument("--process-max-new-tokens", type=int, default=128)
     p.add_argument("--outcome-max-new-tokens", type=int, default=20); p.add_argument("--audit-examples", type=int, default=8)
     p.add_argument("--save-adapters", action=argparse.BooleanOptionalAction, default=True)
-    p.add_argument("--output", type=Path, default=Path("results/smollm_trace_fixed.csv"))
-    p.add_argument("--run-dir", type=Path, default=Path("results/smollm_trace_fixed_artifacts"))
+    p.add_argument("--output", type=Path, default=Path("results/paper/smollm/smollm_trace.csv"))
+    p.add_argument("--run-dir", type=Path, default=Path("results/paper/smollm/artifacts"))
     p.add_argument("--overwrite", action="store_true")
     args = p.parse_args()
 
@@ -422,13 +438,17 @@ def main():
     train_instances = generate_unique(task, args.train_size, args.train_seed)
     train_prompts = {x.prompt for x in train_instances}
     val = generate_unique(task, args.val_size, args.val_seed, excluded=train_prompts)
-    ratio_scores = np.random.default_rng(args.ratio_seed).random(len(train_instances))
+    assignment_order = np.random.default_rng(args.assignment_seed).permutation(len(train_instances))
 
     # Verify candidate-token boundary before spending time training.
     prefix, _, _ = local_prefix(val[0], 0)
     for state in ALL_STATES: encode_local(tok, prefix, state)
 
     cfg = vars(args).copy(); cfg["output"] = str(cfg["output"]); cfg["run_dir"] = str(cfg["run_dir"]); cfg["device"] = str(device)
+    cfg["reliability_assignment"] = "exact nested: first round(rho*N) indices of one fixed permutation"
+    cfg["minibatch_order"] = "fixed across model seeds; only model initialization seed changes"
+    cfg["local_metric"] = "16-way complete candidate conditional log-probability; local_correct iff margin > 0"
+    cfg["all_local_metric"] = "mean_i prod_t 1[margin_it > 0]; iid local^D is reported separately"
     (args.run_dir / "config.json").write_text(json.dumps(cfg, indent=2, default=str))
     print(f"model={args.model} task={task.name} device={device} train={len(train_instances)} val={len(val)} prompt_overlap=0")
     print(f"Trace example:\n  prompt        = {train_instances[0].prompt}\n  correct trace = {train_instances[0].correct_trace}\n"
@@ -438,7 +458,7 @@ def main():
     if args.include_answer_first: conditions.append(("answer_first", None))
     conditions += [("process", r) for r in sorted(set(args.rhos))]
     for condition, rho in conditions:
-        ds = CompletionDataset(train_instances, tok, condition, rho, ratio_scores, args.max_length)
+        ds = CompletionDataset(train_instances, tok, condition, rho, assignment_order, args.max_length)
         if condition == "process": print(f"\nrho={rho:.3f}: realized clean fraction={ds.realized_rho:.4f}")
         for seed in args.seeds: run_one(task, tok, ds, val, condition, rho, seed, args, device)
         del ds; gc.collect()
