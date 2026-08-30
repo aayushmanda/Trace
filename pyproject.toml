@@ -5,12 +5,17 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "accelerate>=1.14.0",
     "matplotlib>=3.11.1",
     "numpy>=2.4.4",
     "nvitop>=1.7.1",
     "pandas>=3.0.5",
+    "peft>=0.20.0",
     "pydantic>=2.13.4",
+    "safetensors>=0.8.0",
     "scipy>=1.17.1",
+    "sentencepiece>=0.2.2",
     "torch>=2.13.0",
+    "transformers>=5.16.1",
     "wandb>=0.28.2",
 ]
