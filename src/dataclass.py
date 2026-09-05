@@ -13,7 +13,7 @@ VAL_SEED = 9999
 
 DATASET_VERSION = "1.0.0"
 
-GLOBAL_CHARS = string.ascii_lowercase + string.digits + " ;:->+=*\n"
+GLOBAL_CHARS = string.ascii_lowercase + string.digits + " ;.:->+=*\n"
 GLOBAL_TOKENIZER = CharTokenizer(GLOBAL_CHARS)
 
 

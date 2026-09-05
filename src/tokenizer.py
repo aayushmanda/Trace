@@ -20,7 +20,7 @@ class CharTokenizer:
         return "".join(self.itos[i] for i in ids if i in self.itos)
 
 if __name__ == "__main__":
-    chars = string.ascii_lowercase + string.digits + " ;:->+=*\n"
+    chars = string.ascii_lowercase + string.digits + " ;:.->+=*\n"
     print(len(chars))
     tokenizer = CharTokenizer(chars)
     test_string = "hello world"
