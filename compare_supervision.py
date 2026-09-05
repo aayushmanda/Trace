@@ -12,9 +12,12 @@ from src.model import GPTModel
 from src.registry import TASKS
 
 
+FILLER_CHAR = "."
+
 TARGET_BUILDERS = {
     "outcome": lambda inst: f" : {inst.gold}\n",
     "answer_first": lambda inst: f" : {inst.gold} ; {inst.correct_trace}\n",
+        "filler": lambda inst: f" {FILLER_CHAR * len(inst.correct_trace)} : {inst.gold}\n",
     "process": lambda inst: f" {inst.correct_trace} : {inst.gold}\n",
     "corrupted": lambda inst: f" {inst.wrong_trace} : {inst.gold}\n",
 }
@@ -154,7 +157,7 @@ def evaluate(model, task, instances, mode, args, device):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--tasks", nargs="+", default=["state_machine_2", "state_machine_4", "state_machine_8", "state_machine_12", "state_machine_16", "state_machine_20"])
-    parser.add_argument("--modes", nargs="+", choices=list(TARGET_BUILDERS), default=["outcome", "answer_first", "process", "corrupted"])
+    parser.add_argument("--modes", nargs="+", choices=list(TARGET_BUILDERS), default=["outcome", "answer_first", "filler", "process", "corrupted"])
     parser.add_argument("--seeds", nargs="+", type=int, default=[2001, 2002, 2003])
     parser.add_argument("--train-size", type=int, default=100_000)
     parser.add_argument("--val-size", type=int, default=2_000)
