@@ -1,478 +1,192 @@
-# Trace Supervision Experiments
+# Trace: learning to compute with reasoning traces
 
-This repository studies when intermediate reasoning traces teach an autoregressive Transformer to execute a multi-step computation even when the prompt already determines the final answer.
+How does supervision on intermediate steps change what an autoregressive Transformer learns?
 
-The central intervention is **trace reliability** \(\rho\in[0,1]\): the prompt and terminal answer are kept fixed while the validity of intermediate supervision is changed.
+Trace explores this question with synthetic tasks whose computations can be checked exactly: Boolean circuits, finite-state machines, register machines, and other sequential problems. Models learn either a final answer or a sequence of intermediate states followed by that answer. Reliability sweeps also vary whether the supervised trace is correct while keeping the terminal answer correct.
 
-The main paper-facing experiments cover:
+Start with **[the Boolean-circuit tutorial](handcoded.ipynb)** for an illustrated, executable introduction. Use the command-line experiments below for comparisons across tasks, seeds, and trace reliability.
 
-- random finite-state machines,
-- two-register modular machines,
-- reversible Boolean circuits,
-- outcome-only, answer-first, valid-process, and corrupted-process controls,
-- reliability sweeps over \(\rho\),
-- trace-level versus step-level corruption,
-- training-time and mechanism diagnostics.
+## Watch the experiment
 
-## Repository structure
+[![Animation comparing Transformer training curves, complete-circuit answer matrices, and the hidden states of a fixed outcome Transformer](docs/assets/training-dynamics.gif)](training_dynamics.mp4)
 
-```text
-Trace/
-├── README.md
-├── compare_supervision.py
-├── experiment.py
-├── mechanism_diagnostics.py
-├── save_data.py
-├── sweep_ratio.py
-├── trace_vs_step_corruption.py
-├── config.py
-├── pyproject.toml
-├── requirements.txt
-├── results/
-└── src/
-    ├── model.py
-    ├── tokenizer.py
-    ├── dataclass.py
-    ├── registry.py
-    ├── task.py
-    ├── state_machine_tasks.py
-    ├── sequential_tasks.py
-    ├── boolean_circuit_tasks.py
-    └── hard_word_index_tasks.py
-```
+**[Watch or download the full-resolution MP4](training_dynamics.mp4)** · **[Download the interactive HTML player](training_dynamics.html)** · **[Open the notebook](handcoded.ipynb)**
 
-## Installation
+The GIF is a compact preview of the exported video. Download the HTML file and open it in a browser for playback controls and a checkpoint slider; the repository's file viewer does not execute the player.
 
-Using `uv`:
+The animation shows:
+
+- **Training curves:** next-token training loss, generated-answer accuracy on a training sample and the test set, and exact test-continuation accuracy.
+- **Whole-circuit answer matrices:** one selected gate sequence evaluated from all 16 initial states. Rows are starting states; columns are final-state tokens. The process model generates its own trace before predicting the answer.
+- **Inside the hand-coded outcome model:** hidden state features captured after each block. These show cumulative execution of the selected circuit and remain fixed during training.
+
+Orange denotes the learned outcome model, blue the learned process model, and purple the fixed outcome reference. The pink highlight follows one starting state. Frames advance through **measured optimization checkpoints**, not generated tokens. The matrices show model responses and internal activations, not raw attention weights.
+
+## Quick start
+
+Use Python 3.12 or newer and `uv`. From the repository root:
 
 ```bash
 uv sync
 ```
 
-or:
+For the notebook kernel and optional MP4 export, install these additional packages into the project environment:
 
 ```bash
-uv pip install torch numpy matplotlib tqdm
+uv pip install --python .venv/bin/python ipykernel imageio-ffmpeg
 ```
 
-Check CUDA:
+Open [handcoded.ipynb](handcoded.ipynb), select `.venv/bin/python` as its kernel, and run the cells in order. The notebook selects CUDA when available and otherwise uses CPU. It trains small models from scratch; no pretrained model download is needed for this tutorial.
 
-```bash
-uv run python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'cpu')"
-```
+Adjust `TRAIN_SIZE`, `TEST_SIZE`, `STEPS`, and `BATCH_SIZE` in the configuration cell before running. Use a small update budget to check the workflow; use longer runs and multiple seeds to study learning. More checkpoints add evaluation and rendering time.
 
-## Core data construction
+## The Transformer tutorial
 
-Every sampled problem contains:
+The notebook uses semantic tokens: each four-bit state and each gate is a single token. A circuit example looks like this:
 
 ```text
-prompt
-correct_trace
-wrong_trace
-gold_answer
+Shared prompt:
+S0000 x0 c01 t012 s03 <SEP>
+
+Outcome target:
+<COLON> S0111 <EOS>
+
+Process target:
+x0 S1000 c01 S1100 t012 S1110 s03 S0111 <COLON> S0111 <EOS>
 ```
 
-A valid process example is:
+There is no mode token in the prompt. Separate models learn the two continuation formats. These are explicit **symbolic reasoning traces**, not natural-language explanations.
 
-```text
-PROMPT CORRECT_TRACE : GOLD
-```
+| Model | Architecture | Generated continuation |
+|---|---|---|
+| Learned outcome | One causal attention layer, four heads, residuals, ReLU MLP, no LayerNorm | Final answer |
+| Learned process | Same architecture and initialization as learned outcome | Gate/state trace, then answer |
+| Hand-coded process reference | Fixed causal attention and a structured ReLU MLP | Gate/state trace, then answer |
+| Hand-coded outcome reference | One fixed attention/MLP block per gate; four blocks at the default depth | Final answer, with intermediate states computed internally |
 
-A corrupted process example is:
+The learned models share training circuits and minibatch indices. Process continuations contain more target tokens, so equal update counts do not mean equal computation. The fixed references use different capacities from the learned models and serve as constructive examples, not capacity-matched controls.
 
-```text
-PROMPT WRONG_TRACE : GOLD
-```
+During **training**, teacher forcing supplies earlier gold continuation tokens. During **generation**, the model chooses the next token from its logits, appends it, and repeats until EOS or the token limit. No Python gate execution or gold-state correction is used during inference. The exact gate functions provide labels and initialize the fixed references' weights.
 
-The final answer remains correct in both cases. For controlled \(\rho\) sweeps, the same underlying prompt pool and validation set are reused; only intermediate trace validity changes.
+### Read the metrics correctly
 
-## Available tasks
+| Notebook metric | Meaning |
+|---|---|
+| `train_loss` | Next-token cross-entropy on a fixed subset of up to 256 training circuits; not an accuracy percentage |
+| `train_answer_accuracy_sample` | Autoregressive answer accuracy on a fixed sample of up to 300 training circuits; not the full training set |
+| `test_answer_accuracy` | Autoregressive final-answer accuracy on all test circuits |
+| `test_exact_continuation` | Fraction of test outputs matching every expected token; includes the full trace for process models |
 
-Tasks are registered in:
+Whole-circuit heatmaps retain probabilities from the full vocabulary without renormalizing over states. A dark row can indicate probability assigned to non-state tokens; a generated prefix that does not reach the expected answer delimiter is represented by a zero row. Use the test metrics, rather than brightness alone, to judge task performance.
+
+### Render or export the animation
+
+After training has populated `history` and the fixed-reference data:
 
 ```python
-from src.registry import TASKS
+training_animation = animate_training_dynamics(
+    history,
+    fixed_circuit,
+    fixed_outcome_comparison,
+    interval_ms=140,
+    dpi=140,
+    figsize=(18, 14),
+    selected_start=8,  # Follow S1000 through the fixed circuit.
+)
+
+display(export_training_animation(training_animation))
+save_training_mp4(training_animation, "training_dynamics.mp4", fps=7, dpi=180)
 ```
 
-Main sequential tasks include:
+The function returns a Matplotlib `FuncAnimation`. HTML export includes a reading guide; MP4 export uses an explicit FFmpeg writer with the `imageio-ffmpeg` binary when system FFmpeg is unavailable.
 
-```text
-state_machine_2
-state_machine_4
-state_machine_8
-state_machine_12
-state_machine_16
-state_machine_20
+Increase `ANIMATION_CHECKPOINTS` before training to record more real frames. Changing playback speed cannot recover missing checkpoints. Set `ANIMATION_GATES` before collecting the circuit matrices to choose another gate sequence. The step axis is linear through 100 and logarithmic afterward to keep early learning visible.
 
-register_machine_2
-register_machine_4
-register_machine_8
-register_machine_12
-register_machine_16
-register_machine_20
+## Run the broader experiments
 
-boolean_circuit_4
-boolean_circuit_8
-boolean_circuit_12
-boolean_circuit_16
-boolean_circuit_20
-```
+The scripts use the task registry and the GPT implementation in `src/`. Their tokenization and model configuration differ from the semantic-token, one-layer notebook experiment.
 
-Additional modular-program, stack-machine, and word-index tasks are also registered.
+### Compare supervision formats
 
-## Supervision conditions
-
-### Outcome-only
-
-```text
-PROMPT : GOLD
-```
-
-The model receives no intermediate state supervision.
-
-### Process
-
-```text
-PROMPT CORRECT_TRACE : GOLD
-```
-
-The valid trace occurs before the answer and can be reused autoregressively.
-
-### Corrupted process
-
-```text
-PROMPT WRONG_TRACE : GOLD
-```
-
-The trace is locally invalid while the terminal answer remains correct.
-
-### Answer-first
-
-The correct answer is generated before the valid trace. This separates trace content from causal availability before answer generation.
-
-## Matched supervision comparison
-
-Example:
+A small workflow check:
 
 ```bash
 uv run compare_supervision.py \
-  --tasks state_machine_12 state_machine_16 state_machine_20 \
-  --modes outcome answer_first process corrupted \
-  --seeds 2001 2002 2003 2004 2005 \
-  --train-size 100000 \
-  --val-size 2000 \
-  --steps 8000 \
-  --layers 2
+  --tasks boolean_circuit_4 \
+  --modes outcome answer_first filler process corrupted \
+  --seeds 2001 \
+  --train-size 1000 --val-size 100 \
+  --steps 100 --batch-size 32 --workers 0
 ```
 
-This is the main control experiment for distinguishing valid pre-answer process supervision from matched alternatives.
+This script prints per-run loss, answer accuracy, and a summary. Increase the dataset size, training budget, and number of seeds for a substantive comparison.
 
-## Reliability sweep
+| Condition | Supervised continuation |
+|---|---|
+| `outcome` | Answer only |
+| `process` | Correct trace before the answer |
+| `corrupted` | Incorrect trace before the correct answer |
+| `answer_first` | Correct answer before the trace |
+| `filler` | Filler tokens before the answer |
 
-`rho` is the fraction/probability of examples receiving a valid trace.
+### Sweep trace reliability
 
-The main sweep is implemented in:
-
-```text
-sweep_ratio.py
-```
-
-Boolean example:
+`rho` controls the probability of assigning a valid trace to a training example. The outcome remains correct even when the trace is corrupted.
 
 ```bash
 uv run sweep_ratio.py \
   --task boolean_circuit_8 \
-  --rhos 0.30 0.50 0.60 0.70 0.80 0.85 0.90 0.95 1.00 \
-  --seeds 2001 2002 2003 2004 2005 \
-  --checkpoints 1000 2000 4000 6000 8000 \
-  --train-size 100000 \
-  --val-size 2000 \
-  --batch-size 128
-```
-
-State-machine boundary example:
-
-```bash
-uv run sweep_ratio.py \
-  --task state_machine_16 \
-  --rhos 0.80 0.82 0.84 0.85 0.86 0.87 0.88 0.90 1.00 \
-  --seeds 2001 2002 2003 2004 2005 \
-  --checkpoints 1000 2000 4000 6000 8000 12000 16000 \
-  --train-size 100000 \
-  --val-size 2000 \
-  --batch-size 128
-```
-
-## Trace-level versus step-level corruption
-
-The standard reliability sweep uses **trace-level corruption**. One Bernoulli variable is shared across the complete trajectory:
-
-\[
-Z\sim\mathrm{Bernoulli}(\rho),\qquad Z_1=\cdots=Z_D=Z.
-\]
-
-Thus an example is either fully valid or fully corrupted.
-
-The step-level intervention independently samples validity at each transition:
-
-\[
-Z_t\sim\mathrm{Bernoulli}(\rho),\qquad t=1,\ldots,D.
-\]
-
-The two schemes match the marginal expected fraction of valid local transitions but differ in cross-transition correlation.
-
-### Important construction detail
-
-Step-level traces are generated **sequentially**. If a previous transition was corrupted, a later clean transition applies the correct operation to the current mixed state rather than jumping back to the canonical clean trajectory.
-
-For transition \(t\):
-
-\[
-s_t = \Phi(s_{t-1},u_t)\quad\text{if }Z_t=1,
-\]
-
-while a corrupted transition emits a successor explicitly different from \(\Phi(s_{t-1},u_t)\).
-
-Do not implement step-level corruption by naively splicing pre-generated clean and corrupted trace strings position-wise; after one corrupted transition the source state has changed.
-
-### Run trace-vs-step corruption
-
-State machine:
-
-```bash
-uv run trace_vs_step_corruption.py \
-  --task state_machine_16 \
-  --modes trace step \
-  --rhos 0.80 0.82 0.84 0.86 0.88 0.90 1.00 \
-  --seeds 2001 2002 2003 2004 2005 \
-  --checkpoints 2000 4000 6000 8000 12000 16000 \
-  --train-size 100000 \
-  --val-size 2000 \
-  --batch-size 128
-```
-
-Register machine:
-
-```bash
-uv run trace_vs_step_corruption.py \
-  --task register_machine_16 \
-  --modes trace step \
-  --rhos 0.10 0.20 0.30 0.40 0.50 0.60 0.70 0.80 0.90 1.00 \
-  --seeds 2001 2002 2003 2004 2005 \
-  --checkpoints 1000 2000 4000 6000 8000
-```
-
-Boolean circuit:
-
-```bash
-uv run trace_vs_step_corruption.py \
-  --task boolean_circuit_8 \
-  --modes trace step \
-  --rhos 0.30 0.50 0.60 0.70 0.80 0.85 0.90 0.95 1.00 \
-  --seeds 2001 2002 2003 2004 2005 \
-  --checkpoints 1000 2000 4000 6000 8000
-```
-
-The trace-vs-step CSV should record:
-
-```text
-task
-corruption_mode
-rho
-realized_valid_step_rate
-realized_clean_trace_rate
-seed
-step
-loss
-answer_accuracy
-exact_trace_accuracy
-trace_step_accuracy
-colon_rate
-```
-
-### Interpretation
-
-This intervention tests whether changing supervision correlation changes finite-budget acquisition while approximately matching the expected amount of locally valid supervision.
-
-The paper should claim matched **marginal local validity**, not automatically identical Transformer mean gradients. Autoregressive prefixes differ across the two schemes, so empirical gradient means and variances should be measured rather than assumed equal.
-
-## Mechanism diagnostics
-
-`mechanism_diagnostics.py` measures quantities such as:
-
-- answer accuracy,
-- exact-trace accuracy,
-- free-running transition accuracy,
-- first-error depth,
-- teacher-forced full-step accuracy,
-- teacher-forced state accuracy,
-- teacher-forced state-token accuracy,
-- teacher-forced state NLL,
-- predicted exact-trace probability,
-- clean-state gradient norm,
-- training-gradient norm,
-- clean/corrupt gradient cosine,
-- projected gradient mean,
-- projected gradient variance,
-- between-component variance,
-- clean-state diagnostic loss.
-
-Example:
-
-```bash
-uv run mechanism_diagnostics.py \
-  --tasks boolean_circuit_8 \
-  --rhos 0.30 0.50 0.80 0.85 0.90 0.95 1.00 \
-  --seeds 2001 2002 2003 2004 2005
-```
-
-
-```bash
-uv run lora.py \
-  --rhos 0.0 0.2 0.4 0.5 0.6 0.8 1.0 \
+  --rhos 0.0 0.5 0.8 1.0 \
   --seeds 2001 2002 2003 \
-  --train-size 12000 \
-  --steps 800 \
-  --include-answer-first \
-  --overwrite
+  --checkpoints 1000 2000 4000 \
+  --train-size 20000 --val-size 1000 \
+  --batch-size 128 --include-outcome
 ```
 
+Each condition and seed is trained along one trajectory and evaluated at its checkpoints. The script writes CSV results under `results/` by default. It reuses ratio scores across reliability values, making valid-trace assignments nested. Training and validation prompts are generated without overlap in these command-line comparisons.
 
-A global gradient cosine should not by itself be interpreted as evidence of semantic acquisition because formatting, delimiters, positional structure, and token marginals can dominate it.
+### Other entry points
 
-## Same-trajectory checkpoint experiment
+| File | Purpose |
+|---|---|
+| [mechanism_diagnostics.py](mechanism_diagnostics.py) | More detailed trace, state, and gradient diagnostics |
+| [fastexec.py](fastexec.py) | Faster training and cached autoregressive decoding, with self-tests and a benchmark |
+| [lora.py](lora.py) | LoRA experiments with pretrained causal language models; separate model and resource requirements |
+| [data_cleaning_validation.py](data_cleaning_validation.py) | Data validation utilities |
+| [src/registry.py](src/registry.py) | Registered task names and task configurations |
+| [src/model.py](src/model.py) | GPT architecture used by the broader scripts |
 
-To study finite-time acquisition, train each `(rho, seed)` once to a long horizon and evaluate checkpoints from the same training trajectory.
+Inspect supported arguments before running a larger experiment:
 
-Recommended checkpoints:
-
-```text
-1000 2000 4000 6000 8000 10000 12000 16000
+```bash
+uv run mechanism_diagnostics.py --help
+uv run lora.py --help
+uv run fastexec.py --selftest
 ```
 
-This supports analysis of:
+List the available tasks:
 
-- acquisition/hitting time,
-- seed dependence,
-- boundary movement with update budget,
-- local-state acquisition before exact rollout,
-- answer accuracy tracking complete execution.
-
-Do not independently retrain a new model for each checkpoint.
-
-## Batch-size experiment
-
-To test finite-batch effects, hold all other settings fixed and vary:
-
-```text
-B = 64
-B = 128
-B = 256
-B = 512
+```bash
+uv run python -c "from src.registry import TASKS; print('\n'.join(sorted(TASKS)))"
 ```
 
-Recommended outputs:
+Task families include reversible Boolean circuits, finite-state machines, register machines, modular programs, stack machines, and word-index problems.
 
-```text
-batch_size
-rho
-seed
-checkpoint
-answer_accuracy
-exact_trace_accuracy
-trace_step_accuracy
-```
+## Reproducibility and interpretation
 
-## Metrics
+Keep model, data, minibatch, and corruption-assignment seeds explicit. Compare models on the same prompts and preserve per-seed results rather than reporting only averages. In the tutorial, sampled training and test circuits use separate random generators; the notebook does not explicitly filter duplicate prompts across those splits.
 
-### Answer accuracy
+The exported animation illustrates one run and one selected circuit. It does not establish that outcome supervision cannot learn, that the observed gap persists across seeds or architectures, or that results transfer to natural-language reasoning. Trace lengths, supervision formats, model capacity, and update budgets matter when interpreting a comparison.
 
-Fraction of held-out prompts for which the generated terminal answer equals the gold answer.
+## Repository guide
 
-### Exact-trace accuracy
-
-Fraction of held-out prompts for which the entire free-running generated trace exactly matches the canonical valid trace.
-
-### Trace-step accuracy
-
-Fraction of individual generated transitions that match the canonical corresponding transition.
-
-### Teacher-forced state accuracy
-
-Accuracy of the next state when the preceding correct trace is supplied. This separates local transition competence from free-running rollout survival.
-
-### First-error depth
-
-Index of the first incorrect transition in the generated trace.
-
-## Reproducibility
-
-Keep randomness sources separate:
-
-```text
-train seed       -> underlying training instances
-validation seed  -> held-out validation instances
-ratio seed       -> clean/corrupted assignment
-corruption seed  -> corrupted successor construction
-batch seed       -> minibatch order
-model seed       -> model initialization
-```
-
-For controlled comparisons:
-
-- keep the prompt pool fixed,
-- keep validation fixed,
-- keep architecture fixed,
-- keep optimizer and update budget fixed,
-- keep minibatch order fixed where possible,
-- vary only the intended intervention.
-
-Reliability assignments should be nested across \(\rho\) when studying acquisition-boundary movement.
-
-
-## Results
-
-Outputs are written under:
-
-```text
-results/
-```
-
-Keep raw per-seed CSV files rather than only averaged results.
-
-Typical result files include:
-
-```text
-*_phase_*.csv
-*_trace_vs_step_*.csv
-*_mechanism_*.csv
-```
-
-## Recommended paper experiment set
-
-The strongest experimental package includes:
-
-1. matched supervision controls,
-2. multi-seed reliability sweeps,
-3. local-state versus exact-rollout measurements,
-4. same-trajectory checkpoint sweeps,
-5. trace-level versus step-level corruption,
-6. batch-size intervention,
-7. early progress/noise diagnostics predicting later acquisition,
-8. corruption-geometry intervention.
-
-## Claim boundary
-
-The experiments are designed to support the finite-budget claim:
-
-> Sufficiently reliable trace-first supervision can teach an autoregressive Transformer a reusable local executor that matched outcome-only, answer-first, and corrupted supervision does not acquire within the same finite training budget.
-
-The repository does **not** by itself establish:
-
-- a universal critical reliability,
-- optimizer-independent phase behavior,
-- asymptotic failure below a positive threshold,
-- outcome-only impossibility,
-- transfer to natural-language reasoning,
-- identical gradient means under trace-level and step-level corruption.
-
+| Location | Contents |
+|---|---|
+| [handcoded.ipynb](handcoded.ipynb) | Main Transformer tutorial, fixed references, training, generation, and animation |
+| [pending_identifiability_experiments.ipynb](pending_identifiability_experiments.ipynb), [pending_transformer_fast.ipynb](pending_transformer_fast.ipynb) | Additional experiment notebooks |
+| [trace.ipynb](trace.ipynb), [train_seed.ipynb](train_seed.ipynb), [verify_experiments1-5.ipynb](verify_experiments1-5.ipynb) | Further training and verification notebooks |
+| `src/` | Models, tokenizers, task generators, and utilities |
+| [pyproject.toml](pyproject.toml), [uv.lock](uv.lock) | Project dependencies and environment lockfile |
+| `results/` | Local experiment outputs |
+| [training_dynamics.mp4](training_dynamics.mp4), [training_dynamics.html](training_dynamics.html) | Exported animation |
+| [docs/assets/training-dynamics.gif](docs/assets/training-dynamics.gif) | Compact animated README preview |
