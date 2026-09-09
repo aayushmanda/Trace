@@ -1,11 +1,30 @@
-/archive
-/count_char
-/word_index
-/.venv
-/pycache
-/paper
-/figures
-dataset_cache/
+# --- environments and caches -------------------------------------------------
+.venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.pytest_cache/
+.ruff_cache/
+
+# --- run artifacts we do not ship --------------------------------------------
 wandb/
 dataset_cache/
-/results
+checkpoints/
+*.pt
+*.ckpt
+*.safetensors
+
+# --- large media (regenerate with experiments/make_training_dynamics.py) -----
+training_dynamics.html
+training_dynamics.mp4
+
+# --- the manuscript lives outside the code artifact --------------------------
+Paper/
+
+# --- editor ------------------------------------------------------------------
+.vscode/
+.DS_Store
+
+# --- scratch -----------------------------------------------------------------
+/archive
+/scratch

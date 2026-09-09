@@ -1,3 +1,5 @@
+import _paths  # noqa: F401  (puts the repo root and src/ on sys.path)
+
 import argparse, csv, gc, json, random, re
 from pathlib import Path
 
@@ -10,7 +12,7 @@ from tqdm.auto import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from registry import TASKS
-from sweep_ratio import generate_unique
+from reliability_sweep import generate_unique
 
 STEP_RE = re.compile(r"^([xcst]\d{1,3})>([01]{4})$")
 ANSWER_RE = re.compile(r"([01]{4})")
