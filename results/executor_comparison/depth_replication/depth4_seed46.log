@@ -13,3 +13,5 @@ trained 500/2000; elapsed 42.6s
 {"step": 500, "mode": "outcome", "answer": 0.125, "local": null, "composition_tv": null, "gradient_cosine": null, "elapsed_seconds": 43.1}
 {"step": 500, "mode": "both", "answer": 0.2461, "local": 0.9963942170143127, "composition_tv": 0.8006924390792847, "gradient_cosine": -0.0058774641130124134, "elapsed_seconds": 44.4}
 trained 600/2000; elapsed 55.4s
+trained 700/2000; elapsed 60.6s
+trained 800/2000; elapsed 65.5s
