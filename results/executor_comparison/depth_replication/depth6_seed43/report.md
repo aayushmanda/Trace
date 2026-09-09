@@ -1,6 +1,6 @@
 # Trained versus hand-coded executor comparison
 
-Fresh pilot: depth 4, seed 46, 2,000 updates, 10,000 unique training circuits and 256 disjoint held-out circuits.
+Fresh pilot: depth 6, seed 43, 2,000 updates, 10,000 unique training circuits and 256 disjoint held-out circuits.
 
 This semantic-token one-layer Transformer run does not reconstruct the archived RegisterMachine or character-token experiments. Learned conditions share initial weights, the circuit pool, minibatches and optimizer settings. Mixed format assigns direct answers to half the examples and process traces to half, using a fixed random assignment. Equal updates do not equalize tokens or FLOPs. Hand-coded references have different capacities.
 
@@ -8,9 +8,9 @@ This semantic-token one-layer Transformer run does not reconstruct the archived 
 
 | Condition | Free answer accuracy | Local rule accuracy | Composition TV |
 |---|---:|---:|---:|
-| process | 100.0% | 100.0% | 0.004 |
-| outcome | 12.5% | not queried | not defined |
-| both | 24.6% | 99.6% | 0.801 |
+| process | 1.2% | 6.4% | 1.000 |
+| outcome | 0.0% | not queried | not defined |
+| both | 1.2% | 6.4% | 0.706 |
 
 Local-rule and composition measurements use separate diagnostic circuits. The displayed circuit is excluded from training and the main accuracy test. Local tables average execution positions and circuit backgrounds. Gradient readouts use first-step tables only; this distinction is recorded in the CSV.
 
@@ -21,7 +21,7 @@ Local-rule and composition measurements use separate diagnostic circuits. The di
 - [Checkpoint diagnostics](training_diagnostics.pdf)
 - [Actual versus predicted gradients](gradient_agreement.pdf)
 
-Final mixed-format full-gradient cosine: **-0.006**; relative gradient error: **1.005**. These measurements do not by themselves establish a shared mechanism.
+Final mixed-format full-gradient cosine: **0.422**; relative gradient error: **0.941**. These measurements do not by themselves establish a shared mechanism.
 
 ## Scope
 
@@ -36,5 +36,5 @@ Final mixed-format full-gradient cosine: **-0.006**; relative gradient error: **
 ## Reproduce
 
 ```bash
-python experiments/compare_executor_rules.py --output results/executor_comparison/reproduction --depth 4 --seed 46 --steps 2000 --train-size 10000 --test-size 256 --probe-size 64 --batch-size 128 --d-model 96 --d-ff 192 --lr 0.002 --device cpu --threads 1 --backgrounds 2 --checkpoints 0 100 500 1000 2000
+python experiments/compare_executor_rules.py --output results/executor_comparison/reproduction --depth 6 --seed 43 --steps 2000 --train-size 10000 --test-size 256 --probe-size 64 --batch-size 128 --d-model 96 --d-ff 192 --lr 0.002 --device cpu --threads 1 --backgrounds 2 --checkpoints 0 100 500 1000 2000
 ```

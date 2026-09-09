@@ -1,0 +1,7 @@
+{"step": 0, "mode": "process", "answer": 0.0117, "local": 0.06370192021131516, "composition_tv": 1.0, "gradient_cosine": null, "elapsed_seconds": 0.8}
+{"step": 0, "mode": "outcome", "answer": 0.0, "local": null, "composition_tv": null, "gradient_cosine": null, "elapsed_seconds": 0.9}
+{"step": 0, "mode": "both", "answer": 0.0117, "local": 0.06370192021131516, "composition_tv": 0.705595850944519, "gradient_cosine": 0.4224098864737414, "elapsed_seconds": 3.0}
+trained 100/2000; elapsed 17.1s
+{"step": 100, "mode": "process", "answer": 0.2109, "local": 0.6899038553237915, "composition_tv": 0.8127530813217163, "gradient_cosine": null, "elapsed_seconds": 18.0}
+{"step": 100, "mode": "outcome", "answer": 0.0938, "local": null, "composition_tv": null, "gradient_cosine": null, "elapsed_seconds": 18.0}
+{"step": 100, "mode": "both", "answer": 0.0781, "local": 0.567307710647583, "composition_tv": 0.24947801232337952, "gradient_cosine": 0.673962579161481, "elapsed_seconds": 20.1}
