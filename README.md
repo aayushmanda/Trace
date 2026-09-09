@@ -4,13 +4,15 @@ How does supervision on intermediate steps change what an autoregressive Transfo
 
 Trace explores this question with synthetic tasks whose computations can be checked exactly: Boolean circuits, finite-state machines, register machines, and other sequential problems. Models learn either a final answer or a sequence of intermediate states followed by that answer. Reliability sweeps also vary whether the supervised trace is correct while keeping the terminal answer correct.
 
-Start with **[the Boolean-circuit tutorial](handcoded.ipynb)** for an illustrated, executable introduction. Use the command-line experiments below for comparisons across tasks, seeds, and trace reliability.
+**[experiments/README.md](experiments/README.md) maps every experiment to the claim it supports** — start there if you are looking for the code behind a particular result.
+
+Start with **[the Boolean-circuit tutorial](handcoded/handcoded_executors.ipynb)** for an illustrated, executable introduction. Use the command-line experiments below for comparisons across tasks, seeds, and trace reliability.
 
 ## Watch the experiment
 
-[![Animation comparing Transformer training curves, complete-circuit answer matrices, and the hidden states of a fixed outcome Transformer](docs/assets/training-dynamics.gif)](training_dynamics.mp4)
+![Animation comparing Transformer training curves, complete-circuit answer matrices, and the hidden states of a fixed outcome Transformer](docs/assets/training-dynamics.gif)
 
-**[Watch or download the full-resolution MP4](training_dynamics.mp4)** · **[Download the interactive HTML player](training_dynamics.html)** · **[Open the notebook](handcoded.ipynb)**
+The preview above is tracked. The full-resolution `training_dynamics.mp4` and the interactive `training_dynamics.html` player are **generated locally** by the notebook (see *Render or export the animation* below) and are not shipped with the code, since the HTML export is roughly 70 MB. **[Open the notebook](handcoded/handcoded_executors.ipynb)** to produce them.
 
 The GIF is a compact preview of the exported video. Download the HTML file and open it in a browser for playback controls and a checkpoint slider; the repository's file viewer does not execute the player.
 
@@ -36,7 +38,7 @@ For the notebook kernel and optional MP4 export, install these additional packag
 uv pip install --python .venv/bin/python ipykernel imageio-ffmpeg
 ```
 
-Open [handcoded.ipynb](handcoded.ipynb), select `.venv/bin/python` as its kernel, and run the cells in order. The notebook selects CUDA when available and otherwise uses CPU. It trains small models from scratch; no pretrained model download is needed for this tutorial.
+Open [handcoded/handcoded_executors.ipynb](handcoded/handcoded_executors.ipynb), select `.venv/bin/python` as its kernel, and run the cells in order. The notebook selects CUDA when available and otherwise uses CPU. It trains small models from scratch; no pretrained model download is needed for this tutorial.
 
 Adjust `TRAIN_SIZE`, `TEST_SIZE`, `STEPS`, and `BATCH_SIZE` in the configuration cell before running. Use a small update budget to check the workflow; use longer runs and multiple seeds to study learning. More checkpoints add evaluation and rendering time.
 
@@ -111,7 +113,7 @@ The scripts use the task registry and the GPT implementation in `src/`. Their to
 A small workflow check:
 
 ```bash
-uv run compare_supervision.py \
+uv run python experiments/supervision_comparison.py \
   --tasks boolean_circuit_4 \
   --modes outcome answer_first filler process corrupted \
   --seeds 2001 \
@@ -134,7 +136,7 @@ This script prints per-run loss, answer accuracy, and a summary. Increase the da
 `rho` controls the probability of assigning a valid trace to a training example. The outcome remains correct even when the trace is corrupted.
 
 ```bash
-uv run sweep_ratio.py \
+uv run python experiments/reliability_sweep.py \
   --task boolean_circuit_8 \
   --rhos 0.0 0.5 0.8 1.0 \
   --seeds 2001 2002 2003 \
@@ -149,19 +151,20 @@ Each condition and seed is trained along one trajectory and evaluated at its che
 
 | File | Purpose |
 |---|---|
-| [mechanism_diagnostics.py](mechanism_diagnostics.py) | More detailed trace, state, and gradient diagnostics |
-| [fastexec.py](fastexec.py) | Faster training and cached autoregressive decoding, with self-tests and a benchmark |
-| [lora.py](lora.py) | LoRA experiments with pretrained causal language models; separate model and resource requirements |
-| [data_cleaning_validation.py](data_cleaning_validation.py) | Data validation utilities |
+| [experiments/mechanism_diagnostics.py](experiments/mechanism_diagnostics.py) | Trace, state and gradient diagnostics on trained models |
+| [handcoded/fastexec.py](handcoded/fastexec.py) | Faster training and cached autoregressive decoding, with self-tests and a benchmark |
+| [experiments/lora_transfer.py](experiments/lora_transfer.py) | LoRA experiments with pretrained causal language models; separate model and resource requirements |
+| [experiments/trace_cleaning.py](experiments/trace_cleaning.py) | Targeted against random removal of corrupted traces |
+| [experiments/induced_rule.py](experiments/induced_rule.py) | Reads the induced local rule out of a trained model |
 | [src/registry.py](src/registry.py) | Registered task names and task configurations |
 | [src/model.py](src/model.py) | GPT architecture used by the broader scripts |
 
 Inspect supported arguments before running a larger experiment:
 
 ```bash
-uv run mechanism_diagnostics.py --help
-uv run lora.py --help
-uv run fastexec.py --selftest
+uv run python experiments/mechanism_diagnostics.py --help
+uv run python experiments/lora_transfer.py --help
+uv run python handcoded/fastexec.py --selftest
 ```
 
 List the available tasks:
@@ -182,11 +185,22 @@ The exported animation illustrates one run and one selected circuit. It does not
 
 | Location | Contents |
 |---|---|
-| [handcoded.ipynb](handcoded.ipynb) | Main Transformer tutorial, fixed references, training, generation, and animation |
-| [pending_identifiability_experiments.ipynb](pending_identifiability_experiments.ipynb), [pending_transformer_fast.ipynb](pending_transformer_fast.ipynb) | Additional experiment notebooks |
-| [trace.ipynb](trace.ipynb), [train_seed.ipynb](train_seed.ipynb), [verify_experiments1-5.ipynb](verify_experiments1-5.ipynb) | Further training and verification notebooks |
-| `src/` | Models, tokenizers, task generators, and utilities |
-| [pyproject.toml](pyproject.toml), [uv.lock](uv.lock) | Project dependencies and environment lockfile |
-| `results/` | Local experiment outputs |
-| [training_dynamics.mp4](training_dynamics.mp4), [training_dynamics.html](training_dynamics.html) | Exported animation |
-| [docs/assets/training-dynamics.gif](docs/assets/training-dynamics.gif) | Compact animated README preview |
+| [experiments/](experiments) | All runnable experiments. **[experiments/README.md](experiments/README.md) maps each script to the claim it supports.** |
+| [handcoded/](handcoded) | The constructive Transformer executors, the fast executor, and their notebooks |
+| [src/](src) | Model, tokenizer, task generators, registry and shared utilities |
+| [results/](results) | Experiment outputs, grouped by experiment family |
+| [docs/](docs) | Notes on definitions used by the newer measurements |
+| [pyproject.toml](pyproject.toml), [uv.lock](uv.lock) | Dependencies and environment lockfile |
+
+`results/` is organised as:
+
+| Directory | Written by |
+|---|---|
+| `results/reliability_sweeps/` | `experiments/reliability_sweep.py` |
+| `results/mechanism/` | `experiments/mechanism_diagnostics.py` |
+| `results/induced_rule/` | `experiments/induced_rule.py`, `experiments/pullback.py` |
+| `results/handcoded_reachability/seeds/` | `handcoded/two_model_reachability.ipynb` |
+
+The exported animation (`training_dynamics.mp4`, `training_dynamics.html`) is
+generated by the notebook and is not tracked; the compact preview in
+[docs/assets/](docs/assets) is.

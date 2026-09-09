@@ -1,3 +1,5 @@
+import _paths  # noqa: F401  (puts the repo root and src/ on sys.path)
+
 import argparse
 import random
 import re
