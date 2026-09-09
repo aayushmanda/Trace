@@ -8,9 +8,9 @@ This semantic-token one-layer Transformer run does not reconstruct the archived 
 
 | Condition | Free answer accuracy | Local rule accuracy | Composition TV |
 |---|---:|---:|---:|
-| process | 100.0% | 100.0% | 0.004 |
-| outcome | 12.5% | not queried | not defined |
-| both | 24.6% | 99.6% | 0.801 |
+| process | 100.0% | 100.0% | 0.001 |
+| outcome | 18.0% | not queried | not defined |
+| both | 21.9% | 100.0% | 0.854 |
 
 Local-rule and composition measurements use separate diagnostic circuits. The displayed circuit is excluded from training and the main accuracy test. Local tables average execution positions and circuit backgrounds. Gradient readouts use first-step tables only; this distinction is recorded in the CSV.
 
@@ -21,7 +21,7 @@ Local-rule and composition measurements use separate diagnostic circuits. The di
 - [Checkpoint diagnostics](training_diagnostics.pdf)
 - [Actual versus predicted gradients](gradient_agreement.pdf)
 
-Final mixed-format full-gradient cosine: **-0.006**; relative gradient error: **1.005**. These measurements do not by themselves establish a shared mechanism.
+Final mixed-format full-gradient cosine: **0.046**; relative gradient error: **1.002**. These measurements do not by themselves establish a shared mechanism.
 
 ## Scope
 
