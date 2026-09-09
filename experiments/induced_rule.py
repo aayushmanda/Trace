@@ -359,6 +359,31 @@ def credit_exponent(Phat, instances, depth, mode,
                 {f"{l:.5g}": float(v) for l, v in zip(lambdas, xs)})}
 
 
+def append_rows(path, rows):
+    """Append to a CSV, refusing to write rows whose schema differs.
+
+    Appending a wider row dict under a narrower existing header silently
+    corrupts the file, so check the header and divert to a sibling file
+    instead of writing a row that will not parse.
+    """
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fields = list(rows[0])
+    if path.exists():
+        with path.open(newline="") as fh:
+            existing = next(csv.reader(fh), None)
+        if existing is not None and existing != fields:
+            path = path.with_name(f"{path.stem}__schema{len(fields)}{path.suffix}")
+            print(f"schema differs from the existing file; writing {path}", flush=True)
+    exists = path.exists()
+    with path.open("a", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=fields)
+        if not exists:
+            w.writeheader()
+        w.writerows(rows)
+    return path
+
+
 # --------------------------------------------------------------------------
 # training
 # --------------------------------------------------------------------------
@@ -471,14 +496,7 @@ def run(args):
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         opt.step()
 
-    out = Path(args.out)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    exists = out.exists()
-    with out.open("a", newline="") as fh:
-        w = csv.DictWriter(fh, fieldnames=list(rows[0]))
-        if not exists:
-            w.writeheader()
-        w.writerows(rows)
+    append_rows(args.out, rows)
     return rows
 
 

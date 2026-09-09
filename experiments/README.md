@@ -63,6 +63,10 @@ These read the mechanism's own quantities out of a trained network. See
 | `run_condition_trajectory.sh` | Depth 4, conditions `both` / `outcome` / `process`, three seeds | `ε̂_rule` and `δ_comp` over training by supervision | `results/induced_rule_traj.csv` |
 | `run_trace_fraction.sh` | Depth 4, trace fraction 0.02 → 1.00 | Where the model sits relative to the near-mixing ball as process supervision is withdrawn | `results/induced_rule_fraction.csv` |
 
+The three runners above were still executing when this tree was organised, so
+their CSVs are at the top level of `results/` rather than in
+`results/induced_rule/`. Move them once the runs finish.
+
 ### 6. Constructive executors
 
 In [`../handcoded/`](../handcoded), not here: the explicit finite-parameter
