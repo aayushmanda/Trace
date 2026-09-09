@@ -1,20 +1,20 @@
 # registry.py
 from typing import Dict
 
-from src.sequential_tasks import (
+from sequential_tasks import (
     MODULAR_PROGRAM_SAMPLERS,
     REGISTER_MACHINE_SAMPLERS,
     STACK_MACHINE_SAMPLERS,
 )
 
-from src.hard_word_index_tasks import (
+from hard_word_index_tasks import (
     HARD_WORD_INDEX_BLOCK_SIZE,
     HARD_WORD_INDEX_MAX_NEW_TOKENS,
     HARD_WORD_INDEX_SAMPLERS,
 )
 
 
-from src.task import (
+from task import (
     _sample_word_index,
     _sample_multiply,
     _sample_count_char,
@@ -23,12 +23,12 @@ from src.task import (
 
 )
 
-from src.state_machine_tasks import STATE_MACHINE_SAMPLERS
-from src.dataclass import Task
+from state_machine_tasks import STATE_MACHINE_SAMPLERS
+from dataclass import Task
 
-from src.dataclass import Task
+from dataclass import Task
 
-from src.boolean_circuit_tasks import (
+from boolean_circuit_tasks import (
     BOOLEAN_CIRCUIT_BLOCK_SIZE,
     BOOLEAN_CIRCUIT_MAX_NEW_TOKENS,
     BOOLEAN_CIRCUIT_SAMPLERS,

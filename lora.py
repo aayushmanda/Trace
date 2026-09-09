@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader, Dataset
 from tqdm.auto import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from src.registry import TASKS
+from registry import TASKS
 from sweep_ratio import generate_unique
 
 STEP_RE = re.compile(r"^([xcst]\d{1,3})>([01]{4})$")

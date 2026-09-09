@@ -1,6 +1,6 @@
 import random
 
-from src.dataclass import Instance
+from dataclass import Instance
 
 
 N_BITS = 4
