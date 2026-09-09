@@ -2,7 +2,7 @@
 # Trajectory: eps_rule, delta_comp and accuracy over training, by supervision.
 set -u
 cd /home/hariguru/aayus/trace
-OUT=results/induced_rule_traj.csv
+OUT=results/induced_rule/trajectory.csv
 for COND in both outcome process; do
   for SEED in 2001 2002 2003; do
     echo "=== cond=$COND seed=$SEED ==="

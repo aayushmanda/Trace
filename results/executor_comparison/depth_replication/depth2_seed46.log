@@ -1,0 +1,36 @@
+{"step": 0, "mode": "process", "answer": 0.0, "local": 0.06490384787321091, "composition_tv": 1.0, "gradient_cosine": null, "elapsed_seconds": 0.2}
+{"step": 0, "mode": "outcome", "answer": 0.0, "local": null, "composition_tv": null, "gradient_cosine": null, "elapsed_seconds": 0.2}
+{"step": 0, "mode": "both", "answer": 0.0, "local": 0.06490384787321091, "composition_tv": 0.8485687375068665, "gradient_cosine": 0.4185088331643009, "elapsed_seconds": 1.1}
+trained 100/2000; elapsed 11.3s
+{"step": 100, "mode": "process", "answer": 0.4414, "local": 0.6538461446762085, "composition_tv": 0.6256920099258423, "gradient_cosine": null, "elapsed_seconds": 11.4}
+{"step": 100, "mode": "outcome", "answer": 0.3281, "local": null, "composition_tv": null, "gradient_cosine": null, "elapsed_seconds": 11.5}
+{"step": 100, "mode": "both", "answer": 0.3555, "local": 0.5961538553237915, "composition_tv": 0.24100056290626526, "gradient_cosine": 0.6908721037877753, "elapsed_seconds": 12.4}
+trained 200/2000; elapsed 22.4s
+trained 300/2000; elapsed 26.2s
+trained 400/2000; elapsed 30.1s
+trained 500/2000; elapsed 34.1s
+{"step": 500, "mode": "process", "answer": 1.0, "local": 1.0, "composition_tv": 0.0023396534379571676, "gradient_cosine": null, "elapsed_seconds": 34.3}
+{"step": 500, "mode": "outcome", "answer": 0.5391, "local": null, "composition_tv": null, "gradient_cosine": null, "elapsed_seconds": 34.3}
+{"step": 500, "mode": "both", "answer": 0.543, "local": 0.9807692170143127, "composition_tv": 0.604095995426178, "gradient_cosine": 0.112743953696902, "elapsed_seconds": 35.2}
+trained 600/2000; elapsed 44.6s
+trained 700/2000; elapsed 48.3s
+trained 800/2000; elapsed 51.9s
+trained 900/2000; elapsed 55.6s
+trained 1000/2000; elapsed 59.4s
+{"step": 1000, "mode": "process", "answer": 1.0, "local": 1.0, "composition_tv": 0.0006206840625964105, "gradient_cosine": null, "elapsed_seconds": 59.5}
+{"step": 1000, "mode": "outcome", "answer": 0.5938, "local": null, "composition_tv": null, "gradient_cosine": null, "elapsed_seconds": 59.5}
+{"step": 1000, "mode": "both", "answer": 0.6758, "local": 0.9963942170143127, "composition_tv": 0.5722681283950806, "gradient_cosine": 0.24284017893274415, "elapsed_seconds": 60.3}
+trained 1100/2000; elapsed 70.6s
+trained 1200/2000; elapsed 74.5s
+trained 1300/2000; elapsed 78.4s
+trained 1400/2000; elapsed 82.5s
+trained 1500/2000; elapsed 86.3s
+trained 1600/2000; elapsed 90.0s
+trained 1700/2000; elapsed 93.9s
+trained 1800/2000; elapsed 97.9s
+trained 1900/2000; elapsed 101.8s
+trained 2000/2000; elapsed 105.8s
+{"step": 2000, "mode": "process", "answer": 1.0, "local": 1.0, "composition_tv": 0.0001760651357471943, "gradient_cosine": null, "elapsed_seconds": 105.9}
+{"step": 2000, "mode": "outcome", "answer": 0.6562, "local": null, "composition_tv": null, "gradient_cosine": null, "elapsed_seconds": 106.0}
+{"step": 2000, "mode": "both", "answer": 0.7891, "local": 1.0, "composition_tv": 0.5028738379478455, "gradient_cosine": 0.1704201897181841, "elapsed_seconds": 106.8}
+Saved comparison to /home/hariguru/aayus/trace/results/executor_comparison/depth_replication/depth2_seed46

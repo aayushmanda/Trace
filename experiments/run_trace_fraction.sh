@@ -5,7 +5,7 @@
 # assumes, and whether its induced kernels compose.
 set -u
 cd /home/hariguru/aayus/trace
-OUT=results/induced_rule_fraction.csv
+OUT=results/induced_rule/fraction.csv
 for TF in 0.02 0.05 0.15 0.50 1.00; do
   for SEED in 2001 2002; do
     uv run python experiments/induced_rule.py \

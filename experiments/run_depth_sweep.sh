@@ -2,7 +2,7 @@
 # Exponent test: does credit scale as eps_rule^(D-1) in the model's own rule geometry?
 set -u
 cd /home/hariguru/aayus/trace
-OUT=results/induced_rule_depth.csv
+OUT=results/induced_rule/depth.csv
 for D in 3 4 5 6; do
   for SEED in 2001 2002 2003; do
     echo "=== depth=$D seed=$SEED ==="

@@ -156,6 +156,7 @@ Each condition and seed is trained along one trajectory and evaluated at its che
 | [experiments/lora_transfer.py](experiments/lora_transfer.py) | LoRA experiments with pretrained causal language models; separate model and resource requirements |
 | [experiments/trace_cleaning.py](experiments/trace_cleaning.py) | Targeted against random removal of corrupted traces |
 | [experiments/induced_rule.py](experiments/induced_rule.py) | Reads the induced local rule out of a trained model |
+| [experiments/compare_executor_rules.py](experiments/compare_executor_rules.py) | A second, independent version of the same comparison on the semantic-token hand-coded architecture |
 | [src/registry.py](src/registry.py) | Registered task names and task configurations |
 | [src/model.py](src/model.py) | GPT architecture used by the broader scripts |
 
@@ -199,6 +200,7 @@ The exported animation illustrates one run and one selected circuit. It does not
 | `results/reliability_sweeps/` | `experiments/reliability_sweep.py` |
 | `results/mechanism/` | `experiments/mechanism_diagnostics.py` |
 | `results/induced_rule/` | `experiments/induced_rule.py`, `experiments/pullback.py` |
+| `results/executor_comparison/` | `experiments/compare_executor_rules.py` |
 | `results/handcoded_reachability/seeds/` | `handcoded/two_model_reachability.ipynb` |
 
 The exported animation (`training_dynamics.mp4`, `training_dynamics.html`) is
