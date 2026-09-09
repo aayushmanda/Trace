@@ -111,6 +111,20 @@ def main():
             cell('composition_tv_with_invalid'),cell('gradient_cosine')])+r' \\')
     (args.paper/'data/trained_executor_rows.tex').write_text('\n'.join(tex)+'\n')
     summary.to_json(args.paper/'data/trained_executor_summary.json',orient='records',indent=2)
+    macros=[]
+    for name,mode,field,scale in [
+        ('BridgeProcessAcc','process','free_answer_accuracy',100),
+        ('BridgeProcessLocal','process','local_rule_accuracy',100),
+        ('BridgeMixedLocal','both','local_rule_accuracy',100),
+        ('BridgeMixedTV','both','composition_tv_with_invalid',1),
+        ('BridgeMixedCos','both','gradient_cosine',1),
+        ('BridgeMixedGradError','both','gradient_relative_error',1)]:
+        row=summary[(summary.depth==4)&(summary['mode']==mode)].iloc[0]
+        mean=scale*row[field+'_mean'];sd=scale*row[field+'_std']
+        precision=1 if scale==100 else 3
+        value=f'{mean:.{precision}f}'+r'\pm'+f'{sd:.{precision}f}'
+        macros.append(r'\newcommand{\'+name+'}{'+value+'}')
+    (args.paper/'data/trained_executor_numbers.tex').write_text('\n'.join(macros)+'\n')
     print(summary[['depth','mode','free_answer_accuracy_mean','local_rule_accuracy_mean',
                    'composition_tv_with_invalid_mean','gradient_cosine_mean']].to_string(index=False))
     print('Wrote verified five-seed manuscript figures and summary')
