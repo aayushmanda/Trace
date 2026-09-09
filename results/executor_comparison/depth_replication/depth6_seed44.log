@@ -15,3 +15,12 @@ trained 500/2000; elapsed 51.4s
 trained 600/2000; elapsed 66.7s
 trained 700/2000; elapsed 73.2s
 trained 800/2000; elapsed 80.0s
+trained 900/2000; elapsed 86.6s
+trained 1000/2000; elapsed 93.1s
+{"step": 1000, "mode": "process", "answer": 1.0, "local": 1.0, "composition_tv": 0.0019173473119735718, "gradient_cosine": null, "elapsed_seconds": 94.1}
+{"step": 1000, "mode": "outcome", "answer": 0.0938, "local": null, "composition_tv": null, "gradient_cosine": null, "elapsed_seconds": 94.2}
+{"step": 1000, "mode": "both", "answer": 0.1289, "local": 1.0, "composition_tv": 0.8773288726806641, "gradient_cosine": 0.08028199063054277, "elapsed_seconds": 96.3}
+trained 1100/2000; elapsed 109.1s
+trained 1200/2000; elapsed 115.8s
+trained 1300/2000; elapsed 122.5s
+trained 1400/2000; elapsed 129.5s
