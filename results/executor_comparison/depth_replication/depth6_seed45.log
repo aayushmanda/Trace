@@ -1,0 +1,9 @@
+{"step": 0, "mode": "process", "answer": 0.0, "local": 0.0625, "composition_tv": 1.0, "gradient_cosine": null, "elapsed_seconds": 0.9}
+{"step": 0, "mode": "outcome", "answer": 0.0, "local": null, "composition_tv": null, "gradient_cosine": null, "elapsed_seconds": 1.0}
+{"step": 0, "mode": "both", "answer": 0.0, "local": 0.0625, "composition_tv": 0.7943852543830872, "gradient_cosine": 0.28926656222517383, "elapsed_seconds": 3.2}
+trained 100/2000; elapsed 16.6s
+{"step": 100, "mode": "process", "answer": 0.1602, "local": 0.6862980723381042, "composition_tv": 0.7927780747413635, "gradient_cosine": null, "elapsed_seconds": 17.4}
+{"step": 100, "mode": "outcome", "answer": 0.1211, "local": null, "composition_tv": null, "gradient_cosine": null, "elapsed_seconds": 17.5}
+{"step": 100, "mode": "both", "answer": 0.0742, "local": 0.5757211446762085, "composition_tv": 0.21137747168540955, "gradient_cosine": 0.6629549164791355, "elapsed_seconds": 19.2}
+trained 200/2000; elapsed 31.9s
+trained 300/2000; elapsed 38.6s
