@@ -6,10 +6,9 @@ from collections import defaultdict
 import numpy as np
 import torch
 from torch.utils.data import DataLoader, Dataset
-from tqdm.auto import tqdm
 
-from src.model import GPTModel
-from src.registry import TASKS
+from model import GPTModel
+from registry import TASKS
 
 
 FILLER_CHAR = "."
@@ -101,7 +100,7 @@ def train_one(task, train_instances, mode, seed, args, device):
         optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     use_bf16 = device.type == "cuda" and torch.cuda.is_bf16_supported()
     model.train()
-    for step in tqdm(range(args.steps), desc=f"{task.name}/{mode}/seed={seed}", leave=False):
+    for step in range(args.steps):
         try:
             x, y, mask = next(iterator)
         except StopIteration:

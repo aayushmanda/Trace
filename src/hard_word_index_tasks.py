@@ -1,7 +1,7 @@
 import random
 import string
 
-from src.dataclass import Instance
+from dataclass import Instance
 
 
 WORD_INDEX_LENGTHS = (16, 24, 32, 48, 64)

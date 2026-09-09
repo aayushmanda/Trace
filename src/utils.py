@@ -7,7 +7,7 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from tqdm.auto import tqdm
 
-from src.model import GPTModel
+from model import GPTModel
 
 
 # ============================================================

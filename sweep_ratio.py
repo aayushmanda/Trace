@@ -9,10 +9,9 @@ from pathlib import Path
 import numpy as np
 import torch
 from torch.utils.data import DataLoader, Dataset
-from tqdm.auto import tqdm
 
-from src.model import GPTModel
-from src.registry import TASKS
+from model import GPTModel
+from registry import TASKS
 
 
 def set_seed(seed: int):
@@ -188,7 +187,7 @@ def train_run(task, dataset, val_instances, condition, rho, seed, checkpoints, a
     label = "outcome" if condition == "outcome" else f"rho={rho:.2f}"
 
     model.train()
-    for step in tqdm(range(1, max(checkpoints) + 1), desc=f"{task.name}/{label}/seed={seed}"):
+    for step in range(1, max(checkpoints) + 1):
         try:
             x, y, mask = next(iterator)
         except StopIteration:

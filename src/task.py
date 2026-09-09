@@ -1,6 +1,6 @@
 import random
 import string
-from src.dataclass import Instance
+from dataclass import Instance
 
 
 

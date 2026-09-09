@@ -3,7 +3,7 @@
 
 import random
 
-from src.dataclass import Instance
+from dataclass import Instance
 
 
 DIFFICULTY_STEPS = (2, 4, 8, 12, 16, 20)
