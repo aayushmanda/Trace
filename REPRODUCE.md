@@ -19,6 +19,13 @@ for f in experiments/*.py; do
 done
 ```
 
+Run the one unit test suite in the tree (six checks on the readouts used by
+`compare_executor_rules.py`, including a finite-difference gradient check):
+
+```bash
+cd experiments && uv run python -m unittest test_executor_comparison -v && cd ..
+```
+
 ## What runs where
 
 Which script supports which claim is in
@@ -35,9 +42,10 @@ A100, at the settings used in the manuscript:
 | Smoke test | `uv run python experiments/supervision_comparison.py --tasks boolean_circuit_4 --seeds 2001 --train-size 1000 --steps 100 --batch-size 32 --workers 0` | minutes |
 | Five-condition comparison | `experiments/supervision_comparison.py` with five seeds | hours |
 | Reliability sweeps | `experiments/reliability_sweep.py` per task and depth | hours per task |
-| Escape-time law | `experiments/escape_time_law.py` | CPU-only, deliberately small |
+| Escape-time law | `experiments/escape_time_law.py` (no flags; edit the constants at the top) | CPU-only, minutes to tens of minutes |
 | Induced-rule sweeps | `experiments/run_depth_sweep.sh`, `run_condition_trajectory.sh`, `run_trace_fraction.sh` | ~1 h per sweep, shared GPU |
 | Summary tables and figure | `uv run python experiments/analyze_induced.py` | seconds |
+| Second executor-comparison pilot | `experiments/compare_executor_rules.py --output results/executor_comparison/reproduction --depth 4 --seed 42 --steps 2000 --train-size 10000 --test-size 256 --probe-size 64 --batch-size 128 --d-model 96 --d-ff 192 --lr 0.002 --device cpu --threads 1 --backgrounds 2 --checkpoints 0 100 500 1000 2000` | ~minutes, CPU |
 
 The three induced-rule runners hard-code a CUDA device (`--device cuda:N`).
 Change it before running.
@@ -57,16 +65,16 @@ Stated plainly, because these are the gaps a reviewer will find:
 1. **No checkpoints are saved.** `config.py` sets `SAVE_MODELS = False`, and the
    induced-rule scripts probe in-process. Any measurement that needs a trained
    model after the fact requires a re-run with checkpointing added.
-2. **The recovered scripts have not been re-run.** `mechanism_diagnostics.py`,
-   `escape_time_law.py`, `competitor_support.py`, `trace_cleaning.py`,
-   `trace_vs_step_corruption.py`, `copy_probe.py`, `early_acquisition.py`,
-   `loss_barrier.py` and `validate_claims.py` were recovered from git history
-   after having been deleted while their outputs remained in `results/`. They
-   import cleanly and their CLIs are intact, but the CSVs in `results/` were
-   produced by the pre-deletion versions. Re-run before citing any number from
-   them as reproduced. All 26 columns of
-   `results/mechanism/mechanism_summary_*.csv` are accounted for in the
-   recovered `mechanism_diagnostics.py`, so the generating code for that table
-   is back in the tree.
+2. **Some archived CSVs predate their current generating script.**
+   `mechanism_diagnostics.py`, `escape_time_law.py`, `competitor_support.py`,
+   `trace_cleaning.py`, `trace_vs_step_corruption.py`, `copy_probe.py`,
+   `early_acquisition.py`, `loss_barrier.py` and `validate_claims.py` were at
+   one point recovered from git history after having been deleted while their
+   outputs remained in `results/`; the tracked versions now carry the `_paths`
+   bootstrap and all entry points in `experiments/` import without error. The
+   CSVs already in `results/` were produced before that recovery, though, so
+   re-run before citing a number from them as freshly reproduced. All 26
+   columns of `results/mechanism/mechanism_summary_*.csv` are accounted for in
+   the current `mechanism_diagnostics.py`.
 3. **Run identity.** Archived CSVs are timestamped but not hashed against a
    commit. Record the commit alongside new runs.

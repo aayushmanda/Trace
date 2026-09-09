@@ -73,9 +73,13 @@ def figure(depth_df, traj_df, path):
     ax[0].legend(fontsize=8, frameon=False)
 
     # (b) fitted exponent against D-1
+    last = last.assign(
+        exponent_fit_conditional=last.exponent_fit_conditional.astype(float),
+        exponent_fit_proportional=last.exponent_fit_proportional.astype(float),
+    )
     g = last.groupby("depth")
-    m = g.exponent_fit_conditional.astype(float).agg(["mean", "std"])
-    p = g.exponent_fit_proportional.astype(float).agg(["mean", "std"])
+    m = g.exponent_fit_conditional.agg(["mean", "std"])
+    p = g.exponent_fit_proportional.agg(["mean", "std"])
     d = np.array(m.index, dtype=float)
     ax[1].plot(d, d - 1, "k--", lw=1, label="$D-1$ (predicted)")
     ax[1].errorbar(d, m["mean"], yerr=m["std"].fillna(0), fmt="o-", ms=5,
@@ -167,12 +171,12 @@ def readout_validity(df):
 
 
 def main():
-    dpath, tpath = RES / "induced_rule_depth.csv", RES / "induced_rule_traj.csv"
+    dpath, tpath = RES / "induced_rule" / "depth.csv", RES / "induced_rule" / "trajectory.csv"
     depth_df = pd.read_csv(dpath) if dpath.exists() else pd.DataFrame()
     traj_df = pd.read_csv(tpath) if tpath.exists() else pd.DataFrame()
-    tbl = exponent_table(RES / "induced_rule_depth.csv",
-                         RES / "induced_rule_fraction.csv",
-                         RES / "induced_rule_fast.csv")
+    tbl = exponent_table(RES / "induced_rule" / "depth.csv",
+                         RES / "induced_rule" / "fraction.csv",
+                         RES / "induced_rule" / "fast_smoke.csv")
     if not tbl.empty:
         print("\n=== credit exponent: full range against the hypothesis region eps <= 1/2 ===")
         print(tbl.to_string())
