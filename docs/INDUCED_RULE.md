@@ -15,9 +15,16 @@ At a trace-format decision position carrying source state `s` and gate `g`,
 scored over the sixteen complete successor states and renormalised over them.
 This is a **readout of the network, not a parameter**, and it depends on the
 query format: change the serialisation and you change the object. The scripts
-also record how much predictive mass fell outside the sixteen valid states
+also record how much predictive mass fell **on** the sixteen valid states
 (`state_on_set_mass`), which is the honest measure of how well-posed the readout
 is at a given checkpoint.
+
+This is not a formality. For a model trained on answers alone the on-set mass is
+`0.002`: a trace-format query is far out of distribution and the resulting table
+is a renormalisation of almost nothing, so its `ε̂_rule` and rule-recovery
+figures are meaningless and must be discarded. For models that also emit traces
+it reaches `0.997`+ once the format is learned. Check this column before
+reporting anything else.
 
 Reading `P̂_g` needs `K·M = 16 × 52 = 832` contexts × 16 candidates per
 checkpoint. Gate strings differ in width (`x0`, `c01`, `t012`), so contexts
@@ -68,6 +75,14 @@ moves `ε̂_rule` exactly linearly, so a log–log fit of conditional credit aga
   marginal term dominates at late positions. Predicted slope falls toward 1.
 
 The gap between the two *is* the content of the marginal-control assumption.
+
+**Fit inside the hypothesis region.** The bound is stated on a ball with
+`ε_rule ≤ 1/2`. Trained models measure `ε̂_rule ≈ 1.0–1.5`, so the unscaled
+tables sit outside it and a fit over the whole rescaling range mixes in points
+the theorem does not cover. `analyze_induced.refit_in_ball` restricts to
+`λ·ε̂ ≤ 1/2`. Measured that way the exponent is `1.920 ± 0.020` at `D = 3`
+(target 2) and `2.982 ± 0.007` at `D = 4` (target 3), `R² ≈ 1.000`; over the
+full range it degrades to 1.38 and 2.51.
 
 ## The pullback
 

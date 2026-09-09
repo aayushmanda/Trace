@@ -106,14 +106,82 @@ def figure(depth_df, traj_df, path):
     print("wrote", path)
 
 
+def refit_in_ball(row, mode="conditional", eps_max=0.5):
+    """Refit the credit exponent using only the rescalings that satisfy the
+    theorem's hypothesis eps_rule <= 1/2.
+
+    The stored full-range fit includes lambda = 1, where the measured
+    eps_rule of a trained model is around 1.0-1.5 and therefore outside the
+    ball the depth bound is stated on.  Restricting to the hypothesis region
+    is not selection: it is evaluating the claim where the claim applies.
+    """
+    xs = json.loads(row[f"eps_by_lambda_{mode}"])
+    ys = json.loads(row[f"credit_by_lambda_{mode}"])
+    keys = [k for k in xs if xs[k] <= eps_max]
+    if len(keys) < 3:
+        return np.nan, np.nan, len(keys)
+    lx = np.log([xs[k] for k in keys])
+    ly = np.log([ys[k] for k in keys])
+    A = np.vstack([lx, np.ones_like(lx)]).T
+    slope, b = np.linalg.lstsq(A, ly, rcond=None)[0]
+    resid = ly - (slope * lx + b)
+    r2 = 1.0 - float((resid ** 2).sum() / max(((ly - ly.mean()) ** 2).sum(), 1e-30))
+    return float(slope), r2, len(keys)
+
+
+def exponent_table(*paths, eps_max=0.5):
+    """Per-depth exponent, full range against the hypothesis region."""
+    frames = []
+    for f in paths:
+        f = Path(f)
+        if not f.exists():
+            continue
+        d = pd.read_csv(f)
+        d = d[d.step == d.step.max()]
+        d = d[d.exponent_fit_conditional.notna()]
+        if len(d):
+            frames.append(d)
+    if not frames:
+        return pd.DataFrame()
+    d = pd.concat(frames, ignore_index=True)
+    fit = d.apply(lambda r: pd.Series(refit_in_ball(r, eps_max=eps_max),
+                                      index=["slope_in_ball", "r2_in_ball", "n_points"]), axis=1)
+    d = pd.concat([d, fit], axis=1)
+    g = d.groupby("depth")
+    return g.agg(runs=("seed", "count"), target=("exponent_target", "first"),
+                 full_range=("exponent_fit_conditional", "mean"),
+                 in_ball=("slope_in_ball", "mean"), in_ball_sd=("slope_in_ball", "std"),
+                 r2=("r2_in_ball", "mean"),
+                 eps_at_lambda1=("eps_rule_hat", "mean")).round(3)
+
+
+def readout_validity(df):
+    """The readout is only well posed where predictive mass lands on the
+    sixteen valid state strings.  Anything with a low on-set mass is an
+    out-of-distribution query and its scales must not be reported."""
+    if "condition" not in df:
+        return pd.DataFrame()
+    return df.groupby("condition").agg(
+        on_set_mass=("state_on_set_mass", "mean"),
+        min_on_set=("state_on_set_mass", "min")).round(4)
+
+
 def main():
     dpath, tpath = RES / "induced_rule_depth.csv", RES / "induced_rule_traj.csv"
     depth_df = pd.read_csv(dpath) if dpath.exists() else pd.DataFrame()
     traj_df = pd.read_csv(tpath) if tpath.exists() else pd.DataFrame()
+    tbl = exponent_table(RES / "induced_rule_depth.csv",
+                         RES / "induced_rule_fraction.csv",
+                         RES / "induced_rule_fast.csv")
+    if not tbl.empty:
+        print("\n=== credit exponent: full range against the hypothesis region eps <= 1/2 ===")
+        print(tbl.to_string())
     if not depth_df.empty:
         print("\n=== depth sweep (final checkpoint) ===")
         print(depth_table(depth_df).to_string(index=False))
     if not traj_df.empty:
+        print("\n=== readout validity (discard conditions with low on-set mass) ===")
+        print(readout_validity(traj_df).to_string())
         print("\n=== trajectory (depth 4) ===")
         print(traj_table(traj_df).to_string(index=False))
     if not depth_df.empty and not traj_df.empty:
