@@ -35,5 +35,6 @@
   },
   "git_commit": "4495d04995cade93517f6c8942a482956d6ddd98",
   "parameter_count": 89856,
-  "training_test_overlap": 0
+  "training_test_overlap": 0,
+  "elapsed_seconds": 141.75148055999307
 }

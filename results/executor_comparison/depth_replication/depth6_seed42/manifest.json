@@ -1,7 +1,7 @@
 {
-  "output": "/home/hariguru/aayus/trace/results/executor_comparison/depth_replication/depth4_seed44",
-  "depth": 4,
-  "seed": 44,
+  "output": "/home/hariguru/aayus/trace/results/executor_comparison/depth_replication/depth6_seed42",
+  "depth": 6,
+  "seed": 42,
   "steps": 2000,
   "train_size": 10000,
   "test_size": 256,
@@ -33,8 +33,7 @@
     "batch": 2026,
     "format": 6721
   },
-  "git_commit": "4495d04995cade93517f6c8942a482956d6ddd98",
-  "parameter_count": 89856,
-  "training_test_overlap": 0,
-  "elapsed_seconds": 139.8763717880065
+  "git_commit": "1880d44c5c187877a808305584b4e7420ac0bd9e",
+  "parameter_count": 90432,
+  "training_test_overlap": 0
 }

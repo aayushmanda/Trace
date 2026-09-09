@@ -33,3 +33,4 @@ trained 2000/2000; elapsed 131.8s
 {"step": 2000, "mode": "process", "answer": 1.0, "local": 1.0, "composition_tv": 0.0004413552233017981, "gradient_cosine": null, "elapsed_seconds": 132.2}
 {"step": 2000, "mode": "outcome", "answer": 0.1992, "local": null, "composition_tv": null, "gradient_cosine": null, "elapsed_seconds": 132.2}
 {"step": 2000, "mode": "both", "answer": 0.3008, "local": 1.0, "composition_tv": 0.844266414642334, "gradient_cosine": 0.08013863848990546, "elapsed_seconds": 133.6}
+Saved comparison to /home/hariguru/aayus/trace/results/executor_comparison/depth_replication/depth4_seed44
