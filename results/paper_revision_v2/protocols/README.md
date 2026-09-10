@@ -8,5 +8,6 @@ Copies of `configs/experiments/e{1,2,3,4}_*.yaml` as of the week-2 freeze. Edit 
 | `e2_architecture.yaml` | Architecture × format, 5-rate 10-seed | `plan`; 1–2 `single` cells if GPU packed | 40-job calibrate grid; 80-job confirm |
 | `e3_mask_trace.yaml` | Continuation-masked traces; per-step \(\widehat P^{(t)}\) | Pilot with `skip_readout: true` | Full readout × depth grid |
 | `e4_projected_kernel.yaml` | Shared-kernel projected simplex flow | CPU smoke (`python -m src projected --smoke`) | T2 proof; row-softmax `escape` as if it were T2 |
+| `causal_identification.yaml` | Deep outcome probes + nnsight causal patch | Smoke: `python -m src outcome-local --smoke` | Confirmation `--confirm` one depth; not a mixed \(\widehat P\) cell |
 
 `python -m src escape` remains the **row-softmax logit** runner (`P_g=\mathrm{softmax}(A_g)`). It is not this E4 protocol.

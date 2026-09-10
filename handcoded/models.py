@@ -263,13 +263,15 @@ class HandcodedOutcomeTransformer(nn.Module):
     def _answer_index(self, length):
         return min(self.answer_position, length - 1)
 
-    def forward(self, ids, return_states=False, patch_layer=None, patch_fn=None):
+    def forward(self, ids, return_states=False):
+        """Forward. Causal patches and probe reads go through nnsight, not `patch_fn`.
+
+        `return_states` is the autograd path for local CE / C_t only.
+        """
         hidden = self._embed(ids)
         states = []
-        for step, block in enumerate(self.blocks):
+        for block in self.blocks:
             hidden = block(hidden)
-            if patch_fn is not None and step == patch_layer:
-                hidden = patch_fn(hidden, step)
             if return_states:
                 states.append(hidden[:, self._answer_index(hidden.shape[1]), :])
         logits = hidden @ self.readout.T

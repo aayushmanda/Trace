@@ -1,0 +1,2 @@
+condition,step,depth,seed,answer_accuracy,train_subset_answer_accuracy,lambda_local,format,train_loss
+outcome,0,2,43,0.0,0.0,1.0,outcome,4.27630090713501

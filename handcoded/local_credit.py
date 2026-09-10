@@ -13,6 +13,34 @@ from torch.nn import functional as F
 from handcoded.gates import phi
 from handcoded.models import attach_local_heads
 
+INTERVENTION_BACKEND = "nnsight"
+
+
+def nnsight_available():
+    try:
+        from nnsight import NNsight  # noqa: F401
+        return True
+    except Exception:
+        return False
+
+
+def wrap_nnsight(model):
+    """Wrap a generic `nn.Module` once. Does not replace loss / grad math."""
+    from nnsight import NNsight
+    wrapper = getattr(model, "_trace_nnsight", None)
+    if wrapper is None:
+        wrapper = NNsight(model)
+        model._trace_nnsight = wrapper
+    return wrapper
+
+
+def _module_device(model, fallback="cpu"):
+    try:
+        return next(model.parameters()).device
+    except StopIteration:
+        buf = next(model.buffers(), None)
+        return buf.device if buf is not None else torch.device(fallback)
+
 
 def gold_states_tensor(circuits, device=None):
     tensor = torch.tensor([c.states for c in circuits], dtype=torch.long)
@@ -36,7 +64,11 @@ def prompt_with_colon(circuits, tokenizer, device):
 
 
 def outcome_plus_local_loss(model, batch, gold_states, lambda_local=1.0):
-    """L_out + λ (1/D) Σ_t CE(H_t(h_t), s_t). `batch` is outcome-format (no trace tokens)."""
+    """L_out + λ (1/D) Σ_t CE(H_t(h_t), s_t). `batch` is outcome-format (no trace tokens).
+
+    Hidden states here use `return_states` so autograd reaches θ. nnsight is for
+    held-out probes and causal patches, not this loss.
+    """
     if getattr(model, "local_heads", None) is None:
         attach_local_heads(model)
     logits, hiddens = model(batch.inputs, return_states=True)
@@ -127,52 +159,53 @@ def probe_subspace_patch(hidden, model, layer, donors, probe, logit_scale=10.0):
     return out
 
 
-def _patch_fn(method, model, layer, donors, *, generator=None, probe=None, wrong_layer=None):
-    applied = layer if wrong_layer is None else wrong_layer
-
-    def fn(hidden, step):
-        if step != applied:
-            return hidden
-        if method == "oracle_slot":
-            return oracle_slot_patch(hidden, model, applied, donors)
-        if method == "random_subspace":
-            return random_subspace_patch(hidden, model, applied, donors, generator=generator)
-        if method == "unstructured":
-            return unstructured_patch(hidden, model, applied, donors, generator=generator)
-        if method == "probe_subspace":
-            if probe is None:
-                raise ValueError("probe_subspace patch needs a trained probe")
-            return probe_subspace_patch(hidden, model, applied, donors, probe)
-        raise ValueError(f"Unknown patch method: {method}")
-
-    return fn, applied
+def apply_residual_patch(hidden, model, layer, donors, method, *, generator=None, probe=None):
+    """Tensor edit of the residual after block `layer`. Called *inside* an nnsight trace."""
+    if method == "oracle_slot":
+        return oracle_slot_patch(hidden, model, layer, donors)
+    if method == "random_subspace":
+        return random_subspace_patch(hidden, model, layer, donors, generator=generator)
+    if method == "unstructured":
+        return unstructured_patch(hidden, model, layer, donors, generator=generator)
+    if method == "probe_subspace":
+        if probe is None:
+            raise ValueError("probe_subspace patch needs a trained probe")
+        return probe_subspace_patch(hidden, model, layer, donors, probe)
+    raise ValueError(f"Unknown patch method: {method}")
 
 
 @torch.no_grad()
 def patched_answers(model, circuits, tokenizer, layer, donors, method="oracle_slot",
                     generator=None, probe=None, wrong_layer=None, n_bits=4):
+    """nnsight trace: replace block-t residual, read remaining network's answer logits."""
     del n_bits
     ids = prompt_with_colon(circuits, tokenizer, donors.device)
-    patch_fn, applied = _patch_fn(
-        method, model, layer, donors, generator=generator, probe=probe, wrong_layer=wrong_layer,
-    )
-    logits = model(ids, patch_layer=applied, patch_fn=patch_fn)
+    applied = layer if wrong_layer is None else wrong_layer
+    wrapped = wrap_nnsight(model)
+    with wrapped.trace(ids):
+        hidden = wrapped.blocks[applied].output
+        patched = apply_residual_patch(
+            hidden, model, applied, donors, method, generator=generator, probe=probe,
+        )
+        wrapped.blocks[applied].output = patched
+        logits = wrapped.output.save()
     return logits[:, -1, : tokenizer.n_states].argmax(dim=-1)
 
 
 @torch.no_grad()
 def counterfactual_accuracy(
     model, circuits, tokenizer, layer, method="oracle_slot", device=None, n_bits=4,
-    generator=None, probe=None, wrong_layer=None,
+    generator=None, probe=None, wrong_layer=None, donor_ids=None,
 ):
     """Fraction of (circuit, donor) pairs whose patched answer matches remaining-gate execution."""
     if device is None:
-        device = next(model.parameters()).device
+        device = _module_device(model)
     n_states = tokenizer.n_states
+    donor_ids = range(n_states) if donor_ids is None else donor_ids
     correct, total = 0, 0
     model.eval()
-    for donor_id in range(n_states):
-        donors = torch.full((len(circuits),), donor_id, dtype=torch.long, device=device)
+    for donor_id in donor_ids:
+        donors = torch.full((len(circuits),), int(donor_id), dtype=torch.long, device=device)
         predicted = patched_answers(
             model, circuits, tokenizer, layer, donors, method=method,
             generator=generator, probe=probe, wrong_layer=wrong_layer, n_bits=n_bits,
@@ -188,12 +221,20 @@ def counterfactual_accuracy(
 
 @torch.no_grad()
 def collect_hiddens(model, circuits, tokenizer, device=None):
+    """nnsight: answer-position residual after each block, for linear probes h_t → s_t."""
+    import nnsight
     if device is None:
-        device = next(model.parameters()).device
+        device = _module_device(model)
     ids = prompt_with_colon(circuits, tokenizer, device)
-    _, states = model(ids, return_states=True)
+    pos = model._answer_index(ids.shape[1])
+    wrapped = wrap_nnsight(model)
+    with wrapped.trace(ids):
+        states = []
+        for block in wrapped.blocks:
+            states.append(block.output[:, pos, :])
+        states = nnsight.save(states)
     gold = gold_states_tensor(circuits, device)
-    return states, gold
+    return [tensor.detach() for tensor in states], gold
 
 
 def train_linear_probes(
@@ -202,7 +243,10 @@ def train_linear_probes(
     """Freeze-LM linear H_t. `*_hiddens` is a list of (N, width) tensors, one per block."""
     probes, train_acc, eval_acc = [], [], []
     for step, hidden in enumerate(train_hiddens):
-        probe = nn.Linear(hidden.shape[-1], n_states, device=hidden.device)
+        hidden = hidden.detach()
+        eval_hidden = eval_hiddens[step].detach()
+        probe = nn.Linear(hidden.shape[-1], n_states)
+        probe = probe.to(device=hidden.device, dtype=hidden.dtype)
         optimizer = torch.optim.Adam(probe.parameters(), lr=lr)
         y_train = train_gold[:, step]
         y_eval = eval_gold[:, step]
@@ -215,7 +259,7 @@ def train_linear_probes(
         probe.eval()
         with torch.no_grad():
             train_acc.append(float((probe(hidden).argmax(-1) == y_train).float().mean()))
-            eval_acc.append(float((probe(eval_hiddens[step]).argmax(-1) == y_eval).float().mean()))
+            eval_acc.append(float((probe(eval_hidden).argmax(-1) == y_eval).float().mean()))
         probes.append(probe)
     return probes, train_acc, eval_acc
 
