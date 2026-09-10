@@ -1,0 +1,41 @@
+{
+  "config": "configs/experiments/executor_comparison.yaml",
+  "output": "results/executor_comparison/smoke_check",
+  "depth": 4,
+  "seed": 42,
+  "steps": 2,
+  "train_size": 64,
+  "test_size": 16,
+  "probe_size": 8,
+  "batch_size": 16,
+  "d_model": 96,
+  "d_ff": 192,
+  "threads": 1,
+  "backgrounds": 2,
+  "lr": 0.002,
+  "device": "cpu",
+  "checkpoints": [
+    0,
+    2
+  ],
+  "compile": true,
+  "bf16": true,
+  "data_on_device": false,
+  "torch_version": "2.13.0+cu130",
+  "numpy_version": "2.4.4",
+  "source_sha256": {
+    "src/eval/executor_comparison.py": "ec276b76a47e7984d014f7880687435dd41e34cbaa0026996731fcb03172ac73",
+    "handcoded/__init__.py": "594e19603e0b428eddd8424cdcb5588499538b49b1e9f4a60e7ca2f31c5786e2"
+  },
+  "data_seeds": {
+    "train": 123,
+    "test": 9000,
+    "probe": 12000,
+    "batch": 2026,
+    "format": 6721
+  },
+  "git_commit": "ed4f3c9487321f228acfb4983e6d1514d7d1a4e8",
+  "parameter_count": 89856,
+  "training_test_overlap": 0,
+  "elapsed_seconds": 15.273632105003344
+}

@@ -15,7 +15,7 @@ def main(argv=None):
     p = argparse.ArgumentParser(prog="python -m src", description="Trace paper experiments")
     p.add_argument("command", nargs="?", default="help",
                    choices=["help", "induced", "pullback", "split-verdict", "escape", "length", "margins", "architecture",
-                            "executor", "executor-depths", "analyze", "supervision", "reliability", "smoke"])
+                            "executor", "executor-depths", "analyze", "supervision", "reliability", "smoke", "lora"])
     args, rest = p.parse_known_args(argv)
     if args.command in {None, "help"}:
         print(__doc__)
@@ -32,6 +32,7 @@ GPT stack
   python -m src reliability --task boolean_circuit_8 --rhos 0.8 --seeds 2001
   python -m src analyze
   python -m src smoke
+  python -m src lora --help
 
 Handcoded / semantic-token stack
   python -m src architecture plan|calibrate|confirm|summarize --config configs/experiments/architecture_controls.yaml
@@ -102,6 +103,11 @@ Handcoded / semantic-token stack
                           "--condition", "both", "--seed", "2001"])
         run_induced(ns)
         return 0
+    if args.command == "lora":
+        raise SystemExit(
+            "pretrained LoRA is not shipped under experiments/; "
+            "use configs/experiments/lora_transfer.yaml as the paper setting once a src.eval LoRA CLI exists"
+        )
     return 1
 
 

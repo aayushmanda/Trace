@@ -33,13 +33,38 @@ python -m src executor --no-compile   # override YAML compile: true
 
 ## Two stacks (do not mix forwards)
 
-**GPT** — character-token LayerNorm Transformer (`src.models.gpt.GPTModel`). Boolean circuits as character strings. Used for Table 1 / Figs 1–2 / LoRA, and for **optional extras** (induced-rule, length, \(m_{\min}\)) that are **not** paper Figure 4.
+**GPT** — character-token LayerNorm Transformer (`src.models.gpt.GPTModel`). Boolean circuits as character strings. Used for Table 1 / Figs 1–2, and for **optional extras** (induced-rule, length, \(m_{\min}\)) that are **not** paper Figure 4. Tiny synthetic-token models; you cannot drop Llama/Qwen in here.
 
-**Handcoded** — semantic-token executors (`handcoded/` package): one token per 4-bit state / gate. **Paper §7 / Figs 4–5 / Table 7** are this stack (one-block width 96), not GPT and not the oracle-shaped Table 4 nets.
+**Handcoded** — semantic-token executors (`handcoded/` package): one token per 4-bit state / gate. **Paper §7 / Figs 4–5 / Table 7** are this stack (one-block width 96), not GPT and not the oracle-shaped Table 4 nets. Same limit: the alphabet is the task tokenizer, not a HuggingFace LM.
+
+**Pretrained LoRA** — rank-8 Peft on `AutoModelForCausalLM` (`python -m src lora`). Same Boolean/trace serialization as GPT, but a real HF tokenizer. This **is** where Qwen/Llama can be swapped. See the section below.
 
 Shared: seed, YAML under `configs/experiments/`, CSV writers, device, progress bars.
 
 Entry point: `python -m src <command>`. Equivalent paper scripts still exist under `experiments/` if you need a one-off flag.
+
+---
+
+## Pretrained LoRA: what you can swap (Qwen / Llama)
+
+The paper’s pretrained paragraph is **rank-8 LoRA** on **SmolLM2-135M**, not a from-scratch GPT with a different backbone.
+
+**Can swap.** HuggingFace causal LMs via `AutoModelForCausalLM` + Peft (`target_modules="all-linear"`). Default remains `HuggingFaceTB/SmolLM2-135M`. Pass another id with `--model`:
+
+```bash
+python -m src lora --help
+python -m src lora --model HuggingFaceTB/SmolLM2-135M
+# other AutoModelForCausalLM ids, e.g.:
+# python -m src lora --model Qwen/Qwen2.5-0.5B --config configs/experiments/lora_transfer.yaml
+```
+
+YAML example (same defaults as the script): `configs/experiments/lora_transfer.yaml`. CLI overrides the file.
+
+This path trains outcome / answer-first / process-\(\rho\) completions and reports **free-generation accuracy** (answer, exact trace, exact state rollout). For `boolean_circuit_*` it also runs the **16-way local state** scorer on the **same HF tokenizer**, not the GPT `GLOBAL_TOKENIZER`. Startup aborts if `encode(prefix)+encode(state) != encode(prefix+state)` at the `>` boundary — common on some BPE/SentencePiece models unless you add/map special tokens. You may also need a larger `--max-length` (this is the sequence cap; it is not GPT `block_size`).
+
+**Cannot swap.** Do not pass a Llama/Qwen id into GPT training, induced-rule, pullback, split-verdict, length, margins, reliability, or handcoded executors. Those models are tiny synthetic-token nets (`CharTokenizer` / semantic gate-state tokens). Induced-rule and pullback readouts are hardcoded to `GLOBAL_TOKENIZER` (character-level 16-way tables). Llama is not a drop-in there.
+
+Do not download a 7B checkpoint unless you intend to; the default 135M run is the paper setting.
 
 ---
 
@@ -131,7 +156,6 @@ Same runs: \(D\in\{2,3,4,6,8\}\). Predicted exponent \(D-1\), fitted exponent in
 
 ```bash
 python -m src split-verdict --config configs/experiments/split_verdict.yaml
-# or: python experiments/split_verdict.py
 ```
 
 Writes `results/revision/split_verdict.csv` and `Paper/figures/split_verdict.pdf` via `apply_style()`. Needs induced (and optional pullback) CSVs from steps 1–2.
@@ -164,7 +188,6 @@ One tensor \(A\in\mathbb{R}^{M\times K\times K}\), \(P_g=\mathrm{softmax}(A_g)\)
 ```bash
 python -m src escape --smoke
 python -m src escape --config configs/experiments/escape_time.yaml --device cpu
-# or: python experiments/escape_time_law.py --shared --smoke
 ```
 
 CSV: `results/revision/shared_kernel.csv`.

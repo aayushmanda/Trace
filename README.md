@@ -110,12 +110,12 @@ Increase `ANIMATION_CHECKPOINTS` before training to record more real frames. Cha
 
 The scripts use the task registry and the GPT implementation in `src/`. Their tokenization and model configuration differ from the semantic-token, one-layer notebook experiment.
 
+Paper and revision commands: **[RUN.md](RUN.md)**. Script-to-claim map: **[experiments/README.md](experiments/README.md)**.
+
 ### Compare supervision formats
 
-A small workflow check:
-
 ```bash
-uv run python experiments/supervision_comparison.py \
+python -m src supervision \
   --tasks boolean_circuit_4 \
   --modes outcome answer_first filler process corrupted \
   --seeds 2001 \
@@ -123,7 +123,7 @@ uv run python experiments/supervision_comparison.py \
   --steps 100 --batch-size 32 --workers 0
 ```
 
-This script prints per-run loss, answer accuracy, and a summary. Increase the dataset size, training budget, and number of seeds for a substantive comparison.
+This prints per-run loss, answer accuracy, and a summary. Increase the dataset size, training budget, and number of seeds for a substantive comparison.
 
 | Condition | Supervised continuation |
 |---|---|
@@ -138,7 +138,7 @@ This script prints per-run loss, answer accuracy, and a summary. Increase the da
 `rho` controls the probability of assigning a valid trace to a training example. The outcome remains correct even when the trace is corrupted.
 
 ```bash
-uv run python experiments/reliability_sweep.py \
+python -m src reliability \
   --task boolean_circuit_8 \
   --rhos 0.0 0.5 0.8 1.0 \
   --seeds 2001 2002 2003 \
@@ -147,33 +147,20 @@ uv run python experiments/reliability_sweep.py \
   --batch-size 128 --include-outcome
 ```
 
-Each condition and seed is trained along one trajectory and evaluated at its checkpoints. The script writes CSV results under `results/` by default. It reuses ratio scores across reliability values, making valid-trace assignments nested. Training and validation prompts are generated without overlap in these command-line comparisons.
+Each condition and seed is trained along one trajectory and evaluated at its checkpoints. Results go under `results/` by default. Training and validation prompts are generated without overlap.
 
 ### Other entry points
 
 | File | Purpose |
 |---|---|
-| [experiments/mechanism_diagnostics.py](experiments/mechanism_diagnostics.py) | Trace, state and gradient diagnostics on trained models |
-| [handcoded/fastexec.py](handcoded/fastexec.py) | Faster training and cached autoregressive decoding, with self-tests and a benchmark |
-| [experiments/lora_transfer.py](experiments/lora_transfer.py) | LoRA experiments with pretrained causal language models; separate model and resource requirements |
-| [experiments/trace_cleaning.py](experiments/trace_cleaning.py) | Targeted against random removal of corrupted traces |
-| [experiments/induced_rule.py](experiments/induced_rule.py) | Reads the induced local rule out of a trained model |
-| [experiments/compare_executor_rules.py](experiments/compare_executor_rules.py) | A second, independent version of the same comparison on the semantic-token hand-coded architecture |
-| [src/registry.py](src/registry.py) | Registered task names and task configurations |
-| [src/model.py](src/model.py) | GPT architecture used by the broader scripts |
-
-Inspect supported arguments before running a larger experiment:
+| [experiments/induced_rule.py](experiments/induced_rule.py) | Induced local-rule readout (`python -m src induced`) |
+| [experiments/compare_executor_rules.py](experiments/compare_executor_rules.py) | Semantic-token executor comparison (`python -m src executor`) |
+| [src/data/registry.py](src/data/registry.py) | Registered task names and task configurations |
+| [src/models/gpt.py](src/models/gpt.py) | GPT architecture used by the GPT-stack scripts |
 
 ```bash
-uv run python experiments/mechanism_diagnostics.py --help
-uv run python experiments/lora_transfer.py --help
-uv run python handcoded/fastexec.py --selftest
-```
-
-List the available tasks:
-
-```bash
-uv run python -c "from src.registry import TASKS; print('\n'.join(sorted(TASKS)))"
+python -m src help
+python -c "from src.data.registry import TASKS; print('\n'.join(sorted(TASKS)))"
 ```
 
 Task families include reversible Boolean circuits, finite-state machines, register machines, modular programs, stack machines, and word-index problems.
@@ -199,10 +186,9 @@ The exported animation illustrates one run and one selected circuit. It does not
 
 | Directory | Written by |
 |---|---|
-| `results/reliability_sweeps/` | `experiments/reliability_sweep.py` |
-| `results/mechanism/` | `experiments/mechanism_diagnostics.py` |
-| `results/induced_rule/` | `experiments/induced_rule.py`, `experiments/pullback.py` |
-| `results/executor_comparison/` | `experiments/compare_executor_rules.py` |
+| `results/reliability_sweeps/` | `python -m src reliability` |
+| `results/revision/` | induced-rule, pullback, length, \(m_{\min}\), split-verdict |
+| `results/executor_comparison/` | `python -m src executor` / `executor-depths` |
 | `results/handcoded_reachability/seeds/` | `handcoded/two_model_reachability.ipynb` |
 
 The exported animation (`training_dynamics.mp4`, `training_dynamics.html`) is

@@ -119,13 +119,25 @@ class PlumbingTests(unittest.TestCase):
         from src.training.config import load_yaml
         from pathlib import Path
         cfg = load_yaml(Path(__file__).resolve().parents[1] / "configs/experiments/architecture_controls.yaml")
-        self.assertFalse(cfg.get("compile", True))
+        self.assertFalse(bool(cfg.get("compile")))
         self.assertEqual(cfg.get("devices"), ["cuda:2", "cuda:3"])
         root = Path(__file__).resolve().parents[1]
         for name in ("induced_rule", "architecture_controls", "length_generalization",
                      "margin_histograms", "executor_comparison", "smoke", "pullback",
-                     "split_verdict", "escape_time"):
+                     "split_verdict", "escape_time", "lora_transfer"):
             self.assertTrue((root / "configs" / "experiments" / f"{name}.yaml").exists())
+
+    def test_lora_model_flag_without_download(self):
+        from src.training.config import load_yaml
+        from transformers import AutoModelForCausalLM
+        from peft import LoraConfig, get_peft_model
+
+        root = Path(__file__).resolve().parents[1]
+        cfg = load_yaml(root / "configs" / "experiments" / "lora_transfer.yaml")
+        self.assertEqual(cfg["model"], "HuggingFaceTB/SmolLM2-135M")
+        self.assertTrue(callable(AutoModelForCausalLM.from_pretrained))
+        self.assertTrue(callable(get_peft_model))
+        self.assertEqual(LoraConfig(task_type="CAUSAL_LM", r=8).r, 8)
 
 
 if __name__ == "__main__":
