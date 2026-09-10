@@ -11,6 +11,17 @@ from src.data.hard_word_index_tasks import (
     HARD_WORD_INDEX_MAX_NEW_TOKENS,
     HARD_WORD_INDEX_SAMPLERS,
 )
+from src.data.local_machine_tasks import (
+    GRID_WALK_BLOCK_SIZE,
+    GRID_WALK_MAX_NEW_TOKENS,
+    GRID_WALK_SAMPLERS,
+    QUEUE_MACHINE_BLOCK_SIZE,
+    QUEUE_MACHINE_MAX_NEW_TOKENS,
+    QUEUE_MACHINE_SAMPLERS,
+    TAPE_MACHINE_BLOCK_SIZE,
+    TAPE_MACHINE_MAX_NEW_TOKENS,
+    TAPE_MACHINE_SAMPLERS,
+)
 from src.data.sequential_tasks import (
     MODULAR_PROGRAM_SAMPLERS,
     REGISTER_MACHINE_SAMPLERS,
@@ -101,6 +112,39 @@ TASKS.update({
         answer_pattern=r"\d+",
     )
     for length, sampler in HARD_WORD_INDEX_SAMPLERS.items()
+})
+TASKS.update({
+    f"tape_machine_{steps}": Task(
+        name=f"tape_machine_{steps}",
+        block_size=TAPE_MACHINE_BLOCK_SIZE,
+        max_new_tokens=TAPE_MACHINE_MAX_NEW_TOKENS[steps],
+        sample=sampler, chance_acc=1 / 10, ceiling_acc=1.0,
+        description=f"execute {steps} head-move/write ops on an 8-cell decimal tape",
+        answer_pattern=r"\d+",
+    )
+    for steps, sampler in TAPE_MACHINE_SAMPLERS.items()
+})
+TASKS.update({
+    f"queue_machine_{steps}": Task(
+        name=f"queue_machine_{steps}",
+        block_size=QUEUE_MACHINE_BLOCK_SIZE,
+        max_new_tokens=QUEUE_MACHINE_MAX_NEW_TOKENS[steps],
+        sample=sampler, chance_acc=1 / 17, ceiling_acc=1.0,
+        description=f"execute {steps} bounded FIFO enqueue/dequeue operations",
+        answer_pattern=r"\d+",
+    )
+    for steps, sampler in QUEUE_MACHINE_SAMPLERS.items()
+})
+TASKS.update({
+    f"grid_walk_{steps}": Task(
+        name=f"grid_walk_{steps}",
+        block_size=GRID_WALK_BLOCK_SIZE,
+        max_new_tokens=GRID_WALK_MAX_NEW_TOKENS[steps],
+        sample=sampler, chance_acc=1 / 16, ceiling_acc=1.0,
+        description=f"walk {steps} steps on a 4x4 grid with blocked cells",
+        answer_pattern=r"\d+",
+    )
+    for steps, sampler in GRID_WALK_SAMPLERS.items()
 })
 TASKS.update({
     f"boolean_circuit_{depth}": Task(

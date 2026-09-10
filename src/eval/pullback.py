@@ -14,15 +14,15 @@ import torch
 from src.data.boolean_circuit_tasks import make_boolean_circuit_sampler
 from src.data.datasets import encode_pair
 from src.eval.induced_rule import (
-    GATES, K, M, TOK, TRUE, U, build_dataset, credit_norms,
-    free_running_accuracy, induced_rules, parse_prompt, probe_contexts,
-    render, rule_recovery, scales,
+    GATES, K, M, TOK, TRUE, U, _tables_seq, build_dataset, credit_exponent,
+    credit_norms, delta_comp, free_running_accuracy, induced_rules, parse_prompt,
+    probe_contexts, render, rule_recovery, scales, table_row_tv,
 )
 from src.models.gpt import GPTModel
 from src.training.io import append_rows
 from src.training.loop import train_with_checkpoints
 from src.training.optim import make_loader, make_optimizer
-from src.training.seed import configure_device, maybe_compile, set_seed
+from src.training.seed import configure_device, prepare_train_model, set_seed
 
 PI = np.eye(K) - U
 
@@ -39,21 +39,61 @@ def _flat_grad(model):
     return torch.cat(parts)
 
 
+def _vec_norm(v):
+    return float(torch.as_tensor(v).float().norm())
+
+
 def cosine(a, b):
-    return float(torch.dot(a, b) / (a.norm() * b.norm() + 1e-30))
+    """Undefined (NaN) if either vector is exactly zero-norm."""
+    na, nb = _vec_norm(a), _vec_norm(b)
+    if na == 0.0 or nb == 0.0:
+        return float("nan")
+    return float(torch.dot(a.float(), b.float()) / (na * nb))
 
 
-def relative_grad_error(a, b):
-    """||a/||a|| − b/||b||||; scale-free disagreement of two parameter gradients."""
-    an = a / (a.norm() + 1e-30)
-    bn = b / (b.norm() + 1e-30)
+def direction_discrepancy(a, b):
+    """||â − b̂|| after unit normalization. NaN if either vector is zero."""
+    na, nb = _vec_norm(a), _vec_norm(b)
+    if na == 0.0 or nb == 0.0:
+        return float("nan")
+    an = a.float() / na
+    bn = b.float() / nb
     return float((an - bn).norm())
 
 
-def surrogate_credit(Phat, instances, depth):
-    P = np.clip(Phat, 1e-12, None)
-    P = P / P.sum(axis=2, keepdims=True)
-    G = np.zeros((M, K, K))
+def relative_grad_error(a, b):
+    """Alias of direction_discrepancy (CSV column rel_grad_err_*). Not a magnitude residual."""
+    return direction_discrepancy(a, b)
+
+
+def grad_norm_ratio(pred, actual):
+    """NaN if ||actual|| = 0 (ratio undefined)."""
+    n = _vec_norm(actual)
+    if n == 0.0:
+        return float("nan")
+    return float(_vec_norm(pred) / n)
+
+
+def relative_grad_residual(pred, actual):
+    """||pred − actual|| / ||actual||. NaN if ||actual|| = 0."""
+    n = _vec_norm(actual)
+    if n == 0.0:
+        return float("nan")
+    return float((pred.float() - actual.float()).norm() / n)
+
+def _normalize_tables(tables, depth):
+    seq = _tables_seq(tables, depth)
+    out = []
+    for P in seq:
+        Q = np.clip(P, 1e-12, None)
+        out.append(Q / Q.sum(axis=2, keepdims=True))
+    return out
+
+
+def surrogate_credit(tables, instances, depth):
+    """Per-step credit W_t of shape (T, M, K, K); do not sum over t before the Jacobian."""
+    Ps = _normalize_tables(tables, depth)
+    G = np.zeros((depth, M, K, K))
     n = 0
     for inst in instances:
         s0, gates = parse_prompt(inst.prompt, depth)
@@ -61,52 +101,76 @@ def surrogate_credit(Phat, instances, depth):
         y = int(inst.gold, 2)
         fwd = [np.eye(K)[s0]]
         for t in range(depth):
-            fwd.append(fwd[-1] @ P[gi[t]])
+            fwd.append(fwd[-1] @ Ps[t][gi[t]])
         bwd = [None] * (depth + 1)
         bwd[depth] = np.eye(K)[y]
         for t in range(depth - 1, -1, -1):
-            bwd[t] = P[gi[t]] @ bwd[t + 1]
+            bwd[t] = Ps[t][gi[t]] @ bwd[t + 1]
         p_y = float(fwd[0] @ bwd[0])
         if p_y <= 1e-12:
             continue
         n += 1
         for t in range(1, depth + 1):
-            G[gi[t - 1]] += np.outer(fwd[t - 1], bwd[t]) / p_y
+            G[t - 1, gi[t - 1]] += np.outer(fwd[t - 1], bwd[t]) / p_y
     G /= max(n, 1)
-    return np.einsum("ij,mjk,kl->mil", PI, G, PI)
+    return np.einsum("ij,tmjk,kl->tmil", PI, G, PI)
 
 
-def pullback_grad(model, depth, device, credit, chunk=256):
-    """J^T vec(W): gradient of Σ ⟨W_g, P̂_g⟩ through the 16-way induced readout."""
+def _credit_seq(credit, depth):
+    credit = np.asarray(credit)
+    if credit.ndim != 4:
+        raise TypeError("pullback_grad needs credit (T, M, K, K); refusing a pooled (M, K, K) field")
+    if credit.shape[0] != depth or credit.shape[1:] != (M, K, K):
+        raise ValueError(f"credit shape {credit.shape} != ({depth}, {M}, {K}, {K})")
+    return credit
+
+
+def pullback_grad(model, depth, device, credit, chunk=256, filler=None,
+                  max_gates=None, max_states=None):
+    """Σ_t J_t^T vec(W_t) through the 16-way readout at each execution step t."""
     import torch.nn.functional as F
-
-    model.zero_grad(set_to_none=True)
-    ctxs, index = probe_contexts(depth, 1, ["x0", "c01", "s23", "t012", "x3", "c30"])
     from src.eval.induced_rule import STATES
+
+    credit = _credit_seq(credit, depth)
+    filler = list(filler or ["x0", "c01", "s23", "t012", "x3", "c30"])
+    model.zero_grad(set_to_none=True)
     cand = [TOK.encode(c) for c in STATES]
     L = len(cand[0])
-    buckets = {}
-    for ci, ctx in enumerate(ctxs):
-        buckets.setdefault(len(ctx), []).append(ci)
-    for idxs in buckets.values():
-        for i in range(0, len(idxs), chunk):
-            sub = idxs[i:i + chunk]
-            rows = []
-            for ci in sub:
-                cids = TOK.encode(ctxs[ci])
-                rows.extend(cids + c for c in cand)
-            T = len(rows[0])
-            data = torch.tensor(rows, dtype=torch.long, device=device)
-            logits, _ = model(data)
-            logp = F.log_softmax(logits[:, T - L - 1:T - 1, :].float(), dim=-1)
-            tgt = data[:, T - L:T]
-            lp = logp.gather(-1, tgt.unsqueeze(-1)).squeeze(-1).sum(-1).view(len(sub), K)
-            P = torch.softmax(lp, dim=-1)
-            w = torch.tensor(
-                np.stack([credit[gi, s] for gi, s in (index[ci] for ci in sub)]),
-                dtype=P.dtype, device=device,
-            )
-            (P * w).sum().backward()
+    jobs = []
+    for t in range(1, depth + 1):
+        ctxs, index = probe_contexts(depth, t, filler)
+        keep = []
+        for ci, (gi, s) in enumerate(index):
+            if max_gates is not None and gi >= max_gates:
+                continue
+            if max_states is not None and s >= max_states:
+                continue
+            keep.append(ci)
+        buckets = {}
+        for ci in keep:
+            buckets.setdefault(len(ctxs[ci]), []).append(ci)
+        for idxs in buckets.values():
+            for i in range(0, len(idxs), chunk):
+                jobs.append((ctxs, index, idxs[i:i + chunk], credit[t - 1]))
+    if not jobs:
+        raise RuntimeError("no pullback readout rows")
+    for j, (ctxs, index, sub, W) in enumerate(jobs):
+        rows = []
+        for ci in sub:
+            cids = TOK.encode(ctxs[ci])
+            rows.extend(cids + c for c in cand)
+        Tlen = len(rows[0])
+        data = torch.tensor(rows, dtype=torch.long, device=device)
+        logits, _ = model(data)
+        logp = F.log_softmax(logits[:, Tlen - L - 1:Tlen - 1, :].float(), dim=-1)
+        tgt = data[:, Tlen - L:Tlen]
+        lp = logp.gather(-1, tgt.unsqueeze(-1)).squeeze(-1).sum(-1).view(len(sub), K)
+        P = torch.softmax(lp, dim=-1)
+        w = torch.tensor(
+            np.stack([W[gi, s] for gi, s in (index[ci] for ci in sub)]),
+            dtype=P.dtype, device=device,
+        )
+        (P * w).sum().backward(retain_graph=j < len(jobs) - 1)
     return _flat_grad(model)
 
 
@@ -190,34 +254,59 @@ def fd_relative_error(model, instances, formats, device, block_size, grad, eta=1
     return abs(actual - pred) / (abs(actual) + 1e-12)
 
 
-def measure_pullback(model, probe, depth, device, block_size, Phat=None, fd=True):
+def _as_table_list(Phat, depth, model, device):
     if Phat is None:
-        Phat, _ = induced_rules(model, depth, device, step=1)
-    credit = surrogate_credit(Phat, probe, depth)
-    ctrue = np.einsum("ij,mjk->mik", PI, TRUE - U[None])
-    ctrue *= np.linalg.norm(credit) / (np.linalg.norm(ctrue) + 1e-30)
-    rc = np.random.default_rng(0).normal(size=credit.shape)
-    rc = np.einsum("ij,mjk,kl->mil", PI, rc, PI)
-    rc *= np.linalg.norm(credit) / (np.linalg.norm(rc) + 1e-30)
-    gp = pullback_grad(model, depth, device, credit)
-    gt = pullback_grad(model, depth, device, ctrue)
-    gr = pullback_grad(model, depth, device, rc)
+        return [induced_rules(model, depth, device, step=t)[0] for t in range(1, depth + 1)]
+    if isinstance(Phat, (list, tuple)):
+        return _tables_seq(Phat, depth)
+    raise TypeError("measure_pullback needs a per-step list of P̂^{(t)}, not one table reused")
+
+
+def measure_pullback(model, probe, depth, device, block_size, Phat=None, fd=True,
+                     skip_jacobian=False):
+    tables = None if skip_jacobian and Phat is None else _as_table_list(Phat, depth, model, device)
     go = outcome_grad(model, probe, device, block_size)
     gq = process_grad(model, probe, depth, device, block_size)
     row = dict(
-        cos_true_outcome=cosine(gt, go),
-        cos_true_process=cosine(gt, gq),
-        cos_random_outcome=cosine(gr, go),
-        cos_random_process=cosine(gr, gq),
-        cos_surrogate_outcome=cosine(gp, go),
+        cos_true_outcome=float("nan"),
+        cos_true_process=float("nan"),
+        cos_random_outcome=float("nan"),
+        cos_random_process=float("nan"),
+        cos_surrogate_outcome=float("nan"),
         cos_outcome_process=cosine(go, gq),
-        rel_grad_err_outcome=relative_grad_error(gt, go),
-        rel_grad_err_process=relative_grad_error(gt, gq),
-        rel_grad_err_random=relative_grad_error(gr, go),
+        rel_grad_err_outcome=float("nan"),
+        rel_grad_err_process=float("nan"),
+        rel_grad_err_random=float("nan"),
         norm_outcome=float(go.norm()),
         norm_process=float(gq.norm()),
         pullback_objective="serialized_lm_ce",
+        skip_jacobian=bool(skip_jacobian),
+        jacobian="sum_t J_t^T W_t",
     )
+    if not skip_jacobian:
+        credit = surrogate_credit(tables, probe, depth)
+        rule = np.einsum("ij,mjk->mik", PI, TRUE - U[None])
+        ctrue = np.broadcast_to(rule, credit.shape).copy()
+        ctrue *= np.linalg.norm(credit) / (np.linalg.norm(ctrue) + 1e-30)
+        rc = np.random.default_rng(0).normal(size=credit.shape)
+        rc = np.einsum("ij,tmjk,kl->tmil", PI, rc, PI)
+        rc *= np.linalg.norm(credit) / (np.linalg.norm(rc) + 1e-30)
+        gp = pullback_grad(model, depth, device, credit)
+        gt = pullback_grad(model, depth, device, ctrue)
+        gr = pullback_grad(model, depth, device, rc)
+        row.update(
+            cos_true_outcome=cosine(gt, go),
+            cos_true_process=cosine(gt, gq),
+            cos_random_outcome=cosine(gr, go),
+            cos_random_process=cosine(gr, gq),
+            cos_surrogate_outcome=cosine(gp, go),
+            rel_grad_err_outcome=relative_grad_error(gt, go),
+            rel_grad_err_process=relative_grad_error(gt, gq),
+            rel_grad_err_random=relative_grad_error(gr, go),
+            rel_grad_residual_outcome=relative_grad_residual(gt, go),
+            grad_norm_ratio_outcome=grad_norm_ratio(gt, go),
+            jacobian="sum_t J_t^T W_t",
+        )
     if fd:
         row["rel_grad_err_fd_outcome"] = fd_relative_error(
             model, probe, ["direct"] * len(probe), device, block_size, go,
@@ -228,8 +317,9 @@ def measure_pullback(model, probe, depth, device, block_size, Phat=None, fd=True
 
 def run(args):
     import time
-    device = torch.device(args.device)
-    configure_device(device, compile=getattr(args, "compile", None), bf16=getattr(args, "bf16", None))
+    device = configure_device(args.device, compile=getattr(args, "compile", None),
+                             bf16=getattr(args, "bf16", None),
+                             distributed=getattr(args, "distributed", None))
     sampler = make_boolean_circuit_sampler(args.depth)
     block = 40 + 12 * args.depth
     set_seed(args.seed)
@@ -245,23 +335,52 @@ def run(args):
         vocab_size=TOK.vocab_size, block_size=block, pad_id=TOK.pad_id,
         n_embd=args.n_embd, n_head=args.n_head, n_layer=args.n_layer, dropout=0.0,
     ).to(device)
-    train_model = maybe_compile(model, device, enabled=getattr(args, "compile", None))
+    train_model = prepare_train_model(
+        model, device, compile=getattr(args, "compile", None),
+        distributed=getattr(args, "distributed", None),
+    )
     opt = make_optimizer(model, args, device)
     ckpts = sorted(set(args.checkpoints))
     rows = []
 
     def on_checkpoint(step, model, _loss):
         t0 = time.time()
-        Phat, on_set = induced_rules(model, args.depth, device, step=1)
-        gam, eps = scales(Phat)
-        pull = measure_pullback(model, probe, args.depth, device, block, Phat=Phat)
-        cred_mean, _ = credit_norms([Phat] * args.depth, probe, args.depth)
+        skip = bool(getattr(args, "skip_readout", False))
+        if skip:
+            Phats = [TRUE.copy() for _ in range(args.depth)]
+            onsets = [1.0] * args.depth
+        else:
+            Phats, onsets = [], []
+            for t in range(1, args.depth + 1):
+                Phat, on_set = induced_rules(model, args.depth, device, step=t)
+                Phats.append(Phat)
+                onsets.append(on_set)
+        dc = delta_comp(model, probe, Phats, args.depth, device)
+        eps_steps = [scales(P)[1] for P in Phats]
+        gam_steps = [scales(P)[0] for P in Phats]
+        pull = measure_pullback(
+            model, probe, args.depth, device, block, Phat=Phats,
+            fd=not skip, skip_jacobian=skip,
+        )
+        cred_mean, _ = credit_norms(Phats, probe, args.depth)
         acc = free_running_accuracy(model, probe, args.depth, device, "both")
+        expo = dict(exponent_target=args.depth - 1)
+        if step == max(ckpts):
+            for mode in ("conditional", "proportional"):
+                expo.update(credit_exponent(Phats, probe, args.depth, mode))
+        table_step_tv = (
+            float(np.mean([table_row_tv(Phats[t], Phats[0]) for t in range(1, args.depth)]))
+            if args.depth > 1 else 0.0
+        )
         row = dict(
-            depth=args.depth, seed=args.seed, step=step, free_answer_acc=acc,
-            eps_rule_hat=eps, gamma_hat=gam, rule_recovery=rule_recovery(Phat),
-            credit_mean=cred_mean, state_on_set_mass=on_set,
-            **pull, seconds=round(time.time() - t0, 1),
+            depth=args.depth, seed=args.seed, step=step, probe_step=1,
+            condition="both", free_answer_acc=acc,
+            eps_rule_hat=float(np.mean(eps_steps)), gamma_hat=float(np.mean(gam_steps)),
+            rule_recovery=rule_recovery(Phats[0]), credit_mean=cred_mean,
+            state_on_set_mass=float(np.mean(onsets)),
+            eps_step_std=float(np.std(eps_steps)), table_step_tv=table_step_tv,
+            background_eps_std=0.0, composition="per_step", skip_readout=skip,
+            **dc, **expo, **pull, seconds=round(time.time() - t0, 1),
         )
         rows.append(row)
         print(json.dumps(row), flush=True)

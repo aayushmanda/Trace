@@ -18,12 +18,18 @@ def _fill(args, cfg, **defaults):
             setattr(args, key, value)
     if getattr(args, "device", None) is None:
         args.device = default_device()
+    device = configure_device(
+        args.device,
+        compile=getattr(args, "compile", None),
+        bf16=getattr(args, "bf16", None),
+        distributed=getattr(args, "distributed", None),
+    )
+    args.device = str(device)
     args.workers = getattr(args, "workers", 0) or 0
     args.batch_seed = getattr(args, "batch_seed", 12345)
     args.weight_decay = getattr(args, "weight_decay", 0.0)
     args.grad_clip = getattr(args, "grad_clip", 1.0)
     args.dropout = getattr(args, "dropout", 0.0)
-    configure_device(args.device, compile=getattr(args, "compile", None), bf16=getattr(args, "bf16", None))
     return args
 
 
@@ -47,6 +53,8 @@ def run_induced(ns):
             args.probe_steps = [1, max(1, d // 2), d]
     if not getattr(args, "with_pullback", False):
         args.with_pullback = bool(cfg.get("with_pullback", False))
+    if getattr(args, "skip_readout", None) is None:
+        args.skip_readout = bool(cfg.get("skip_readout", False))
     run(args)
 
 
@@ -58,6 +66,8 @@ def run_pullback(ns):
           checkpoints=[0, 500, 2000, 4000], out="results/revision/pullback.csv",
           trace_fraction=0.5)
     args.workers = 0
+    if getattr(args, "skip_readout", None) is None:
+        args.skip_readout = bool(cfg.get("skip_readout", False))
     run(args)
 
 

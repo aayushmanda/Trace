@@ -14,7 +14,7 @@ import pandas as pd
 from src.plot_style import apply_style
 
 ROOT=Path(__file__).resolve().parents[1]
-COLORS={'process':'#247ba0','outcome':'#dd8452','both':'#7252a2'}
+COLORS={'process':'#087eaa','outcome':'#c56b08','both':'#6b4c9a'}
 LABELS={'process':'Process','outcome':'Outcome','both':'Mixed format'}
 
 
@@ -30,8 +30,8 @@ def curve(ax,frame,mode,field,label=None,color=None,style='-',band=True):
 
 
 def save(fig,path):
-    fig.savefig(path.with_suffix('.pdf'),bbox_inches='tight')
-    fig.savefig(path.with_suffix('.png'),dpi=200,bbox_inches='tight')
+    fig.savefig(path.with_suffix('.pdf'),dpi=300,bbox_inches='tight')
+    fig.savefig(path.with_suffix('.png'),dpi=300,bbox_inches='tight')
     plt.close(fig)
 
 
@@ -61,7 +61,7 @@ def main():
     json_path.parent.mkdir(parents=True,exist_ok=True)
     (args.paper/'figures').mkdir(parents=True,exist_ok=True)
     json_path.write_text(json.dumps({'protocol':protocol,'sources':provenance},indent=2)+'\n')
-    apply_style()
+    apply_style(extra={'pdf.fonttype':42,'ps.fonttype':42,'savefig.dpi':300,'legend.fontsize':11})
     d4=frame[frame.depth==4]
     fig,axs=plt.subplots(2,2,figsize=(9.4,6.1),layout='constrained')
     for mode in ['process','both']:

@@ -4,4 +4,4 @@ seeds: [2001, 2002, 2003, 2004, 2005]
 induced_csv: results/revision/induced_rule.csv
 pullback_csv: results/revision/pullback.csv
 out: results/revision/split_verdict.csv
-figure: Paper/figures/split_verdict.pdf
+figure: results/revision/split_verdict.pdf

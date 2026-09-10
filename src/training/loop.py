@@ -1,5 +1,7 @@
 """Train any nn.Module. GPT uses (x, y, mask); handcoded uses a custom loss_fn."""
 import torch
+from torch.nn import functional as F
+from torch.nn.parallel import DataParallel
 
 from src.training.progress import progress
 from src.training.seed import autocast_context
@@ -12,6 +14,18 @@ def gpt_lm_loss(model, batch, device):
     mask = mask.to(device, dtype=torch.float32, non_blocking=True)
     if x.ndim != 2 or y.shape != x.shape or mask.shape != x.shape:
         raise ValueError(f"GPT batch must be (B, T) triples, got {tuple(x.shape)}")
+    # DataParallel cannot gather a 0-dim CE; compute the same masked mean on gathered logits.
+    if isinstance(model, DataParallel):
+        logits, _ = model(x)
+        inner = model.module
+        pad_id = getattr(getattr(inner, "_orig_mod", inner), "pad_id")
+        loss_per_token = F.cross_entropy(
+            logits.reshape(-1, logits.size(-1)),
+            y.reshape(-1),
+            reduction="none",
+            ignore_index=pad_id,
+        ).view_as(y)
+        return (loss_per_token * mask).sum() / mask.sum().clamp(min=1)
     _, loss = model(x, targets=y, mask=mask)
     return loss
 
@@ -48,7 +62,8 @@ def train_with_checkpoints(model, loader, optimizer, device, checkpoints, on_che
                            grad_clip=1.0, loss_fn=None, desc=None, train_model=None):
     """on_checkpoint(step, model, loss) uses the eager `model` (generate/probes).
 
-    Pass `train_model=maybe_compile(model, ...)` so the loss path can be compiled.
+    Pass `train_model=prepare_train_model(model, ...)` so the loss path can be
+    DataParallel and/or compiled. Checkpoints and generate use eager `model`.
     """
     runner = train_model if train_model is not None else model
     ckpts = sorted(set(checkpoints))

@@ -30,7 +30,7 @@ import handcoded as h
 from src.training.config import load_yaml
 from src.training.optim import make_adamw
 from src.training.progress import progress
-from src.training.seed import add_compile_bf16_flags, autocast_context, configure_device, maybe_compile, set_seed
+from src.training.seed import add_compile_bf16_flags, autocast_context, configure_device, prepare_train_model, set_seed
 from src.plot_style import apply_style
 
 COLORS = {'process': '#247ba0', 'outcome': '#dd8452', 'both': '#7252a2'}
@@ -474,8 +474,10 @@ def main():
     (args.output / 'checkpoints').mkdir()
     torch.set_num_threads(args.threads)
     set_seed(args.seed)
-    device, tok = torch.device(args.device), h.make_tokenizer()
-    configure_device(device, compile=getattr(args, "compile", None), bf16=getattr(args, "bf16", None))
+    tok = h.make_tokenizer()
+    device = configure_device(args.device, compile=getattr(args, "compile", None),
+                              bf16=getattr(args, "bf16", None),
+                              distributed=getattr(args, "distributed", None))
     shown = display_circuits(args.depth)
     train = unique_circuits(args.train_size, 123, args.depth, circuit_keys(shown))
     test = unique_circuits(args.test_size, 9000, args.depth, circuit_keys(train + shown))
@@ -485,7 +487,8 @@ def main():
     base = h.build_random_learned_model(tok, args.depth, seed=args.seed,
                                        d_model=args.d_model, d_ff=args.d_ff, device=device)
     models = {mode: copy.deepcopy(base) for mode in COLORS}
-    train_models = {mode: maybe_compile(models[mode], device, enabled=getattr(args, "compile", None))
+    train_models = {mode: prepare_train_model(models[mode], device, compile=getattr(args, "compile", None),
+                                             distributed=getattr(args, "distributed", None))
                     for mode in COLORS}
     optimizers = {mode: make_adamw(model.parameters(), args.lr, weight_decay=0.01, device=device)
                   for mode, model in models.items()}

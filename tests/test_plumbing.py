@@ -1,5 +1,6 @@
 """Unit tests for the restructured package. Quiet tqdm via TRACE_TQDM=0 in unittest argv."""
 import json
+import math
 import tempfile
 import unittest
 from pathlib import Path
@@ -115,26 +116,110 @@ class PlumbingTests(unittest.TestCase):
         exec_cfg = load_yaml(root / "configs" / "experiments" / "executor_comparison.yaml")
         self.assertIs(exec_cfg["compile"], True)
 
+    def test_yaml_distributed_off_by_default(self):
+        from src.training.config import load_yaml
+        from src.training.distributed import distributed_enabled, maybe_data_parallel
+
+        root = Path(__file__).resolve().parents[1]
+        default = load_yaml(root / "configs" / "train" / "default.yaml")
+        self.assertIs(default["distributed"], False)
+        self.assertFalse(distributed_enabled(explicit=False))
+        model = GPTModel(vocab_size=8, block_size=8, pad_id=0, n_embd=8, n_head=2, n_layer=1)
+        self.assertIs(maybe_data_parallel(model, "cpu", enabled=True), model)
+        self.assertIs(maybe_data_parallel(model, "cuda:2", enabled=False), model)
+
+    def test_dataparallel_two_step_or_skip(self):
+        from src.training.distributed import distributed_device_ids, maybe_data_parallel, unwrap_model
+        from src.training.loop import train_steps
+        from src.training.optim import make_adamw
+
+        ids = distributed_device_ids(enabled=True)
+        n = torch.cuda.device_count() if torch.cuda.is_available() else 0
+        if ids is None or n < 2:
+            self.skipTest(f"need 2+ CUDA devices for DataParallel smoke; have {n}")
+        device = torch.device(f"cuda:{ids[0]}")
+        model = GPTModel(vocab_size=8, block_size=8, pad_id=0, n_embd=8, n_head=2, n_layer=1).to(device)
+        train_model = maybe_data_parallel(model, device, enabled=True)
+        self.assertIsInstance(train_model, torch.nn.DataParallel)
+        self.assertIs(unwrap_model(train_model), model)
+        x = torch.randint(0, 8, (8, 4), device=device)
+        y = torch.randint(0, 8, (8, 4), device=device)
+        mask = torch.ones(8, 4, device=device)
+
+        class _Once:
+            def __iter__(self):
+                while True:
+                    yield (x, y, mask)
+
+        opt = make_adamw(model.parameters(), 1e-3, device=device)
+        loss = train_steps(train_model, _Once(), opt, device, 2, desc="dp-smoke")
+        self.assertTrue(math.isfinite(loss))
+        idx = torch.zeros(1, 2, dtype=torch.long, device=device)
+        out = model.generate(idx, max_new_tokens=1)
+        self.assertEqual(tuple(out.shape), (1, 3))
+
     def test_architecture_yaml_compile_off(self):
         from src.training.config import load_yaml
         from pathlib import Path
         cfg = load_yaml(Path(__file__).resolve().parents[1] / "configs/experiments/architecture_controls.yaml")
         self.assertFalse(bool(cfg.get("compile")))
         self.assertEqual(cfg.get("devices"), ["cuda:2", "cuda:3"])
+        self.assertEqual(len(cfg.get("rates") or []), 5)
+        self.assertEqual(len(cfg.get("confirmation_seeds") or []), 10)
         root = Path(__file__).resolve().parents[1]
         for name in ("induced_rule", "architecture_controls", "length_generalization",
                      "margin_histograms", "executor_comparison", "smoke", "pullback",
-                     "split_verdict", "escape_time", "lora_transfer"):
+                     "split_verdict", "escape_time", "lora_transfer",
+                     "e1_five_condition", "e2_architecture", "e3_mask_trace", "e4_projected_kernel"):
             self.assertTrue((root / "configs" / "experiments" / f"{name}.yaml").exists())
+
+    def test_architecture_summarize_counts_unstable_as_failure(self):
+        from argparse import Namespace
+        from src.eval.architecture_controls import summarize
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cell = root / "confirmation" / "process_process_s42_lr0.001_clip1"
+            cell.mkdir(parents=True)
+            (cell / "result.json").write_text(json.dumps({
+                "status": "complete",
+                "config": {"architecture": "process", "mode": "process", "seed": 42,
+                           "lr": 0.001, "clip": 1.0},
+                "selected_test": {"free_answer_accuracy": 1.0},
+            }))
+            bad = root / "confirmation" / "process_process_s43_lr0.001_clip1"
+            bad.mkdir(parents=True)
+            (bad / "result.json").write_text(json.dumps({
+                "status": "unstable",
+                "config": {"architecture": "process", "mode": "process", "seed": 43,
+                           "lr": 0.001, "clip": 1.0},
+                "reason": "Non-finite training loss",
+            }))
+            (root / "protocol.json").write_text(json.dumps({
+                "confirmation_seeds": [42, 43],
+                "clips": [1.0],
+            }))
+            summary = summarize(Namespace(output=root))
+            self.assertEqual(len(summary), 1)
+            row = summary[0]
+            self.assertEqual(row["n_attempted"], 2)
+            self.assertEqual(row["n_success"], 1)
+            self.assertEqual(row["n_unstable"], 1)
+            self.assertEqual(row["fraction_gt_95"], 0.5)
+            payload = json.loads((root / "success_fraction.json").read_text())
+            self.assertEqual(payload[0]["fraction_gt_95"], 0.5)
 
     def test_lora_model_flag_without_download(self):
         from src.training.config import load_yaml
-        from transformers import AutoModelForCausalLM
-        from peft import LoraConfig, get_peft_model
 
         root = Path(__file__).resolve().parents[1]
         cfg = load_yaml(root / "configs" / "experiments" / "lora_transfer.yaml")
         self.assertEqual(cfg["model"], "HuggingFaceTB/SmolLM2-135M")
+        try:
+            from transformers import AutoModelForCausalLM
+            from peft import LoraConfig, get_peft_model
+        except ImportError:
+            self.skipTest("transformers/peft not installed in this environment")
         self.assertTrue(callable(AutoModelForCausalLM.from_pretrained))
         self.assertTrue(callable(get_peft_model))
         self.assertEqual(LoraConfig(task_type="CAUSAL_LM", r=8).r, 8)

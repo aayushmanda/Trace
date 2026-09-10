@@ -6,6 +6,10 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 
+# --- docs -------------------------------------------------------
+docs/*.md
+
+
 # --- run artifacts we do not ship --------------------------------------------
 wandb/
 dataset_cache/
@@ -28,3 +32,5 @@ Paper/
 # --- scratch -----------------------------------------------------------------
 /archive
 /scratch
+
+PAPER_ROADMAP.md

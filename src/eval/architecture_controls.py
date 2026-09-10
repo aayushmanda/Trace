@@ -20,7 +20,7 @@ from src.training.config import load_yaml
 from src.training.io import write_csv
 from src.training.optim import make_adamw
 from src.training.progress import progress
-from src.training.seed import add_compile_bf16_flags, autocast_context, configure_device, default_device, set_seed
+from src.training.seed import add_compile_bf16_flags, autocast_context, configure_device, default_device, prepare_train_model, set_seed
 
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
@@ -59,9 +59,9 @@ def run_one(args):
         print('already complete',folder,flush=True);return
     torch.set_num_threads(args.threads)
     set_seed(args.seed)
-    device=torch.device(args.device)
     args.compile = False  # run_one is always eager; do not lie in config.json
-    configure_device(device, compile=False, bf16=getattr(args, "bf16", None))
+    device = configure_device(args.device, compile=False, bf16=getattr(args, "bf16", None),
+                              distributed=getattr(args, "distributed", None))
     tok=h.make_tokenizer()
     train=c.unique_circuits(args.train_size,123,args.depth)
     val=c.unique_circuits(args.val_size,8000,args.depth,c.circuit_keys(train))
@@ -91,6 +91,8 @@ def run_one(args):
             if saved['config'][key]!=config[key]: raise ValueError(f'Cannot resume changed {key}')
         model.load_state_dict(saved['model']);optimizer.load_state_dict(saved['optimizer'])
         start=saved['step'];records=saved['records'];best=saved['best'];best_key=tuple(saved['best_key'])
+    runner = prepare_train_model(model, device, compile=False,
+                                 distributed=getattr(args, "distributed", None))
     json_write(folder/'config.json',config)
     began=time.monotonic()
     def checkpoint(step):
@@ -112,10 +114,10 @@ def run_one(args):
     try:
         if not records:checkpoint(0)
         for step in progress(range(start+1,args.steps+1), desc=f"{args.architecture}/{args.mode}/s{args.seed}", leave=False):
-            model.train();optimizer.zero_grad(set_to_none=True)
+            runner.train();optimizer.zero_grad(set_to_none=True)
             index=torch.tensor(schedule[step-1],device=device)
             with autocast_context(device):
-                loss=h.language_model_loss(model,data.select(index))
+                loss=h.language_model_loss(runner,data.select(index))
             if not torch.isfinite(loss):raise FloatingPointError('Non-finite training loss')
             loss.backward()
             norm=torch.nn.utils.clip_grad_norm_(model.parameters(),args.clip if args.clip>0 else float('inf'))
@@ -227,44 +229,97 @@ def orchestrate(args):
 
 
 def summarize(args):
-    """Fraction of confirmation seeds with test answer accuracy above 95%."""
-    folder=args.output/'confirmation'
-    if not folder.exists():
-        raise FileNotFoundError(folder)
-    rows=[]
-    for path in sorted(folder.glob('*/result.json')):
-        rec=json.loads(path.read_text())
-        cfg=rec.get('config',{})
-        test=rec.get('selected_test') or rec.get('final_test') or {}
-        acc=test.get('free_answer_accuracy')
-        rows.append({
-            'architecture':cfg.get('architecture'),
-            'mode':cfg.get('mode'),
-            'seed':cfg.get('seed'),
-            'lr':cfg.get('lr'),
-            'clip':cfg.get('clip'),
-            'status':rec.get('status'),
-            'test_accuracy':acc,
-            'success':None if acc is None else acc>=0.95,
-        })
-    out=args.output/'success_fraction.csv'
+    """Success fraction for confirmation seeds.
+
+    Success = status complete AND test answer accuracy > 95%.
+    Unstable/divergent runs are failures, not dropped from the denominator.
+    Denominator = confirmation seeds launched for the cell (result.json files),
+    plus protocol-declared seeds that still have no result (n_missing).
+    Also report the instability fraction and mean accuracy among stable completes.
+    """
+    folder = args.output / 'confirmation'
+    protocol = {}
+    proto_path = args.output / 'protocol.json'
+    if proto_path.exists():
+        protocol = json.loads(proto_path.read_text())
+    selected = {}
+    sel_path = args.output / 'selected_rates.json'
+    if sel_path.exists():
+        selected = json.loads(sel_path.read_text())
+
+    found = {}
+    if folder.exists():
+        for path in sorted(folder.glob('*/result.json')):
+            rec = json.loads(path.read_text())
+            cfg = rec.get('config', {})
+            test = rec.get('selected_test') or rec.get('final_test') or {}
+            acc = test.get('free_answer_accuracy')
+            key = (
+                cfg.get('architecture'),
+                cfg.get('mode'),
+                float(cfg['lr']) if cfg.get('lr') is not None else None,
+                float(cfg['clip']) if cfg.get('clip') is not None else None,
+            )
+            found.setdefault(key, []).append({
+                'architecture': cfg.get('architecture'),
+                'mode': cfg.get('mode'),
+                'seed': cfg.get('seed'),
+                'lr': cfg.get('lr'),
+                'clip': cfg.get('clip'),
+                'status': rec.get('status'),
+                'test_accuracy': acc,
+                'success': bool(rec.get('status') == 'complete' and acc is not None and acc >= 0.95),
+                'path': str(path),
+            })
+
+    expected_seeds = list(protocol.get('confirmation_seeds') or [])
+    clips = list(protocol.get('clips') or [0.0, 1.0])
+    if expected_seeds and selected:
+        for arch, lr in selected.items():
+            for mode in ('process', 'outcome'):
+                for clip in clips:
+                    found.setdefault((arch, mode, float(lr), float(clip)), [])
+
+    rows = [r for group in found.values() for r in group]
+    out = args.output / 'success_fraction.csv'
+    args.output.mkdir(parents=True, exist_ok=True)
     if rows:
-        write_csv(out, rows)
-    summary=[]
-    by={}
-    for row in rows:
-        key=(row['architecture'],row['mode'],row['lr'],row['clip'])
-        by.setdefault(key,[]).append(row)
-    print('architecture mode lr clip n n_ok fraction_gt_95')
-    for key,group in sorted(by.items()):
-        done=[r for r in group if r['status']=='complete' and r['success'] is not None]
-        n_ok=sum(r['success'] for r in done)
-        frac=n_ok/len(done) if done else float('nan')
-        print(*key,len(done),n_ok,f'{frac:.2f}' if done else 'na')
-        summary.append({'architecture':key[0],'mode':key[1],'lr':key[2],'clip':key[3],
-                        'n':len(done),'n_success':n_ok,'fraction_gt_95':frac})
-    json_write(args.output/'success_fraction.json',summary)
-    print('wrote',out)
+        write_csv(out, [{k: v for k, v in r.items() if k != 'path'} for r in rows])
+
+    print('Success = complete AND test acc > 95%. Unstable/divergent runs are failures.')
+    print('Denominator = all confirmation results in the cell, plus protocol seeds still missing.')
+    print('architecture mode lr clip n_attempted n_complete n_unstable n_missing n_success fraction_gt_95 fraction_unstable acc_stable_mean')
+    summary = []
+    for key in sorted(found, key=lambda x: (str(x[0]), str(x[1]), float(x[2] or 0), float(x[3] or 0))):
+        group = found[key]
+        seeds_have = {r['seed'] for r in group if r.get('seed') is not None}
+        n_missing = 0
+        if expected_seeds:
+            n_missing = sum(1 for s in expected_seeds if s not in seeds_have)
+        n_complete = sum(r['status'] == 'complete' for r in group)
+        n_unstable = sum(r['status'] == 'unstable' for r in group)
+        n_attempted = len(group) + n_missing
+        n_ok = sum(r['success'] for r in group)
+        frac = n_ok / n_attempted if n_attempted else None
+        frac_u = n_unstable / n_attempted if n_attempted else None
+        stable_acc = [r['test_accuracy'] for r in group if r['status'] == 'complete' and r['test_accuracy'] is not None]
+        acc_mean = sum(stable_acc) / len(stable_acc) if stable_acc else None
+        print(*key, n_attempted, n_complete, n_unstable, n_missing, n_ok,
+              f'{frac:.2f}' if frac is not None else 'na',
+              f'{frac_u:.2f}' if frac_u is not None else 'na',
+              f'{acc_mean:.4f}' if acc_mean is not None else 'na')
+        summary.append({
+            'architecture': key[0], 'mode': key[1], 'lr': key[2], 'clip': key[3],
+            'n_attempted': n_attempted, 'n': n_attempted,
+            'n_complete': n_complete, 'n_unstable': n_unstable, 'n_missing': n_missing,
+            'n_success': n_ok,
+            'fraction_gt_95': frac, 'fraction_unstable': frac_u,
+            'acc_stable_mean': acc_mean,
+            'success_rule': 'complete AND test_acc>0.95; unstable counts as failure',
+        })
+    json_write(args.output / 'success_fraction.json', summary)
+    print('wrote', out)
+    return summary
 
 
 def main():
@@ -290,7 +345,7 @@ def main():
                        ('test-size',int(cfg.get('test_size',1000))),
                        ('batch-size',int(cfg.get('batch_size',128)))]:
         p.add_argument('--'+name,type=int,default=value)
-    p.add_argument('--rates',nargs='+',type=float,default=list(cfg.get('rates',[.002,.001,.0005,.0002])))
+    p.add_argument('--rates',nargs='+',type=float,default=list(cfg.get('rates',[.002,.001,.0005,.0002,.0001])))
     p.add_argument('--confirmation-seeds',nargs='+',type=int,
                    default=list(cfg.get('confirmation_seeds',[42,43,44,45,46,47,48,49,50,51])))
     add_compile_bf16_flags(p, cfg)
