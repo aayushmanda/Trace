@@ -1,0 +1,3 @@
+mode,free_answer_accuracy,free_exact_continuation,terminal_query,terminal_state_mass,terminal_state_argmax_accuracy,local_query_status,local_rule_accuracy,local_rule_tv,local_state_mass,local_state_mass_min,local_context_variation_tv,epsilon_rule,gamma,composition_tv_with_invalid,composition_tv_conditional,product_answer_accuracy
+process,1.0,1.0,after greedy trace; not a marginal over traces,0.9999998211860657,1.0,gold-prefix trace readout; conditioned on valid state token,1.0,1.545865124796819e-08,0.9999998807907104,0.9999998807907104,0.0,1.0000052452087402,9.678587709061048e-09,1.6558526283461106e-07,4.6375951967547735e-08,1.0
+outcome,1.0,1.0,direct answer conditioned on COLON,0.9999998211860657,1.0,omitted: trace query is out of distribution,,,,,,,,,,
