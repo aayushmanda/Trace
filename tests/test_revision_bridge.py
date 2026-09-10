@@ -171,6 +171,33 @@ class RevisionBridgeTests(unittest.TestCase):
         self.assertEqual(int(tbl.iloc[0].predicted_exponent), 1)
         self.assertFalse(pd.isna(tbl.iloc[0].fitted_exponent_in_ball))
 
+    def test_mask_trace_excludes_prompt_tokens(self):
+        from src.data.datasets import TARGET_BUILDERS
+        inst = TASKS["boolean_circuit_2"].sample()
+        target = TARGET_BUILDERS["process"](inst)
+        _, _, mask = encode_pair(TOK, inst.prompt, target, 128)
+        n_prompt = len(TOK.encode(inst.prompt))
+        self.assertEqual(sum(mask[: n_prompt - 1]), 0)
+        self.assertGreater(sum(mask[n_prompt - 1:]), 0)
+
+    def test_projected_kernel_stays_on_simplex(self):
+        from src.eval.projected_kernel import init_near_uniform, mixing_radius, project_simplex
+        v = project_simplex(torch.tensor([[0.9, -0.2, 0.4]]))
+        self.assertAlmostEqual(float(v.sum()), 1.0, places=5)
+        self.assertTrue((v >= -1e-6).all())
+        P = init_near_uniform(2, 4, 0.2, "cpu")
+        self.assertTrue(torch.allclose(P.sum(dim=-1), torch.ones(2, 4), atol=1e-5))
+        self.assertGreater(mixing_radius(P), 0.0)
+
+    def test_projected_kernel_trial_is_labeled_not_a_proof(self):
+        from src.eval.projected_kernel import run_projected_trial
+        rows = run_projected_trial(2, 0.2, 1, k=3, m=2, lr=0.05, max_steps=3, device="cpu")
+        self.assertEqual(len(rows), 3)
+        self.assertTrue(rows[0]["not_a_proof"])
+        self.assertEqual(rows[0]["parameterization"], "projected_simplex")
+        self.assertIn("dini_plus", rows[0])
+        self.assertIn("c_hat", rows[0])
+
 
 if __name__ == "__main__":
     unittest.main()

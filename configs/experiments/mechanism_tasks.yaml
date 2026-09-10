@@ -1,0 +1,25 @@
+# Extra sequential-executor families beyond Boolean / FSM / register.
+# `python -m src supervision` does not load this file; pass the flags on the CLI.
+# Tiny smoke only — not a paper-scale cell. Smoke may not show a large process gap.
+experiment: supervision
+tasks:
+  - modular_program_8
+  - stack_machine_8
+  - word_index_len16
+modes: [outcome, process]
+seeds: [2001]
+train:
+  train_size: 512
+  val_size: 128
+  train_seed: 501
+  val_seed: 101
+  steps: 80
+  batch_size: 32
+  eval_batch_size: 64
+  lr: 0.0003
+  compile: false
+  bf16: true
+model:
+  embedding: 128
+  heads: 4
+  layers: 2

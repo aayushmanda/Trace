@@ -2,7 +2,7 @@
 
 Audience: research engineer reproducing the Boolean-circuit results. From the repo root. Training prints tqdm progress bars; set `TRACE_TQDM=0` to silence them.
 
-**Revision positioning (10 Sep 2026):** [PAPER_POSITIONING.md](PAPER_POSITIONING.md), [THEORY_EMPIRICAL_REVISION_ROADMAP.md](THEORY_EMPIRICAL_REVISION_ROADMAP.md). Theorems 1–3 are an exact **shared-executor** explanation; **T2 is unproved**. Empirical centerpiece is **reliability \(\rho\)** (local vs rollout), not induced-rule/pullback. New dump dir: `results/paper_revision_v2/`. Ledger stub: `Paper/theorem_ledger.md`.
+**Revision positioning (10 Sep 2026):** [PAPER_POSITIONING.md](PAPER_POSITIONING.md), [THEORY_EMPIRICAL_REVISION_ROADMAP.md](THEORY_EMPIRICAL_REVISION_ROADMAP.md). Theorems 1–3 are an exact **shared-executor** explanation; **T2 is unproved** ([Paper/T2_CANDIDATE.md](Paper/T2_CANDIDATE.md)). Empirical centerpiece is **reliability \(\rho\)** (local vs rollout), not induced-rule/pullback. New dump dir: `results/paper_revision_v2/`. Ledger: `Paper/theorem_ledger.md`. Frozen week-2 protocols: `results/paper_revision_v2/protocols/`.
 
 ## Environment
 
@@ -203,10 +203,11 @@ Split-verdict is a **limit-of-transfer** table (exponent, \(\delta_{\mathrm{comp
 
 PDF **Table 6** is still the historical **one-seed** notebook. Do not overwrite those cells. YAML has `compile: false`; `run_one` is eager. Devices default to GPU 2/3.
 
-**Job counts (do not start the 80-job confirm in a plumbing pass):** calibrate = 2 architectures × 4 LRs × 2 clips × 2 formats = **32** jobs; confirm after `selected_rates.json` = 2 × 10 seeds × 2 clips × 2 formats = **80** jobs.
+**Job counts (do not start the 80-job confirm in a plumbing pass):** calibrate = 2 architectures × 5 LRs × 2 clips × 2 formats = **40** jobs; confirm after `selected_rates.json` = 2 × 10 seeds × 2 clips × 2 formats = **80** jobs. Frozen YAML: `configs/experiments/e2_architecture.yaml`.
 
 ```bash
-python -m src architecture plan --config configs/experiments/architecture_controls.yaml
+python -m src architecture plan --config configs/experiments/e2_architecture.yaml \
+  --output results/paper_revision_v2/e2_architecture
 python -m src architecture single --output /tmp/arch_smoke --architecture process --mode process \
   --seed 1 --lr 0.0005 --clip 1 --stage calibrate --steps 1 \
   --train-size 8 --val-size 4 --test-size 4 --batch-size 4 --device cpu --no-compile
@@ -220,7 +221,7 @@ Output: `results/architecture_controls_n10/`. Existing leftover plan: `results/a
 
 ## Shared trainable kernel executor
 
-One tensor \(A\in\mathbb{R}^{M\times K\times K}\), \(P_g=\mathrm{softmax}(A_g)\). Same parameters for outcome compose vs process local CE. Cheap CPU/GPU; this is the setting of the theorems, not a Transformer proof.
+One tensor \(A\in\mathbb{R}^{M\times K\times K}\), \(P_g=\mathrm{softmax}(A_g)\). Same parameters for outcome compose vs process local CE. Cheap CPU/GPU; this is a **row-softmax logit** parameterization, not the T2 projected-simplex candidate.
 
 ```bash
 python -m src escape --smoke
@@ -228,6 +229,15 @@ python -m src escape --config configs/experiments/escape_time.yaml --device cpu
 ```
 
 CSV: `results/revision/shared_kernel.csv`.
+
+Theory-matched **projected** simplex flow (Euclidean projection, \(r(t)\), discrete Dini ratio). Does **not** prove T2.
+
+```bash
+python -m src projected --smoke
+python -m src projected --config configs/experiments/e4_projected_kernel.yaml --device cpu
+```
+
+CSV: `results/paper_revision_v2/e4_projected_kernel/`.
 
 ---
 
@@ -243,12 +253,30 @@ python -m src analyze   # Paper/figures/revision_*.pdf if CSVs exist
 
 ---
 
+## Extra mechanism tasks (not Boolean / FSM / register)
+
+`modular_program_*`, `stack_machine_*`, and `word_index_len*` are already registered sequential-executor families: exact local traces, same-length corruptions, correct gold, known chance accuracy (\(1/17\), \(1/17\), \(1/L\)). Boolean / FSM / register stay in `TASKS`. Also registered on the same interface: `tape_machine_*`, `queue_machine_*`, `grid_walk_*`. Tiny outcome vs process smoke (not a paper cell; the gap may be small):
+
+```bash
+# GPU 2 or 3; documentary YAML: configs/experiments/mechanism_tasks.yaml
+python -m src supervision --tasks modular_program_8 stack_machine_8 word_index_len16 \
+  --modes outcome process --seeds 2001 \
+  --train-size 512 --val-size 128 --steps 80 --batch-size 32 \
+  --device cuda:2 --no-compile
+
+python -m src reliability --task stack_machine_8 --rhos 0.8 --seeds 2001 \
+  --checkpoints 2 --train-size 32 --val-size 8 --batch-size 8 \
+  --output results/paper_revision_v2/e5_reliability/stack_machine_8_smoke.csv \
+  --device cpu --no-compile
+```
+
 ## Smoke
 
 ```bash
-TRACE_TQDM=0 python -m unittest tests.test_plumbing tests.test_revision_bridge
+TRACE_TQDM=0 python -m unittest tests.test_plumbing tests.test_revision_bridge tests.test_mechanism_tasks tests.test_local_machine_tasks
 python -m src escape --smoke
-python -m src architecture plan --config configs/experiments/architecture_controls.yaml
+python -m src projected --smoke
+python -m src architecture plan --config configs/experiments/e2_architecture.yaml --output results/paper_revision_v2/e2_architecture
 python -m src smoke   # tiny mixed-format induced D=2, skip 16×52 readout, exact LM pullback grads
 ```
 
@@ -263,14 +291,16 @@ Handcoded smoke is the short `python -m src executor …` command in the §7 sec
 | What | Path |
 |---|---|
 | Positioning / roadmap | `PAPER_POSITIONING.md`, `THEORY_EMPIRICAL_REVISION_ROADMAP.md` |
-| Theorem ledger | `Paper/theorem_ledger.md` |
+| Theorem ledger | `Paper/theorem_ledger.md`, `Paper/T2_CANDIDATE.md` |
 | Revision dumps | `results/paper_revision_v2/` |
+| Week-2 protocols | `results/paper_revision_v2/protocols/`, `configs/experiments/e{1,2,3,4}_*.yaml` |
 | Reliability (E5) | `results/reliability_sweeps/`, `*_persist.json` |
 | §7 depth replication | `results/executor_comparison/depth_replication/` |
 | Fig 4 / 5 + Table 7 TeX | `Paper/figures/trained_executor_*.pdf`, `Paper/data/trained_executor_*.tex` |
 | Architecture n=10 | `results/architecture_controls_n10/` |
 | Optional pullback / induced | `results/revision/pullback.csv`, `induced_rule.csv` |
-| Shared kernel | `results/revision/shared_kernel.csv` |
+| Shared kernel (row-softmax) | `results/revision/shared_kernel.csv` |
+| Projected kernel (not a T2 proof) | `results/paper_revision_v2/e4_projected_kernel/` |
 | `Paper/` | often gitignored; local manuscript |
 
 ---
@@ -278,9 +308,39 @@ Handcoded smoke is the short `python -m src executor …` command in the §7 sec
 ## Tests
 
 ```bash
-TRACE_TQDM=0 python -m unittest tests.test_plumbing tests.test_handcoded tests.test_executor_comparison tests.test_revision_bridge
+TRACE_TQDM=0 python -m unittest tests.test_plumbing tests.test_handcoded tests.test_executor_comparison tests.test_revision_bridge tests.test_mechanism_tasks tests.test_local_machine_tasks
 # or
 TRACE_TQDM=0 python -m unittest discover -s tests -v
 ```
 
 Claim map: [experiments/README.md](experiments/README.md). Roadmap: [THEORY_EMPIRICAL_REVISION_ROADMAP.md](THEORY_EMPIRICAL_REVISION_ROADMAP.md). Manuscript map: [Paper/EXPERIMENT_MAP.md](Paper/EXPERIMENT_MAP.md).
+
+---
+
+## Leftover GPU (after week-2 protocol freeze)
+
+GPU 2/3 were packed (high util) during the freeze, so calibration/confirm grids were **not** started. When memory **and** util are free on physical 2/3, do **not** kill other jobs. Compile off. **Do not** launch 80-job confirm until `selected_rates.json` exists.
+
+```bash
+PY=/home/hariguru/aayus/.venv/bin/python
+export CUDA_VISIBLE_DEVICES=2   # or 3; then --device cuda:0
+# E2 calibration only (40 jobs). Stop if the cards fill:
+$PY -m src architecture calibrate --config configs/experiments/e2_architecture.yaml \
+  --output results/paper_revision_v2/e2_architecture --devices cuda:0 --no-compile
+
+# After selected_rates.json only:
+# $PY -m src architecture confirm --config configs/experiments/e2_architecture.yaml \
+#   --output results/paper_revision_v2/e2_architecture --devices cuda:0 --no-compile
+
+# E1 five-condition confirmation (not a Table 1 paste until complete):
+# $PY -m src supervision --config configs/experiments/e1_five_condition.yaml \
+#   --seeds 2001 2002 2003 2004 2005 --steps 8000 --train-size 20000 --val-size 1000 \
+#   --batch-size 128 --device cuda:0 --no-compile \
+#   --output results/paper_revision_v2/e1_five_condition/confirm.csv
+
+# E3 confirmation readout (skip_readout false; one depth/seed at a time):
+# $PY -m src induced --config configs/experiments/induced_rule.yaml --depth 8 \
+#   --condition both --seed 2001 --with-pullback --device cuda:0 --no-compile \
+#   --out results/paper_revision_v2/e3_mask_trace/confirm.csv
+```
+

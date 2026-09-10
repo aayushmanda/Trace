@@ -12,7 +12,8 @@ from src.data.local_machine_tasks import (
     _tape_op_text,
 )
 from src.data.registry import TASKS
-from src.data.sequential_tasks import MODULUS
+from src.data.sample import generate_unique
+from src.data.sequential_tasks import DIFFICULTY_STEPS, MODULUS
 
 
 class LocalMachineTaskTests(unittest.TestCase):
@@ -22,8 +23,23 @@ class LocalMachineTaskTests(unittest.TestCase):
 
     def test_new_families_registered(self):
         for family in ("tape_machine", "queue_machine", "grid_walk"):
-            for steps in (2, 4, 8, 12, 16, 20):
+            for steps in DIFFICULTY_STEPS:
                 self.assertIn(f"{family}_{steps}", TASKS)
+
+    def test_prompt_uniqueness_and_trace_length(self):
+        for name, n_steps in (
+            ("tape_machine_8", 8),
+            ("queue_machine_8", 8),
+            ("grid_walk_8", 8),
+        ):
+            task = TASKS[name]
+            items = generate_unique(task, 128, seed=0)
+            self.assertEqual(len({inst.prompt for inst in items}), 128)
+            for inst in items[:16]:
+                self.assertEqual(len(inst.correct_trace.split()), n_steps)
+                self.assertEqual(len(inst.wrong_trace.split()), n_steps)
+                self.assertEqual(len(inst.correct_trace), len(inst.wrong_trace))
+                self.assertNotEqual(inst.correct_trace, inst.wrong_trace)
 
     def test_chance_and_traces_fit_block(self):
         expected = {

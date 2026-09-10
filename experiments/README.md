@@ -41,7 +41,8 @@ python experiments/build_executor_results.py \
 | `induced_rule.py` | `python -m src induced` | Per-step \(\widehat P_g^{(t)}\), \(\widehat\varepsilon_{\mathrm{rule}}\) | `results/revision/induced_rule.csv` |
 | `pullback.py` | `python -m src pullback` | Exact LM \(J^\top W\) vs \(-\nabla L\) | `results/revision/pullback.csv` |
 | `split_verdict.py` | `python -m src split-verdict` | Depth table: \(D-1\), in-ball exponent, \(\delta_{\mathrm{comp}}\) | `results/revision/split_verdict.csv` |
-| `escape_time_law.py` | `python -m src escape` | Shared \(A\in\mathbb{R}^{M\times K\times K}\) kernel | `results/revision/shared_kernel.csv` |
+| `escape_time_law.py` | `python -m src escape` | Shared \(A\in\mathbb{R}^{M\times K\times K}\) **row-softmax** kernel | `results/revision/shared_kernel.csv` |
+| `projected_kernel.py` | `python -m src projected` | Projected simplex flow; **not a T2 proof** | `results/paper_revision_v2/e4_projected_kernel/` |
 | `analyze_induced.py` | `python experiments/analyze_induced.py` | Tables + `induced_rule.pdf` from archived CSVs | `Paper/figures/induced_rule.pdf` |
 | `analyze_revision.py` | `python -m src analyze` | `revision_*.pdf` | `Paper/figures/revision_*.pdf` |
 | `length_generalization.py` | `python -m src length` | Train \(D=8\), eval 8/10/12/16 | `results/revision/length_generalization.csv` |

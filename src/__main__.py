@@ -283,7 +283,7 @@ def _supervision_ns(rest):
     p.add_argument("--workers", type=int, default=int(cfg.get("workers", 0)))
     p.add_argument("--device", default=None)
     p.add_argument("--output", type=Path, default=Path(cfg["output"]) if cfg.get("output") else None)
-    add_compile_bf16_flags(p, from_yaml=True)
+    add_compile_bf16_flags(p, cfg, from_yaml=True)
     return p.parse_args(rest)
 
 

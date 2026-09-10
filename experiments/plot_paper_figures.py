@@ -35,12 +35,18 @@ BASELINE = "#5c5c5c"
 LABELS = {"process": "Process", "outcome": "Outcome", "both": "Mixed format"}
 MODE_COLOR = {"process": PROCESS, "outcome": OUTCOME, "both": MIXED}
 
+# apply_style() sets DejaVu / #EAEAF2. Extra sizes are NeurIPS-readable (not 21pt,
+# which collides on two-column panels) while staying well above tiny 7–8pt captions.
 PAPER_RC = {
     "pdf.fonttype": 42,
     "ps.fonttype": 42,
     "savefig.dpi": 300,
-    "legend.fontsize": 11,
-    "legend.title_fontsize": 12,
+    "axes.titlesize": 12,
+    "axes.labelsize": 12,
+    "xtick.labelsize": 10,
+    "ytick.labelsize": 10,
+    "legend.fontsize": 9,
+    "legend.title_fontsize": 10,
     "lines.linewidth": 2.0,
 }
 
@@ -100,7 +106,7 @@ def plot_legacy_reliability():
     style()
     fsm = pd.read_csv(ROOT / "results/reliability_sweeps/state_machine_16_phase_20260824_045723.csv")
     bc = pd.read_csv(ROOT / "results/reliability_sweeps/boolean_circuit_8_phase_20260823_151153.csv")
-    fig, axes = plt.subplots(1, 2, figsize=(7.0, 3.25), sharey=True, layout="constrained")
+    fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.45), sharey=True, layout="constrained")
 
     proc = fsm[fsm.condition != "outcome"].copy()
     proc["rho"] = proc["rho"].astype(float)
@@ -115,13 +121,13 @@ def plot_legacy_reliability():
     chance_line(ax, 1 / 16)
     ax.annotate(
         r"$7.15\%\to 99.75\%$" + "\n" + r"$\rho=0.86\to 0.87$",
-        xy=(0.87, 0.9975), xytext=(0.18, 0.62),
+        xy=(0.87, 0.9975), xytext=(0.12, 0.48),
         arrowprops={"arrowstyle": "->", "color": ".25", "lw": 1.1},
-        fontsize=11, color=".2",
+        fontsize=10, color=".2",
     )
-    ax.set(title="(a) FSM, depth 16, one seed", xlabel=r"Trace reliability $\rho$",
+    ax.set(title="(a) FSM, depth 16 (1 seed)", xlabel=r"Trace reliability $\rho$",
            ylabel="Accuracy", xlim=(-0.02, 1.04), ylim=(-0.04, 1.06))
-    ax.legend(loc="center left", fontsize=9)
+    ax.legend(loc="upper left", fontsize=8, framealpha=0.9)
 
     proc = bc[bc.condition != "outcome"].copy()
     proc["rho"] = proc["rho"].astype(float)
@@ -136,9 +142,9 @@ def plot_legacy_reliability():
         scatter_seeds(ax, proc, "rho", col, color)
     outcome_line(ax, float(bc[bc.condition == "outcome"].answer_accuracy.mean()))
     chance_line(ax, 1 / 16)
-    ax.set(title="(b) Boolean circuit, depth 8, five seeds",
+    ax.set(title="(b) Boolean, depth 8 (5 seeds)",
            xlabel=r"Trace reliability $\rho$", xlim=(-0.02, 1.04), ylim=(-0.04, 1.06))
-    ax.legend(loc="lower right", fontsize=9)
+    ax.legend(loc="lower right", fontsize=8, framealpha=0.9)
     return save(fig, "legacy_reliability")
 
 
@@ -149,10 +155,10 @@ def plot_revision_reliability():
     style()
     rm = pd.read_csv(ROOT / "results/reliability_sweeps/register_machine_16_seeds_2001-2003.csv")
     bc = pd.read_csv(ROOT / "results/reliability_sweeps/boolean_circuit_8_seeds_1000-1800.csv")
-    fig, axes = plt.subplots(1, 2, figsize=(7.0, 3.25), sharey=True, layout="constrained")
+    fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.45), sharey=True, layout="constrained")
     panels = [
-        (axes[0], rm, "Register machine, depth 16 (3 seeds)", 0.0588),
-        (axes[1], bc, "Boolean circuit, depth 8 (5 seeds)", 1 / 16),
+        (axes[0], rm, "Register machine, $D{=}16$ (3 seeds)", 0.0588),
+        (axes[1], bc, "Boolean circuit, $D{=}8$ (5 seeds)", 1 / 16),
     ]
     for i, (ax, df, title, chance) in enumerate(panels):
         proc = df[df.condition != "outcome"].copy()
@@ -163,16 +169,15 @@ def plot_revision_reliability():
             ("trace_step_accuracy", PROCESS, "Trace step (free-run)", "^", ":"),
         ]:
             stats = seed_stats(proc, "rho", col)
-            errorbar(ax, stats, "rho", color, label if i == 0 else None, marker=marker, ls=ls)
+            errorbar(ax, stats, "rho", color, label, marker=marker, ls=ls)
             scatter_seeds(ax, proc, "rho", col, color)
-        outcome_line(ax, float(df[df.condition == "outcome"].answer_accuracy.mean()),
-                     label="Outcome-only" if i == 0 else None)
-        chance_line(ax, chance, label=f"Chance ({100 * chance:.2f}%)" if i == 0 else None)
+        outcome_line(ax, float(df[df.condition == "outcome"].answer_accuracy.mean()))
+        chance_line(ax, chance)
         ax.set(title=title, xlabel=r"Trace reliability $\rho$",
                xlim=(-0.02, 1.04), ylim=(-0.04, 1.06))
         if i == 0:
             ax.set_ylabel("Accuracy")
-            ax.legend(loc="lower right", fontsize=9)
+        ax.legend(loc="upper left" if i == 0 else "lower left", fontsize=8, framealpha=0.9)
     return save(fig, "revision_reliability")
 
 
@@ -206,7 +211,7 @@ def plot_local_rollout():
         title="Boolean circuit, depth 8, seed 2005",
         ylim=(-0.04, 1.06), xlim=(-0.02, 1.04),
     )
-    ax.legend(loc="center right", fontsize=10)
+    ax.legend(loc="lower right", fontsize=8, framealpha=0.9)
     return save(fig, "local_rollout_gap")
 
 
@@ -228,9 +233,9 @@ def _curve(ax, frame, mode, field, label=None, color=None, style_ls="-"):
 
 
 def plot_trained_bridge(frame):
-    style(**{"axes.titlesize": 16, "axes.labelsize": 15})
+    style()
     d4 = frame[frame.depth == 4]
-    fig, axs = plt.subplots(2, 2, figsize=(7.0, 6.0), layout="constrained")
+    fig, axs = plt.subplots(2, 2, figsize=(7.0, 6.2), layout="constrained")
     for mode in ["process", "both"]:
         _curve(axs[0, 0], d4, mode, "epsilon_rule")
         _curve(axs[0, 1], d4, mode, "composition_tv_with_invalid")
@@ -242,21 +247,21 @@ def plot_trained_bridge(frame):
     _curve(axs[1, 0], d4, "both", "descent_oracle_rule_cosine", "True-rule direction", PROCESS, "--")
     _curve(axs[1, 0], d4, "both", "descent_random_rule_cosine_mean", "Random-rule mean", BASELINE, ":")
     axs[1, 0].axhline(0, color=".55", lw=1.0)
-    axs[1, 0].set(title="(C) Gradient agreement (mixed)", ylabel="Cosine", ylim=(-0.38, 1.06))
-    axs[1, 0].legend(fontsize=10)
+    axs[1, 0].set(title="(C) Gradient cosine (mixed)", ylabel="Cosine", ylim=(-0.38, 1.06))
+    axs[1, 0].legend(fontsize=8)
     for mode in ["process", "outcome", "both"]:
         _curve(axs[1, 1], d4, mode, "free_answer_accuracy")
     chance_line(axs[1, 1], 1 / 16, "Chance (6.25%)")
-    axs[1, 1].set(title="(D) Free-running answer accuracy", ylabel="Accuracy", ylim=(-0.04, 1.06))
-    axs[1, 1].legend(fontsize=10)
+    axs[1, 1].set(title="(D) Answer accuracy", ylabel="Accuracy", ylim=(-0.04, 1.06))
+    axs[1, 1].legend(fontsize=8)
     for ax in axs.flat:
         ax.set_xlabel("Training update")
     return save(fig, "trained_executor_bridge")
 
 
 def plot_trained_depths(frame, protocol):
-    style(**{"axes.titlesize": 15, "axes.labelsize": 14, "xtick.labelsize": 12, "ytick.labelsize": 12})
-    fig, axes = plt.subplots(3, 4, figsize=(7.0, 7.6), layout="constrained")
+    style()
+    fig, axes = plt.subplots(3, 4, figsize=(7.2, 7.8), layout="constrained")
     for row, depth in enumerate(protocol["depths"]):
         d = frame[frame.depth == depth]
         for mode in ["process", "both"]:
@@ -274,13 +279,17 @@ def plot_trained_depths(frame, protocol):
         axes[row, 1].set_ylim(-0.04, 1.06)
         axes[row, 3].set_ylim(-0.04, 1.06)
     for ax, title in zip(axes[0], [
-        r"Rule strength $\widehat{\varepsilon}$",
+        r"Rule strength",
         "Composition TV",
-        "Gradient norms (mixed)",
+        "Gradient norms",
         "Answer accuracy",
     ]):
         ax.set_title(title)
-        ax.legend(fontsize=8)
+    axes[0, 0].legend(fontsize=7)
+    axes[0, 2].legend(fontsize=7)
+    axes[0, 3].legend(fontsize=7)
+    for ax in axes[:-1].flat:
+        ax.set_xlabel("")
     return save(fig, "trained_executor_depths")
 
 
@@ -290,14 +299,14 @@ def plot_trained_depths(frame, protocol):
 def plot_transfer_limit(frame, protocol):
     style()
     final = frame[frame.step == protocol["steps"]].copy()
-    fig, axs = plt.subplots(1, 2, figsize=(7.0, 3.35), layout="constrained")
+    fig, axs = plt.subplots(1, 2, figsize=(7.2, 3.45), layout="constrained")
 
     ax = axs[0]
     depths = np.array(protocol["depths"], dtype=float)
     width = 0.22
     offsets = {"process": -width, "both": 0.0, "outcome": width}
     for mode, color in MODE_COLOR.items():
-        sub = final[final.mode == mode]
+        sub = final[final["mode"] == mode]
         stats = sub.groupby("depth")["free_answer_accuracy"].agg(["mean", "std", "count"])
         x = stats.index.to_numpy() + offsets[mode]
         yerr = np.where(stats["count"] > 1, stats["std"].fillna(0), 0)
@@ -306,35 +315,37 @@ def plot_transfer_limit(frame, protocol):
     chance_line(ax, 1 / 16)
     ax.set(
         xlabel="Circuit depth $D$", ylabel="Answer accuracy",
-        title="Answer accuracy by depth × format",
+        title="(A) Answer accuracy",
         xticks=protocol["depths"], ylim=(-0.04, 1.12),
     )
-    ax.legend(loc="upper right", fontsize=10)
+    ax.legend(loc="upper right", fontsize=8)
 
     ax = axs[1]
     last = final.dropna(subset=["local_rule_accuracy", "composition_tv_with_invalid"])
     for mode, marker in [("process", "o"), ("both", "s")]:
-        sub = last[last.mode == mode]
+        sub = last[last["mode"] == mode]
         ax.scatter(
             sub.local_rule_accuracy, sub.composition_tv_with_invalid,
-            c=MODE_COLOR[mode], marker=marker, s=55, alpha=0.75,
-            label=f"{LABELS[mode]} (per seed)", zorder=3,
+            c=MODE_COLOR[mode], marker=marker, s=55, alpha=0.8,
+            label=LABELS[mode], zorder=3,
         )
-        for depth, grp in sub.groupby("depth"):
-            ax.annotate(
-                f"$D={int(depth)}$",
-                (grp.local_rule_accuracy.mean(), grp.composition_tv_with_invalid.mean()),
-                textcoords="offset points", xytext=(6, 4), fontsize=10, color=MODE_COLOR[mode],
-            )
-    mixed4 = last[(last.mode == "both") & (last.depth == 4)]
+    proc = last[last["mode"] == "process"]
+    ax.annotate("Process\n$D=2,4,6$", (proc.local_rule_accuracy.mean(), 0.04),
+                ha="right", va="bottom", fontsize=9, color=PROCESS)
+    for depth, xytext in [(2, (-18, 10)), (4, (-36, -14)), (6, (8, 6))]:
+        grp = last[(last["mode"] == "both") & (last.depth == depth)]
+        ax.annotate(
+            f"$D={depth}$",
+            (grp.local_rule_accuracy.mean(), grp.composition_tv_with_invalid.mean()),
+            textcoords="offset points", xytext=xytext, fontsize=9, color=MIXED,
+        )
     ax.axhline(0.833, color=OUTCOME, ls=":", lw=1.8, label=r"Mixed $D{=}4$ TV $0.833$")
-    ax.axvline(mixed4.local_rule_accuracy.mean(), color=PROCESS, ls="--", lw=1.3, alpha=0.8)
     ax.set(
         xlabel="Local rule accuracy", ylabel="Composition TV",
-        title="Transfer fails: local rules do not compose",
-        xlim=(0.988, 1.002), ylim=(-0.05, 1.05),
+        title="(B) Transfer fails at TV $0.833$",
+        xlim=(0.992, 1.003), ylim=(-0.06, 1.08),
     )
-    ax.legend(loc="center left", fontsize=9)
+    ax.legend(loc="lower left", fontsize=8)
     return save(fig, "revision_transfer_limit")
 
 
@@ -385,7 +396,7 @@ def plot_induced_and_split():
     m = g["in_ball"].agg(["mean", "std", "count"])
     yerr = np.where(m["count"] > 1, m["std"].fillna(0), 0)
     ax[1].errorbar(d, m["mean"], yerr=yerr, fmt="o-", color=PROCESS, ms=7,
-                   capsize=3, label=r"Fit in $\varepsilon\le 1/2$")
+                   capsize=3, label=r"Fit in $\varepsilon\leq 1/2$")
     ax[1].set(xlabel="Depth $D$", ylabel="Exponent", title="(b) Split-verdict exponent",
               xticks=d)
     ax[1].legend(fontsize=9)
@@ -404,7 +415,7 @@ def plot_induced_and_split():
     fig, ax = plt.subplots(1, 2, figsize=(7.0, 3.25), layout="constrained")
     ax[0].plot(d, d - 1, "k--", lw=1.8, label="$D-1$ (kernel theory)")
     ax[0].errorbar(d, m["mean"], yerr=yerr, fmt="o-", color=PROCESS, ms=8,
-                   capsize=3.5, lw=2, label=r"GPT readout, $\varepsilon\le 1/2$")
+                   capsize=3.5, lw=2, label=r"GPT readout, $\varepsilon\leq 1/2$")
     for _, r in tbl.iterrows():
         ax[0].scatter(r.depth, r.in_ball, color=PROCESS, s=28, alpha=0.4, zorder=2)
     ax[0].set(xlabel="Depth $D$", ylabel="Exponent", title="(a) Credit exponent",
