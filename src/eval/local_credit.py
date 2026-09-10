@@ -43,6 +43,11 @@ from handcoded.local_credit import (
     trained_target_ids,
     train_linear_probes,
 )
+from handcoded.nnsight_probe import (
+    collect_hiddens_nnsight,
+    counterfactual_accuracy_nnsight,
+    evaluate_probes_nnsight,
+)
 from handcoded.models import attach_local_heads
 from src.eval import executor_comparison as c
 
@@ -67,7 +72,11 @@ def answer_accuracy(model, circuits, tokenizer, device, mode):
     return c.generation_metrics(model, circuits, tokenizer, device, mode)["free_answer_accuracy"]
 
 
-def evaluate_probes(model, probe_train, probe_eval, tokenizer, device, n_states, probe_steps, probe_lr):
+def evaluate_probes(model, probe_train, probe_eval, tokenizer, device, n_states, probe_steps, probe_lr, use_nnsight=False):
+    if use_nnsight:
+        return evaluate_probes_nnsight(
+            model, probe_train, probe_eval, tokenizer, device, n_states, probe_steps, probe_lr,
+        )
     was_training = model.training
     model.eval()
     for param in model.parameters():
@@ -90,10 +99,11 @@ def train_loss(condition, model, batch, gold, lambda_local):
     return h.language_model_loss(model, batch)
 
 
-def run_patches(oracle, circuits, tokenizer, device, methods=PATCH_METHODS):
+def run_patches(oracle, circuits, tokenizer, device, methods=PATCH_METHODS, use_nnsight=False):
     rows = []
     generator = torch.Generator().manual_seed(0)
     depth = oracle.depth
+    patch_fn = counterfactual_accuracy_nnsight if use_nnsight else counterfactual_accuracy
     for layer in range(depth):
         for method in methods:
             kwargs = {"device": device, "generator": generator}
@@ -102,7 +112,7 @@ def run_patches(oracle, circuits, tokenizer, device, methods=PATCH_METHODS):
                 kwargs["wrong_layer"] = (layer + 1) % depth if depth > 1 else layer
             else:
                 kwargs["method"] = method
-            acc = counterfactual_accuracy(oracle, circuits, tokenizer, layer, **kwargs)
+            acc = patch_fn(oracle, circuits, tokenizer, layer, **kwargs)
             rows.append({
                 "model": "oracle_outcome",
                 "layer": layer,
@@ -249,7 +259,7 @@ def run_experiment(args):
                 continue
             probes, train_acc, eval_acc = evaluate_probes(
                 model, probe_train, probe_eval, tokenizer, device, tokenizer.n_states,
-                args.probe_steps, args.probe_lr,
+                args.probe_steps, args.probe_lr, use_nnsight=args.use_nnsight,
             )
             for layer, (tr, ev) in enumerate(zip(train_acc, eval_acc)):
                 probe_rows.append({
@@ -273,7 +283,7 @@ def run_experiment(args):
         }), flush=True)
 
     oracle = h.HandcodedOutcomeTransformer(tokenizer, depth).to(device).eval()
-    patch_rows = run_patches(oracle, patch_circuits, tokenizer, device)
+    patch_rows = run_patches(oracle, patch_circuits, tokenizer, device, use_nnsight=args.use_nnsight)
     write_csv(output / "patch.csv", patch_rows)
     oracle_mean = sum(r["counterfactual_accuracy"] for r in patch_rows if r["method"] == "oracle_slot") / depth
     random_mean = sum(r["counterfactual_accuracy"] for r in patch_rows if r["method"] == "random_subspace") / depth
@@ -328,6 +338,7 @@ def run_experiment(args):
         "lambda_local": args.lambda_local,
         "oracle_patch_mean": oracle_mean,
         "random_patch_mean": random_mean,
+        "use_nnsight": args.use_nnsight,
         "final_answer": {r["condition"]: r["answer_accuracy"] for r in metrics if r["step"] == args.steps},
         "csv": str(output / "metrics.csv"),
     }
@@ -362,6 +373,8 @@ def parse_args(argv=None):
     parser.add_argument("--probe-seed", type=int, default=int(cfg.get("probe_seed", 9000)))
     parser.add_argument("--batch-seed", type=int, default=int(cfg.get("batch_seed", 2026)))
     parser.add_argument("--checkpoints", nargs="+", type=int, default=list(cfg.get("checkpoints") or [0, 20, 40]))
+    parser.add_argument("--use-nnsight", action="store_true", default=bool(cfg.get("use_nnsight", True)))
+    parser.add_argument("--no-nnsight", action="store_false", dest="use_nnsight")
     parser.add_argument("--device", default=cfg.get("device"))
     add_compile_bf16_flags(parser, cfg, from_yaml=True)
     args = parser.parse_args(argv)

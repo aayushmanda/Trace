@@ -22,9 +22,6 @@ checkpoints/
 training_dynamics.html
 training_dynamics.mp4
 
-# --- the manuscript lives outside the code artifact --------------------------
-Paper/
-
 # --- editor ------------------------------------------------------------------
 .vscode/
 .DS_Store
@@ -34,3 +31,4 @@ Paper/
 /scratch
 
 PAPER_ROADMAP.md
+*.egg-info/

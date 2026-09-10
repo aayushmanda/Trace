@@ -1,0 +1,17 @@
+% Mechanism test: outcome vs outcome+local vs process on a deep outcome net.
+% Mixed-format $\widehat P_g$ is negative transfer, not identification.
+
+\textbf{Setup.} Deep outcome architecture; answer-only targets. Block-$t$ hidden
+$h_t$ at the colon position; gold state $s_t$. Linear probe $H_t(h_t)\to s_t$
+(trained frozen-LM). Causal patch: write $s_t'$ into the construction slot after
+block~$t$; remaining net should match $\Phi_{g_{t+1:D}}(s_t')$.
+
+\textbf{Implementation.} \texttt{nnsight} traces collect $h_t$ and patch block
+outputs. Controls: \texttt{oracle\_slot} (exact), \texttt{random\_subspace},
+\texttt{unstructured}, \texttt{wrong\_layer}. Smoke:
+\begin{verbatim}
+python -m src outcome-local --smoke --device cpu --use-nnsight
+\end{verbatim}
+Outputs: \texttt{results/paper\_revision\_v2/outcome\_local/} (\texttt{probes.csv},
+\texttt{patch.csv}). Report $C_t=\langle g^{\mathrm{term}},g^{\mathrm{local}}\rangle/
+\|g^{\mathrm{local}}\|^2$ vs $D$ only; do not claim $\varepsilon^{D-1}$ from $C_t$.

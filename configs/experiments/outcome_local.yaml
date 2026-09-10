@@ -4,6 +4,7 @@
 # Do not claim ε^{D-1} from C_t; report C_t vs D only.
 experiment: outcome_local
 mechanism_test: true
+use_nnsight: true
 lambda_local: 1.0
 lambda: 1.0
 depth: 2

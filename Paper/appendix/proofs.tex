@@ -1,0 +1,18 @@
+% Proved theorems (Thm~\ref{thm:realizability}--\ref{thm:complete-mixing}).
+% Full proofs retained from the manuscript kernel section; no new results here.
+
+\subsection{Realizability}
+Constructive embedding of row-stochastic tables $P_g$ into a fixed-depth outcome
+architecture with state slots and gate routing. Width scales as $O(K+M)$.
+
+\subsection{Forward--backward credit}
+Let $q_{t-1}$ be the forward marginal and $b_t$ the backward answer residual.
+Outcome credit at step $t$ is $\mathrm{Rule}(-\nabla_{P_t}\ell_{\mathrm{out}})=
+\bar q_{t-1}\bar b_t^\top/p_y$. Local process CE needs neither inference and has
+constant lower bound in Frobenius norm. Mixing-ball bound:
+$\|\mathrm{Rule}(-\nabla_{P_t}\ell_{\mathrm{out}})\|_F\le
+\frac{1-1/K}{\alpha}\varepsilon_{\mathrm{rule}}^{D-1}$ when $p_y\ge\alpha$.
+
+\subsection{Complete mixing}
+When $P_g=U$, outcome gradients vanish on the simplex interior; process targets
+recover $T_g-U$ by reversibility of the uniform chain.

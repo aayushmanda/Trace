@@ -1,0 +1,8 @@
+% eq:induced-scales / eq:depth-credit-bound — table-space credit on saved induced tables.
+% Rebuild: python experiments/build_rule_credit_table.py
+
+Let $\widehat P_g$ be the induced rule table at gate $g$. The theorem's credit
+quantity is the Frobenius norm of the table-space gradient
+$\|\mathrm{Rule}(-\nabla_{\widehat P_g}\ell)\|_F$, aggregated over gates and
+probe contexts. Primary columns: \texttt{credit\_table\_mean}, \texttt{credit\_table\_max}.
+Do not confuse with parameter-space pullback norms or alignment cosines.

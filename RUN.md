@@ -255,12 +255,12 @@ If outcome \(\approx\) chance but outcome+local \(\approx\) process \(\approx 10
 
 ```bash
 # Tests (oracle patch must be ~100%; random patch must not):
-TRACE_TQDM=0 python -m unittest tests.test_outcome_local
+TRACE_TQDM=0 python -m unittest tests.test_outcome_local tests.test_nnsight_probe
 
-# Smoke: D=2, tiny data, ~30 steps, 1 seed. CPU default; use cuda:2 if that card is free.
-python -m src outcome-local --smoke --device cpu --no-compile
+# Smoke: D=2, tiny data, ~30 steps, 1 seed. CPU default; nnsight collects h_t and runs causal patch.
+python -m src outcome-local --smoke --device cpu --no-compile --use-nnsight
 # or
-python experiments/outcome_local_rescue.py --smoke --device cuda:2 --no-compile
+python experiments/outcome_local_rescue.py --smoke --device cpu --no-compile --use-nnsight
 ```
 
 YAML: `configs/experiments/outcome_local.yaml` (\(\lambda=1.0\)). Outputs: `results/paper_revision_v2/outcome_local/` (`metrics.csv`, `probes.csv`, `credit.csv`, `patch.csv`, `table.csv`, `apply_style` PDFs). Confirmation depths 2/4/6/8 are recorded in the YAML and **not** launched from this file.

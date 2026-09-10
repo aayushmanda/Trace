@@ -1,0 +1,26 @@
+\section{Introduction}
+We study when outcome supervision can recover step-local executor structure in a
+shared-kernel model. Theorems~\ref{thm:realizability}--\ref{thm:complete-mixing}
+are proved in Appendix~\ref{app:proofs}. Mechanism diagnostics (linear probe
+$h_t\to s_t$ and causal patch at block~$t$) are summarized in
+Appendix~\ref{app:probe-patch}; code: \texttt{python -m src outcome-local --smoke}.
+
+\section{Main results (proved)}
+\begin{theorem}[Realizability]\label{thm:realizability}
+Finite-depth Transformers realize the shared-executor kernel with bounded width.
+\end{theorem}
+
+\begin{theorem}[Forward--backward credit]\label{thm:forward-backward}
+Outcome CE credit factorizes on shared tables; local process targets have a
+depth-independent Frobenius lower bound. Near uniform mixing,
+$\|\mathrm{Rule}(-\nabla_{P_t}\ell_{\mathrm{out}})\|_F\le C\,\varepsilon_{\mathrm{rule}}^{D-1}$.
+\end{theorem}
+
+\begin{theorem}[Complete mixing]\label{thm:complete-mixing}
+If $P_g=U$ for all gates, outcome credit vanishes and process supervision recovers
+$T_g-U$.
+\end{theorem}
+
+Proofs: Appendix~\ref{app:proofs}. Table-space diagnostics:
+Appendix~\ref{app:L-diagnostics}. \textbf{T2} (projected flow) is \emph{not} proved;
+see \texttt{theorem\_ledger.md}.
