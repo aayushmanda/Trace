@@ -253,17 +253,25 @@ This is the **mechanism** experiment. A depth-\(D\) outcome architecture generat
 
 If outcome \(\approx\) chance but outcome+local \(\approx\) process \(\approx 100\%\), that isolates **credit placement**. Mixed-format \(\widehat P_g\) remains the **negative transfer** readout — do not treat it as validating the shared-executor model. Report \(C_t=\langle g_t^{\mathrm{term}},g_t^{\mathrm{local}}\rangle/\|g_t^{\mathrm{local}}\|^2\) vs \(D\); **do not** claim \(\varepsilon^{D-1}\) unless mixing assumptions are checked.
 
+Layerwise probes \(h_t\to s_t\) and causal state patches (oracle slot, trained-probe subspace, random subspace, wrong layer) use **nnsight** traces (`nnsight.NNsight` on the generic `nn.Module`). \(C_t\) stays in autograd. Requires `nnsight==0.7.0`.
+
 ```bash
-# Tests (oracle patch must be ~100%; random patch must not):
+# Tests (oracle nnsight patch ~100%; random not; Phi target; probe train). Skip nnsight tests if the package is missing.
 TRACE_TQDM=0 python -m unittest tests.test_outcome_local
 
-# Smoke: D=2, tiny data, ~30 steps, 1 seed. CPU default; use cuda:2 if that card is free.
+# Smoke (plumbing): D=2, 80 steps, tiny data. Checks train_loss + persist keys.
+# Held-out answer may stay 0 — that is not a paper number. Prefer cuda:2/3 if free; else CPU.
 python -m src outcome-local --smoke --device cpu --no-compile
-# or
-python experiments/outcome_local_rescue.py --smoke --device cuda:2 --no-compile
+# if GPU 2 is actually free (memory AND util):
+# python -m src outcome-local --smoke --device cuda:2 --no-compile
+
+# Confirmation (hours; one depth; do not launch a D-grid from here):
+# python -m src outcome-local --config configs/experiments/causal_identification.yaml \
+#   --confirm --depth 2 --device cuda:2 --no-compile \
+#   --output results/paper_revision_v2/causal_identification/confirm_depth2_seed42
 ```
 
-YAML: `configs/experiments/outcome_local.yaml` (\(\lambda=1.0\)). Outputs: `results/paper_revision_v2/outcome_local/` (`metrics.csv`, `probes.csv`, `credit.csv`, `patch.csv`, `table.csv`, `apply_style` PDFs). Confirmation depths 2/4/6/8 are recorded in the YAML and **not** launched from this file.
+YAML: `configs/experiments/outcome_local.yaml` (smoke defaults), `configs/experiments/causal_identification.yaml` (confirmation; requires `--confirm`). Outputs: `results/paper_revision_v2/causal_identification/` (`metrics.csv`, `probes.csv`, `credit.csv`, `patch.csv`, `trained_patch.csv`, `probe_vs_patch.csv`, `table.csv`, `persist.json`, `report.md`). Confirmation depths 2/4/6/8 are recorded and **not** launched from this file.
 
 ---
 
@@ -327,7 +335,7 @@ Handcoded smoke is the short `python -m src executor …` command in the §7 sec
 | Optional pullback / induced | `results/revision/pullback.csv`, `induced_rule.csv` |
 | Shared kernel (row-softmax) | `results/revision/shared_kernel.csv` |
 | Projected kernel (not a T2 proof) | `results/paper_revision_v2/e4_projected_kernel/` |
-| Outcome+local mechanism test | `results/paper_revision_v2/outcome_local/` |
+| Outcome+local mechanism test | `results/paper_revision_v2/causal_identification/` |
 | `Paper/` | often gitignored; local manuscript |
 
 ---

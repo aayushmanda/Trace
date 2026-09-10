@@ -27,10 +27,20 @@ def append_csv(path, row: dict):
 
 
 def write_csv(path, rows):
+    """Write dict rows to `path`. Rows may have heterogeneous keys (e.g. one
+    condition logging extra fields another doesn't); the header is the union
+    of all keys, in first-seen order, and missing cells are written empty."""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
+    fieldnames = list(rows[0])
+    seen = set(fieldnames)
+    for row in rows[1:]:
+        for key in row:
+            if key not in seen:
+                fieldnames.append(key)
+                seen.add(key)
     with path.open("w", newline="") as fh:
-        writer = csv.DictWriter(fh, fieldnames=list(rows[0]))
+        writer = csv.DictWriter(fh, fieldnames=fieldnames, restval="")
         writer.writeheader()
         writer.writerows(rows)
     return path
