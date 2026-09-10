@@ -7,3 +7,4 @@ workers: 0
 batch_seed: 12345
 compile: false
 bf16: true
+distributed: false

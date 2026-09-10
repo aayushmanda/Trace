@@ -8,7 +8,7 @@ from tqdm.auto import tqdm
 from handcoded.data import language_model_loss
 from handcoded.eval import evaluate_checkpoint
 from src.training.optim import make_adamw
-from src.training.seed import autocast_context, configure_device, maybe_compile
+from src.training.seed import autocast_context, configure_device, prepare_train_model
 
 
 def train_step(model, batch, optimizer, grad_clip_norm=None):
@@ -57,7 +57,7 @@ def train_one_model(
     model = copy.deepcopy(base)
     device = next(model.parameters()).device
     configure_device(device)
-    train_model = maybe_compile(model, device)  # eval/generate keep eager `model`
+    train_model = prepare_train_model(model, device)  # eval/generate keep eager `model`
     trainable_parameters = [p for p in model.parameters() if p.requires_grad]
     if not trainable_parameters:
         raise ValueError("Cannot train a model with no trainable parameters")

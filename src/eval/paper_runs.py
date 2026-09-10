@@ -13,12 +13,13 @@ from src.eval.margins import example_min_margins
 from src.training.io import write_csv
 from src.training.loop import train_steps
 from src.training.optim import build_gpt, make_loader, make_optimizer
-from src.training.seed import maybe_compile, maybe_high_precision, set_seed
+from src.training.seed import maybe_high_precision, prepare_train_model, set_seed
 
 
 def run_length(args):
-    device = torch.device(args.device)
-    maybe_high_precision(device, compile=getattr(args, "compile", None), bf16=getattr(args, "bf16", None))
+    device = maybe_high_precision(args.device, compile=getattr(args, "compile", None),
+                                 bf16=getattr(args, "bf16", None),
+                                 distributed=getattr(args, "distributed", None))
     train_task = TASKS[f"boolean_circuit_{args.train_depth}"]
     train = generate_unique(train_task, args.train_size, 501)
     train_prompts = {inst.prompt for inst in train}
@@ -34,7 +35,10 @@ def run_length(args):
             dataset = SupervisionDataset(train, train_task, mode)
             loader = make_loader(dataset, args, device)
             model = build_gpt(train_task, args, device)
-            train_model = maybe_compile(model, device, enabled=getattr(args, "compile", None))
+            train_model = prepare_train_model(
+                model, device, compile=getattr(args, "compile", None),
+                distributed=getattr(args, "distributed", None),
+            )
             opt = make_optimizer(model, args, device)
             loss = train_steps(train_model, loader, opt, device, args.steps, getattr(args, "grad_clip", 1.0),
                                desc=f"length {mode} s{seed}")
@@ -59,8 +63,9 @@ def run_length(args):
 
 
 def run_margins(args):
-    device = torch.device(args.device)
-    maybe_high_precision(device, compile=getattr(args, "compile", None), bf16=getattr(args, "bf16", None))
+    device = maybe_high_precision(args.device, compile=getattr(args, "compile", None),
+                                 bf16=getattr(args, "bf16", None),
+                                 distributed=getattr(args, "distributed", None))
     task = TASKS[args.task]
     train = generate_unique(task, args.train_size, 501)
     val = generate_unique(task, args.val_size, 101, {i.prompt for i in train})
@@ -72,7 +77,10 @@ def run_margins(args):
             loader = make_loader(dataset, args, device, extra_seed=seed)
             set_seed(seed)
             model = build_gpt(task, args, device)
-            train_model = maybe_compile(model, device, enabled=getattr(args, "compile", None))
+            train_model = prepare_train_model(
+                model, device, compile=getattr(args, "compile", None),
+                distributed=getattr(args, "distributed", None),
+            )
             opt = make_optimizer(model, args, device)
             loss = train_steps(train_model, loader, opt, device, args.steps, args.grad_clip,
                                desc=f"mmin {label} s{seed}")

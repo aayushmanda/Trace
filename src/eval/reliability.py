@@ -1,4 +1,5 @@
 """Trace-reliability sweeps (GPT stack)."""
+import json
 from datetime import datetime
 from pathlib import Path
 
@@ -12,7 +13,28 @@ from src.eval.generate import evaluate_with_trace
 from src.training.io import append_csv
 from src.training.loop import train_with_checkpoints
 from src.training.optim import build_gpt, make_loader, make_optimizer
-from src.training.seed import maybe_compile, maybe_high_precision, set_seed
+from src.training.seed import maybe_high_precision, prepare_train_model, set_seed
+
+
+def _persist_payload(args, task, output, rows):
+    return {
+        "experiment": "e5_reliability",
+        "task": task.name,
+        "rhos": list(args.rhos),
+        "seeds": list(args.seeds),
+        "checkpoints": list(args.checkpoints),
+        "train_size": args.train_size,
+        "val_size": args.val_size,
+        "train_seed": args.train_seed,
+        "val_seed": args.val_seed,
+        "ratio_seed": args.ratio_seed,
+        "batch_seed": args.batch_seed,
+        "include_outcome": bool(args.include_outcome),
+        "csv": str(output),
+        "n_rows": len(rows),
+        "rows": rows,
+        "note": "Terminal answers remain correct; rho is trace reliability. Local = trace_step_accuracy, rollout = exact_trace_accuracy / answer_accuracy.",
+    }
 
 
 def main(args):
@@ -20,14 +42,20 @@ def main(args):
         raise SystemExit("every rho must lie in [0, 1]")
     checkpoints = sorted(set(args.checkpoints))
     task = TASKS[args.task]
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    maybe_high_precision(device, compile=getattr(args, "compile", None), bf16=getattr(args, "bf16", None))
+    from src.training.seed import default_device
+
+    device = torch.device(getattr(args, "device", None) or default_device())
+    device = maybe_high_precision(device, compile=getattr(args, "compile", None),
+                                  bf16=getattr(args, "bf16", None),
+                                  distributed=getattr(args, "distributed", None))
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     output = args.output or Path("results") / f"{task.name}_phase_{timestamp}.csv"
     output = Path(output)
     output.parent.mkdir(parents=True, exist_ok=True)
     if output.exists():
         raise FileExistsError(f"refusing to append to existing output: {output}")
+    persist = output.with_name(output.stem + "_persist.json")
+    rows = []
     train_instances = generate_unique(task, args.train_size, args.train_seed)
     val_instances = generate_unique(task, args.val_size, args.val_seed, {i.prompt for i in train_instances})
     ratio_scores = np.random.default_rng(args.ratio_seed).random(len(train_instances))
@@ -41,7 +69,10 @@ def main(args):
             set_seed(seed)
             loader = make_loader(dataset, args, device)
             model = build_gpt(task, args, device)
-            train_model = maybe_compile(model, device, enabled=getattr(args, "compile", None))
+            train_model = prepare_train_model(
+                model, device, compile=getattr(args, "compile", None),
+                distributed=getattr(args, "distributed", None),
+            )
             optimizer = make_optimizer(model, args, device)
             label = "outcome" if condition == "outcome" else f"rho={rho:.2f}"
 
@@ -59,6 +90,8 @@ def main(args):
                     "colon_rate": metrics["colon_rate"],
                 }
                 append_csv(output, row)
+                rows.append(row)
+                persist.write_text(json.dumps(_persist_payload(args, task, output, rows), indent=2) + "\n")
                 print(f"{task.name} {_lab} seed={_s} step={step} answer={100 * metrics['answer_accuracy']:.2f}%")
 
             train_with_checkpoints(
@@ -70,4 +103,6 @@ def main(args):
             if device.type == "cuda":
                 torch.cuda.empty_cache()
         del dataset
+    persist.write_text(json.dumps(_persist_payload(args, task, output, rows), indent=2) + "\n")
     print(f"saved: {output}")
+    print(f"persist: {persist}")

@@ -1,0 +1,23 @@
+# E2 architecture × supervision. 5-rate calibration, 10-seed confirmation.
+# plan is cheap. calibrate = 2 arch × 5 LR × 2 clip × 2 format = 40 jobs.
+# confirm = 2 × 10 seeds × 2 clip × 2 format = 80 jobs. Do not launch confirm
+# until selected_rates.json exists. Week 2: plan + at most calibration / 1–2 singles.
+experiment: e2_architecture
+output: results/paper_revision_v2/e2_architecture
+depth: 4
+compile: false
+bf16: true
+devices: [cuda:2, cuda:3]
+rates: [0.002, 0.001, 0.0005, 0.0002, 0.0001]
+confirmation_seeds: [42, 43, 44, 45, 46, 47, 48, 49, 50, 51]
+success_threshold: 0.95
+success_rule: "complete AND test acc > 95%. Unstable = failure in the denominator."
+calibration_seed: 7001
+calibration_steps: 2000
+steps: 8000
+train_size: 20000
+val_size: 1000
+test_size: 1000
+batch_size: 128
+clips: [0.0, 1.0]
+note: "Do not overwrite PDF Table 6. Unstable runs count as failures. Prefer GPU 2/3. compile stays false."

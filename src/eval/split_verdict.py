@@ -29,6 +29,9 @@ def load_frame(path):
 
 def build_table(induced, pullback=None, eps_max=0.5):
     refit_in_ball = _import_refit()
+    if induced is None or induced.empty:
+        induced = pullback if pullback is not None else pd.DataFrame()
+        pullback = None
     if induced.empty:
         return pd.DataFrame()
     last = induced[induced.step == induced.step.max()].copy()
@@ -108,7 +111,7 @@ def run(args):
     induced_path = Path(getattr(args, "input", None) or cfg.get("induced_csv") or ROOT / "results/revision/induced_rule.csv")
     pull_path = Path(getattr(args, "pullback", None) or cfg.get("pullback_csv") or ROOT / "results/revision/pullback.csv")
     out = Path(getattr(args, "out", None) or cfg.get("out") or ROOT / "results/revision/split_verdict.csv")
-    fig_path = Path(getattr(args, "figure", None) or cfg.get("figure") or ROOT / "Paper/figures/split_verdict.pdf")
+    fig_path = Path(getattr(args, "figure", None) or cfg.get("figure") or ROOT / "results/revision/split_verdict.pdf")
     induced = load_frame(induced_path)
     pullback = load_frame(pull_path)
     table = build_table(induced, pullback)

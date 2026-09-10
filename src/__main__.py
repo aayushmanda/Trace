@@ -14,7 +14,7 @@ def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
     p = argparse.ArgumentParser(prog="python -m src", description="Trace paper experiments")
     p.add_argument("command", nargs="?", default="help",
-                   choices=["help", "induced", "pullback", "split-verdict", "escape", "length", "margins", "architecture",
+                   choices=["help", "induced", "pullback", "split-verdict", "escape", "projected", "length", "margins", "architecture",
                             "executor", "executor-depths", "analyze", "supervision", "reliability", "smoke", "lora"])
     args, rest = p.parse_known_args(argv)
     if args.command in {None, "help"}:
@@ -26,6 +26,8 @@ GPT stack
   python -m src pullback --config configs/experiments/pullback.yaml --depth 4 --seed 2001
   python -m src split-verdict --config configs/experiments/split_verdict.yaml
   python -m src escape --smoke
+  python -m src projected --smoke
+  python -m src supervision --config configs/experiments/e1_five_condition.yaml
   python -m src length --config configs/experiments/length_generalization.yaml
   python -m src margins --config configs/experiments/margin_histograms.yaml
   python -m src supervision --tasks boolean_circuit_4 --seeds 2001 --steps 100 --train-size 1000
@@ -74,6 +76,10 @@ Handcoded / semantic-token stack
         from src.cli import run_escape
         ns = _escape_ns(rest)
         run_escape(ns)
+        return 0
+    if args.command == "projected":
+        from src.eval.projected_kernel import run as run_projected
+        run_projected(_projected_ns(rest))
         return 0
     if args.command == "length":
         from src.cli import run_length
@@ -125,6 +131,7 @@ def _induced_ns(rest):
     p.add_argument("--probe-steps", type=int, nargs="+", default=None)
     p.add_argument("--n-fillers", type=int, default=None)
     p.add_argument("--with-pullback", action="store_true")
+    p.add_argument("--skip-readout", action="store_true", default=None)
     p.add_argument("--ckpt-dir", default=None)
     p.add_argument("--batch-size", type=int, default=None)
     p.add_argument("--lr", type=float, default=None)
@@ -156,6 +163,7 @@ def _pullback_ns(rest):
     p.add_argument("--checkpoints", type=int, nargs="+", default=None)
     p.add_argument("--device", default=None)
     p.add_argument("--out", default=None)
+    p.add_argument("--skip-readout", action="store_true", default=None)
     add_compile_bf16_flags(p, from_yaml=False)
     return p.parse_args(rest)
 
@@ -175,6 +183,16 @@ def _escape_ns(rest):
     p.add_argument("--config", default="configs/experiments/escape_time.yaml")
     p.add_argument("--smoke", action="store_true")
     p.add_argument("--shared", action="store_true", default=True)
+    p.add_argument("--device", default=None)
+    p.add_argument("--out", default=None)
+    add_compile_bf16_flags(p, from_yaml=False)
+    return p.parse_args(rest)
+
+
+def _projected_ns(rest):
+    p = argparse.ArgumentParser()
+    p.add_argument("--config", default="configs/experiments/e4_projected_kernel.yaml")
+    p.add_argument("--smoke", action="store_true")
     p.add_argument("--device", default=None)
     p.add_argument("--out", default=None)
     add_compile_bf16_flags(p, from_yaml=False)
@@ -237,27 +255,34 @@ def _margins_ns(rest):
 
 def _supervision_ns(rest):
     from src.data.datasets import TARGET_BUILDERS
-    p = argparse.ArgumentParser()
-    p.add_argument("--tasks", nargs="+", default=["boolean_circuit_4"])
-    p.add_argument("--modes", nargs="+", choices=list(TARGET_BUILDERS), default=["outcome", "process"])
-    p.add_argument("--seeds", nargs="+", type=int, default=[2001])
-    p.add_argument("--train-size", type=int, default=1000)
-    p.add_argument("--val-size", type=int, default=100)
-    p.add_argument("--train-seed", type=int, default=501)
-    p.add_argument("--val-seed", type=int, default=101)
-    p.add_argument("--batch-seed", type=int, default=12345)
-    p.add_argument("--batch-size", type=int, default=32)
-    p.add_argument("--eval-batch-size", type=int, default=64)
-    p.add_argument("--steps", type=int, default=100)
-    p.add_argument("--lr", type=float, default=3e-4)
-    p.add_argument("--weight-decay", type=float, default=0.0)
-    p.add_argument("--grad-clip", type=float, default=1.0)
-    p.add_argument("--embedding", type=int, default=128)
-    p.add_argument("--heads", type=int, default=4)
-    p.add_argument("--layers", type=int, default=2)
-    p.add_argument("--dropout", type=float, default=0.0)
-    p.add_argument("--workers", type=int, default=0)
+    from src.training.config import load_yaml
+    pre = argparse.ArgumentParser(add_help=False)
+    pre.add_argument("--config", default=None)
+    pre_args, _ = pre.parse_known_args(rest)
+    cfg = load_yaml(pre_args.config) if pre_args.config else {}
+    p = argparse.ArgumentParser(parents=[pre])
+    p.add_argument("--tasks", nargs="+", default=list(cfg.get("tasks") or ["boolean_circuit_4"]))
+    p.add_argument("--modes", nargs="+", choices=list(TARGET_BUILDERS),
+                   default=list(cfg.get("modes") or ["outcome", "process"]))
+    p.add_argument("--seeds", nargs="+", type=int, default=list(cfg.get("seeds") or [2001]))
+    p.add_argument("--train-size", type=int, default=int(cfg.get("train_size", 1000)))
+    p.add_argument("--val-size", type=int, default=int(cfg.get("val_size", 100)))
+    p.add_argument("--train-seed", type=int, default=int(cfg.get("train_seed", 501)))
+    p.add_argument("--val-seed", type=int, default=int(cfg.get("val_seed", 101)))
+    p.add_argument("--batch-seed", type=int, default=int(cfg.get("batch_seed", 12345)))
+    p.add_argument("--batch-size", type=int, default=int(cfg.get("batch_size", 32)))
+    p.add_argument("--eval-batch-size", type=int, default=int(cfg.get("eval_batch_size", 64)))
+    p.add_argument("--steps", type=int, default=int(cfg.get("steps", 100)))
+    p.add_argument("--lr", type=float, default=float(cfg.get("lr", 3e-4)))
+    p.add_argument("--weight-decay", type=float, default=float(cfg.get("weight_decay", 0.0)))
+    p.add_argument("--grad-clip", type=float, default=float(cfg.get("grad_clip", 1.0)))
+    p.add_argument("--embedding", type=int, default=int(cfg.get("embedding", 128)))
+    p.add_argument("--heads", type=int, default=int(cfg.get("heads", 4)))
+    p.add_argument("--layers", type=int, default=int(cfg.get("layers", 2)))
+    p.add_argument("--dropout", type=float, default=float(cfg.get("dropout", 0.0)))
+    p.add_argument("--workers", type=int, default=int(cfg.get("workers", 0)))
     p.add_argument("--device", default=None)
+    p.add_argument("--output", type=Path, default=Path(cfg["output"]) if cfg.get("output") else None)
     add_compile_bf16_flags(p, from_yaml=True)
     return p.parse_args(rest)
 
@@ -285,6 +310,7 @@ def _reliability_ns(rest):
     p.add_argument("--dropout", type=float, default=0.0)
     p.add_argument("--workers", type=int, default=0)
     p.add_argument("--include-outcome", action="store_true")
+    p.add_argument("--device", default=None)
     p.add_argument("--output", type=Path, default=None)
     add_compile_bf16_flags(p, from_yaml=True)
     return p.parse_args(rest)

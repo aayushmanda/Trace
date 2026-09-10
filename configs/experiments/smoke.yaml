@@ -6,7 +6,8 @@ condition: both
 seeds: [2001]
 probe_steps_mode: all
 n_fillers: 1
-with_pullback: false
+skip_readout: true
+with_pullback: true
 train:
   train_size: 256
   val_size: 64

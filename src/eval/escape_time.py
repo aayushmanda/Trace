@@ -1,8 +1,13 @@
 """Shared trainable kernel executor: one A ∈ R^{M×K×K}, P_g = softmax(A_g).
 
+ROW-SOFTMAX LOGITS, not the theory-matched projected simplex flow.
+For Euclidean projection onto the row-simplex, r(t), and a discrete Dini
+ratio, use `src/eval/projected_kernel.py` (`python -m src projected`).
+That runner does **not** prove T2.
+
 The same parameters define outcome composition CE and process local CE.
-Init near uniform (scale ε), vary ε and D; report projected true-rule gradient,
-escape time, and success vs D.
+Init near uniform (scale ε), vary ε and D; report inner-product of the
+logit gradient with the true-rule direction, escape time, and success vs D.
 """
 from __future__ import annotations
 

@@ -4,7 +4,7 @@ depth: 4
 compile: false
 bf16: true
 devices: [cuda:2, cuda:3]
-rates: [0.002, 0.001, 0.0005, 0.0002]
+rates: [0.002, 0.001, 0.0005, 0.0002, 0.0001]
 confirmation_seeds: [42, 43, 44, 45, 46, 47, 48, 49, 50, 51]
 success_threshold: 0.95
 calibration_steps: 2000
@@ -13,4 +13,4 @@ train_size: 20000
 val_size: 1000
 test_size: 1000
 batch_size: 128
-note: "After calibrate, confirm is 2 architectures × 10 seeds × 2 clips × 2 formats = 80 jobs. Do not launch confirm until calibration selected_rates.json exists. Prefer GPUs 2/3. compile stays false (run_one is eager)."
+note: "After calibrate, confirm is 2 architectures × 10 seeds × 2 clips × 2 formats = 80 jobs. Calibration is 2 × 5 rates × 2 clips × 2 formats = 40 jobs. Do not launch confirm until calibration selected_rates.json exists. Prefer GPUs 2/3. compile stays false (run_one is eager)."

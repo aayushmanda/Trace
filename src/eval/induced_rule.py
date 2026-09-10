@@ -19,7 +19,7 @@ from src.training.io import append_rows
 from src.training.loop import train_with_checkpoints
 from src.training.optim import make_loader, make_optimizer
 from src.training.progress import progress
-from src.training.seed import configure_device, maybe_compile, set_seed
+from src.training.seed import configure_device, prepare_train_model, set_seed
 
 K = 2 ** N_BITS
 TOK = GLOBAL_TOKENIZER
@@ -322,8 +322,9 @@ def _formats(args, n):
 
 def run(args):
     import time
-    device = torch.device(args.device)
-    configure_device(device, compile=getattr(args, "compile", None), bf16=getattr(args, "bf16", None))
+    device = configure_device(args.device, compile=getattr(args, "compile", None),
+                             bf16=getattr(args, "bf16", None),
+                             distributed=getattr(args, "distributed", None))
     sampler = make_boolean_circuit_sampler(args.depth)
     block = 40 + 12 * args.depth
     set_seed(args.seed)
@@ -336,7 +337,10 @@ def run(args):
         vocab_size=TOK.vocab_size, block_size=block, pad_id=TOK.pad_id,
         n_embd=args.n_embd, n_head=args.n_head, n_layer=args.n_layer, dropout=0.0,
     ).to(device)
-    train_model = maybe_compile(model, device, enabled=getattr(args, "compile", None))
+    train_model = prepare_train_model(
+        model, device, compile=getattr(args, "compile", None),
+        distributed=getattr(args, "distributed", None),
+    )
     opt = make_optimizer(model, args, device)
     ckpts = sorted(set(args.checkpoints))
     rows = []
@@ -353,13 +357,18 @@ def run(args):
                 {"model": model.state_dict(), "args": vars(args), "step": step},
                 dest / f"{args.condition}_D{args.depth}_s{args.seed}_step{step}.pt",
             )
+        skip = bool(getattr(args, "skip_readout", False))
         fillers = list(getattr(args, "fillers", None) or DEFAULT_FILLERS[: max(1, int(getattr(args, "n_fillers", 3)))])
         primary = list(fillers[0])
         Phats, onsets = [], []
-        for t in range(1, args.depth + 1):
-            Phat, on_set = induced_rules(model, args.depth, device, step=t, filler=primary)
-            Phats.append(Phat)
-            onsets.append(on_set)
+        if skip:
+            Phats = [TRUE.copy() for _ in range(args.depth)]
+            onsets = [1.0] * args.depth
+        else:
+            for t in range(1, args.depth + 1):
+                Phat, on_set = induced_rules(model, args.depth, device, step=t, filler=primary)
+                Phats.append(Phat)
+                onsets.append(on_set)
         dc = delta_comp(model, probe, Phats, args.depth, device)
         eps_steps = [scales(P)[1] for P in Phats]
         gam_steps = [scales(P)[0] for P in Phats]
@@ -367,7 +376,7 @@ def run(args):
         eps_step_std = float(np.std(eps_steps))
         table_step_tv = float(np.mean([table_row_tv(Phats[t], Phats[0]) for t in range(1, args.depth)])) if args.depth > 1 else 0.0
         bg_eps, bg_tv = [eps_steps[0]], []
-        if step == max(ckpts) and len(fillers) > 1:
+        if (not skip) and step == max(ckpts) and len(fillers) > 1:
             for filler in fillers[1:]:
                 Pbg, _ = induced_rules(model, args.depth, device, step=1, filler=list(filler))
                 bg_eps.append(scales(Pbg)[1])
@@ -378,7 +387,10 @@ def run(args):
         pull_row = {}
         if getattr(args, "with_pullback", False) and step in {0, max(ckpts)}:
             from src.eval.pullback import measure_pullback
-            pull_row = measure_pullback(model, probe, args.depth, device, block, Phat=Phats[0], fd=step == max(ckpts))
+            pull_row = measure_pullback(
+                model, probe, args.depth, device, block, Phat=Phats,
+                fd=(not skip) and step == max(ckpts), skip_jacobian=skip,
+            )
         if step == max(ckpts):
             expo = dict(exponent_target=args.depth - 1)
             for mode in ("conditional", "proportional"):
@@ -404,7 +416,7 @@ def run(args):
                 depth=args.depth, seed=args.seed, probe_step=pstep, step=step,
                 free_answer_acc=acc, gamma_hat=gam_steps[i], eps_rule_hat=eps_steps[i],
                 rule_recovery=rec_steps[i], credit_mean=cred_mean, credit_max=cred_max,
-                state_on_set_mass=onsets[i], **dc, **expo, **pull_row, **vary,
+                state_on_set_mass=onsets[i], skip_readout=skip, **dc, **expo, **pull_row, **vary,
                 probe_seconds=round(time.time() - t0, 1),
             )
             rows.append(row)
@@ -417,4 +429,19 @@ def run(args):
     train_with_checkpoints(model, loader, opt, device, ckpts, on_checkpoint, grad_clip=1.0,
                            train_model=train_model)
     append_rows(args.out, rows)
+    persist = Path(args.out).with_name(Path(args.out).stem + "_persist.json")
+    persist.parent.mkdir(parents=True, exist_ok=True)
+    persist.write_text(json.dumps({
+        "experiment": "induced_rule",
+        "condition": args.condition,
+        "trace_fraction": args.trace_fraction,
+        "depth": args.depth,
+        "seed": args.seed,
+        "skip_readout": bool(getattr(args, "skip_readout", False)),
+        "mask": "continuation only (prompt tokens zero loss; trace/answer supervised)",
+        "csv": str(args.out),
+        "n_rows": len(rows),
+        "note": "Not a paper exponent unless confirmation YAML skip_readout is false and the grid is complete.",
+    }, indent=2) + "\n")
+    print("persist", persist)
     return rows

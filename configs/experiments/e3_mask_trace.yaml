@@ -1,0 +1,56 @@
+# E3 mask-trace induced-rule. Continuation-masked LM CE: prompt tokens have
+# zero loss; trace (and answer) tokens are supervised. Per-step P̂^{(t)}.
+# Top-level keys are the **pilot** (skip 16×52 readout). Confirmation is recorded
+# under `confirmation:` and is not launched from this file.
+experiment: e3_mask_trace
+claim: "Mask-trace = ContinuationDataset mask (prompt excluded). Mixed-format traces. Per-step tables."
+compile: false
+bf16: true
+depth: 8
+seed: 2001
+depths: [8]
+conditions: [both]
+condition: both
+trace_fraction: 0.5
+probe_steps_mode: all
+n_fillers: 1
+skip_readout: true
+with_pullback: false
+seeds: [2001]
+train:
+  train_size: 256
+  val_size: 32
+  probe_size: 8
+  checkpoints: [0, 100]
+  lr: 0.0003
+  batch_size: 8
+  compile: false
+  bf16: true
+model:
+  n_embd: 64
+  n_head: 4
+  n_layer: 2
+out: results/paper_revision_v2/e3_mask_trace/pilot.csv
+ckpt_dir: results/paper_revision_v2/e3_mask_trace/ckpts
+note: "Pilot is protocol plumbing, not a paper exponent. Confirmation uses skip_readout: false."
+
+confirmation:
+  do_not_launch_from_week2: true
+  depths: [2, 3, 4, 6, 8]
+  conditions: [both]
+  seeds: [2001, 2002, 2003]
+  skip_readout: false
+  with_pullback: true
+  probe_steps_mode: all
+  n_fillers: 3
+  train:
+    train_size: 30000
+    val_size: 800
+    probe_size: 300
+    checkpoints: [0, 500, 2000, 4000]
+    batch_size: 128
+  model:
+    n_embd: 128
+    n_head: 4
+    n_layer: 4
+  out: results/paper_revision_v2/e3_mask_trace/confirm.csv
