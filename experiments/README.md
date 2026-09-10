@@ -3,112 +3,59 @@
 How to run the paper stack: **[../RUN.md](../RUN.md)**. Figure/table numbers below
 match **PDF numbering** in `Paper/main.pdf` (see `Paper/EXPERIMENT_MAP.md`).
 
-Every entry point here is runnable from the repository root:
+Preferred entry point is `python -m src <command>`. Files here are thin CLIs
+(`import _paths` then `src.__main__`) except `analyze_induced.py` and
+`build_executor_results.py`, which only write figures.
 
 ```bash
+python -m src help
 uv run python experiments/<name>.py --help
 ```
 
-`_paths.py` puts the repository root, `src/` and this directory on `sys.path`, so
-scripts also run from inside `experiments/`.
-
 ---
 
-## Which experiment supports which claim
+## Paper tables and figures
 
-Grouped by the stage of the argument. **Status** distinguishes results the
-manuscript reports from code that is present but whose numbers are not currently
-cited.
-
-### 1. The phenomenon: does a valid trace teach execution?
-
-| Script | What it runs | Supports | Output |
+| Script | Command | Supports | Output |
 |---|---|---|---|
-| `supervision_comparison.py` | The five matched conditions — outcome, answer-first, filler, process, corrupted — on state machines, register machines and Boolean circuits | **Table 1** held-out answer accuracy | stdout / CSV |
-| `reliability_sweep.py` | Trains at trace reliability ρ over a grid of ρ, seeds and checkpoints; the shared machinery (`RatioDataset`, `build_model`, `evaluate`) other experiments import | **Figures 1–2**, **Table 3** | `results/reliability_sweeps/*_phase_*.csv` |
-| `lora_transfer.py` | Rank-8 LoRA on SmolLM2-135M, same Boolean generator and serialization | The pretrained-model paragraph in §3 (no separate table number) | CSV |
-| `copy_probe.py` | Removes the answer-bearing successor while keeping the final operation | Off this PDF as a numbered table | CSV |
-| `trace_vs_step_corruption.py` | One Bernoulli per trace against one per step, at matched marginal validity | Off this PDF | `results/paper/*_aggregate.csv` |
-| `trace_cleaning.py` | Removes the corrupted portion of a ρ₀ = .8 pool against removing the same count at random | Off this PDF | `calibration.csv`, `intervention.csv` |
+| `supervision_comparison.py` | `python -m src supervision` | **Table 1** five-condition accuracy | stdout |
+| `reliability_sweep.py` | `python -m src reliability` | **Figures 1–2**, **Table 3** | `results/reliability_sweeps/` |
+| `compare_executor_rules.py` | `python -m src executor` | **Figure 4** protocol (single run) | `results/executor_comparison/<run>/` |
+| `run_executor_depths.py` | `python -m src executor-depths` | Five-seed \(D\in\{2,4,6\}\) | `results/executor_comparison/depth_replication/` |
+| `build_executor_results.py` | `python experiments/build_executor_results.py` | **Figures 4–5**, **Table 7** TeX | `Paper/figures/trained_executor_*.pdf` |
+| `architecture_controls.py` | `python -m src architecture` | 10-seed 2×2 (not historical Table 6) | `results/architecture_controls_n10/` |
 
-### 2. Local competence against complete rollout
-
-| Script | What it runs | Supports | Output |
-|---|---|---|---|
-| `validate_claims.py` | Local positive-margin fraction against exact rollout; the `a_local^D` prediction and a union-bound lower bound; prefix survival across depth | Proposition 1 in the text; histograms not in this PDF | `results/claim_validation/` |
-| `early_acquisition.py` | Trains each (ρ, seed) once to a long horizon and uses only an early window of clean successor-state NLL changes to predict later acquisition | Off this PDF | `early_progress.csv`, `prediction_summary.csv` |
-
-### 3. What a corrupted trace teaches
-
-| Script | What it runs | Supports | Output |
-|---|---|---|---|
-| `competitor_support.py` | Matched competitor-support experiment, resumable, multi-seed | Off this PDF (PDF uses Prop. 1 + Fig 2) | `results/competitor_support/` |
-| `loss_barrier.py` | Concentrates corrupted mass over `--m` incorrect successors (`m = 1, 3, 15` give ρ\* = 1/2, 1/4, 1/16) | Off this PDF | `results/local_loss_barrier/` |
-
-### 4. Mechanism: where credit enters (theory fingerprints)
-
-| Script | What it runs | Supports | Output |
-|---|---|---|---|
-| `escape_time_law.py` | Population gradient flow on the K×M transition-kernel executor | Off this PDF as a figure | JSON/CSV |
-| `mechanism_diagnostics.py` | Gradient-side diagnostics on trained models | Off this PDF | `results/mechanism/mechanism_{summary,steps}_*.csv` |
-
-### 5. Paper §7 — handcoded semantic-token readout (Figs 4–5, Table 7)
-
-This **is** the compiled paper’s trained-mechanism experiment: one-block
-semantic-token Transformers (width 96), gold-prefix local tables, composition TV,
-mixed-format gradient cosine. **Not** character-token GPT. **Not** the
-oracle-shaped Table 4 / Table 6 nets.
-
-| Script | What it runs | Supports | Output |
-|---|---|---|---|
-| `compare_executor_rules.py` | Trains process / outcome / mixed semantic-token models; gold-prefix \(\widehat P_g\), composition TV, mixed actual vs composed-table gradient cosine | **Figure 4** protocol (single run) | `results/executor_comparison/<run>/` |
-| `run_executor_depths.py` | Depths \(\{2,4,6\}\) × seeds \(\{42..46\}\), resumable | Five-seed replication | `results/executor_comparison/depth_replication/` |
-| `build_executor_results.py` | Rejects incomplete coverage; writes manuscript PDFs and Table 7 TeX | **Figure 4**, **Figure 5**, **Table 7** | `Paper/figures/trained_executor_*.pdf`, `Paper/data/trained_executor_*.tex` |
-| `test_executor_comparison.py` | Exact-rule recovery, composition, query isolation, split disjointness, finite-difference readout | That the readouts compute what they claim | `python -m unittest tests.test_executor_comparison` |
-
-Completed artifacts: `results/executor_comparison/depth_replication/metrics.csv`
-and per-seed `report.md`. Rebuild figures without retraining:
+Completed §7 artifacts: `results/executor_comparison/depth_replication/`. Rebuild figures:
 
 ```bash
 python experiments/build_executor_results.py \
   --input results/executor_comparison/depth_replication --paper Paper
 ```
 
-### 6. Architecture × supervision (Table 6 is one seed; 10-seed not run)
+---
 
-PDF **Table 6** (`tab:2x2`) is the historical one-seed
-`handcoded/two_model_reachability.ipynb` (not GPT; not Table 2 — Table 2 in this
-PDF is attention scales \(C_\star\)). The manuscript asks for a multi-seed LR
-grid; that replacement has **no numbers yet**.
+## Resubmission bridge (GPT character-token; not Figure 4)
 
-| Script | What it does | Status |
-|---|---|---|
-| `architecture_controls.py` | Planned 10-seed LR-controlled 2×2 (`results/architecture_controls_n10/`) | `plan` only: `results/architecture_controls/protocol.json`. No calibration/confirm CSVs. **Do not overwrite Table 6.** |
-
-### 7. Optional extra / revision-not-in-this-PDF (GPT character-token)
-
-`app:regime-spec` on ordinary learned GPT. **Do not treat as Figure 4.**
-`Paper/figures/induced_rule.pdf` and `revision_*.pdf` exist as optional assets
-and are not included in the compiled `main.pdf`.
-
-| Script | What it runs | Role | Output |
+| Script | Command | Role | Output |
 |---|---|---|---|
-| `induced_rule.py` | Per-step \(\widehat P_g^{(t)}\), \(\widehat\varepsilon_{\mathrm{rule}}\), stepwise composition, optional exact-LM pullback | Extra | `results/revision/induced_rule.csv` |
-| `pullback.py` | \(J^\top W\) vs full-vocab \(-\nabla L^{\mathrm{LM}}\) | Extra | `results/revision/pullback.csv` |
-| `split_verdict.py` | Depth table: \(D-1\), in-ball exponent, \(\delta_{\mathrm{comp}}\), LM cosine | Extra (central revision figure) | `results/revision/split_verdict.csv` |
-| `escape_time_law.py` | Shared \(A\in\mathbb{R}^{M\times K\times K}\) outcome vs process | Extra | `results/revision/shared_kernel.csv` |
-| `analyze_induced.py` | Tables + `induced_rule.pdf` from archived CSVs | Extra figure | `Paper/figures/induced_rule.pdf` |
-| `run_depth_sweep.sh` / `run_condition_trajectory.sh` / `run_trace_fraction.sh` | GPT depth / condition / trace-fraction grids | Extra | `results/induced_rule/*.csv` |
-| `length_generalization.py` | Train \(D=8\), eval 10/12/16 | Extra (no PDF table) | `results/revision/length_generalization.csv` |
-| `margin_histograms.py` | Gold-path \(m_{\min}\) at \(\rho=0.80\) | Extra (no PDF figure) | `results/revision/mmin_histograms.csv` |
-| `run_revision_bridge.sh` | Queues the **GPT** extras + architecture n=10 | Not the §7 protocol | `results/revision/`, `logs/revision/` |
-| `analyze_revision.py` | `python -m src analyze` | Extra `revision_*.pdf` | `Paper/figures/revision_*.pdf` |
+| `induced_rule.py` | `python -m src induced` | Per-step \(\widehat P_g^{(t)}\), \(\widehat\varepsilon_{\mathrm{rule}}\) | `results/revision/induced_rule.csv` |
+| `pullback.py` | `python -m src pullback` | Exact LM \(J^\top W\) vs \(-\nabla L\) | `results/revision/pullback.csv` |
+| `split_verdict.py` | `python -m src split-verdict` | Depth table: \(D-1\), in-ball exponent, \(\delta_{\mathrm{comp}}\) | `results/revision/split_verdict.csv` |
+| `escape_time_law.py` | `python -m src escape` | Shared \(A\in\mathbb{R}^{M\times K\times K}\) kernel | `results/revision/shared_kernel.csv` |
+| `analyze_induced.py` | `python experiments/analyze_induced.py` | Tables + `induced_rule.pdf` from archived CSVs | `Paper/figures/induced_rule.pdf` |
+| `analyze_revision.py` | `python -m src analyze` | `revision_*.pdf` | `Paper/figures/revision_*.pdf` |
+| `length_generalization.py` | `python -m src length` | Train \(D=8\), eval 8/10/12/16 | `results/revision/length_generalization.csv` |
+| `margin_histograms.py` | `python -m src margins` | Gold-path \(m_{\min}\) at \(\rho=0.80\) | `results/revision/mmin_histograms.csv` |
+| `run_revision_bridge.sh` | GPU 2/3 queue | Induced + length + \(m_{\min}\) + architecture plan | `results/revision/`, `logs/revision/` |
+| `run_depth_sweep.sh` | `python -m src induced` grid | Exponent vs \(D-1\) | `results/induced_rule/depth.csv` |
+| `run_condition_trajectory.sh` | `python -m src induced` | \(\widehat\varepsilon_{\mathrm{rule}}\) by supervision | `results/induced_rule/trajectory.csv` |
+| `run_trace_fraction.sh` | `python -m src induced` | Trace-fraction vs mixing ball | `results/induced_rule/fraction.csv` |
 
-`results/induced_rule/fast_smoke.csv` is an earlier exponent check that
-`analyze_induced.py` can still fold in. Those exponent numbers are **not**
-Table 7.
+`results/induced_rule/fast_smoke.csv` can still be folded into `analyze_induced.py`. Those exponent numbers are **not** Table 7.
 
-### 8. Constructive executors
+---
+
+## Constructive executors
 
 In [`../handcoded/`](../handcoded): exact finite-parameter Transformers
 (Theorem 2, Figure 3, Table 4) and the one-seed reachability notebook (Table 6).
@@ -118,13 +65,7 @@ In [`../handcoded/`](../handcoded): exact finite-parameter Transformers
 | `handcoded/` package | Semantic-token constructions |
 | `handcoded/handcoded_executors.ipynb` | Builds and checks the exact executors |
 | `handcoded/two_model_reachability.ipynb` | Historical Table 6 (one seed) |
-| `Paper/scripts/check_mathematics.py` | Algebra for Tables 2 / constructions |
 
----
+PDF **Table 6** is that one-seed notebook. `architecture_controls.py` is the planned 10-seed replacement (`results/architecture_controls/protocol.json` exists; do not overwrite Table 6).
 
-## Notes
-
-- `depth_sweep_commands.sh` is a commented record of GPT depth-sweep invocations.
-- Several diagnostic scripts were recovered from git history; re-run before
-  citing their archived CSVs as freshly reproduced.
-- Claim map vs PDF numbering: `Paper/EXPERIMENT_MAP.md`.
+Claim map vs PDF numbering: `Paper/EXPERIMENT_MAP.md`.

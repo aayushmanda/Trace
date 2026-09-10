@@ -1,10 +1,9 @@
 # Comparing trained and hand-coded computation
 
-`experiments/compare_executor_rules.py` produces actual forward-pass comparisons,
+`src.eval.executor_comparison` produces actual forward-pass comparisons,
 composition diagnostics, and an optional parameter-gradient comparison. It uses
-the semantic-token models in `handcoded_utils.py` (also supports that file under
-`handcoded/`). It does not load the character-token GPT checkpoints used in the
-broader experiments.
+the semantic-token models in the `handcoded/` package. It does not load the
+character-token GPT checkpoints used in the broader experiments.
 
 ## Generated figures
 
@@ -45,9 +44,9 @@ import sys
 from pathlib import Path
 
 ROOT = next(p for p in [Path.cwd(), *Path.cwd().parents]
-            if (p / 'experiments/compare_executor_rules.py').exists())
-sys.path.insert(0, str(ROOT / 'experiments'))
-from compare_executor_rules import compare_models
+            if (p / 'src' / 'eval' / 'executor_comparison.py').exists())
+sys.path.insert(0, str(ROOT))
+from src.eval.executor_comparison import compare_models
 
 rows = compare_models(
     {'process': trained_process, 'outcome': trained_outcome},
@@ -71,7 +70,7 @@ is supplied under the key `both`. Do not label a process-only model as `both`.
 ## Reproducible fresh pilot
 
 ```bash
-python experiments/compare_executor_rules.py \
+python -m src executor \
   --output results/executor_comparison/pilot \
   --depth 4 --seed 42 --steps 2000 \
   --train-size 10000 --test-size 256 --probe-size 64 \
@@ -108,7 +107,7 @@ Loading one for later analysis:
 
 ```python
 import torch
-from compare_executor_rules import h
+from src.eval.executor_comparison import h
 
 saved = torch.load('results/executor_comparison/pilot/checkpoints/process_step02000.pt',
                    map_location='cpu', weights_only=True)
@@ -160,5 +159,5 @@ Suggested caption (replace run details using the actual manifest):
 ## Diagnostic verification
 
 ```bash
-python experiments/test_executor_comparison.py
+python -m unittest tests.test_executor_comparison
 ```

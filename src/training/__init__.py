@@ -1,3 +1,4 @@
+from src.training.handcoded_lm import handcoded_lm_loss
 from src.training.io import append_csv, append_rows, write_csv
 from src.training.loop import gpt_lm_loss, train_indexed, train_steps, train_with_checkpoints
 from src.training.optim import build_gpt, make_adamw, make_loader, make_optimizer
@@ -23,6 +24,7 @@ __all__ = [
     "configure_device",
     "default_device",
     "gpt_lm_loss",
+    "handcoded_lm_loss",
     "make_adamw",
     "make_loader",
     "make_optimizer",

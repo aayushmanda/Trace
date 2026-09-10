@@ -80,6 +80,23 @@ class RevisionBridgeTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             composition(t1, 7, gates)
 
+    def test_split_verdict_builds_from_csv_rows(self):
+        import pandas as pd
+        from src.eval.split_verdict import build_table
+        import json
+        df = pd.DataFrame([{
+            "depth": 2, "seed": 1, "step": 2, "probe_step": 1,
+            "state_on_set_mass": 0.9, "delta_comp_tv": 0.1,
+            "cos_true_outcome": 0.2, "rel_grad_err_outcome": 0.5,
+            "eps_rule_hat": 1.0, "eps_step_std": 0.01, "table_step_tv": 0.02,
+            "background_eps_std": 0.0, "condition": "both",
+            "eps_by_lambda_conditional": json.dumps({"1": 0.4, "0.5": 0.2, "0.25": 0.1, "0.125": 0.05}),
+            "credit_by_lambda_conditional": json.dumps({"1": 0.16, "0.5": 0.04, "0.25": 0.01, "0.125": 0.0025}),
+        }])
+        tbl = build_table(df)
+        self.assertEqual(int(tbl.iloc[0].predicted_exponent), 1)
+        self.assertFalse(pd.isna(tbl.iloc[0].fitted_exponent_in_ball))
+
 
 if __name__ == "__main__":
     unittest.main()

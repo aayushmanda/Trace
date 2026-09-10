@@ -1,0 +1,26 @@
+# Rank-8 LoRA on a HuggingFace causal LM + the Boolean-circuit serialization.
+# This is the pretrained path in §3 (SmolLM2-135M in the paper). It is not
+# the from-scratch GPT stack and not the handcoded semantic-token executors.
+#
+# Swap `model` to another AutoModelForCausalLM id (Qwen2, Llama, …). Startup
+# checks that encode(prefix)+encode(4-bit state) == encode(prefix+state) at '>'.
+# Raise --max-length if BPE makes traces longer than 384 tokens.
+#
+# Examples (do not download a 7B checkpoint on this box unless you mean to):
+#   model: Qwen/Qwen2.5-0.5B
+#   model: meta-llama/Llama-3.2-1B
+experiment: lora_transfer
+model: HuggingFaceTB/SmolLM2-135M
+task: boolean_circuit_8
+lora_rank: 8
+rhos: [0.0, 0.2, 0.4, 0.5, 0.6, 0.8, 1.0]
+seeds: [2001, 2002, 2003]
+train_size: 12000
+val_size: 300
+local_eval_size: 300
+steps: 800
+batch_size: 16
+max_length: 384
+lr: 0.0003
+output: results/paper/smollm/smollm_trace.csv
+run_dir: results/paper/smollm/artifacts

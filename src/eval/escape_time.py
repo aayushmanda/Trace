@@ -132,16 +132,15 @@ def run(args):
     from src.training.config import load_yaml
     cfg = load_yaml(args.config) if getattr(args, "config", None) else {}
     smoke = bool(getattr(args, "smoke", False))
+    device = getattr(args, "device", None) or cfg.get("device") or "cpu"
+    configure_device(device, compile=False)
     if smoke:
-        device = "cpu"
-        configure_device(device, compile=False)
         depths = [2, 3]
         epss = [0.4]
         seeds = [1]
         max_steps = 40
         k, m, lr = 8, 4, 80.0
     else:
-        configure_device(device, compile=False)
         depths = list(cfg.get("depths", [2, 3, 4, 6]))
         epss = list(cfg.get("eps", [0.6, 0.4, 0.28, 0.2]))
         seeds = list(cfg.get("seeds", [1, 2, 3]))
