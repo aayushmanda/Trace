@@ -3,7 +3,7 @@ import unittest
 from unittest.mock import patch
 import numpy as np
 import torch
-import compare_executor_rules as c
+from src.eval import executor_comparison as c
 
 
 class ReadoutTests(unittest.TestCase):

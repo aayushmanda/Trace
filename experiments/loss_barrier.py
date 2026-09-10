@@ -17,6 +17,7 @@ from torch.utils.data import DataLoader, Dataset
 
 from src.boolean_circuit_tasks import _apply_gate
 from src.model import GPTModel
+from src.plot_style import apply_style
 from src.tokenizer import CharTokenizer
 
 
@@ -330,6 +331,7 @@ def write_csv(rows, path):
 
 
 def plot_accuracy(rows, path):
+    apply_style()
     path.parent.mkdir(parents=True, exist_ok=True)
     grouped = defaultdict(lambda: defaultdict(list))
     for row in rows:

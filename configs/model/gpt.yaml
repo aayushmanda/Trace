@@ -1,0 +1,4 @@
+embedding: 128
+heads: 4
+layers: 2
+dropout: 0.0

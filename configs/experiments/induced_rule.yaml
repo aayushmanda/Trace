@@ -1,0 +1,22 @@
+experiment: induced_rule
+depths: [2, 4, 6, 8]
+conditions: [outcome, process]
+seeds: [2001, 2002, 2003]
+probe_steps_mode: early_mid_late   # 1, D/2, D
+with_pullback: true
+onset_min: 0.5
+train:
+  train_size: 30000
+  val_size: 800
+  probe_size: 300
+  checkpoints: [0, 500, 2000, 4000]
+  lr: 0.0003
+  batch_size: 128
+  compile: true
+  bf16: true
+model:
+  n_embd: 128
+  n_head: 4
+  n_layer: 4
+out: results/revision/induced_rule.csv
+ckpt_dir: results/revision/induced_ckpts

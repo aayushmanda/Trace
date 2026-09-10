@@ -1,0 +1,20 @@
+# Tiny induced-rule run to check imports and one GPU step.
+experiment: induced_rule
+depths: [2]
+conditions: [process]
+seeds: [2001]
+with_pullback: false
+train:
+  train_size: 256
+  val_size: 64
+  probe_size: 16
+  checkpoints: [0, 2]
+  lr: 0.0003
+  batch_size: 32
+  compile: true
+  bf16: true
+model:
+  n_embd: 64
+  n_head: 4
+  n_layer: 2
+out: results/revision/smoke_induced.csv

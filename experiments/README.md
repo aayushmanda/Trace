@@ -1,5 +1,7 @@
 # Experiments
 
+How to run the paper stack: **[../RUN.md](../RUN.md)**.
+
 Every entry point here is runnable from the repository root:
 
 ```bash
@@ -60,6 +62,10 @@ These read the mechanism's own quantities out of a trained network. See
 | `pullback.py` | Corollary "parameter-space pullback": `Σ_g J_gᵀ vec(W_g)` is the parameter gradient of `Σ_g ⟨W_g, P̂_g(θ)⟩`, so one backward pass gives it. Compares against the true `∇_θ L_out` and `∇_θ L_proc`, with a norm-matched random control | Whether the outcome gradient actually routes through the induced rules | `results/pullback.csv` |
 | `analyze_induced.py` | Builds the summary tables and the figure from the CSVs below (no CLI — fixed paths) | — | `Paper/figures/induced_rule.pdf` |
 | `run_depth_sweep.sh` | `induced_rule.py` at depths 3–6, three seeds | The exponent against `D − 1` | `results/induced_rule/depth.csv` |
+| `length_generalization.py` | Train outcome/process at circuit depth 8; greedy-eval at 8/10/12/16 with no finetuning | Composition / length extrapolation | `results/revision/length_generalization.csv` |
+| `margin_histograms.py` | Gold-path \(m_{\min}\) at \(\rho=0.80\) for outcome vs process | Proposition 1: abrupt flips are bottleneck-margin crossings | `results/revision/mmin_histograms.csv` |
+| `run_revision_bridge.sh` | Induced-rule probes at \(D\in\{2,4,6,8\}\) with pullback cosines; length; \(m_{\min}\); 10-seed architecture LR grid | The theory–Transformer bridge for resubmission | `results/revision/`, `results/architecture_controls_n10/` |
+| `analyze_revision.py` | Figures from the revision CSVs | Paper figures | `Paper/figures/revision_*.pdf` |
 | `run_condition_trajectory.sh` | Depth 4, conditions `both` / `outcome` / `process`, three seeds | `ε̂_rule` and `δ_comp` over training by supervision | `results/induced_rule/trajectory.csv` |
 | `run_trace_fraction.sh` | Depth 4, trace fraction 0.02 → 1.00 | Where the model sits relative to the near-mixing ball as process supervision is withdrawn | `results/induced_rule/fraction.csv` |
 
@@ -74,7 +80,7 @@ these four files as committed.
 
 `compare_executor_rules.py` re-derives the same comparison — trained-versus-exact
 local rules, composition error, and gradient agreement — on a different
-architecture: the semantic-token, one-layer models in `handcoded/handcoded_utils.py`
+architecture: the semantic-token, one-layer models in the `handcoded/` package
 rather than the character-token GPT `induced_rule.py`/`pullback.py` use. It is not
 a dependency of the character-token results above; treat it as a second, smaller
 data point built on different infrastructure.
@@ -115,7 +121,7 @@ Transformer executors and the randomized-copy reachability runs.
 
 | File | What it is |
 |---|---|
-| `handcoded/handcoded_utils.py`, `handcoded/fastexec.py` | The constructions and a fast executor |
+| `handcoded/` package, `handcoded/fastexec.py` | Semantic-token constructions and a fast executor |
 | `handcoded/handcoded_executors.ipynb` | Builds and checks the exact executors |
 | `handcoded/two_model_reachability.ipynb` | Randomized copies of both oracles, trained under both objectives |
 | `results/handcoded_reachability/seeds/` | Per-seed outputs of the above |
@@ -137,5 +143,10 @@ Transformer executors and the randomized-copy reachability runs.
   recovery, though, so re-run before citing a number from them as freshly
   reproduced rather than archival.
 - The "Supports" column maps scripts to claims in words. Confirm the mapping to
-  final table and figure numbers before release; the manuscript has been
-  renumbered during revision.
+final table and figure numbers before release; the manuscript has been
+renumbered during revision.
+
+The resubmission bridge (induced-rule fingerprints in the trained Transformer,
+multi-seed architecture controls, length generalization, and \(m_{\min}\)
+histograms) is documented in [`../Paper/revision_bridge.md`](../Paper/revision_bridge.md)
+and launched by `run_revision_bridge.sh`.

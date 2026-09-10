@@ -15,6 +15,7 @@ import torch
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 
+from src.plot_style import apply_style
 from src.registry import TASKS
 from reliability_sweep import (
     RatioDataset,
@@ -392,6 +393,7 @@ def run_calibration(task, args, device, run_dir):
 
     grouped.to_csv(run_dir / "calibration_aggregate.csv", index=False)
 
+    apply_style()
     fig, ax = plt.subplots(figsize=(7.2, 4.6))
     ax.plot(x, y, "o-", label="measured positive-margin rate")
     ax.plot(x, y_iso, "--", label="isotonic fit")
@@ -619,6 +621,7 @@ def run_intervention(prediction_path: Path, args, device, run_dir):
     )
     aggregate.to_csv(run_dir / "intervention_aggregate.csv", index=False)
 
+    apply_style()
     fig, ax = plt.subplots(figsize=(7.4, 4.8))
     for mode in ("targeted", "random"):
         g = aggregate[aggregate["filter_mode"] == mode].sort_values("filter_fraction")

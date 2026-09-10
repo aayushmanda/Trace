@@ -1,0 +1,20 @@
+# Minutes-scale notebook smoke. Not paper accuracy.
+n_bits: 4
+depth: 4
+train_size: 256
+test_size: 64
+steps: 40
+batch_size: 32
+lr: 0.002
+d_model: 64
+n_heads: 4
+d_ff: 128
+data_seed: 123
+test_seed: 9000
+model_seed: 42
+batch_seed: 2026
+animation_checkpoints: 8
+loss_eval_size: 64
+device: cuda:2
+compile: true
+bf16: true
