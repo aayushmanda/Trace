@@ -2,7 +2,6 @@
 import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import csv
-import hashlib
 import json
 from pathlib import Path
 import subprocess

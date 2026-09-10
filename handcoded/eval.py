@@ -1,9 +1,12 @@
 """Free-run accuracy, whole-circuit answer matrices, fixed-model hidden states."""
 from dataclasses import dataclass
 
+import numpy as np
 import torch
 
+from handcoded.config import N_BITS
 from handcoded.data import language_model_loss
+from handcoded.gates import phi
 from handcoded.generate import generate, strip_after_eos
 
 
@@ -72,6 +75,20 @@ def circuit_answer_matrix(model, prompts, tokenizer, mode):
     return (probabilities * valid[:, None]).detach().cpu().numpy()
 
 
+def gold_answer_matrix(gates, n_bits=N_BITS):
+    """Exact permutation: one-hot φ composition for every start state."""
+    if not gates:
+        raise ValueError("Choose a nonempty gate sequence")
+    n_states = 2 ** n_bits
+    matrix = np.zeros((n_states, n_states), dtype=np.float32)
+    for start in range(n_states):
+        state = start
+        for gate in gates:
+            state = phi(state, gate, n_bits)
+        matrix[start, state] = 1.0
+    return matrix
+
+
 @torch.no_grad()
 def inspect_fixed_circuit(model, gates, tokenizer, device):
     """Residual-stream state features after each fixed outcome block (not attention weights)."""
@@ -104,7 +121,6 @@ def evaluate_checkpoint(
     model, mode, step, train_loss_sample, train_eval, test_eval, tokenizer, circuit_prompts,
     architecture=None, test_loss_sample=None,
 ):
-    import numpy as np
     train_metrics = free_run_metrics(model, train_eval, tokenizer, mode)
     test_metrics = free_run_metrics(model, test_eval, tokenizer, mode)
     row = {

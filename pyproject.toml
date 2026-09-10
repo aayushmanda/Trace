@@ -21,3 +21,22 @@ dependencies = [
     "wandb>=0.28.2",
     "pyyaml>=6.0",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.11",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+src = ["src", "handcoded", "tests"]
+extend-exclude = ["results", "Paper", ".venv", "*.ipynb"]
+
+[tool.ruff.lint]
+select = ["E", "F"]
+ignore = ["E501", "E402", "E701", "E702", "E731", "E741"]
+
+[tool.ruff.lint.per-file-ignores]
+"handcoded/handcoded_utils.py" = ["F403", "F401"]
+"src/*.py" = ["F401", "F403"]

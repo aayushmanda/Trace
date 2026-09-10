@@ -1,0 +1,20 @@
+# Exact serialized-LM pullback grid (do not launch here; one (depth, seed) per CLI call).
+experiment: pullback
+depths: [2, 4, 6, 8]
+seeds: [2001, 2002, 2003, 2004, 2005]
+trace_fraction: 0.5   # mixed-format checkpoints
+with_pullback: true
+train:
+  train_size: 30000
+  val_size: 800
+  probe_size: 300
+  checkpoints: [0, 500, 2000, 4000]
+  lr: 0.0003
+  batch_size: 128
+  compile: false
+  bf16: true
+model:
+  n_embd: 128
+  n_head: 4
+  n_layer: 4
+out: results/revision/pullback.csv

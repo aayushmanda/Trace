@@ -33,7 +33,11 @@ def encode_dataset(circuits, tokenizer, mode):
         target = full[1:]
         target[: len(prompt) - 1] = [-100] * (len(prompt) - 1)
         targets.append(target)
-    return LanguageBatch(torch.tensor(inputs), torch.tensor(targets))
+    inputs = torch.tensor(inputs)
+    targets = torch.tensor(targets)
+    if inputs.ndim != 2 or targets.shape != inputs.shape:
+        raise RuntimeError(f"encode_dataset expected (N, T) pair, got {tuple(inputs.shape)} {tuple(targets.shape)}")
+    return LanguageBatch(inputs, targets)
 
 
 def language_model_loss(model, batch):

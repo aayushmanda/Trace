@@ -1,8 +1,11 @@
 # Tiny induced-rule run to check imports and one GPU step.
 experiment: induced_rule
 depths: [2]
-conditions: [process]
+conditions: [both]
+condition: both
 seeds: [2001]
+probe_steps_mode: all
+n_fillers: 1
 with_pullback: false
 train:
   train_size: 256

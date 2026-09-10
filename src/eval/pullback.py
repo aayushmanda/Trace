@@ -16,7 +16,7 @@ from src.data.datasets import encode_pair
 from src.eval.induced_rule import (
     GATES, K, M, TOK, TRUE, U, build_dataset, credit_norms,
     free_running_accuracy, induced_rules, parse_prompt, probe_contexts,
-    render, rule_recovery, scales, score_candidates,
+    render, rule_recovery, scales,
 )
 from src.models.gpt import GPTModel
 from src.training.io import append_rows
@@ -28,9 +28,14 @@ PI = np.eye(K) - U
 
 
 def _flat_grad(model):
-    parts = [p.grad.detach().reshape(-1).float() for p in model.parameters() if p.grad is not None]
+    parts = []
+    for p in model.parameters():
+        if p.grad is None:
+            parts.append(torch.zeros(p.numel(), dtype=torch.float32, device="cpu"))
+        else:
+            parts.append(p.grad.detach().reshape(-1).float().cpu())
     if not parts:
-        raise RuntimeError("no parameter gradients")
+        raise RuntimeError("no parameters")
     return torch.cat(parts)
 
 
@@ -250,7 +255,7 @@ def run(args):
         Phat, on_set = induced_rules(model, args.depth, device, step=1)
         gam, eps = scales(Phat)
         pull = measure_pullback(model, probe, args.depth, device, block, Phat=Phat)
-        cred_mean, _ = credit_norms(Phat, probe, args.depth)
+        cred_mean, _ = credit_norms([Phat] * args.depth, probe, args.depth)
         acc = free_running_accuracy(model, probe, args.depth, device, "both")
         row = dict(
             depth=args.depth, seed=args.seed, step=step, free_answer_acc=acc,

@@ -27,8 +27,8 @@ def encode_pair(tokenizer, prompt: str, target: str, block_size: int):
     y[:n] = full[1:]
     for i in range(len(prompt_ids) - 1, n):
         mask[i] = 1.0
-    if len(x) != len(y) or len(y) != len(mask):
-        raise RuntimeError("encode_pair length mismatch")
+    if not (len(x) == len(y) == len(mask) == width):
+        raise RuntimeError(f"encode_pair ranks {len(x), len(y), len(mask)} != {width}")
     return x, y, mask
 
 
@@ -51,6 +51,8 @@ class ContinuationDataset(Dataset):
             self.x[row] = torch.tensor(x, dtype=torch.uint8)
             self.y[row] = torch.tensor(y, dtype=torch.uint8)
             self.mask[row] = torch.tensor(mask, dtype=torch.bool)
+        if self.x.ndim != 2 or self.x.shape != self.y.shape or self.mask.shape != self.x.shape:
+            raise RuntimeError(f"dataset tensors must be (N, T), got x={tuple(self.x.shape)}")
 
     def to(self, device):
         """Optional GPU-resident copies for small GPT sets (`data_on_device: true`)."""

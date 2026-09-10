@@ -1,6 +1,5 @@
 """Train-D=8 length eval and rho=0.80 m_min histograms (GPT stack)."""
 import json
-from collections import defaultdict
 from pathlib import Path
 
 import numpy as np

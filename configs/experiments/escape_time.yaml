@@ -1,0 +1,11 @@
+# Shared trainable kernel A ∈ R^{M×K×K}, P_g = softmax(A_g). Cheap CPU/GPU.
+experiment: escape_time
+shared: true
+depths: [2, 3, 4, 6]
+eps: [0.6, 0.4, 0.28, 0.2]
+seeds: [1, 2, 3]
+k: 8
+m: 4
+lr: 80.0
+compile: false
+out: results/revision/shared_kernel.csv

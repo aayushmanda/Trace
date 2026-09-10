@@ -6,7 +6,6 @@ with test accuracy > 95% after validation-only LR selection.
 from __future__ import annotations
 import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import csv
 import hashlib
 import json
 import math
@@ -21,7 +20,7 @@ from src.training.config import load_yaml
 from src.training.io import write_csv
 from src.training.optim import make_adamw
 from src.training.progress import progress
-from src.training.seed import add_compile_bf16_flags, autocast_context, configure_device, set_seed
+from src.training.seed import add_compile_bf16_flags, autocast_context, configure_device, default_device, set_seed
 
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
@@ -213,7 +212,11 @@ def orchestrate(args):
                  '--device',device,'--depth',str(protocol['depth']),
                  '--train-size',str(protocol['train_size']),'--val-size',str(protocol['val_size']),
                  '--test-size',str(protocol['test_size']),'--batch-size',str(protocol['batch_size']),
-                 '--threads',str(args.threads)]
+                 '--threads',str(args.threads),'--no-compile']
+            if getattr(args,'bf16',True):
+                cmd.append('--bf16')
+            else:
+                cmd.append('--no-bf16')
             with (folder/'run.log').open('a') as f:
                 run=subprocess.run(cmd,stdout=f,stderr=subprocess.STDOUT,cwd=ROOT)
             if run.returncode:raise RuntimeError(f'Failed: {folder}/run.log')
@@ -275,7 +278,7 @@ def main():
     p.add_argument('--steps',type=int,default=int(cfg.get('steps',8000)))
     p.add_argument('--calibration-steps',type=int,default=int(cfg.get('calibration_steps',2000)))
     p.add_argument('--devices',nargs='+',default=list(cfg.get('devices',['cuda:2','cuda:3'])))
-    p.add_argument('--device',default='cpu');p.add_argument('--threads',type=int,default=1)
+    p.add_argument('--device',default=None);p.add_argument('--threads',type=int,default=1)
     p.add_argument('--architecture',choices=['process','outcome'],default='process')
     p.add_argument('--mode',choices=['process','outcome'],default='process')
     p.add_argument('--stage',choices=['calibrate','confirm'],default='calibrate')
@@ -292,6 +295,8 @@ def main():
                    default=list(cfg.get('confirmation_seeds',[42,43,44,45,46,47,48,49,50,51])))
     add_compile_bf16_flags(p, cfg)
     args=p.parse_args()
+    if args.device is None:
+        args.device = default_device()
     if args.action=='single':run_one(args)
     elif args.action=='summarize':summarize(args)
     else:orchestrate(args)
