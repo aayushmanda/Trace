@@ -9,6 +9,7 @@ Convention for the 10 Sep 2026 revision. Do not mix with PDF Table 6 or §7 `res
 | `e2_architecture/` | `plan` protocol.json; calibration singles as pipeline proof; not 80-job confirm |
 | `e3_mask_trace/` | Induced mask-trace **pilot** (skip 16×52 readout) |
 | `e4_projected_kernel/` | Projected simplex CPU smoke; not a T2 proof |
+| `outcome_local/` | Mechanism test: outcome vs outcome+local vs process on a deep outcome net. Mixed \(\widehat P_g\) is negative transfer, not this cell. |
 | `e5_reliability/` | Logged reliability \(\rho\) (CSV + persist JSON) |
 | `e4_pullback/` | Optional Transformer transfer diagnostics |
 | `provenance/` | Table 1 / LoRA command logs (no new 7B download) |

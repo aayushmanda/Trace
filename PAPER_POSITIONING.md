@@ -8,7 +8,9 @@ Honest scores: scientific contribution ~6/10; current draft ~5/10. Path to ~7/10
 
 **Theorems 1–3 stay in the main text** as an **exact explanation in the shared-executor / kernel setting** (mixing ball, local credit vs rollout, constructive and shared \(A_g\) kernels). Scope must be stated in the title, abstract, and theorem headers. They do **not** claim a causal mechanism inside a generic Transformer.
 
-**Trained-model readout is a limit of transfer, not confirmation.** Representative numbers: composition TV \(\approx 0.833\), pullback cosine \(\approx 0.028\). Function-level agreement can be large while parameter-space credit does not transfer. Report this as a negative/limit result.
+**Mechanism test is local credit on a deep outcome architecture** (D blocks, answer-only). Same init, same direct-answer format: ordinary \(L_{\mathrm{out}}\) vs \(L_{\mathrm{out}}+\lambda\) local \(H_t(h_t)\to s_t\) (no trace tokens) vs ordinary process. If outcome is chance while outcome+local matches process, that isolates **credit placement**. Mixed-format \(\widehat P_g\) is the **negative transfer** result, not this test. Do not claim \(\varepsilon^{D-1}\) from \(C_t\).
+
+**Trained mixed-format readout is a limit of transfer, not confirmation.** Representative numbers: composition TV \(\approx 0.833\), pullback cosine \(\approx 0.028\). Function-level agreement can be large while parameter-space credit does not transfer. Report this as a negative/limit result.
 
 **Architecture controls** (process vs outcome architecture \(\times\) supervision) remain necessary so the reliability story is not an artifact of one oracle-shaped net. **Table 1 and LoRA** need explicit provenance (command, YAML, output path, seed list) before they headline anything.
 
@@ -20,4 +22,4 @@ Honest scores: scientific contribution ~6/10; current draft ~5/10. Path to ~7/10
 
 ## Strongest paper
 
-Convincing **reliability** experiment + **precise local-credit theory** (kernel model) + **honest connection** (including negative transfer). Details, IDs, and week plan: [THEORY_EMPIRICAL_REVISION_ROADMAP.md](THEORY_EMPIRICAL_REVISION_ROADMAP.md). Ledger: `Paper/theorem_ledger.md`. New artifacts: `results/paper_revision_v2/`.
+Convincing **reliability** experiment + **precise local-credit theory** (kernel model) + **mechanism test** (outcome vs outcome+local vs process on a deep outcome net) + **honest connection** (mixed \(\widehat P_g\) as negative transfer). Details, IDs, and week plan: [THEORY_EMPIRICAL_REVISION_ROADMAP.md](THEORY_EMPIRICAL_REVISION_ROADMAP.md). Ledger: `Paper/theorem_ledger.md`. New artifacts: `results/paper_revision_v2/`.

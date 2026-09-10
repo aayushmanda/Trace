@@ -1,0 +1,9 @@
+model,layer,method,counterfactual_accuracy
+oracle_outcome,0,oracle_slot,1.0
+oracle_outcome,0,random_subspace,0.03125
+oracle_outcome,0,unstructured,0.0625
+oracle_outcome,0,wrong_layer,0.3125
+oracle_outcome,1,oracle_slot,1.0
+oracle_outcome,1,random_subspace,0.0625
+oracle_outcome,1,unstructured,0.0625
+oracle_outcome,1,wrong_layer,0.3125

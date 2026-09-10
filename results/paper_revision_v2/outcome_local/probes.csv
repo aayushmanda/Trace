@@ -1,0 +1,13 @@
+condition,step,depth,seed,layer,probe_train_accuracy,probe_eval_accuracy,answer_accuracy
+outcome,0,2,42,0,0.5,0.0,0.0
+outcome,0,2,42,1,0.875,0.0,0.0
+outcome_local,0,2,42,0,0.5,0.0,0.0
+outcome_local,0,2,42,1,0.75,0.0,0.0
+outcome,15,2,42,0,0.375,0.0,0.0
+outcome,15,2,42,1,0.375,0.0,0.0
+outcome_local,15,2,42,0,0.375,0.0,0.0
+outcome_local,15,2,42,1,0.875,0.125,0.0
+outcome,30,2,42,0,0.625,0.0,0.0
+outcome,30,2,42,1,0.25,0.125,0.0
+outcome_local,30,2,42,0,0.75,0.0,0.0
+outcome_local,30,2,42,1,0.75,0.125,0.0
