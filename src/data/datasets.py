@@ -52,6 +52,13 @@ class ContinuationDataset(Dataset):
             self.y[row] = torch.tensor(y, dtype=torch.uint8)
             self.mask[row] = torch.tensor(mask, dtype=torch.bool)
 
+    def to(self, device):
+        """Optional GPU-resident copies for small GPT sets (`data_on_device: true`)."""
+        self.x = self.x.to(device, non_blocking=True)
+        self.y = self.y.to(device, non_blocking=True)
+        self.mask = self.mask.to(device, non_blocking=True)
+        return self
+
     def __len__(self):
         return len(self.x)
 

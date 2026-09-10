@@ -21,7 +21,7 @@ from src.training.config import load_yaml
 from src.training.io import write_csv
 from src.training.optim import make_adamw
 from src.training.progress import progress
-from src.training.seed import autocast_context, configure_device, set_seed
+from src.training.seed import add_compile_bf16_flags, autocast_context, configure_device, set_seed
 
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
@@ -61,7 +61,8 @@ def run_one(args):
     torch.set_num_threads(args.threads)
     set_seed(args.seed)
     device=torch.device(args.device)
-    configure_device(device, compile=getattr(args, "compile", None), bf16=getattr(args, "bf16", None))
+    args.compile = False  # run_one is always eager; do not lie in config.json
+    configure_device(device, compile=False, bf16=getattr(args, "bf16", None))
     tok=h.make_tokenizer()
     train=c.unique_circuits(args.train_size,123,args.depth)
     val=c.unique_circuits(args.val_size,8000,args.depth,c.circuit_keys(train))
@@ -289,6 +290,7 @@ def main():
     p.add_argument('--rates',nargs='+',type=float,default=list(cfg.get('rates',[.002,.001,.0005,.0002])))
     p.add_argument('--confirmation-seeds',nargs='+',type=int,
                    default=list(cfg.get('confirmation_seeds',[42,43,44,45,46,47,48,49,50,51])))
+    add_compile_bf16_flags(p, cfg)
     args=p.parse_args()
     if args.action=='single':run_one(args)
     elif args.action=='summarize':summarize(args)

@@ -11,7 +11,7 @@ train:
   checkpoints: [0, 2]
   lr: 0.0003
   batch_size: 32
-  compile: true
+  compile: false
   bf16: true
 model:
   n_embd: 64

@@ -57,7 +57,7 @@ def train_one_model(
     model = copy.deepcopy(base)
     device = next(model.parameters()).device
     configure_device(device)
-    model = maybe_compile(model, device)
+    train_model = maybe_compile(model, device)  # eval/generate keep eager `model`
     trainable_parameters = [p for p in model.parameters() if p.requires_grad]
     if not trainable_parameters:
         raise ValueError("Cannot train a model with no trainable parameters")
@@ -74,7 +74,7 @@ def train_one_model(
     ]
     progress = tqdm(enumerate(batch_schedule, 1), total=len(batch_schedule), desc=label, leave=progress_leave)
     for step, indices in progress:
-        train_step(model, data.select(indices), optimizer, grad_clip_norm=grad_clip_norm)
+        train_step(train_model, data.select(indices), optimizer, grad_clip_norm=grad_clip_norm)
         if step not in checkpoint_set:
             continue
         row = evaluate_checkpoint(

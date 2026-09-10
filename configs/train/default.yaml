@@ -5,5 +5,5 @@ batch_size: 128
 eval_batch_size: 128
 workers: 0
 batch_seed: 12345
-compile: true
+compile: false
 bf16: true

@@ -50,6 +50,7 @@ from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 
 from src.registry import TASKS
+from src.training.seed import maybe_high_precision
 from reliability_sweep import RatioDataset, build_model, evaluate, generate_unique, make_optimizer, set_seed
 
 
@@ -442,8 +443,7 @@ def main():
         parser.error("Supported tasks: state_machine_*, register_machine_*, boolean_circuit_*.")
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    if device.type == "cuda":
-        torch.set_float32_matmul_precision("high")
+    maybe_high_precision(device)
 
     train_instances = generate_unique(task, args.train_size, args.train_seed)
     train_prompts = {inst.prompt for inst in train_instances}

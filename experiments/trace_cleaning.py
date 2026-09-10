@@ -17,6 +17,7 @@ from tqdm.auto import tqdm
 
 from src.plot_style import apply_style
 from src.registry import TASKS
+from src.training.seed import maybe_high_precision
 from reliability_sweep import (
     RatioDataset,
     build_model,
@@ -741,8 +742,7 @@ def main():
     validate_args(args)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    if device.type == "cuda":
-        torch.set_float32_matmul_precision("high")
+    maybe_high_precision(device)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     run_name = args.run_name or f"{args.task}_{timestamp}"

@@ -3,7 +3,7 @@ import random
 from src.data.dataclass import Instance
 
 N_BITS = 4
-BOOLEAN_CIRCUIT_DEPTHS = (2, 4, 6, 8, 10, 12, 16, 20)
+BOOLEAN_CIRCUIT_DEPTHS = (2, 3, 4, 6, 8, 10, 12, 16, 20)
 
 
 def _bits(value: int) -> list[int]:
@@ -79,5 +79,5 @@ BOOLEAN_CIRCUIT_SAMPLERS = {
 }
 BOOLEAN_CIRCUIT_BLOCK_SIZE = 320
 BOOLEAN_CIRCUIT_MAX_NEW_TOKENS = {
-    2: 48, 4: 64, 6: 80, 8: 96, 10: 120, 12: 144, 16: 184, 20: 224,
+    2: 48, 3: 56, 4: 64, 6: 80, 8: 96, 10: 120, 12: 144, 16: 184, 20: 224,
 }

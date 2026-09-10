@@ -14,7 +14,7 @@ from src.eval.margins import example_min_margins
 from src.training.io import write_csv
 from src.training.loop import train_steps
 from src.training.optim import build_gpt, make_loader, make_optimizer
-from src.training.seed import maybe_high_precision, set_seed
+from src.training.seed import maybe_compile, maybe_high_precision, set_seed
 
 
 def run_length(args):
@@ -35,8 +35,9 @@ def run_length(args):
             dataset = SupervisionDataset(train, train_task, mode)
             loader = make_loader(dataset, args, device)
             model = build_gpt(train_task, args, device)
+            train_model = maybe_compile(model, device, enabled=getattr(args, "compile", None))
             opt = make_optimizer(model, args, device)
-            loss = train_steps(model, loader, opt, device, args.steps, getattr(args, "grad_clip", 1.0),
+            loss = train_steps(train_model, loader, opt, device, args.steps, getattr(args, "grad_clip", 1.0),
                                desc=f"length {mode} s{seed}")
             ckpt = Path(args.ckpt_dir) / f"{mode}_trainD{args.train_depth}_s{seed}.pt"
             torch.save({"model": model.state_dict(), "mode": mode, "seed": seed}, ckpt)
@@ -72,8 +73,9 @@ def run_margins(args):
             loader = make_loader(dataset, args, device, extra_seed=seed)
             set_seed(seed)
             model = build_gpt(task, args, device)
+            train_model = maybe_compile(model, device, enabled=getattr(args, "compile", None))
             opt = make_optimizer(model, args, device)
-            loss = train_steps(model, loader, opt, device, args.steps, args.grad_clip,
+            loss = train_steps(train_model, loader, opt, device, args.steps, args.grad_clip,
                                desc=f"mmin {label} s{seed}")
             metrics = evaluate_with_trace(
                 model, task, val, "outcome" if condition == "outcome" else "process", args, device,
