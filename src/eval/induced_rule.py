@@ -179,12 +179,26 @@ def parse_prompt(prompt, depth):
     return s0, gates
 
 
-def composition(Phat, s0, gates):
+def _tables_seq(tables, depth):
+    if isinstance(tables, (list, tuple)):
+        if len(tables) != depth:
+            raise ValueError(f"need one induced table per step, got {len(tables)} for D={depth}")
+        return list(tables)
+    raise TypeError("composition/credit require a per-step sequence of P̂^{(t)}, not one table reused")
+
+
+def composition(tables, s0, gates):
+    """e_{s0}^T P̂^{(1)}_{g1} ⋯ P̂^{(D)}_{gD} with a distinct table at each position."""
     v = np.zeros(K)
     v[s0] = 1.0
-    for g in gates:
-        v = v @ Phat[GATES.index(g)]
+    seq = _tables_seq(tables, len(gates))
+    for t, g in enumerate(gates):
+        v = v @ seq[t][GATES.index(g)]
     return v
+
+
+def table_row_tv(A, B):
+    return float(0.5 * np.abs(A - B).sum(axis=-1).mean())
 
 
 @torch.inference_mode()
