@@ -1,0 +1,40 @@
+{
+  "depth": 4,
+  "rates": [
+    0.002,
+    0.001,
+    0.0005,
+    0.0002,
+    0.0001
+  ],
+  "calibration_seed": 7001,
+  "calibration_steps": 2000,
+  "confirmation_seeds": [
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51
+  ],
+  "confirmation_steps": 8000,
+  "clips": [
+    0.0,
+    1.0
+  ],
+  "train_size": 20000,
+  "val_size": 1000,
+  "test_size": 1000,
+  "batch_size": 128,
+  "weight_decay": 0.0,
+  "init_std": 0.02,
+  "selection": "Select one LR per architecture using clipped calibration, pooled over both formats. Repeat the chosen rate with clip=0 and clip=1 across all confirmation seeds.",
+  "test_policy": "No test evaluation during calibration or checkpoint selection.",
+  "success_threshold": 0.95,
+  "calibration_runs": 40,
+  "confirmation_runs": 80
+}

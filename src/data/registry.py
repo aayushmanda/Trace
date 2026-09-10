@@ -77,7 +77,7 @@ TASKS.update({
 })
 TASKS.update({
     f"modular_program_{steps}": Task(
-        name=f"modular_program_{steps}", block_size=256, max_new_tokens=192,
+        name=f"modular_program_{steps}", block_size=256, max_new_tokens=208,
         sample=sampler, chance_acc=1 / 17, ceiling_acc=1.0,
         description=f"execute {steps} arithmetic operations modulo 17",
         answer_pattern=r"\d+",

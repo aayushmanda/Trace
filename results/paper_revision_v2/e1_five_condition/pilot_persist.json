@@ -1,0 +1,116 @@
+{
+  "experiment": "e1_five_condition",
+  "pilot": true,
+  "note": "Pilot accuracies are not Table 1. Confirmation protocol is frozen in YAML only.",
+  "tasks": [
+    "boolean_circuit_8"
+  ],
+  "modes": [
+    "outcome",
+    "answer_first",
+    "filler",
+    "process",
+    "corrupted"
+  ],
+  "seeds": [
+    2001
+  ],
+  "steps": 100,
+  "train_size": 256,
+  "val_size": 32,
+  "csv": "results/paper_revision_v2/e1_five_condition/pilot.csv",
+  "rows": [
+    {
+      "task": "boolean_circuit_8",
+      "mode": "outcome",
+      "seed": 2001,
+      "steps": 100,
+      "loss": 0.6137638092041016,
+      "accuracy": 0.0,
+      "pilot": true
+    },
+    {
+      "task": "boolean_circuit_8",
+      "mode": "answer_first",
+      "seed": 2001,
+      "steps": 100,
+      "loss": 1.428837537765503,
+      "accuracy": 0.0,
+      "pilot": true
+    },
+    {
+      "task": "boolean_circuit_8",
+      "mode": "filler",
+      "seed": 2001,
+      "steps": 100,
+      "loss": 0.12226995825767517,
+      "accuracy": 0.0,
+      "pilot": true
+    },
+    {
+      "task": "boolean_circuit_8",
+      "mode": "process",
+      "seed": 2001,
+      "steps": 100,
+      "loss": 1.444972276687622,
+      "accuracy": 0.0,
+      "pilot": true
+    },
+    {
+      "task": "boolean_circuit_8",
+      "mode": "corrupted",
+      "seed": 2001,
+      "steps": 100,
+      "loss": 1.4398225545883179,
+      "accuracy": 0.0,
+      "pilot": true
+    }
+  ],
+  "summary": [
+    {
+      "task": "boolean_circuit_8",
+      "mode": "outcome",
+      "mean_pct": 0.0,
+      "std_pct": 0.0,
+      "runs": [
+        0.0
+      ]
+    },
+    {
+      "task": "boolean_circuit_8",
+      "mode": "answer_first",
+      "mean_pct": 0.0,
+      "std_pct": 0.0,
+      "runs": [
+        0.0
+      ]
+    },
+    {
+      "task": "boolean_circuit_8",
+      "mode": "filler",
+      "mean_pct": 0.0,
+      "std_pct": 0.0,
+      "runs": [
+        0.0
+      ]
+    },
+    {
+      "task": "boolean_circuit_8",
+      "mode": "process",
+      "mean_pct": 0.0,
+      "std_pct": 0.0,
+      "runs": [
+        0.0
+      ]
+    },
+    {
+      "task": "boolean_circuit_8",
+      "mode": "corrupted",
+      "mean_pct": 0.0,
+      "std_pct": 0.0,
+      "runs": [
+        0.0
+      ]
+    }
+  ]
+}

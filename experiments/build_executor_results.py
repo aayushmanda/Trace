@@ -72,8 +72,8 @@ def main():
     axs[0,0].legend(loc='lower right',fontsize=8)
     axs[0,1].set(title='(B) Composition error',ylabel='Total variation',ylim=(-.02,1.02))
     axs[0,1].legend(fontsize=8)
-    curve(axs[1,0],d4,'both','gradient_cosine','Composed-table gradient','#7252a2')
-    curve(axs[1,0],d4,'both','descent_oracle_rule_cosine','True-rule direction','#247ba0','--')
+    curve(axs[1,0],d4,'both','gradient_cosine','Composed-table gradient','#6b4c9a')
+    curve(axs[1,0],d4,'both','descent_oracle_rule_cosine','True-rule direction','#087eaa','--')
     curve(axs[1,0],d4,'both','descent_random_rule_cosine_mean','Random-rule mean','#777777',':')
     axs[1,0].axhline(0,color='.6',lw=.6)
     axs[1,0].set(title='(C) Gradient agreement: mixed format',ylabel='Cosine',ylim=(-.35,1.02))
@@ -89,8 +89,8 @@ def main():
         for mode in ['process','both']:
             curve(axes[row,0],d,mode,'epsilon_rule')
             curve(axes[row,1],d,mode,'composition_tv_with_invalid')
-        curve(axes[row,2],d,'both','gradient_actual_norm','Actual answer gradient','#7252a2')
-        curve(axes[row,2],d,'both','gradient_rule_pullback_norm','Rule pullback','#247ba0','--')
+        curve(axes[row,2],d,'both','gradient_actual_norm','Actual answer gradient','#6b4c9a')
+        curve(axes[row,2],d,'both','gradient_rule_pullback_norm','Rule pullback','#087eaa','--')
         for mode in COLORS:curve(axes[row,3],d,mode,'free_answer_accuracy')
         axes[row,0].set_ylabel(f'D = {depth}')
         axes[row,2].set_yscale('log')
@@ -115,6 +115,10 @@ def main():
         tex.append(f"{int(r.depth)} & {LABELS[r['mode']]} & "+' & '.join([
             cell('free_answer_accuracy',True),cell('local_rule_accuracy',True),
             cell('composition_tv_with_invalid'),cell('gradient_cosine')])+r' \\')
+    # \bottomrule must be read from the same \input as the last row: array's
+    # row-completion bookkeeping for \\ does not survive a rule command that
+    # crosses an \input file boundary (verified: Misplaced \noalign otherwise).
+    tex.append(r'\bottomrule')
     (args.paper/'data/trained_executor_rows.tex').write_text('\n'.join(tex)+'\n')
     summary.to_json(args.paper/'data/trained_executor_summary.json',orient='records',indent=2)
     macros=[]

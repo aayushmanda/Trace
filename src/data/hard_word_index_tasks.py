@@ -39,4 +39,5 @@ def make_hard_word_index_sampler(length: int, repeat_probability: float = REPEAT
 
 HARD_WORD_INDEX_SAMPLERS = {n: make_hard_word_index_sampler(n) for n in WORD_INDEX_LENGTHS}
 HARD_WORD_INDEX_BLOCK_SIZE = 384
-HARD_WORD_INDEX_MAX_NEW_TOKENS = {16: 64, 24: 96, 32: 128, 48: 192, 64: 256}
+# Trace is "i c" pairs (1–2 index digits) plus " : " and gold; keep a decode margin.
+HARD_WORD_INDEX_MAX_NEW_TOKENS = {16: 80, 24: 112, 32: 144, 48: 208, 64: 272}

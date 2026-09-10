@@ -1,5 +1,18 @@
 # Theory and empirical revision roadmap
 
+## Current fix (10 Sep 2026)
+
+Do these four things; nothing else this pass.
+
+1. **Reliability plots + provenance.** Rebuild Fig. 1 from the archived FSM/Boolean CSVs (hashes in `Paper/data/revision_figure_sources.json`). Add `revision_reliability.pdf` from `register_machine_16_seeds_2001-2003.csv` and `boolean_circuit_8_seeds_1000-1800.csv`. Reliability \(\rho\) with correct terminals is the empirical centerpiece; report local vs rollout with seed error bars.
+2. **Architecture controls (unstable = fail).** `python -m src architecture summarize` already puts divergent runs in the denominator (1 success + 1 unstable = 50%). Do not headline Table 6 until `results/architecture_controls_n10/` exists. Unstable is failure, not a dropped seed.
+3. **Honest transfer figure.** Depth-4 mixed composition TV is \(0.833\pm0.025\) with local accuracy \(99.9\pm0.2\%\) and pullback cosine \(0.028\pm0.049\). Plot answer accuracy by depth \(\times\) format and TV vs local accuracy (`revision_transfer_limit.pdf`). Transfer of the kernel theorems to these nets does **not** hold.
+4. **Rebuild PDF.** Recompile `Paper/main.pdf` so `\IfFileExists` picks up `data/trained_executor_*.tex` and the restyled figures.
+
+Not this pass: T2 proof, more tasks, DDP, Llama, E1 (~75 interchange runs), full E5 GPU grid.
+
+---
+
 Prepared **10 September 2026**. Horizon 6–8+ weeks. This is a work plan, not a record of new theorems or finished grids. The manuscript already has **three** central theorem results; **T2** below is a **candidate and unproved**. Completing the plan does not imply acceptance.
 
 **Positioning (binding):** [PAPER_POSITIONING.md](PAPER_POSITIONING.md). Title/abstract must not promise a Transformer-internal executor. Empirical centerpiece = reliability \(\rho\) with correct answers. Theorems = exact **shared-executor** explanation. Trained readout (TV \(\approx 0.833\), cosine \(\approx 0.028\)) = **limit of transfer**.
@@ -86,3 +99,16 @@ Do **not** launch E1’s ~75-run interchange grid in week 1. **E5 is now first a
 6. Stub `Paper/theorem_ledger.md` (Thm 1–3 existing, T2 candidate).
 
 Commands: [RUN.md](RUN.md).
+
+---
+
+## 7. Week 1–2 freeze log (10 Sep 2026)
+
+Operational week 2 in this pass is **protocol freeze + pilots**, not the week-table “E5 replication” block (that remains week 2–3).
+
+**Week 1 closed:** pullback all-step + full-vocab CE (unit tests); architecture unstable = failure in the denominator; `results/paper_revision_v2/` including `provenance/`; theorem ledger T1 plus T2 unproved candidate (projected flow, \(r(t)\), \(D^+ r\le C r^{D-1}\)) in `Paper/theorem_ledger.md` and `Paper/T2_CANDIDATE.md`. No T2 proof.
+
+**Week 2 frozen:** confirmation YAMLs under `configs/experiments/e{1,2,3,4}_*.yaml` and `results/paper_revision_v2/protocols/`. E2 `plan` only; calibration/confirm not launched while GPU 2/3 are packed. E1/E3 pilots are tiny and are **not** paper numbers. E4 is a **projected simplex** runner (`python -m src projected`), separate from row-softmax `python -m src escape`.
+
+**Not done (blocked / out of scope):** T2 proof; 75-run interchange; 80 E2 confirm jobs; T3 polish beyond the ledger; E6; fake Table 1.
+

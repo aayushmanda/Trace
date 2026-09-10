@@ -1,0 +1,62 @@
+{
+  "config": "configs/experiments/architecture_controls.yaml",
+  "action": "single",
+  "output": "results/paper_revision_v2/e2_architecture/calibration/outcome_process_s7001_lr0.0005_clip1",
+  "steps": 2,
+  "calibration_steps": 2000,
+  "devices": [
+    "cuda:2",
+    "cuda:3"
+  ],
+  "device": "cpu",
+  "threads": 1,
+  "architecture": "outcome",
+  "mode": "process",
+  "stage": "calibrate",
+  "seed": 7001,
+  "lr": 0.0005,
+  "clip": 1.0,
+  "depth": 4,
+  "train_size": 8,
+  "val_size": 4,
+  "test_size": 4,
+  "batch_size": 4,
+  "rates": [
+    0.002,
+    0.001,
+    0.0005,
+    0.0002,
+    0.0001
+  ],
+  "confirmation_seeds": [
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51
+  ],
+  "compile": false,
+  "bf16": false,
+  "data_on_device": false,
+  "distributed": false,
+  "initial_state_sha256": "0c67f454f2dcd34c443ab5d47e97084b6ca103abf2cd1c23fde2e2cfb9742f83",
+  "parameters": 3741184,
+  "source_sha256": {
+    "src/eval/architecture_controls.py": "cafb67bd6860100c91b4d594787c5d2338ea8c2563b3547b5e16a791a14cdc05",
+    "src/eval/executor_comparison.py": "21b41709381c075fa6335fcb200029d0f7d3fafc77fb6ded27abfbf07033e661",
+    "handcoded/__init__.py": "594e19603e0b428eddd8424cdcb5588499538b49b1e9f4a60e7ca2f31c5786e2"
+  },
+  "data_seeds": {
+    "train": 123,
+    "validation": 8000,
+    "test": 9000,
+    "batch": 2026
+  },
+  "grid_selection": "one LR per architecture, average best validation accuracy of both formats; ties use NLL, then lower LR",
+  "checkpoint_selection": "highest validation answer accuracy, then lowest validation NLL, then earliest checkpoint"
+}

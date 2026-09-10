@@ -1,12 +1,12 @@
 """Projected simplex kernel flow (theory-matched diagnostic; not a T2 proof).
 
-Distinct from `src/eval/escape_time.py`, which parameterizes \(P_g=\mathrm{softmax}(A_g)\)
-on unconstrained logits. Here each row of \(P_g\) lives on the probability simplex,
+Distinct from `src/eval/escape_time.py`, which parameterizes P_g = softmax(A_g)
+on unconstrained logits. Here each row of P_g lives on the probability simplex,
 gradient steps are centered onto the row-tangent space, then Euclidean-projected
 back to the simplex.
 
 Tracks mixing radius r(t) = max_g ||P_g - U||_2 and a discrete Dini ratio
-max(0, Δr/Δt) / r^{D-1}. That ratio is an empirical Ĉ, not a theorem.
+max(0, Delta r / Delta t) / r^{D-1}. That ratio is an empirical C-hat, not a theorem.
 """
 from __future__ import annotations
 

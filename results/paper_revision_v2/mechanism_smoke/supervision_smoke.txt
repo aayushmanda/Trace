@@ -1,0 +1,20 @@
+
+modular_program_8: chance=5.88% train=512 val=128
+modular_program_8  outcome      seed=2001 loss=0.5104 accuracy=5.47%
+modular_program_8  process      seed=2001 loss=1.1248 accuracy=5.47%
+
+stack_machine_8: chance=5.88% train=512 val=128
+stack_machine_8    outcome      seed=2001 loss=0.4451 accuracy=20.31%
+stack_machine_8    process      seed=2001 loss=1.4309 accuracy=0.00%
+
+word_index_len16: chance=6.25% train=512 val=128
+word_index_len16   outcome      seed=2001 loss=0.5612 accuracy=3.91%
+word_index_len16   process      seed=2001 loss=0.9874 accuracy=6.25%
+
+SUMMARY
+modular_program_8  outcome      mean=  5.47% std=  0.00% runs=[5.47]
+modular_program_8  process      mean=  5.47% std=  0.00% runs=[5.47]
+stack_machine_8    outcome      mean= 20.31% std=  0.00% runs=[20.31]
+stack_machine_8    process      mean=  0.00% std=  0.00% runs=[0.]
+word_index_len16   outcome      mean=  3.91% std=  0.00% runs=[3.91]
+word_index_len16   process      mean=  6.25% std=  0.00% runs=[6.25]
