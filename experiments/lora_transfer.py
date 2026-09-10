@@ -13,6 +13,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from registry import TASKS
 from reliability_sweep import generate_unique
+from src.training.seed import maybe_high_precision
 
 STEP_RE = re.compile(r"^([xcst]\d{1,3})>([01]{4})$")
 ANSWER_RE = re.compile(r"([01]{4})")
@@ -429,7 +430,7 @@ def main():
     if not args.task.startswith("boolean_circuit_"): raise ValueError("16-way local evaluator is for boolean_circuit_* tasks")
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    if device.type == "cuda": torch.set_float32_matmul_precision("high")
+    maybe_high_precision(device)
     else: print("WARNING: no CUDA GPU; this will be slow")
     task = TASKS[args.task]; tok = load_tokenizer(args.model); args.pad_id = tok.pad_token_id
     args.output.parent.mkdir(parents=True, exist_ok=True); args.run_dir.mkdir(parents=True, exist_ok=True)

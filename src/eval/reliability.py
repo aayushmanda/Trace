@@ -12,7 +12,7 @@ from src.eval.generate import evaluate_with_trace
 from src.training.io import append_csv
 from src.training.loop import train_with_checkpoints
 from src.training.optim import build_gpt, make_loader, make_optimizer
-from src.training.seed import maybe_high_precision, set_seed
+from src.training.seed import maybe_compile, maybe_high_precision, set_seed
 
 
 def main(args):
@@ -41,6 +41,7 @@ def main(args):
             set_seed(seed)
             loader = make_loader(dataset, args, device)
             model = build_gpt(task, args, device)
+            train_model = maybe_compile(model, device, enabled=getattr(args, "compile", None))
             optimizer = make_optimizer(model, args, device)
             label = "outcome" if condition == "outcome" else f"rho={rho:.2f}"
 
@@ -63,6 +64,7 @@ def main(args):
             train_with_checkpoints(
                 model, loader, optimizer, device, checkpoints, on_checkpoint,
                 grad_clip=args.grad_clip, desc=f"{task.name}/{label}/s{seed}",
+                train_model=train_model,
             )
             del model, optimizer, loader
             if device.type == "cuda":

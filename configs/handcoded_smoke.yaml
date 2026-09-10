@@ -16,5 +16,5 @@ batch_seed: 2026
 animation_checkpoints: 8
 loss_eval_size: 64
 device: cuda:2
-compile: true
+compile: false
 bf16: true

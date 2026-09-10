@@ -7,6 +7,8 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from src.training.seed import add_compile_bf16_flags
+
 
 def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
@@ -114,6 +116,7 @@ def _induced_ns(rest):
     p.add_argument("--device", default=None)
     p.add_argument("--out", default=None)
     p.add_argument("--dump-tables", default=None)
+    add_compile_bf16_flags(p, from_yaml=False)
     return p.parse_args(rest)
 
 
@@ -132,6 +135,7 @@ def _pullback_ns(rest):
     p.add_argument("--checkpoints", type=int, nargs="+", default=[0, 500, 2000, 4000])
     p.add_argument("--device", default=None)
     p.add_argument("--out", default="results/pullback.csv")
+    add_compile_bf16_flags(p, from_yaml=False)
     return p.parse_args(rest)
 
 
@@ -159,6 +163,7 @@ def _length_ns(rest):
     p.add_argument("--device", default=None)
     p.add_argument("--ckpt-dir", type=Path, default=None)
     p.add_argument("--out", type=Path, default=None)
+    add_compile_bf16_flags(p, from_yaml=False)
     return p.parse_args(rest)
 
 
@@ -184,6 +189,7 @@ def _margins_ns(rest):
     p.add_argument("--batch-seed", type=int, default=12345)
     p.add_argument("--device", default=None)
     p.add_argument("--out", type=Path, default=None)
+    add_compile_bf16_flags(p, from_yaml=False)
     return p.parse_args(rest)
 
 
@@ -210,6 +216,7 @@ def _supervision_ns(rest):
     p.add_argument("--dropout", type=float, default=0.0)
     p.add_argument("--workers", type=int, default=0)
     p.add_argument("--device", default=None)
+    add_compile_bf16_flags(p, from_yaml=True)
     return p.parse_args(rest)
 
 
@@ -237,6 +244,7 @@ def _reliability_ns(rest):
     p.add_argument("--workers", type=int, default=0)
     p.add_argument("--include-outcome", action="store_true")
     p.add_argument("--output", type=Path, default=None)
+    add_compile_bf16_flags(p, from_yaml=True)
     return p.parse_args(rest)
 
 

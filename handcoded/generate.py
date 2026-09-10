@@ -4,6 +4,7 @@ import torch
 
 @torch.no_grad()
 def generate(model, prompts, max_new_tokens, eos_id):
+    # Eager token loop: compiling it recaptures a graph each time length grows.
     was_training = model.training
     model.eval()
     ids = prompts.clone()

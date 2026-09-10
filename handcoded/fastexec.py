@@ -33,7 +33,7 @@ class Cfg:
     batch_seed: int = 12345
     # runtime
     eval_batch_size: int = 256
-    compile: object = "reduce-overhead"   # False, True, or a torch.compile mode
+    compile: object = False   # False, True, or a torch.compile mode
     bf16: bool = True
     log_every: int = 50
 
@@ -343,6 +343,7 @@ def train(task, instances, mode, seed, args, device, split: Split | None = None,
     fwd = model
     if cfg.compile and device.type == "cuda":
         mode = cfg.compile if isinstance(cfg.compile, str) else "default"
+        # Train on the compiled wrapper; generate/eval keep eager `model`.
         fwd = torch.compile(model, mode=mode, dynamic=False)
     bf16 = cfg.bf16 and device.type == "cuda" and torch.cuda.is_bf16_supported()
     stream = batches(split.n, cfg.batch_size, cfg.batch_seed)

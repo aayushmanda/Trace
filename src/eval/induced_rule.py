@@ -37,6 +37,11 @@ def gate_alphabet():
 
 GATES = gate_alphabet()
 M = len(GATES)
+DEFAULT_FILLERS = (
+    ("x0", "c01", "s23", "t012", "x3", "c30"),
+    ("x1", "c12", "s30", "t123", "x2", "c23"),
+    ("x2", "c23", "s01", "t201", "x0", "c12"),
+)
 
 
 def true_table(g):
@@ -313,7 +318,7 @@ def run(args):
         vocab_size=TOK.vocab_size, block_size=block, pad_id=TOK.pad_id,
         n_embd=args.n_embd, n_head=args.n_head, n_layer=args.n_layer, dropout=0.0,
     ).to(device)
-    model = maybe_compile(model, device, enabled=getattr(args, "compile", None))
+    train_model = maybe_compile(model, device, enabled=getattr(args, "compile", None))
     opt = make_optimizer(model, args, device)
     ckpts = sorted(set(args.checkpoints))
     rows = []
@@ -388,6 +393,7 @@ def run(args):
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 np.save(dest.with_name(f"{dest.stem}_step{pstep}{dest.suffix}"), Phat)
 
-    train_with_checkpoints(model, loader, opt, device, ckpts, on_checkpoint, grad_clip=1.0)
+    train_with_checkpoints(model, loader, opt, device, ckpts, on_checkpoint, grad_clip=1.0,
+                           train_model=train_model)
     append_rows(args.out, rows)
     return rows

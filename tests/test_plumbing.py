@@ -44,6 +44,24 @@ class PlumbingTests(unittest.TestCase):
             got = plan(args)
             self.assertEqual(got["rates"], [0.001])
 
+    def test_compile_disabled_under_unittest(self):
+        from src.training.seed import compile_enabled, maybe_compile
+        self.assertFalse(compile_enabled(device="cuda"))
+        self.assertFalse(compile_enabled(explicit=True, device="cuda"))
+        model = GPTModel(vocab_size=8, block_size=8, pad_id=0, n_embd=8, n_head=2, n_layer=1)
+        forward = model.forward
+        compiled = maybe_compile(model, "cpu", enabled=True)
+        self.assertIs(compiled, model)
+        self.assertIs(model.forward, forward)
+        self.assertFalse(getattr(compiled, "_trace_compiled", False))
+
+    def test_maybe_compile_does_not_replace_forward(self):
+        from src.training.seed import maybe_compile
+        model = GPTModel(vocab_size=8, block_size=8, pad_id=0, n_embd=8, n_head=2, n_layer=1)
+        original = model.forward
+        maybe_compile(model, "cuda", enabled=True)
+        self.assertIs(model.forward, original)
+
     def test_yaml_configs_exist(self):
         root = Path(__file__).resolve().parents[1]
         for name in ("induced_rule", "architecture_controls", "length_generalization",

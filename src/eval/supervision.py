@@ -10,12 +10,11 @@ from src.data.sample import generate_unique
 from src.eval.generate import evaluate
 from src.training.loop import train_steps
 from src.training.optim import build_gpt, make_loader, make_optimizer
-from src.training.seed import default_device, maybe_high_precision, set_seed
+from src.training.seed import default_device, maybe_compile, maybe_high_precision, set_seed
 
 
 def main(args):
-    device = torch.device(args.device or default_device() if getattr(args, "device", None) else (
-        "cuda" if torch.cuda.is_available() else "cpu"))
+    device = torch.device(args.device if getattr(args, "device", None) else default_device())
     maybe_high_precision(device, compile=getattr(args, "compile", None), bf16=getattr(args, "bf16", None))
     results = defaultdict(list)
     for task_name in args.tasks:
@@ -29,8 +28,9 @@ def main(args):
                 dataset = SupervisionDataset(train_instances, task, mode)
                 loader = make_loader(dataset, args, device)
                 model = build_gpt(task, args, device)
+                train_model = maybe_compile(model, device, enabled=getattr(args, "compile", None))
                 opt = make_optimizer(model, args, device)
-                loss = train_steps(model, loader, opt, device, args.steps, args.grad_clip,
+                loss = train_steps(train_model, loader, opt, device, args.steps, args.grad_clip,
                                    desc=f"{task_name}/{mode}/s{seed}")
                 accuracy = evaluate(model, task, val_instances, mode, args, device)
                 results[(task_name, mode)].append(accuracy)

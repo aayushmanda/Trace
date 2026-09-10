@@ -43,8 +43,12 @@ def train_steps(model, loader, optimizer, device, n_steps, grad_clip=1.0, loss_f
 
 
 def train_with_checkpoints(model, loader, optimizer, device, checkpoints, on_checkpoint,
-                           grad_clip=1.0, loss_fn=None, desc=None):
-    """on_checkpoint(step, model, loss) at listed steps, including 0 before updates."""
+                           grad_clip=1.0, loss_fn=None, desc=None, train_model=None):
+    """on_checkpoint(step, model, loss) uses the eager `model` (generate/probes).
+
+    Pass `train_model=maybe_compile(model, ...)` so the loss path can be compiled.
+    """
+    runner = train_model if train_model is not None else model
     ckpts = sorted(set(checkpoints))
     iterator = iter(loader)
     step_loss = loss_fn or (lambda m, b: gpt_lm_loss(m, b, device))
@@ -54,6 +58,8 @@ def train_with_checkpoints(model, loader, optimizer, device, checkpoints, on_che
         if step in ckpts:
             on_checkpoint(step, model, loss)
             model.train()
+            if runner is not model:
+                runner.train()
         if step == max(ckpts):
             break
         try:
@@ -63,7 +69,7 @@ def train_with_checkpoints(model, loader, optimizer, device, checkpoints, on_che
             batch = next(iterator)
         optimizer.zero_grad(set_to_none=True)
         with _maybe_autocast(device):
-            loss = step_loss(model, batch)
+            loss = step_loss(runner, batch)
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), grad_clip)
         optimizer.step()

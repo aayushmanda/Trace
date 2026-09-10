@@ -19,6 +19,7 @@ from src.boolean_circuit_tasks import _apply_gate
 from src.model import GPTModel
 from src.plot_style import apply_style
 from src.tokenizer import CharTokenizer
+from src.training.seed import maybe_high_precision
 
 
 STATE_SYMBOLS = "ABCDEFGHIJKLMNOP"  # 16 atomic state tokens
@@ -420,8 +421,7 @@ def main():
             raise ValueError(f"support size must be in [1,15], got {m}")
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    if device.type == "cuda":
-        torch.set_float32_matmul_precision("high")
+    maybe_high_precision(device)
 
     tokenizer = build_tokenizer()
     base_contexts = build_base_contexts(args.max_contexts, args.context_seed)

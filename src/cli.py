@@ -3,7 +3,7 @@ from argparse import Namespace
 from pathlib import Path
 
 from src.training.config import load_experiment
-from src.training.seed import default_device
+from src.training.seed import configure_device, default_device
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -24,7 +24,6 @@ def _fill(args, cfg, **defaults):
     args.weight_decay = getattr(args, "weight_decay", 0.0)
     args.grad_clip = getattr(args, "grad_clip", 1.0)
     args.dropout = getattr(args, "dropout", 0.0)
-    from src.training.seed import configure_device
     configure_device(args.device, compile=getattr(args, "compile", None), bf16=getattr(args, "bf16", None))
     return args
 

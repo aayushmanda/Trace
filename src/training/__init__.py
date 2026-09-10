@@ -4,6 +4,7 @@ from src.training.loop import gpt_lm_loss, train_indexed, train_steps, train_wit
 from src.training.optim import build_gpt, make_adamw, make_loader, make_optimizer
 from src.training.progress import progress
 from src.training.seed import (
+    add_compile_bf16_flags,
     autocast_context,
     compile_enabled,
     configure_device,
@@ -14,6 +15,7 @@ from src.training.seed import (
 )
 
 __all__ = [
+    "add_compile_bf16_flags",
     "append_csv",
     "append_rows",
     "autocast_context",

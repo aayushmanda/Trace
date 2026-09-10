@@ -14,6 +14,7 @@ from tqdm.auto import tqdm
 
 from src.model import GPTModel
 from src.registry import TASKS
+from src.training.seed import maybe_high_precision
 
 
 def set_seed(seed):
@@ -429,9 +430,7 @@ def main():
     device = torch.device(
         "cuda" if torch.cuda.is_available() else "cpu"
     )
-
-    if device.type == "cuda":
-        torch.set_float32_matmul_precision("high")
+    maybe_high_precision(device)
 
     task = TASKS[args.task]
 

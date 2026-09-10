@@ -22,6 +22,57 @@ python -m src … --device cuda:2
 
 If `CUDA_VISIBLE_DEVICES` is set, scripts treat `cuda:0` as that physical GPU. Default device selection already prefers `cuda:2` then `cuda:3`. Cap concurrent jobs (`MAX_JOBS=2` in `experiments/run_revision_bridge.sh`).
 
+**Compile is off by default.** Training may opt in with YAML `compile: true`, `TRACE_COMPILE=1`, or `--compile`. That compiles a **wrapper** used only for the train loss; `generate`, probes, induced-rule, and pullback always call the eager module (same parameters). Do not replace `model.forward` with `torch.compile`. `--no-compile` forces eager. Tests never compile. Architecture-controls `run_one` stays eager (no `compile: true` in that YAML).
+
+```bash
+python -m src executor --config configs/experiments/executor_comparison.yaml --compile   # train compiled
+python -m src executor --no-compile   # override YAML compile: true
+```
+
+---
+
+## Two stacks (do not mix forwards)
+
+**GPT** — character-token LayerNorm Transformer (`src.models.gpt.GPTModel`). Boolean circuits as character strings. Used for Table 1 / Figs 1–2 / LoRA, and for **optional extras** (induced-rule, length, \(m_{\min}\)) that are **not** paper Figure 4.
+
+**Handcoded** — semantic-token executors (`handcoded/` package): one token per 4-bit state / gate. **Paper §7 / Figs 4–5 / Table 7** are this stack (one-block width 96), not GPT and not the oracle-shaped Table 4 nets.
+
+Shared: seed, YAML under `configs/experiments/`, CSV writers, device, progress bars.
+
+Entry point: `python -m src <command>`. Equivalent paper scripts still exist under `experiments/` if you need a one-off flag.
+
+---
+
+## Paper §7: handcoded semantic-token readout (Figs 4–5, Table 7)
+
+This is the completed five-seed study in the compiled PDF. Protocol: one causal block, width 96, 4 heads, 192-unit ReLU MLP, no LN/dropout, \(D\in\{2,4,6\}\), seeds 42–46, 10k train circuits, 2k updates, process / outcome / mixed. Builder refuses incomplete seed×depth coverage.
+
+```bash
+# Single comparison run (empty output dir required):
+python -m src executor --config configs/experiments/executor_comparison.yaml \
+  --output results/executor_comparison/smoke --steps 2 --train-size 64 --test-size 16 \
+  --probe-size 8 --batch-size 16 --checkpoints 0 2 --device cpu --threads 1
+
+# Depth replication (paper: D=2,4,6 × seeds 42–46). Default workers are CPU.
+python -m src executor-depths --config configs/experiments/executor_depths.yaml
+
+# Verified figures + Table 7 TeX (run after replication is complete):
+python experiments/build_executor_results.py \
+  --input results/executor_comparison/depth_replication --paper Paper
+```
+
+Writes:
+
+- `Paper/figures/trained_executor_bridge.pdf` — Figure 4
+- `Paper/figures/trained_executor_depths.pdf` — Figure 5
+- `Paper/data/trained_executor_rows.tex` — Table 7 rows (`\input` from `trained_model_protocol.tex`)
+- `Paper/data/trained_executor_numbers.tex` — §7 macros (`\input` from `trained_model_results.tex`)
+- paste copy: `Paper/data/trained_executor_table.md`
+
+Existing complete run: `results/executor_comparison/depth_replication/` (`metrics.csv`, per-seed `report.md`). Do not treat GPT `induced_rule.py` output as this figure.
+
+The YAML may list depth 8; the **manuscript study is \(D\in\{2,4,6\}\)** as in `protocol.json`. Do not pool with character-token GPT readouts.
+
 ---
 
 ## Handcoded tutorial notebook
@@ -31,112 +82,18 @@ Package: `handcoded/` (`gates`, `tokenizer`, `models`, `data`, `generate`, `trai
 ```bash
 conda activate aayus   # or: uv sync && source .venv/bin/activate
 cd /path/to/trace
-# Jupyter kernel = that env's python
 jupyter notebook handcoded/handcoded_executors.ipynb
-# or VS Code / Cursor: select the env kernel, run all
 ```
 
-Device: the first cell prefers `cuda:2` if ≥3 GPUs exist, else `cuda`, else CPU. Plots use `src.plot_style.apply_style()` (seaborn-like grey grid, DejaVu Sans) — do not copy rcParams into scripts.
-
-`handcoded_utils.py` is a deprecated import shim; new code should `import handcoded`.
+Device: the first cell prefers `cuda:2` if ≥3 GPUs exist, else `cuda`, else CPU. Plots use `src.plot_style.apply_style()`. `handcoded_utils.py` is a deprecated import shim; new code should `import handcoded`.
 
 ---
 
-## Two stacks (do not mix forwards)
+## Architecture × supervision (Table 6 is still one seed)
 
-**GPT** — character-token LayerNorm Transformer (`src.models.gpt.GPTModel`). Boolean circuits as character strings. Induced-rule, length, m_min.
+PDF **Table 6** (`tab:2x2`) is the historical **one-seed** reachability notebook (process/outcome 61.7→38.1%; process/process 100%; outcome/outcome diverged). **Do not replace those cells** with unrun 10-seed numbers.
 
-**Handcoded** — semantic-token executors (`handcoded/` package): one token per 4-bit state / gate. Local tables, composition, architecture × supervision. Not the same architecture as GPT.
-
-Shared: seed, YAML under `configs/experiments/`, CSV writers, device, progress bars.
-
-Entry point: `python -m src <command>`. Equivalent paper scripts still exist under `experiments/` if you need a one-off flag.
-
----
-
-## Smoke (minutes) vs full paper
-
-**Smoke** (one small process GPT, 2 train steps):
-
-```bash
-python -m src smoke
-# same as:
-python -m src induced --config configs/experiments/smoke.yaml --depth 2 --condition process --seed 2001
-```
-
-Handcoded smoke (CPU or one GPU; empty output dir required):
-
-```bash
-python -m src executor --config configs/experiments/executor_comparison.yaml \
-  --output results/executor_comparison/smoke --steps 2 --train-size 64 --test-size 16 \
-  --probe-size 8 --batch-size 16 --checkpoints 0 2 --device cpu --threads 1
-```
-
-**Full paper:** sections below in the run order at the end. Wall time is GPU-days, not minutes. Use `experiments/run_revision_bridge.sh` to queue GPT induced + length + m_min on GPU 2/3 (`MAX_JOBS=2`).
-
----
-
-## GPT: induced-rule / ε_rule / pullback
-
-Config: `configs/experiments/induced_rule.yaml`  
-D ∈ {2,4,6,8}, outcome and process, seeds 2001–2003. Probe steps 1, ⌊D/2⌋, D. Pullback on. Discard readouts with `state_on_set_mass < 0.5` at analysis time.
-
-One cell:
-
-```bash
-python -m src induced --config configs/experiments/induced_rule.yaml \
-  --depth 4 --condition process --seed 2001 --with-pullback --device cuda:2
-```
-
-Grid (or run the shell script):
-
-```bash
-for D in 2 4 6 8; do
-  for COND in outcome process; do
-    for SEED in 2001 2002 2003; do
-      python -m src induced --config configs/experiments/induced_rule.yaml \
-        --depth $D --condition $COND --seed $SEED --with-pullback --device cuda:2
-    done
-  done
-done
-```
-
-CSV appends to `results/revision/induced_rule.csv`. Checkpoints: `results/revision/induced_ckpts/`. Logs if using the shell: `logs/revision/induced_*.log`.
-
-Standalone pullback (same GPT stack, default D=4):
-
-```bash
-python -m src pullback --depth 4 --seed 2001 --device cuda:2 --out results/pullback.csv
-```
-
----
-
-## Handcoded: induced-rule analogue / ε_rule / pullback (gradient cosine)
-
-Config: `configs/experiments/handcoded_induced.yaml` (same keys as `executor_comparison.yaml`).  
-Local gold-prefix tables, `epsilon_rule`, composition TV, mixed-format gradient cosine vs true-rule and random controls. Output directory must be empty.
-
-```bash
-python -m src executor --config configs/experiments/handcoded_induced.yaml \
-  --output results/executor_comparison/induced --device cuda:2
-```
-
-Depth replication D=2,4,6,8 (5 seeds): `configs/experiments/executor_depths.yaml`
-
-```bash
-python -m src executor-depths --config configs/experiments/executor_depths.yaml
-```
-
-Writes `results/executor_comparison/depth_replication/metrics.csv` and per-run logs next to it. Default worker device in that launcher is CPU; override by editing the subprocess `--device` if you want GPU.
-
-Figures from a comparison run: `results/executor_comparison/<run>/*.pdf` plus `metrics.csv`, `report.md`, `checkpoints/`.
-
----
-
-## Architecture × supervision (handcoded, 10 seeds, LR grid, success >95%)
-
-Config: `configs/experiments/architecture_controls.yaml`  
-Output **`results/architecture_controls_n10`** (do not reuse `results/architecture_controls/` if `protocol.json` already exists). Rates `2e-3, 1e-3, 5e-4, 2e-4`. Confirmation seeds 42–51. Report fraction of seeds with selected-checkpoint **test** answer accuracy **> 95%**.
+The planned multi-seed LR grid is `experiments/architecture_controls.py` → `results/architecture_controls_n10/` (rates \(2\times10^{-3},10^{-3},5\times10^{-4},2\times10^{-4}\), confirmation seeds 42–51, success = test answer accuracy \(>95\%\)). That directory is empty; only `results/architecture_controls/protocol.json` (`plan`) exists. Calibration / confirm have not produced a table.
 
 ```bash
 python -m src architecture plan --config configs/experiments/architecture_controls.yaml
@@ -145,83 +102,75 @@ python -m src architecture confirm --config configs/experiments/architecture_con
 python -m src architecture summarize --config configs/experiments/architecture_controls.yaml
 ```
 
-Per-run logs: `results/architecture_controls_n10/{calibration,confirmation}/*/run.log`. Summary: `success_fraction.csv` and `success_fraction.json` in that directory.
-
 ---
 
-## Length generalization (GPT)
+## Optional extra / not in this PDF
 
-Config: `configs/experiments/length_generalization.yaml`  
-Train D=8, eval 8/10/12/16, outcome and process, seeds 2001–2003.
+These implement `app:regime-spec` on **character-token GPT**, plus length and \(m_{\min}\). They are revision extras. They are **not** Figure 4 / Table 7. `experiments/run_revision_bridge.sh` queues this GPT grid, not the semantic-token protocol.
+
+### GPT induced-rule / ε_rule / pullback
+
+Config: `configs/experiments/induced_rule.yaml`  
+D ∈ {2,4,6,8}, outcome and process, seeds 2001–2003. Discard readouts with `state_on_set_mass < 0.5`.
+
+```bash
+python -m src induced --config configs/experiments/induced_rule.yaml \
+  --depth 4 --condition process --seed 2001 --with-pullback --device cuda:2
+python -m src pullback --depth 4 --seed 2001 --device cuda:2 --out results/pullback.csv
+python experiments/analyze_induced.py   # Paper/figures/induced_rule.pdf (not \includegraphics'd in main.pdf)
+```
+
+CSV: `results/revision/induced_rule.csv`.
+
+### Length generalization (GPT)
+
+Train D=8, eval 8/10/12/16. No figure/table number in `main.pdf`.
 
 ```bash
 python -m src length --config configs/experiments/length_generalization.yaml --device cuda:2
 ```
 
-CSV: `results/revision/length_generalization.csv`. Checkpoints: `results/revision/length_ckpts/`.
+### \(m_{\min}\) histograms at ρ = 0.80 (GPT)
 
----
-
-## m_min histograms at ρ = 0.80 (GPT)
-
-Config: `configs/experiments/margin_histograms.yaml`  
-Task `boolean_circuit_8`. Proposition 1 / greedy flips; not a “phase transition” claim.
+Proposition 1 / greedy flips. Histograms are not in this PDF.
 
 ```bash
 python -m src margins --config configs/experiments/margin_histograms.yaml --device cuda:2
 ```
 
-CSV: `results/revision/mmin_histograms.csv`.
+`python -m src analyze` writes `Paper/figures/revision_*.pdf` from `results/revision/*.csv` if present.
 
 ---
 
-## Figures
-
-After CSVs exist:
+## Smoke
 
 ```bash
-python -m src analyze
-# GPT induced-rule tables + Paper/figures/induced_rule.pdf (fixed paths):
-python experiments/analyze_induced.py
+python -m src smoke
 ```
 
-`python -m src analyze` writes `Paper/figures/revision_induced_rule.pdf`, `revision_length_generalization.pdf`, `revision_mmin.pdf` from `results/revision/*.csv`, and prints architecture success fractions if `results/architecture_controls_n10/success_fraction.csv` exists.
-
-`Paper/` is local (often gitignored). Create `Paper/figures` if missing.
+Handcoded smoke is the short `python -m src executor …` command in the §7 section above.
 
 ---
 
-## Outputs (where things go)
+## Outputs
 
 | What | Path |
 |---|---|
-| GPT paper CSVs | `results/revision/` |
-| GPT induced / length checkpoints | `results/revision/induced_ckpts/`, `results/revision/length_ckpts/` |
-| GPT queue logs | `logs/revision/` |
-| Architecture (n=10) | `results/architecture_controls_n10/` |
-| Handcoded executor runs | `results/executor_comparison/` |
-| Figures | `Paper/figures/` |
-| Pullback-only CSV | `results/pullback.csv` |
+| §7 depth replication | `results/executor_comparison/depth_replication/` |
+| Fig 4 / 5 + Table 7 TeX | `Paper/figures/trained_executor_*.pdf`, `Paper/data/trained_executor_*.tex` |
+| Architecture plan (not Table 6) | `results/architecture_controls/protocol.json` |
+| Architecture n=10 (not run) | `results/architecture_controls_n10/` |
+| GPT extras | `results/revision/` |
+| `Paper/` | often gitignored; local manuscript |
 
 ---
 
 ## Tests
 
 ```bash
-TRACE_TQDM=0 python -m unittest tests.test_plumbing tests.test_handcoded experiments.test_executor_comparison experiments.test_revision_bridge
+TRACE_TQDM=0 python -m unittest tests.test_plumbing tests.test_handcoded tests.test_executor_comparison tests.test_revision_bridge
 # or
 TRACE_TQDM=0 python -m unittest discover -s tests -v
 ```
 
-`experiments/test_revision_bridge.py` is heavier than `tests/test_plumbing.py`.
-
----
-
-## Other GPT diagnostics (not the revision grid)
-
-```bash
-python -m src supervision --tasks boolean_circuit_4 --seeds 2001 --steps 100 --train-size 1000
-python -m src reliability --task boolean_circuit_8 --rhos 0.8 --seeds 2001
-```
-
-Claim map for remaining `experiments/*.py`: [experiments/README.md](experiments/README.md). Tutorial notebook: `handcoded/handcoded_executors.ipynb`.
+Claim map: [experiments/README.md](experiments/README.md). Manuscript map: [Paper/EXPERIMENT_MAP.md](Paper/EXPERIMENT_MAP.md).

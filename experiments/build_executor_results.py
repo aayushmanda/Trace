@@ -39,7 +39,8 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--input',type=Path,default=ROOT/'results/executor_comparison/depth_replication')
     p.add_argument('--paper',type=Path,default=ROOT/'Paper')
-    args=p.parse_args();protocol=json.loads((args.input/'protocol.json').read_text())
+    args=p.parse_args();args.input=args.input.resolve();args.paper=args.paper.resolve()
+    protocol=json.loads((args.input/'protocol.json').read_text())
     frame=pd.read_csv(args.input/'metrics.csv')
     keys=['depth','seed','mode','step']
     if frame.duplicated(keys).any():raise ValueError('Duplicate measurements')
@@ -57,6 +58,8 @@ def main():
                 provenance.append({'file':str(path.relative_to(ROOT)),
                                    'sha256':hashlib.sha256(path.read_bytes()).hexdigest()})
     json_path=args.paper/'data/trained_executor_sources.json'
+    json_path.parent.mkdir(parents=True,exist_ok=True)
+    (args.paper/'figures').mkdir(parents=True,exist_ok=True)
     json_path.write_text(json.dumps({'protocol':protocol,'sources':provenance},indent=2)+'\n')
     apply_style()
     d4=frame[frame.depth==4]
@@ -126,7 +129,7 @@ def main():
         mean=scale*row[field+'_mean'];sd=scale*row[field+'_std']
         precision=1 if scale==100 else 3
         value=f'{mean:.{precision}f}'+r'\pm'+f'{sd:.{precision}f}'
-        macros.append(r'\newcommand{\'+name+'}{'+value+'}')
+        macros.append('\\newcommand{\\' + name + '}{' + value + '}')
     (args.paper/'data/trained_executor_numbers.tex').write_text('\n'.join(macros)+'\n')
     print(summary[['depth','mode','free_answer_accuracy_mean','local_rule_accuracy_mean',
                    'composition_tv_with_invalid_mean','gradient_cosine_mean']].to_string(index=False))

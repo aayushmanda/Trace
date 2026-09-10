@@ -30,7 +30,7 @@ import handcoded as h
 from src.training.config import load_yaml
 from src.training.optim import make_adamw
 from src.training.progress import progress
-from src.training.seed import autocast_context, configure_device, maybe_compile, set_seed
+from src.training.seed import add_compile_bf16_flags, autocast_context, configure_device, maybe_compile, set_seed
 from src.plot_style import apply_style
 
 COLORS = {'process': '#247ba0', 'outcome': '#dd8452', 'both': '#7252a2'}
@@ -463,6 +463,7 @@ def main():
     parser.add_argument('--lr', type=float, default=float(cfg.get('lr', 0.002)))
     parser.add_argument('--device', default=cfg.get('device', 'cpu'))
     parser.add_argument('--checkpoints', type=int, nargs='+', default=list(cfg.get('checkpoints', [0, 100, 500, 1000, 2000])))
+    add_compile_bf16_flags(parser, cfg)
     args = parser.parse_args()
     if min(args.depth, args.steps, args.train_size, args.test_size, args.probe_size,
            args.batch_size, args.threads, args.backgrounds) < 1 or args.depth < 2:
@@ -483,8 +484,9 @@ def main():
     data = {mode: h.encode_dataset(train, tok, mode).to(device) for mode in ('outcome', 'process')}
     base = h.build_random_learned_model(tok, args.depth, seed=args.seed,
                                        d_model=args.d_model, d_ff=args.d_ff, device=device)
-    models = {mode: maybe_compile(copy.deepcopy(base), device, enabled=getattr(args, "compile", None))
-              for mode in COLORS}
+    models = {mode: copy.deepcopy(base) for mode in COLORS}
+    train_models = {mode: maybe_compile(models[mode], device, enabled=getattr(args, "compile", None))
+                    for mode in COLORS}
     optimizers = {mode: make_adamw(model.parameters(), args.lr, weight_decay=0.01, device=device)
                   for mode, model in models.items()}
     schedule = h.make_batch_schedule(len(train), args.steps, args.batch_size, 2026)
@@ -541,16 +543,17 @@ def main():
         if step == args.steps: break
         idx = torch.tensor(schedule[step], device=device)
         for mode, model in models.items():
-            model.train()
+            runner = train_models[mode]
+            runner.train()
             optimizer = optimizers[mode]
             optimizer.zero_grad(set_to_none=True)
             with autocast_context(device):
                 if mode == 'both':
                     mask = assignment[idx]
-                    loss = sum(h.language_model_loss(model, data[fmt].select(idx[select])) * select.float().mean()
+                    loss = sum(h.language_model_loss(runner, data[fmt].select(idx[select])) * select.float().mean()
                                for fmt, select in (('process', mask), ('outcome', ~mask)) if select.any())
                 else:
-                    loss = h.language_model_loss(model, data[mode].select(idx))
+                    loss = h.language_model_loss(runner, data[mode].select(idx))
             if not torch.isfinite(loss):
                 raise RuntimeError(f'Non-finite loss for {mode} at step {step + 1}')
             loss.backward()

@@ -1,3 +1,4 @@
+import argparse
 import os
 import random
 import sys
@@ -76,8 +77,40 @@ def maybe_high_precision(device, compile=None, bf16=None):
     return configure_device(device, compile=compile, bf16=bf16)
 
 
+def add_compile_bf16_flags(parser, cfg=None, *, from_yaml=True):
+    """`--compile` / `--bf16` / `--data-on-device`. YAML defaults; compile off if omitted.
+
+    `from_yaml=False` leaves defaults as None so load_experiment can fill from YAML.
+    """
+    cfg = cfg or {}
+    if from_yaml:
+        compile_default = bool(cfg.get("compile", False))
+        bf16_default = bool(cfg.get("bf16", True))
+        data_default = bool(cfg.get("data_on_device", False))
+    else:
+        compile_default = None
+        bf16_default = None
+        data_default = None
+    parser.add_argument(
+        "--compile", action=argparse.BooleanOptionalAction, default=compile_default,
+        help="Compile a training wrapper only; generate/eval stay eager. Default off unless YAML compile: true.",
+    )
+    parser.add_argument(
+        "--bf16", action=argparse.BooleanOptionalAction, default=bf16_default,
+        help="CUDA bfloat16 autocast. Default on unless YAML bf16: false.",
+    )
+    parser.add_argument(
+        "--data-on-device", action=argparse.BooleanOptionalAction, default=data_default,
+        dest="data_on_device",
+        help="Keep small ContinuationDataset tensors on GPU.",
+    )
+
+
 def compile_enabled(explicit=None, device=None):
-    """TRACE_COMPILE=1 is the CUDA default outside tests. Tests never compile."""
+    """Compile only if YAML/CLI `--compile`, TRACE_COMPILE=1, or configure_device(compile=True).
+
+    Default is off. Tests never compile.
+    """
     if _in_tests():
         return False
     env = _env_flag("TRACE_COMPILE")
@@ -88,7 +121,7 @@ def compile_enabled(explicit=None, device=None):
     elif _explicit_compile is not None:
         wanted = _explicit_compile
     else:
-        wanted = True
+        wanted = False
     if not wanted:
         return False
     if device is not None and torch.device(device).type != "cuda":
@@ -118,10 +151,11 @@ def autocast_context(device, enabled=None):
 
 
 def maybe_compile(model, device, enabled=None):
-    """Compile `forward` only (not greedy generate). Eager fallback on failure.
+    """Return an optional compiled *wrapper* for training. Never mutate `model.forward`.
 
-    First compiled call is slow (Inductor). Subsequent train steps reuse the graph
-    when sequence length is fixed. Growing generate lengths can recapture graphs.
+    Keep `model` for generate / probes / induced-rule / pullback. Train with the
+    return value (`train_model = maybe_compile(model, ...)`); it shares parameters.
+    Replacing `forward` recaptures a Dynamo graph on every new generate length.
     """
     name = type(model).__name__
     if name not in _COMPILABLE:
@@ -131,11 +165,12 @@ def maybe_compile(model, device, enabled=None):
     if not compile_enabled(explicit=enabled, device=device):
         return model
     try:
-        model.forward = torch.compile(model.forward, mode="default", fullgraph=False)
-        model._trace_compiled = True
+        compiled = torch.compile(model, mode="default", fullgraph=False)
+        compiled._trace_compiled = True
+        return compiled
     except Exception as exc:
         warnings.warn(
             f"torch.compile failed for {name} ({exc}); continuing eager",
             stacklevel=2,
         )
-    return model
+        return model
