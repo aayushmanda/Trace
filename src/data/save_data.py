@@ -3,7 +3,6 @@ import random
 from typing import List
 
 from src.data.dataclass import Instance
-from src.data.registry import TASKS
 
 
 def save_mixed_trace_file(instances: List[Instance], correct_ratio: float, output_file: str, seed: int = 100):

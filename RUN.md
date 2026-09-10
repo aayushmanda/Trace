@@ -89,63 +89,105 @@ Device: the first cell prefers `cuda:2` if ≥3 GPUs exist, else `cuda`, else CP
 
 ---
 
-## Architecture × supervision (Table 6 is still one seed)
+## Mechanistic revision extras (run in this order)
 
-PDF **Table 6** (`tab:2x2`) is the historical **one-seed** reachability notebook (process/outcome 61.7→38.1%; process/process 100%; outcome/outcome diverged). **Do not replace those cells** with unrun 10-seed numbers.
+These are **not** paper Figure 4 / Table 7 (that is the semantic-token §7 study above). Do **not** add five-condition / LoRA / reliability sweeps. Prefer `--device cuda:2` or `cuda:3`. Compile stays **off** (`compile: false` in these YAMLs). One `(depth, seed)` call at a time; do not launch the full grid from this file.
 
-The planned multi-seed LR grid is `experiments/architecture_controls.py` → `results/architecture_controls_n10/` (rates \(2\times10^{-3},10^{-3},5\times10^{-4},2\times10^{-4}\), confirmation seeds 42–51, success = test answer accuracy \(>95\%\)). That directory is empty; only `results/architecture_controls/protocol.json` (`plan`) exists. Calibration / confirm have not produced a table.
+Discard GPT readouts with `state_on_set_mass < 0.5`. Mixed-format checkpoints use `condition: both` / `trace_fraction: 0.5`.
+
+### 1. Exact serialized-gradient pullback (highest priority)
+
+Full-vocabulary autoregressive CE on the serialized continuation (same mask as training). Reports \(\cos(-\nabla_\theta L_{\mathrm{out}}^{\mathrm{LM}}, J^\top W_{\mathrm{rule}})\), random controls, relative gradient error. Grid: \(D\in\{2,4,6,8\}\), seeds 2001–2005.
 
 ```bash
-python -m src architecture plan --config configs/experiments/architecture_controls.yaml
-python -m src architecture calibrate --config configs/experiments/architecture_controls.yaml --devices cuda:2 cuda:3
-python -m src architecture confirm --config configs/experiments/architecture_controls.yaml --devices cuda:2 cuda:3
-python -m src architecture summarize --config configs/experiments/architecture_controls.yaml
+# Smoke (no full readout grid):
+python -m src pullback --config configs/experiments/pullback.yaml \
+  --depth 2 --seed 2001 --train-size 64 --val-size 16 --probe-size 8 \
+  --checkpoints 0 --n-layer 1 --n-embd 32 --batch-size 8 --device cpu \
+  --out results/revision/smoke_pullback.csv --no-compile
+
+# Full (one job; GPU hours):
+python -m src pullback --config configs/experiments/pullback.yaml \
+  --depth 4 --seed 2001 --device cuda:2 --no-compile
+# Repeat depths 2,4,6,8 × seeds 2001–2005.
 ```
 
----
+Also on mixed-format induced checkpoints: `--with-pullback` (same LM objective).
 
-## Optional extra / not in this PDF
+### 2. Step-dependent induced kernels
 
-These implement `app:regime-spec` on **character-token GPT**, plus length and \(m_{\min}\). They are revision extras. They are **not** Figure 4 / Table 7. `experiments/run_revision_bridge.sh` queues this GPT grid, not the semantic-token protocol.
-
-### GPT induced-rule / ε_rule / pullback
-
-Config: `configs/experiments/induced_rule.yaml`  
-D ∈ {2,4,6,8}, outcome and process, seeds 2001–2003. Discard readouts with `state_on_set_mass < 0.5`.
+For each position \(t=1\ldots D\) read \(\widehat P^{(t)}_g\) (several gate backgrounds). Composition is \(e_{s_0}^\top \widehat P^{(1)}_{g_1}\cdots\widehat P^{(D)}_{g_D}\) vs the model's direct-answer law — **not** one table reused at every depth. CSV columns: `eps_rule_hat` per `probe_step`, `eps_step_std`, `table_step_tv`, `background_eps_std`, `delta_comp_tv`.
 
 ```bash
 python -m src induced --config configs/experiments/induced_rule.yaml \
-  --depth 4 --condition process --seed 2001 --with-pullback --device cuda:2
-python -m src pullback --depth 4 --seed 2001 --device cuda:2 --out results/pullback.csv
-python experiments/analyze_induced.py   # Paper/figures/induced_rule.pdf (not \includegraphics'd in main.pdf)
+  --depth 4 --condition both --seed 2001 --with-pullback --device cuda:2 --no-compile
+# Grid: D ∈ {2,3,4,6,8}, seeds 2001–2005, mixed format.
+# Tiny: python -m src smoke
 ```
 
-CSV: `results/revision/induced_rule.csv`.
+### 3. Split-verdict depth table (central figure)
 
-### Length generalization (GPT)
-
-Train D=8, eval 8/10/12/16. No figure/table number in `main.pdf`.
+Same runs: \(D\in\{2,3,4,6,8\}\). Predicted exponent \(D-1\), fitted exponent in the \(\varepsilon\le 1/2\) ball (`refit_in_ball`), \(\delta_{\mathrm{comp}}\), exact-LM gradient cosine.
 
 ```bash
-python -m src length --config configs/experiments/length_generalization.yaml --device cuda:2
+python -m src split-verdict --config configs/experiments/split_verdict.yaml
+# or: python experiments/split_verdict.py
 ```
 
-### \(m_{\min}\) histograms at ρ = 0.80 (GPT)
+Writes `results/revision/split_verdict.csv` and `Paper/figures/split_verdict.pdf` via `apply_style()`. Needs induced (and optional pullback) CSVs from steps 1–2.
 
-Proposition 1 / greedy flips. Histograms are not in this PDF.
+### 4. Architecture × supervision 2×2
+
+PDF **Table 6** is still the historical **one-seed** notebook. Do not overwrite those cells. YAML has `compile: false`; `run_one` is eager. Devices default to GPU 2/3.
+
+**Job counts (do not start the 80-job confirm in a plumbing pass):** calibrate = 2 architectures × 4 LRs × 2 clips × 2 formats = **32** jobs; confirm after `selected_rates.json` = 2 × 10 seeds × 2 clips × 2 formats = **80** jobs.
 
 ```bash
-python -m src margins --config configs/experiments/margin_histograms.yaml --device cuda:2
+python -m src architecture plan --config configs/experiments/architecture_controls.yaml
+# After plan only, optional 1-run smoke (CPU):
+python -m src architecture single --output /tmp/arch_smoke --architecture process --mode process \
+  --seed 1 --lr 0.0005 --clip 1 --stage calibrate --steps 1 \
+  --train-size 8 --val-size 4 --test-size 4 --batch-size 4 --device cpu --no-compile
+
+# 10-seed confirm *after* calibrate finishes (GPU hours; cuda:2/3):
+python -m src architecture calibrate --config configs/experiments/architecture_controls.yaml --devices cuda:2 cuda:3 --no-compile
+python -m src architecture confirm --config configs/experiments/architecture_controls.yaml --devices cuda:2 cuda:3 --no-compile
+python -m src architecture summarize --config configs/experiments/architecture_controls.yaml
 ```
 
-`python -m src analyze` writes `Paper/figures/revision_*.pdf` from `results/revision/*.csv` if present.
+Output: `results/architecture_controls_n10/`. Existing leftover plan file: `results/architecture_controls/protocol.json`.
+
+### 5. Shared trainable kernel executor
+
+One tensor \(A\in\mathbb{R}^{M\times K\times K}\), \(P_g=\mathrm{softmax}(A_g)\). Same parameters for outcome compose vs process local CE. Init near uniform; vary \(\varepsilon\), \(D\). Projected true-rule gradient, escape time, success vs \(D\). Cheap CPU/GPU.
+
+```bash
+python -m src escape --smoke
+python -m src escape --config configs/experiments/escape_time.yaml --device cpu
+# or: python experiments/escape_time_law.py --shared --smoke
+```
+
+CSV: `results/revision/shared_kernel.csv`.
+
+### 6. Length + \(m_{\min}\) (AFTER 1–4; do not run the full grid now)
+
+Train \(D=8\), eval 8/10/12/16; gold-path \(m_{\min}\) at \(\rho=0.80\). No figure/table number in `main.pdf`. Keep the scripts; run only after pullback / induced / split-verdict / architecture calibration.
+
+```bash
+python -m src length --config configs/experiments/length_generalization.yaml --device cuda:2 --no-compile
+python -m src margins --config configs/experiments/margin_histograms.yaml --device cuda:2 --no-compile
+python -m src analyze   # Paper/figures/revision_*.pdf if CSVs exist
+```
 
 ---
 
 ## Smoke
 
 ```bash
-python -m src smoke
+TRACE_TQDM=0 python -m unittest tests.test_plumbing tests.test_revision_bridge
+python -m src escape --smoke
+python -m src architecture plan --config configs/experiments/architecture_controls.yaml
+python -m src smoke   # tiny mixed-format induced D=2; still a full 16×52 readout — use GPU if needed
 ```
 
 Handcoded smoke is the short `python -m src executor …` command in the §7 section above.
@@ -160,6 +202,9 @@ Handcoded smoke is the short `python -m src executor …` command in the §7 sec
 | Fig 4 / 5 + Table 7 TeX | `Paper/figures/trained_executor_*.pdf`, `Paper/data/trained_executor_*.tex` |
 | Architecture plan (not Table 6) | `results/architecture_controls/protocol.json` |
 | Architecture n=10 (not run) | `results/architecture_controls_n10/` |
+| Split verdict | `results/revision/split_verdict.csv`, `Paper/figures/split_verdict.pdf` |
+| Exact-LM pullback | `results/revision/pullback.csv` |
+| Shared kernel | `results/revision/shared_kernel.csv` |
 | GPT extras | `results/revision/` |
 | `Paper/` | often gitignored; local manuscript |
 

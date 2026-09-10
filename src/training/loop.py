@@ -10,6 +10,8 @@ def gpt_lm_loss(model, batch, device):
     x = x.to(device, dtype=torch.long, non_blocking=True)
     y = y.to(device, dtype=torch.long, non_blocking=True)
     mask = mask.to(device, dtype=torch.float32, non_blocking=True)
+    if x.ndim != 2 or y.shape != x.shape or mask.shape != x.shape:
+        raise ValueError(f"GPT batch must be (B, T) triples, got {tuple(x.shape)}")
     _, loss = model(x, targets=y, mask=mask)
     return loss
 

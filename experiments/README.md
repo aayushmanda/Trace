@@ -93,8 +93,10 @@ and are not included in the compiled `main.pdf`.
 
 | Script | What it runs | Role | Output |
 |---|---|---|---|
-| `induced_rule.py` | Character-token \(\widehat P_g\), \(\widehat\varepsilon_{\mathrm{rule}}\), credit exponent | Extra | `results/revision/induced_rule.csv` (also older `results/induced_rule/*.csv`) |
-| `pullback.py` | Parameter-space pullback vs \(\nabla_\theta L\) | Extra | `results/pullback.csv` |
+| `induced_rule.py` | Per-step \(\widehat P_g^{(t)}\), \(\widehat\varepsilon_{\mathrm{rule}}\), stepwise composition, optional exact-LM pullback | Extra | `results/revision/induced_rule.csv` |
+| `pullback.py` | \(J^\top W\) vs full-vocab \(-\nabla L^{\mathrm{LM}}\) | Extra | `results/revision/pullback.csv` |
+| `split_verdict.py` | Depth table: \(D-1\), in-ball exponent, \(\delta_{\mathrm{comp}}\), LM cosine | Extra (central revision figure) | `results/revision/split_verdict.csv` |
+| `escape_time_law.py` | Shared \(A\in\mathbb{R}^{M\times K\times K}\) outcome vs process | Extra | `results/revision/shared_kernel.csv` |
 | `analyze_induced.py` | Tables + `induced_rule.pdf` from archived CSVs | Extra figure | `Paper/figures/induced_rule.pdf` |
 | `run_depth_sweep.sh` / `run_condition_trajectory.sh` / `run_trace_fraction.sh` | GPT depth / condition / trace-fraction grids | Extra | `results/induced_rule/*.csv` |
 | `length_generalization.py` | Train \(D=8\), eval 10/12/16 | Extra (no PDF table) | `results/revision/length_generalization.csv` |

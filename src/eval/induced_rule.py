@@ -3,7 +3,6 @@
     Phat_g[s, s'] = P_theta(s' | s, g)
 """
 import json
-import math
 from itertools import permutations
 from pathlib import Path
 
@@ -207,12 +206,12 @@ def terminal_distribution(model, instances, depth, device):
     return renormalize(score_candidates(model, ctxs, STATES, device))
 
 
-def delta_comp(model, instances, Phat, depth, device):
+def delta_comp(model, instances, tables, depth, device):
     Q, on_set = terminal_distribution(model, instances, depth, device)
     tv, gold_gap, prod_acc, model_acc = [], [], [], []
     for row, inst in enumerate(instances):
         s0, gates = parse_prompt(inst.prompt, depth)
-        v = composition(Phat, s0, gates)
+        v = composition(tables, s0, gates)
         y = int(inst.gold, 2)
         tv.append(0.5 * np.abs(Q[row] - v).sum())
         gold_gap.append(abs(Q[row][y] - v[y]))
@@ -227,7 +226,7 @@ def delta_comp(model, instances, Phat, depth, device):
     )
 
 
-def credit_norms(Phat, instances, depth, scale=1.0, mode="actual"):
+def _scaled_table(Phat, scale, mode):
     c, Fc = split(Phat)
     if mode == "actual":
         P = Phat.copy()
@@ -238,7 +237,12 @@ def credit_norms(Phat, instances, depth, scale=1.0, mode="actual"):
     else:
         raise ValueError(mode)
     P = np.clip(P, 1e-12, None)
-    P = P / P.sum(axis=2, keepdims=True)
+    return P / P.sum(axis=2, keepdims=True)
+
+
+def credit_norms(tables, instances, depth, scale=1.0, mode="actual"):
+    seq = _tables_seq(tables, depth)
+    Ps = [_scaled_table(P, scale, mode) for P in seq]
     Pi = np.eye(K) - U
     out = []
     for inst in instances:
@@ -247,11 +251,11 @@ def credit_norms(Phat, instances, depth, scale=1.0, mode="actual"):
         y = int(inst.gold, 2)
         fwd = [np.eye(K)[s0]]
         for t in range(depth):
-            fwd.append(fwd[-1] @ P[gi[t]])
+            fwd.append(fwd[-1] @ Ps[t][gi[t]])
         bwd = [None] * (depth + 1)
         bwd[depth] = np.eye(K)[y]
         for t in range(depth - 1, -1, -1):
-            bwd[t] = P[gi[t]] @ bwd[t + 1]
+            bwd[t] = Ps[t][gi[t]] @ bwd[t + 1]
         p_y = float(fwd[0] @ bwd[0])
         if p_y <= 0:
             continue
@@ -261,14 +265,14 @@ def credit_norms(Phat, instances, depth, scale=1.0, mode="actual"):
     return float(np.mean(out)), float(np.max(out))
 
 
-def credit_exponent(Phat, instances, depth, mode, lambdas=(1.0, 0.5, 0.25, 0.125, 0.0625, 0.03125)):
-    _, Fc = split(Phat)
-    base = float(max(np.linalg.norm(Fc[g], 2) for g in range(M)))
+def credit_exponent(tables, instances, depth, mode, lambdas=(1.0, 0.5, 0.25, 0.125, 0.0625, 0.03125)):
+    seq = _tables_seq(tables, depth)
+    base = max(scales(P)[1] for P in seq)
     if base <= 0:
         return dict(exponent_fit="", exponent_r2="", credit_by_lambda="", eps_by_lambda="")
     xs, ys = [], []
     for lam in lambdas:
-        mean, _ = credit_norms(Phat, instances, depth, scale=lam, mode=mode)
+        mean, _ = credit_norms(seq, instances, depth, scale=lam, mode=mode)
         xs.append(lam * base)
         ys.append(mean)
     lx, ly = np.log(np.array(xs)), np.log(np.array(ys))
@@ -349,55 +353,58 @@ def run(args):
                 {"model": model.state_dict(), "args": vars(args), "step": step},
                 dest / f"{args.condition}_D{args.depth}_s{args.seed}_step{step}.pt",
             )
+        fillers = list(getattr(args, "fillers", None) or DEFAULT_FILLERS[: max(1, int(getattr(args, "n_fillers", 3)))])
+        primary = list(fillers[0])
+        Phats, onsets = [], []
+        for t in range(1, args.depth + 1):
+            Phat, on_set = induced_rules(model, args.depth, device, step=t, filler=primary)
+            Phats.append(Phat)
+            onsets.append(on_set)
+        dc = delta_comp(model, probe, Phats, args.depth, device)
+        eps_steps = [scales(P)[1] for P in Phats]
+        gam_steps = [scales(P)[0] for P in Phats]
+        rec_steps = [rule_recovery(P) for P in Phats]
+        eps_step_std = float(np.std(eps_steps))
+        table_step_tv = float(np.mean([table_row_tv(Phats[t], Phats[0]) for t in range(1, args.depth)])) if args.depth > 1 else 0.0
+        bg_eps, bg_tv = [eps_steps[0]], []
+        if step == max(ckpts) and len(fillers) > 1:
+            for filler in fillers[1:]:
+                Pbg, _ = induced_rules(model, args.depth, device, step=1, filler=list(filler))
+                bg_eps.append(scales(Pbg)[1])
+                bg_tv.append(table_row_tv(Phats[0], Pbg))
+        background_eps_std = float(np.std(bg_eps)) if len(bg_eps) > 1 else 0.0
+        background_table_tv = float(np.mean(bg_tv)) if bg_tv else 0.0
+        cred_mean, cred_max = credit_norms(Phats, probe, args.depth)
         pull_row = {}
         if getattr(args, "with_pullback", False) and step in {0, max(ckpts)}:
-            from src.eval.pullback import (  # noqa: PLC0415
-                PI, cosine, outcome_grad, process_grad, pullback_grad, surrogate_credit,
-            )
-            Phat1, _ = induced_rules(model, args.depth, device, step=1)
-            credit = surrogate_credit(Phat1, probe, args.depth)
-            ctrue = np.einsum("ij,mjk->mik", PI, TRUE - U[None])
-            ctrue *= np.linalg.norm(credit) / (np.linalg.norm(ctrue) + 1e-30)
-            rc = np.random.default_rng(0).normal(size=credit.shape)
-            rc = np.einsum("ij,mjk,kl->mil", PI, rc, PI)
-            rc *= np.linalg.norm(credit) / (np.linalg.norm(rc) + 1e-30)
-            gp = pullback_grad(model, args.depth, device, credit)
-            gt = pullback_grad(model, args.depth, device, ctrue)
-            gr = pullback_grad(model, args.depth, device, rc)
-            go = outcome_grad(model, probe, device)
-            gq = process_grad(model, probe, args.depth, device)
-            pull_row = dict(
-                cos_true_outcome=cosine(gt, go),
-                cos_true_process=cosine(gt, gq),
-                cos_random_outcome=cosine(gr, go),
-                cos_random_process=cosine(gr, gq),
-                cos_surrogate_outcome=cosine(gp, go),
-                cos_outcome_process=cosine(go, gq),
-            )
-            model.zero_grad(set_to_none=True)
+            from src.eval.pullback import measure_pullback
+            pull_row = measure_pullback(model, probe, args.depth, device, block, Phat=Phats[0], fd=step == max(ckpts))
+        if step == max(ckpts):
+            expo = dict(exponent_target=args.depth - 1)
+            for mode in ("conditional", "proportional"):
+                expo.update(credit_exponent(Phats, probe, args.depth, mode))
+        else:
+            expo = dict(exponent_target=args.depth - 1)
+            for mode in ("conditional", "proportional"):
+                expo.update({
+                    f"exponent_fit_{mode}": "", f"exponent_r2_{mode}": "",
+                    f"credit_by_lambda_{mode}": "", f"eps_by_lambda_{mode}": "",
+                })
+        vary = dict(
+            eps_step_std=eps_step_std, table_step_tv=table_step_tv,
+            background_eps_std=background_eps_std, background_table_tv=background_table_tv,
+            eps_rule_by_step=json.dumps({str(t + 1): float(v) for t, v in enumerate(eps_steps)}),
+            composition="per_step",
+        )
         for pstep in probe_steps:
-            Phat, on_set = induced_rules(model, args.depth, device, step=pstep)
-            gam, eps = scales(Phat)
-            rec = rule_recovery(Phat)
-            dc = delta_comp(model, probe, Phat, args.depth, device)
-            cred_mean, cred_max = credit_norms(Phat, probe, args.depth)
-            if step == max(ckpts) and pstep == probe_steps[0]:
-                expo = dict(exponent_target=args.depth - 1)
-                for mode in ("conditional", "proportional"):
-                    expo.update(credit_exponent(Phat, probe, args.depth, mode))
-            else:
-                expo = dict(exponent_target=args.depth - 1)
-                for mode in ("conditional", "proportional"):
-                    expo.update({
-                        f"exponent_fit_{mode}": "", f"exponent_r2_{mode}": "",
-                        f"credit_by_lambda_{mode}": "", f"eps_by_lambda_{mode}": "",
-                    })
+            i = pstep - 1
+            Phat = Phats[i]
             row = dict(
                 condition=args.condition, trace_fraction=args.trace_fraction,
                 depth=args.depth, seed=args.seed, probe_step=pstep, step=step,
-                free_answer_acc=acc, gamma_hat=gam, eps_rule_hat=eps,
-                rule_recovery=rec, credit_mean=cred_mean, credit_max=cred_max,
-                state_on_set_mass=on_set, **dc, **expo, **pull_row,
+                free_answer_acc=acc, gamma_hat=gam_steps[i], eps_rule_hat=eps_steps[i],
+                rule_recovery=rec_steps[i], credit_mean=cred_mean, credit_max=cred_max,
+                state_on_set_mass=onsets[i], **dc, **expo, **pull_row, **vary,
                 probe_seconds=round(time.time() - t0, 1),
             )
             rows.append(row)

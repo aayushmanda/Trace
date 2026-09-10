@@ -14,7 +14,7 @@ def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
     p = argparse.ArgumentParser(prog="python -m src", description="Trace paper experiments")
     p.add_argument("command", nargs="?", default="help",
-                   choices=["help", "induced", "pullback", "length", "margins", "architecture",
+                   choices=["help", "induced", "pullback", "split-verdict", "escape", "length", "margins", "architecture",
                             "executor", "executor-depths", "analyze", "supervision", "reliability", "smoke"])
     args, rest = p.parse_known_args(argv)
     if args.command in {None, "help"}:
@@ -22,8 +22,10 @@ def main(argv=None):
         print("commands:", ", ".join(p._option_string_actions and []))
         print("""
 GPT stack
-  python -m src induced --config configs/experiments/induced_rule.yaml --depth 2 --condition process --seed 2001
-  python -m src pullback --depth 4 --seed 2001
+  python -m src induced --config configs/experiments/induced_rule.yaml --depth 2 --condition both --seed 2001 --with-pullback
+  python -m src pullback --config configs/experiments/pullback.yaml --depth 4 --seed 2001
+  python -m src split-verdict --config configs/experiments/split_verdict.yaml
+  python -m src escape --smoke
   python -m src length --config configs/experiments/length_generalization.yaml
   python -m src margins --config configs/experiments/margin_histograms.yaml
   python -m src supervision --tasks boolean_circuit_4 --seeds 2001 --steps 100 --train-size 1000
@@ -62,6 +64,16 @@ Handcoded / semantic-token stack
         ns = _pullback_ns(rest)
         run_pullback(ns)
         return 0
+    if args.command == "split-verdict":
+        from src.cli import run_split_verdict
+        ns = _split_verdict_ns(rest)
+        run_split_verdict(ns)
+        return 0
+    if args.command == "escape":
+        from src.cli import run_escape
+        ns = _escape_ns(rest)
+        run_escape(ns)
+        return 0
     if args.command == "length":
         from src.cli import run_length
         ns = _length_ns(rest)
@@ -87,7 +99,7 @@ Handcoded / semantic-token stack
     if args.command == "smoke":
         from src.cli import run_induced
         ns = _induced_ns(["--config", "configs/experiments/smoke.yaml", "--depth", "2",
-                          "--condition", "process", "--seed", "2001"])
+                          "--condition", "both", "--seed", "2001"])
         run_induced(ns)
         return 0
     return 1
@@ -105,6 +117,7 @@ def _induced_ns(rest):
     p.add_argument("--probe-size", type=int, default=None)
     p.add_argument("--probe-step", type=int, default=1)
     p.add_argument("--probe-steps", type=int, nargs="+", default=None)
+    p.add_argument("--n-fillers", type=int, default=None)
     p.add_argument("--with-pullback", action="store_true")
     p.add_argument("--ckpt-dir", default=None)
     p.add_argument("--batch-size", type=int, default=None)
@@ -122,19 +135,42 @@ def _induced_ns(rest):
 
 def _pullback_ns(rest):
     p = argparse.ArgumentParser()
-    p.add_argument("--depth", type=int, default=4)
-    p.add_argument("--seed", type=int, default=2001)
-    p.add_argument("--train-size", type=int, default=60000)
-    p.add_argument("--val-size", type=int, default=1000)
-    p.add_argument("--probe-size", type=int, default=200)
-    p.add_argument("--batch-size", type=int, default=128)
-    p.add_argument("--lr", type=float, default=3e-4)
-    p.add_argument("--n-embd", type=int, default=128)
-    p.add_argument("--n-head", type=int, default=4)
-    p.add_argument("--n-layer", type=int, default=4)
-    p.add_argument("--checkpoints", type=int, nargs="+", default=[0, 500, 2000, 4000])
+    p.add_argument("--config", default="configs/experiments/pullback.yaml")
+    p.add_argument("--depth", type=int, default=None)
+    p.add_argument("--seed", type=int, default=None)
+    p.add_argument("--train-size", type=int, default=None)
+    p.add_argument("--val-size", type=int, default=None)
+    p.add_argument("--probe-size", type=int, default=None)
+    p.add_argument("--trace-fraction", type=float, default=None)
+    p.add_argument("--batch-size", type=int, default=None)
+    p.add_argument("--lr", type=float, default=None)
+    p.add_argument("--n-embd", type=int, default=None)
+    p.add_argument("--n-head", type=int, default=None)
+    p.add_argument("--n-layer", type=int, default=None)
+    p.add_argument("--checkpoints", type=int, nargs="+", default=None)
     p.add_argument("--device", default=None)
-    p.add_argument("--out", default="results/pullback.csv")
+    p.add_argument("--out", default=None)
+    add_compile_bf16_flags(p, from_yaml=False)
+    return p.parse_args(rest)
+
+
+def _split_verdict_ns(rest):
+    p = argparse.ArgumentParser()
+    p.add_argument("--config", default="configs/experiments/split_verdict.yaml")
+    p.add_argument("--input", default=None)
+    p.add_argument("--pullback", default=None)
+    p.add_argument("--out", default=None)
+    p.add_argument("--figure", default=None)
+    return p.parse_args(rest)
+
+
+def _escape_ns(rest):
+    p = argparse.ArgumentParser()
+    p.add_argument("--config", default="configs/experiments/escape_time.yaml")
+    p.add_argument("--smoke", action="store_true")
+    p.add_argument("--shared", action="store_true", default=True)
+    p.add_argument("--device", default=None)
+    p.add_argument("--out", default=None)
     add_compile_bf16_flags(p, from_yaml=False)
     return p.parse_args(rest)
 

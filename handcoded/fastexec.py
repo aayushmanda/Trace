@@ -474,7 +474,6 @@ def _demo(depth=8, n=512, seed=0):
 def selftest(device=None):
     import compare_supervision as cs
     import sweep_ratio as sr
-    from src.model import GPTModel
 
     device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
     task, items = _demo()

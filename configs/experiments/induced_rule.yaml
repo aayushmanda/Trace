@@ -1,8 +1,11 @@
 experiment: induced_rule
-depths: [2, 4, 6, 8]
-conditions: [outcome, process]
-seeds: [2001, 2002, 2003]
-probe_steps_mode: early_mid_late   # 1, D/2, D
+depths: [2, 3, 4, 6, 8]
+conditions: [both]
+seeds: [2001, 2002, 2003, 2004, 2005]
+condition: both
+trace_fraction: 0.5
+probe_steps_mode: all          # t = 1..D; do not reuse one P̂ at every depth
+n_fillers: 3
 with_pullback: true
 onset_min: 0.5
 train:
@@ -12,7 +15,7 @@ train:
   checkpoints: [0, 500, 2000, 4000]
   lr: 0.0003
   batch_size: 128
-  compile: true
+  compile: false
   bf16: true
 model:
   n_embd: 128

@@ -23,7 +23,7 @@ Run the one unit test suite in the tree (six checks on the readouts used by
 `compare_executor_rules.py`, including a finite-difference gradient check):
 
 ```bash
-cd experiments && uv run python -m unittest test_executor_comparison -v && cd ..
+uv run python -m unittest tests.test_executor_comparison
 ```
 
 ## What runs where

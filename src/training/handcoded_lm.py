@@ -1,5 +1,5 @@
 """Handcoded / semantic-token LM loss. Not the GPT forward pass."""
-from src.models.handcoded import h
+import handcoded as h
 
 
 def handcoded_lm_loss(model, batch):

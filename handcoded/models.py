@@ -25,6 +25,8 @@ class LearnedOneLayerTransformer(nn.Module):
         self.readout = nn.Linear(d_model, vocab_size, bias=False)
 
     def forward(self, ids, return_attention=False):
+        if ids.ndim != 2:
+            raise ValueError(f"ids must be (B, T), got {tuple(ids.shape)}")
         length = ids.shape[1]
         if length > self.max_length:
             raise ValueError(f"Input length {length} exceeds {self.max_length}")

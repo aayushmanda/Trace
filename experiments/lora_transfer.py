@@ -431,7 +431,8 @@ def main():
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     maybe_high_precision(device)
-    else: print("WARNING: no CUDA GPU; this will be slow")
+    if device.type != "cuda":
+        print("WARNING: no CUDA GPU; this will be slow")
     task = TASKS[args.task]; tok = load_tokenizer(args.model); args.pad_id = tok.pad_token_id
     args.output.parent.mkdir(parents=True, exist_ok=True); args.run_dir.mkdir(parents=True, exist_ok=True)
     if args.output.exists():

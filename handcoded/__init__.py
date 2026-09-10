@@ -17,9 +17,12 @@ from handcoded.models import (
 from handcoded.eval import (
     circuit_answer_matrix, evaluate_checkpoint, free_run_metrics, generated_answer,
     inspect_fixed_circuit, make_circuit_prompts, make_generation_evaluation,
+    gold_answer_matrix,
 )
 from handcoded.train import run_architecture_experiment, run_experiment, train_one_model, train_step
-from handcoded.animate import animate_training_dynamics, export_training_animation, save_training_mp4
+from handcoded.animate import (
+    animate_all_circuits, animate_training_dynamics, export_training_animation, save_training_mp4,
+)
 from handcoded.plotting import apply_style
 
 __all__ = [
@@ -33,6 +36,7 @@ __all__ = [
     "build_random_trainable_outcome_architecture", "build_random_trainable_process_architecture",
     "make_random_trainable_copy", "circuit_answer_matrix", "evaluate_checkpoint", "free_run_metrics",
     "generated_answer", "inspect_fixed_circuit", "make_circuit_prompts", "make_generation_evaluation",
+    "gold_answer_matrix",
     "run_architecture_experiment", "run_experiment", "train_one_model", "train_step",
-    "animate_training_dynamics", "export_training_animation", "save_training_mp4", "apply_style",
+    "animate_all_circuits", "animate_training_dynamics", "export_training_animation", "save_training_mp4", "apply_style",
 ]

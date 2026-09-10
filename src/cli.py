@@ -1,5 +1,4 @@
 """Paper + diagnostic entrypoints: python -m src <command>."""
-from argparse import Namespace
 from pathlib import Path
 
 from src.training.config import load_experiment
@@ -31,15 +30,21 @@ def _fill(args, cfg, **defaults):
 def run_induced(ns):
     from src.eval.induced_rule import run
     args, cfg = load_experiment(ns.config, ns)
-    args.condition = args.condition or "process"
+    args.condition = args.condition or cfg.get("condition") or "both"
     args.trace_fraction = getattr(args, "trace_fraction", None) or 0.5
     args.probe_step = getattr(args, "probe_step", None) or 1
     _fill(args, cfg, depth=4, seed=2001, train_size=30000, val_size=800, probe_size=300,
           batch_size=128, lr=3e-4, n_embd=128, n_head=4, n_layer=4,
           checkpoints=[0, 500, 2000, 4000], out="results/revision/induced_rule.csv")
+    if getattr(args, "n_fillers", None) is None:
+        args.n_fillers = int(cfg.get("n_fillers", 3))
     if getattr(args, "probe_steps", None) is None:
         d = int(args.depth)
-        args.probe_steps = [1, max(1, d // 2), d]
+        mode = cfg.get("probe_steps_mode", "all")
+        if mode in {"all", "every"}:
+            args.probe_steps = list(range(1, d + 1))
+        else:
+            args.probe_steps = [1, max(1, d // 2), d]
     if not getattr(args, "with_pullback", False):
         args.with_pullback = bool(cfg.get("with_pullback", False))
     run(args)
@@ -47,11 +52,22 @@ def run_induced(ns):
 
 def run_pullback(ns):
     from src.eval.pullback import run
-    ns.workers = 0
-    ns.batch_seed = 12345
-    ns.weight_decay = 0.0
-    if ns.device is None:
-        ns.device = default_device()
+    args, cfg = load_experiment(ns.config, ns)
+    _fill(args, cfg, depth=4, seed=2001, train_size=30000, val_size=800, probe_size=200,
+          batch_size=128, lr=3e-4, n_embd=128, n_head=4, n_layer=4,
+          checkpoints=[0, 500, 2000, 4000], out="results/revision/pullback.csv",
+          trace_fraction=0.5)
+    args.workers = 0
+    run(args)
+
+
+def run_split_verdict(ns):
+    from src.eval.split_verdict import run
+    run(ns)
+
+
+def run_escape(ns):
+    from src.eval.escape_time import run
     run(ns)
 
 

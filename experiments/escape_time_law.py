@@ -191,4 +191,16 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+    p = argparse.ArgumentParser()
+    p.add_argument("--shared", action="store_true")
+    p.add_argument("--smoke", action="store_true")
+    p.add_argument("--config", default="configs/experiments/escape_time.yaml")
+    p.add_argument("--device", default=None)
+    p.add_argument("--out", default=None)
+    flags, _ = p.parse_known_args()
+    if flags.shared or flags.smoke:
+        from src.eval.escape_time import run
+        run(flags)
+    else:
+        main()
