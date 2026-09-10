@@ -11,8 +11,9 @@ from handcoded.data import LanguageBatch, encode_dataset, language_model_loss, m
 from handcoded.generate import generate, strip_after_eos
 from handcoded.models import (
     FixedAttentionHead, FixedOutcomeBlock, HandcodedOutcomeTransformer, HandcodedProcessTransformer,
-    LearnedOneLayerTransformer, build_random_learned_model, build_random_trainable_outcome_architecture,
-    build_random_trainable_process_architecture, make_random_trainable_copy,
+    LearnedOneLayerTransformer, attach_local_heads, build_random_learned_model,
+    build_random_trainable_outcome_architecture, build_random_trainable_process_architecture,
+    make_random_trainable_copy,
 )
 from handcoded.eval import (
     circuit_answer_matrix, evaluate_checkpoint, free_run_metrics, generated_answer,
@@ -32,8 +33,9 @@ __all__ = [
     "phi", "sample_example", "sample_gate", "state_text", "CircuitTokenizer", "make_tokenizer",
     "LanguageBatch", "encode_dataset", "language_model_loss", "make_batch_schedule", "generate",
     "strip_after_eos", "FixedAttentionHead", "FixedOutcomeBlock", "HandcodedOutcomeTransformer",
-    "HandcodedProcessTransformer", "LearnedOneLayerTransformer", "build_random_learned_model",
-    "build_random_trainable_outcome_architecture", "build_random_trainable_process_architecture",
+    "HandcodedProcessTransformer", "LearnedOneLayerTransformer", "attach_local_heads",
+    "build_random_learned_model", "build_random_trainable_outcome_architecture",
+    "build_random_trainable_process_architecture",
     "make_random_trainable_copy", "circuit_answer_matrix", "evaluate_checkpoint", "free_run_metrics",
     "generated_answer", "inspect_fixed_circuit", "make_circuit_prompts", "make_generation_evaluation",
     "gold_answer_matrix",

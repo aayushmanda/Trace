@@ -15,7 +15,8 @@ def main(argv=None):
     p = argparse.ArgumentParser(prog="python -m src", description="Trace paper experiments")
     p.add_argument("command", nargs="?", default="help",
                    choices=["help", "induced", "pullback", "split-verdict", "escape", "projected", "length", "margins", "architecture",
-                            "executor", "executor-depths", "analyze", "supervision", "reliability", "smoke", "lora"])
+                            "executor", "executor-depths", "analyze", "supervision", "reliability", "smoke", "lora",
+                            "outcome-local"])
     args, rest = p.parse_known_args(argv)
     if args.command in {None, "help"}:
         print(__doc__)
@@ -40,6 +41,7 @@ Handcoded / semantic-token stack
   python -m src architecture plan|calibrate|confirm|summarize --config configs/experiments/architecture_controls.yaml
   python -m src executor --config configs/experiments/executor_comparison.yaml
   python -m src executor-depths --config configs/experiments/executor_depths.yaml
+  python -m src outcome-local --smoke
 """)
         return 0
     if args.command == "architecture":
@@ -108,6 +110,10 @@ Handcoded / semantic-token stack
         ns = _induced_ns(["--config", "configs/experiments/smoke.yaml", "--depth", "2",
                           "--condition", "both", "--seed", "2001"])
         run_induced(ns)
+        return 0
+    if args.command == "outcome-local":
+        from src.eval.local_credit import main as m
+        m(rest)
         return 0
     if args.command == "lora":
         raise SystemExit(

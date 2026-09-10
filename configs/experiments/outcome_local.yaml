@@ -1,0 +1,40 @@
+# Deep outcome architecture, answer-only. L_out vs L_out+local vs ordinary process.
+# H_t is a linear residual-stream readout; no trace tokens in the outcome+local target.
+# This is the mechanism test. Mixed-format P̂_g is the negative transfer result, not this run.
+# Do not claim ε^{D-1} from C_t; report C_t vs D only.
+experiment: outcome_local
+mechanism_test: true
+lambda_local: 1.0
+lambda: 1.0
+depth: 2
+seed: 42
+steps: 40
+train_size: 64
+val_size: 16
+probe_size: 16
+patch_circuits: 8
+batch_size: 16
+lr: 0.002
+grad_clip: 1.0
+probe_steps: 40
+probe_lr: 0.05
+train_seed: 123
+val_seed: 8000
+probe_seed: 9000
+batch_seed: 2026
+checkpoints: [0, 20, 40]
+compile: false
+bf16: false
+device: cpu
+output: results/paper_revision_v2/outcome_local
+conditions: [outcome, outcome_local, process]
+note: "Smoke defaults. Confirmation depths 2,4,6,8 are recorded, not launched from this file."
+
+confirmation:
+  do_not_launch: true
+  depths: [2, 4, 6, 8]
+  seeds: [42]
+  steps: 2000
+  train_size: 10000
+  val_size: 256
+  lambda_local: 1.0

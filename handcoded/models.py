@@ -216,6 +216,9 @@ class HandcodedOutcomeTransformer(nn.Module):
         states, gates = tokenizer.n_states, len(tokenizer.gates)
         positions = depth + 4 if positions is None else positions
         answer_position = depth + 2
+        self.depth = depth
+        self.n_states = states
+        self.answer_position = answer_position
         self.max_length = positions
         token_state = slice(0, states)
         token_gate = slice(token_state.stop, token_state.stop + gates)
@@ -229,6 +232,8 @@ class HandcodedOutcomeTransformer(nn.Module):
             for step in range(depth)
         ]
         width = gate_slots[-1].stop
+        self.state_slots = state_slots
+        self.residual_width = width
         self.register_buffer("token_features", torch.zeros(len(tokenizer.tokens), width))
         self.register_buffer("position_features", torch.zeros(positions, width))
         self.register_buffer("readout", torch.zeros(len(tokenizer.tokens), width))
@@ -250,13 +255,25 @@ class HandcodedOutcomeTransformer(nn.Module):
         self.readout[tokenizer.colon, position.start + depth + 1] = 20
         self.readout[tokenizer.eos, position.start + depth + 3] = 20
 
-    def forward(self, ids):
+    def _embed(self, ids):
         if ids.shape[1] > self.max_length:
             raise ValueError("Prefix exceeds the fixed outcome routing layout")
-        hidden = self.token_features[ids] + self.position_features[: ids.shape[1]][None]
-        for block in self.blocks:
+        return self.token_features[ids] + self.position_features[: ids.shape[1]][None]
+
+    def _answer_index(self, length):
+        return min(self.answer_position, length - 1)
+
+    def forward(self, ids, return_states=False, patch_layer=None, patch_fn=None):
+        hidden = self._embed(ids)
+        states = []
+        for step, block in enumerate(self.blocks):
             hidden = block(hidden)
-        return hidden @ self.readout.T
+            if patch_fn is not None and step == patch_layer:
+                hidden = patch_fn(hidden, step)
+            if return_states:
+                states.append(hidden[:, self._answer_index(hidden.shape[1]), :])
+        logits = hidden @ self.readout.T
+        return (logits, states) if return_states else logits
 
 
 def build_random_trainable_process_architecture(
@@ -272,3 +289,21 @@ def build_random_trainable_outcome_architecture(
     # Process-length positions so this architecture can train under process supervision (2×2).
     model = HandcodedOutcomeTransformer(tokenizer, depth, positions=3 * depth + 4)
     return make_random_trainable_copy(model, seed=seed, init_std=init_std, device=device)
+
+
+def attach_local_heads(model, *, seed=None, device=None):
+    """Linear H_t: residual stream after block t → 16 states. Jointly trained for L_out+local."""
+    if not hasattr(model, "blocks"):
+        raise TypeError("local heads attach only to a deep outcome architecture")
+    width = int(getattr(model, "residual_width", model.token_features.shape[1]))
+    n_states = int(getattr(model, "n_states", 16))
+    depth = int(getattr(model, "depth", len(model.blocks)))
+    if seed is not None:
+        torch.manual_seed(seed)
+    heads = nn.ModuleList([nn.Linear(width, n_states) for _ in range(depth)])
+    model.add_module("local_heads", heads)
+    if device is not None:
+        model.local_heads.to(device)
+    elif next(model.parameters()).is_cuda:
+        model.local_heads.to(next(model.parameters()).device)
+    return model

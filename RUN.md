@@ -241,6 +241,32 @@ CSV: `results/paper_revision_v2/e4_projected_kernel/`.
 
 ---
 
+## Mechanism test: outcome + local credit (answer-only)
+
+This is the **mechanism** experiment. A depth-\(D\) outcome architecture generates **COLON / answer / EOS only**. Three conditions; 1–2 share architecture, init, and direct-answer format:
+
+| Condition | Loss | Tokens |
+|---|---|---|
+| \(L_{\mathrm{out}}\) | ordinary outcome CE | answer only |
+| \(L_{\mathrm{out}}+\mathrm{local}\) | \(L_{\mathrm{out}}+\lambda\frac{1}{D}\sum_t \mathrm{CE}(H_t(h_t),s_t)\) | **no trace tokens**; \(H_t\) is a linear residual-stream head after block \(t\) |
+| \(L_{\mathrm{process}}\) | ordinary process | process tokens (comparison) |
+
+If outcome \(\approx\) chance but outcome+local \(\approx\) process \(\approx 100\%\), that isolates **credit placement**. Mixed-format \(\widehat P_g\) remains the **negative transfer** readout — do not treat it as validating the shared-executor model. Report \(C_t=\langle g_t^{\mathrm{term}},g_t^{\mathrm{local}}\rangle/\|g_t^{\mathrm{local}}\|^2\) vs \(D\); **do not** claim \(\varepsilon^{D-1}\) unless mixing assumptions are checked.
+
+```bash
+# Tests (oracle patch must be ~100%; random patch must not):
+TRACE_TQDM=0 python -m unittest tests.test_outcome_local
+
+# Smoke: D=2, tiny data, ~30 steps, 1 seed. CPU default; use cuda:2 if that card is free.
+python -m src outcome-local --smoke --device cpu --no-compile
+# or
+python experiments/outcome_local_rescue.py --smoke --device cuda:2 --no-compile
+```
+
+YAML: `configs/experiments/outcome_local.yaml` (\(\lambda=1.0\)). Outputs: `results/paper_revision_v2/outcome_local/` (`metrics.csv`, `probes.csv`, `credit.csv`, `patch.csv`, `table.csv`, `apply_style` PDFs). Confirmation depths 2/4/6/8 are recorded in the YAML and **not** launched from this file.
+
+---
+
 ## Length + \(m_{\min}\) (E6; after E5 / E2)
 
 Train \(D=8\), eval 8/10/12/16; gold-path \(m_{\min}\) at \(\rho=0.80\). No figure/table number in `main.pdf`. Do not run the full grid now.
@@ -273,7 +299,7 @@ python -m src reliability --task stack_machine_8 --rhos 0.8 --seeds 2001 \
 ## Smoke
 
 ```bash
-TRACE_TQDM=0 python -m unittest tests.test_plumbing tests.test_revision_bridge tests.test_mechanism_tasks tests.test_local_machine_tasks
+TRACE_TQDM=0 python -m unittest tests.test_plumbing tests.test_revision_bridge tests.test_mechanism_tasks tests.test_local_machine_tasks tests.test_outcome_local
 python -m src escape --smoke
 python -m src projected --smoke
 python -m src architecture plan --config configs/experiments/e2_architecture.yaml --output results/paper_revision_v2/e2_architecture
@@ -301,6 +327,7 @@ Handcoded smoke is the short `python -m src executor …` command in the §7 sec
 | Optional pullback / induced | `results/revision/pullback.csv`, `induced_rule.csv` |
 | Shared kernel (row-softmax) | `results/revision/shared_kernel.csv` |
 | Projected kernel (not a T2 proof) | `results/paper_revision_v2/e4_projected_kernel/` |
+| Outcome+local mechanism test | `results/paper_revision_v2/outcome_local/` |
 | `Paper/` | often gitignored; local manuscript |
 
 ---
@@ -308,7 +335,7 @@ Handcoded smoke is the short `python -m src executor …` command in the §7 sec
 ## Tests
 
 ```bash
-TRACE_TQDM=0 python -m unittest tests.test_plumbing tests.test_handcoded tests.test_executor_comparison tests.test_revision_bridge tests.test_mechanism_tasks tests.test_local_machine_tasks
+TRACE_TQDM=0 python -m unittest tests.test_plumbing tests.test_handcoded tests.test_executor_comparison tests.test_revision_bridge tests.test_mechanism_tasks tests.test_local_machine_tasks tests.test_outcome_local
 # or
 TRACE_TQDM=0 python -m unittest discover -s tests -v
 ```
