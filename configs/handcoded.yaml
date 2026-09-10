@@ -1,0 +1,20 @@
+# Paper-scale semantic-token tutorial (notebook / architecture reachability).
+n_bits: 4
+depth: 4
+train_size: 20000
+test_size: 1000
+steps: 10000
+batch_size: 128
+lr: 0.002
+d_model: 96
+n_heads: 4
+d_ff: 192
+data_seed: 123
+test_seed: 9000
+model_seed: 42
+batch_seed: 2026
+animation_checkpoints: 120
+loss_eval_size: 256
+device: cuda:2
+compile: true
+bf16: true

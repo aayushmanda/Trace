@@ -2,11 +2,15 @@
 import json, sys
 from pathlib import Path
 
+import _paths  # noqa: F401
+
 import numpy as np
 import pandas as pd
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+
+from src.plot_style import apply_style
 
 ROOT = Path(__file__).resolve().parent.parent
 RES = ROOT / "results"
@@ -171,6 +175,7 @@ def readout_validity(df):
 
 
 def main():
+    apply_style()
     dpath, tpath = RES / "induced_rule" / "depth.csv", RES / "induced_rule" / "trajectory.csv"
     depth_df = pd.read_csv(dpath) if dpath.exists() else pd.DataFrame()
     traj_df = pd.read_csv(tpath) if tpath.exists() else pd.DataFrame()

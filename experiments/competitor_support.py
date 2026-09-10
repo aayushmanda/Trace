@@ -24,6 +24,7 @@ from torch.utils.data import DataLoader, Dataset
 
 from src.boolean_circuit_tasks import _apply_gate
 from src.model import GPTModel
+from src.plot_style import apply_style
 from src.tokenizer import CharTokenizer
 
 
@@ -535,6 +536,7 @@ def grouped_metric(rows, metric: str):
 
 
 def plot_results(rows: list[dict], path: Path) -> None:
+    apply_style()
     path.parent.mkdir(parents=True, exist_ok=True)
     accuracy = grouped_metric(rows, "clean_accuracy")
     margins = grouped_metric(rows, "mean_state_margin")

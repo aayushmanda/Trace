@@ -3,11 +3,15 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+
+import _paths  # noqa: F401
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+
+from src.plot_style import apply_style
 
 ROOT=Path(__file__).resolve().parents[1]
 COLORS={'process':'#247ba0','outcome':'#dd8452','both':'#7252a2'}
@@ -54,8 +58,7 @@ def main():
                                    'sha256':hashlib.sha256(path.read_bytes()).hexdigest()})
     json_path=args.paper/'data/trained_executor_sources.json'
     json_path.write_text(json.dumps({'protocol':protocol,'sources':provenance},indent=2)+'\n')
-    plt.rcParams.update({'font.size':9,'axes.spines.top':False,'axes.spines.right':False,
-                         'pdf.fonttype':42,'ps.fonttype':42})
+    apply_style()
     d4=frame[frame.depth==4]
     fig,axs=plt.subplots(2,2,figsize=(9.4,6.1),layout='constrained')
     for mode in ['process','both']:

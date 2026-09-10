@@ -1,0 +1,16 @@
+experiment: architecture_controls
+output: results/architecture_controls_n10
+depth: 4
+rates: [0.002, 0.001, 0.0005, 0.0002]
+confirmation_seeds: [42, 43, 44, 45, 46, 47, 48, 49, 50, 51]
+success_threshold: 0.95
+calibration_steps: 2000
+steps: 8000
+train_size: 20000
+val_size: 1000
+test_size: 1000
+batch_size: 128
+devices: [cuda:2, cuda:3]
+compile: true
+bf16: true
+note: "Report fraction of confirmation seeds with selected-checkpoint test accuracy > 95%. New output dir if protocol.json already exists."

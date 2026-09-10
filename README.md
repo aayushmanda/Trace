@@ -4,7 +4,7 @@ How does supervision on intermediate steps change what an autoregressive Transfo
 
 Trace explores this question with synthetic tasks whose computations can be checked exactly: Boolean circuits, finite-state machines, register machines, and other sequential problems. Models learn either a final answer or a sequence of intermediate states followed by that answer. Reliability sweeps also vary whether the supervised trace is correct while keeping the terminal answer correct.
 
-**[experiments/README.md](experiments/README.md) maps every experiment to the claim it supports** — start there if you are looking for the code behind a particular result.
+**Reproduce paper experiments:** command-first instructions are in **[RUN.md](RUN.md)**. **[experiments/README.md](experiments/README.md)** maps scripts to claims.
 
 Start with **[the Boolean-circuit tutorial](handcoded/handcoded_executors.ipynb)** for an illustrated, executable introduction. Use the command-line experiments below for comparisons across tasks, seeds, and trace reliability.
 
@@ -26,11 +26,13 @@ Orange denotes the learned outcome model, blue the learned process model, and pu
 
 ## Quick start
 
-Use Python 3.12 or newer and `uv`. From the repository root:
+Python 3.12+. Conda env `aayus`, or from the repository root:
 
 ```bash
 uv sync
 ```
+
+Paper runs (induced-rule, architecture × supervision, length, m_min, figures): **[RUN.md](RUN.md)**.
 
 For the notebook kernel and optional MP4 export, install these additional packages into the project environment:
 
