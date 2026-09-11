@@ -116,10 +116,9 @@ Handcoded / semantic-token stack
         m(rest)
         return 0
     if args.command == "lora":
-        raise SystemExit(
-            "pretrained LoRA is not shipped under experiments/; "
-            "use configs/experiments/lora_transfer.yaml as the paper setting once a src.eval LoRA CLI exists"
-        )
+        from src.eval.lora import main as m
+        m(rest)
+        return 0
     return 1
 
 

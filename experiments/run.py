@@ -61,6 +61,14 @@ COMMANDS = {
         "src.experiments.clean_convergence",
         "Cor. 5: GD trajectory converging to T_g under clean process supervision",
     ),
+    "prop8-frontier": (
+        "src.experiments.prop8_frontier",
+        "Prop. 8: measured vs. predicted rho_c(a,D,beta) reliability frontier",
+    ),
+    "fraction-vs-amount": (
+        "src.experiments.fraction_vs_amount",
+        "Fixed-rho, varying-N grid separating fraction from corpus size",
+    ),
     "recover-mechanism-deep": (
         "src.experiments.recover_mechanism_deep",
         "Recover Tables 2–3 and escape times from crashed-run logs",
