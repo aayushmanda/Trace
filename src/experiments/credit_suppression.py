@@ -28,7 +28,6 @@ import itertools
 import json
 from pathlib import Path
 
-import _paths  # noqa: F401
 import matplotlib
 
 matplotlib.use("Agg")
@@ -37,7 +36,7 @@ import numpy as np
 
 from src.data.boolean_circuit_tasks import N_BITS, _apply_gate, _bits, _state_text
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "results" / "credit_suppression"
 FIG = ROOT / "Paper" / "figures"
 
@@ -228,14 +227,14 @@ def draw(res):
         fig.savefig(FIG / f"credit_suppression.{ext}", bbox_inches="tight")
 
 
-def main() -> int:
+def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--depths", type=int, nargs="+", default=[2, 3, 4, 5, 6, 8, 10, 12])
     ap.add_argument("--eps", type=float, nargs="+", default=[0.05, 0.1, 0.2, 0.4])
     ap.add_argument("--n", type=int, default=200)
     ap.add_argument("--seed", type=int, default=2001)
     ap.add_argument("--plot-only", action="store_true")
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
     OUT.mkdir(parents=True, exist_ok=True)
     FIG.mkdir(parents=True, exist_ok=True)
 

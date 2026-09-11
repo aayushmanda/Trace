@@ -12,7 +12,9 @@ import json
 import math
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+from src.experiments import reject_extra_flags
+
+ROOT = Path(__file__).resolve().parents[2]
 SUMMARY = ROOT / "results" / "oracle_alignment" / "summary.json"
 
 
@@ -23,7 +25,8 @@ def stats(values):
     return m, sd, n
 
 
-def main() -> int:
+def main(argv=None) -> int:
+    reject_extra_flags(argv, __doc__)
     data = json.loads(SUMMARY.read_text())
     rows = data["alignment"]
     depths = sorted({r["depth"] for r in rows})

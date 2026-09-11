@@ -23,9 +23,10 @@ from __future__ import annotations
 import itertools
 import json
 import random
+import sys
 from pathlib import Path
 
-import _paths  # noqa: F401
+from src.experiments import reject_extra_flags
 import matplotlib
 
 matplotlib.use("Agg")
@@ -34,7 +35,7 @@ import numpy as np
 
 from src.data.boolean_circuit_tasks import N_BITS, _apply_gate, _bits, _state_text
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "results" / "noise_threshold"
 FIG = ROOT / "Paper" / "figures"
 
@@ -70,7 +71,20 @@ U = np.ones((K, K)) / K
 PI = np.eye(K) - U
 
 
-def corrupted_counts(rho: float, n: int, seed: int, mode: str = "symmetric", wrong=None):
+def sample_gate_index(rng, sampling="uniform"):
+    """`uniform`: equal weight on 52 gate strings (App. I tabular). `family`:
+    uniform over {x,c,s,t} then uniform in the family — the Transformer sweep."""
+    if sampling in (None, "uniform", "uniform_string"):
+        return rng.randrange(M)
+    if sampling in ("family", "family_first"):
+        op = rng.choice("xcst")
+        members = [i for i, g in enumerate(GATES) if g[0] == op]
+        return rng.choice(members)
+    raise ValueError(f"unknown gate sampling {sampling!r}")
+
+
+def corrupted_counts(rho: float, n: int, seed: int, mode: str = "symmetric", wrong=None,
+                     sampling="uniform"):
     """Local (gate, displayed source, displayed target) counts from a rho-reliable pool.
 
     Each circuit keeps its correct answer and receives the valid trace with
@@ -78,12 +92,15 @@ def corrupted_counts(rho: float, n: int, seed: int, mode: str = "symmetric", wro
     sampler does: the gate is applied to the *displayed* state and the emitted
     successor is drawn uniformly from the K-1 states that are not the valid one,
     so every displayed transition is invalid under its own prefix.
+
+    Default `sampling="uniform"` is the paper App. I fit (do not change). Pass
+    `family` to match boolean_circuit / handcoded gate-family sampling.
     """
     rng = random.Random(seed)
     counts = np.zeros((M, K, K))
     for _ in range(n):
         prev = rng.randrange(K)
-        gates = [rng.randrange(M) for _ in range(D)]
+        gates = [sample_gate_index(rng, sampling) for _ in range(D)]
         clean = rng.random() < rho
         for g in gates:
             valid = PERM[g][prev]
@@ -147,7 +164,15 @@ def fit_by_gradient_descent(counts, steps=4000, lr=5.0, seed=0):
     return softmax(logits).argmax(axis=2)
 
 
-def main() -> int:
+def main(argv=None) -> int:
+    argv = list(sys.argv[1:] if argv is None else argv)
+    if argv in (["-h"], ["--help"]):
+        print(__doc__)
+        return 0
+    if "--plot-only" in argv:
+        draw(json.loads((OUT / "summary.json").read_text()))
+        return 0
+    reject_extra_flags(argv, __doc__)
     OUT.mkdir(parents=True, exist_ok=True)
     FIG.mkdir(parents=True, exist_ok=True)
     results: dict = {"K": K, "M": M, "D": D, "n_circuits": N_CIRCUITS, "seeds": list(SEEDS)}
@@ -322,9 +347,4 @@ def draw(results: dict) -> None:
 
 
 if __name__ == "__main__":
-    import sys
-
-    if "--plot-only" in sys.argv:
-        draw(json.loads((OUT / "summary.json").read_text()))
-        raise SystemExit(0)
     raise SystemExit(main())

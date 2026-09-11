@@ -20,9 +20,9 @@ import math
 import statistics as st
 from pathlib import Path
 
-import _paths  # noqa: F401
+from src.experiments import reject_extra_flags
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 RUNS = ROOT / "results" / "mechanism_deep" / "runs"
 OUT = ROOT / "results" / "mechanism_deep"
 CONDITIONS = ("outcome", "outcome_local", "process")
@@ -83,7 +83,8 @@ def escape_step(checkpoints, condition, threshold):
     return None  # censored within the recorded horizon
 
 
-def main() -> int:
+def main(argv=None) -> int:
+    reject_extra_flags(argv, __doc__)
     runs = {}
     for d in sorted(RUNS.iterdir()):
         log = d / "log.txt"

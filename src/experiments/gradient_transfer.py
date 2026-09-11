@@ -32,16 +32,15 @@ import argparse
 import json
 from pathlib import Path
 
-import _paths  # noqa: F401
 import torch
 
 from src.eval import executor_comparison as c
 from src.training.seed import set_seed
-from oracle_alignment import (CHUNK, DATA_SEED, N_CIRCUITS, flat, loss_at,
+from src.experiments.oracle_alignment import (CHUNK, DATA_SEED, N_CIRCUITS, flat, loss_at,
                               population_gradient)
 
 h = c.h
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "results" / "gradient_transfer"
 
 DEPTHS = (2, 4, 6, 8)
@@ -49,13 +48,13 @@ SEEDS = (42, 43, 44, 45, 46)
 ETAS = (0.1, 1.0, 10.0)
 
 
-def main() -> int:
+def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--depths", type=int, nargs="+", default=list(DEPTHS))
     ap.add_argument("--seeds", type=int, nargs="+", default=list(SEEDS))
     ap.add_argument("--etas", type=float, nargs="+", default=list(ETAS))
     ap.add_argument("--device", default="cuda:0" if torch.cuda.is_available() else "cpu")
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
 
     OUT.mkdir(parents=True, exist_ok=True)
     device = torch.device(args.device)

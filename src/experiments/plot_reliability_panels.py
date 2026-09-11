@@ -2,7 +2,9 @@
 from pathlib import Path
 import sys
 
-ROOT = Path(__file__).resolve().parents[1]
+from src.experiments import reject_extra_flags
+
+ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
@@ -66,7 +68,8 @@ def plot_loss(ax, process, outcome, title, ymax):
     ax.legend(fontsize=9, loc="upper right")
 
 
-def main():
+def main(argv=None):
+    reject_extra_flags(argv, __doc__)
     apply_style(extra={"pdf.fonttype": 42, "savefig.dpi": 300})
     rm, rm_out = split_frame(RM)
     bc, bc_out = split_frame(BC)

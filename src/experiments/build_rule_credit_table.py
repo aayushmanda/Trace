@@ -20,7 +20,9 @@ import sys
 import numpy as np
 import torch
 
-ROOT = Path(__file__).resolve().parents[1]
+from src.experiments import reject_extra_flags
+
+ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 import handcoded as h
@@ -30,7 +32,8 @@ from src.eval.rule_credit import credit_summary
 IN_DIR = ROOT / "results/executor_comparison/depth_replication"
 
 
-def main():
+def main(argv=None):
+    reject_extra_flags(argv, __doc__)
     protocol = json.loads((IN_DIR / "protocol.json").read_text())
     gate_index = {g: i for i, g in enumerate(h.GATES)}
     k = 16  # Boolean-circuit state count (N_BITS=4); matches local_conditional's (M,16,16)
