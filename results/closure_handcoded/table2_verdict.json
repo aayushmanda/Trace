@@ -1,0 +1,57 @@
+{
+  "prediction": {
+    "eps": 0.5,
+    "eps_source": "theorem mixing-ball edge \u03b5=1/2 (hypothesis of Cor. 2 / cor:near-mixing). Not fitted to Table 2. Not the init ||P\u0302_g\u2212U||_2 from init_induced.csv.",
+    "K": 16,
+    "chance": 0.0625,
+    "credit_scale_eps_to_D_minus_1": {
+      "2": 0.5,
+      "4": 0.125,
+      "6": 0.03125,
+      "8": 0.0078125
+    },
+    "predicted_first_collapsed_depth": 6,
+    "predicted": {
+      "D2_outcome": "above chance (scale 0.5 >> 0.0625)",
+      "D4_outcome": "above chance, below D=2 (scale 0.125 > 0.0625)",
+      "D6_outcome": "collapse underway (scale 0.03125 < 0.0625)",
+      "D8_outcome": "at chance 1/K",
+      "process_all_D": "stays high (\u0398(1) credit, independent of \u03b5^{D-1})",
+      "outcome_local": "above outcome at D\u22654 if measured (local readout bypasses the product); not required for this test"
+    },
+    "checks": {
+      "outcome_D2_D4_above_2chance": 0.125,
+      "outcome_D6_D8_at_most": 0.25,
+      "outcome_D8_within": 0.02,
+      "process_min": 0.95,
+      "monotone_outcome": "acc(2) > acc(4) > acc(6) \u2265 acc(8) - 0.02"
+    },
+    "not_claimed": "exact 97/72/12.8/6.25, and not mechanistic use of s_t. Init mixing radius ~0.01\u20130.05 would predict collapse at every D including D=2; that \u03b5 is the wrong object for this test."
+  },
+  "verdict": {
+    "process_all_high": true,
+    "outcome_D2_succeed": true,
+    "outcome_D4_succeed": true,
+    "outcome_D6_collapse": true,
+    "outcome_D8_chance": true,
+    "monotone": true,
+    "n_passed": 6,
+    "n_checks": 6,
+    "overall": "MATCH",
+    "empirical": {
+      "D2_outcome": 0.9727,
+      "D2_outcome_local": 0.9875,
+      "D2_process": 1.0,
+      "D4_outcome": 0.7211,
+      "D4_outcome_local": 0.875,
+      "D4_process": 1.0,
+      "D6_outcome": 0.1281,
+      "D6_outcome_local": 0.5563,
+      "D6_process": 1.0,
+      "D8_outcome": 0.0625,
+      "D8_outcome_local": 0.2031,
+      "D8_process": 1.0
+    }
+  },
+  "source": "/home/hariguru/aayus/trace/results/mechanism_deep/recovered.csv"
+}

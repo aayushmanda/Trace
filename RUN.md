@@ -22,7 +22,7 @@ export CUDA_VISIBLE_DEVICES=2   # then --device cuda:0
 python -m src … --device cuda:2
 ```
 
-If `CUDA_VISIBLE_DEVICES` is set, scripts treat `cuda:0` as that physical GPU. Default device selection already prefers `cuda:2` then `cuda:3`. Cap concurrent jobs (`MAX_JOBS=2` in `experiments/run_revision_bridge.sh`).
+If `CUDA_VISIBLE_DEVICES` is set, scripts treat `cuda:0` as that physical GPU. Default device selection already prefers `cuda:2` then `cuda:3`. Cap concurrent jobs (`MAX_JOBS=2` in `scripts/run_revision_bridge.sh`).
 
 ### Optional 2-GPU training (DataParallel, not DDP)
 
@@ -71,7 +71,7 @@ python -m src executor --no-compile   # override YAML compile: true
 
 Shared: seed, YAML under `configs/experiments/`, CSV writers, device, progress bars.
 
-Entry point: `python -m src <command>`. Equivalent paper scripts still exist under `experiments/` if you need a one-off flag.
+Entry point: `python -m src <command>`. Figure builders and closure checks: `python experiments/run.py <command>` (see `experiments/README.md`).
 
 ---
 
@@ -144,7 +144,7 @@ python -m src executor --config configs/experiments/executor_comparison.yaml \
 python -m src executor-depths --config configs/experiments/executor_depths.yaml
 
 # Verified figures + Table 7 TeX (run after replication is complete):
-python experiments/build_executor_results.py \
+python experiments/run.py build-executor-results \
   --input results/executor_comparison/depth_replication --paper Paper
 ```
 

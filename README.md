@@ -188,7 +188,8 @@ The exported animation illustrates one run and one selected circuit. It does not
 
 | Location | Contents |
 |---|---|
-| [experiments/](experiments) | All runnable experiments. **[experiments/README.md](experiments/README.md) maps each script to the claim it supports.** |
+| [experiments/](experiments) | One CLI (`python experiments/run.py`) and one notebook. **[experiments/README.md](experiments/README.md)** maps commands to claims. |
+| [scripts/](scripts) | GPU queue shells (`run_revision_bridge.sh`, depth/fraction sweeps) |
 | [handcoded/](handcoded) | The constructive Transformer executors, the fast executor, and their notebooks |
 | [src/](src) | Model, tokenizer, task generators, registry and shared utilities |
 | [results/](results) | Experiment outputs, grouped by experiment family |

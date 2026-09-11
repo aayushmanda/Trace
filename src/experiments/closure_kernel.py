@@ -26,7 +26,6 @@ import itertools
 import json
 from pathlib import Path
 
-import _paths  # noqa: F401
 import matplotlib
 
 matplotlib.use("Agg")
@@ -35,9 +34,9 @@ import numpy as np
 
 from src.data.boolean_circuit_tasks import N_BITS, _apply_gate, _bits, _state_text
 from src.plot_style import apply_style
-import noise_threshold as nt
+from src.experiments import noise_threshold as nt
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "results" / "closure_handcoded"
 
 K = 2 ** N_BITS
@@ -361,14 +360,14 @@ def draw(res):
     plt.close(fig)
 
 
-def main() -> int:
+def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--depths", type=int, nargs="+", default=list(range(2, 13)))
     ap.add_argument("--eps", type=float, nargs="+", default=[0.1, 0.3, 0.5, 0.9])
     ap.add_argument("--n", type=int, default=200)
     ap.add_argument("--n-mixing", type=int, default=4000)
     ap.add_argument("--seed", type=int, default=2001)
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
     OUT.mkdir(parents=True, exist_ok=True)
 
     rng = np.random.default_rng(args.seed)

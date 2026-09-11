@@ -12,10 +12,10 @@ conda activate aayus   # or: /home/hariguru/aayus/.venv/bin/python
 cd /home/hariguru/aayus/trace
 
 # 1–3. Kernel (CPU, ~15s)
-python experiments/closure_kernel.py
+python experiments/run.py kernel
 
 # 4, 6. Oracle tables + nnsight patches + init Def 20 (CPU, ~15–25 min)
-python experiments/closure_handcoded.py --device cpu
+python experiments/run.py handcoded --device cpu
 
 # 5, 7. Short matched-architecture train (prefer cuda:2/3 when free)
 python -m src outcome-local \

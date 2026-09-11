@@ -37,7 +37,6 @@ import json
 import sys
 from pathlib import Path
 
-import _paths  # noqa: F401
 import torch
 import torch.nn as nn
 
@@ -47,7 +46,7 @@ from src.training.seed import set_seed
 h = c.h
 from handcoded.models import HandcodedOutcomeTransformer  # noqa: E402
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "results" / "oracle_alignment"
 
 DEPTHS = (2, 4, 6, 8)
@@ -208,14 +207,14 @@ def part_b(tok, device, depths, n_points, seed):
     return rows
 
 
-def main() -> int:
+def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--depths", type=int, nargs="+", default=list(DEPTHS))
     ap.add_argument("--seeds", type=int, nargs="+", default=list(SEEDS))
     ap.add_argument("--points", type=int, default=101)
     ap.add_argument("--device", default="cuda:0" if torch.cuda.is_available() else "cpu")
     ap.add_argument("--skip-b", action="store_true")
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
 
     OUT.mkdir(parents=True, exist_ok=True)
     device = torch.device(args.device)

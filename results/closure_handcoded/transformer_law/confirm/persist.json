@@ -1,0 +1,43 @@
+{
+  "experiment": "closure_transformer_law",
+  "closure_standard": "quantitative prediction that discriminates this account from alternatives, measured on the system we claim to explain (D-block Transformer). Kernel 1/K vs 1/2 is a proxy, not closure of the net.",
+  "stack": "handcoded same-architecture D-block (not GPT character-token, not \u00a77 mixed)",
+  "laws": [
+    "symmetric",
+    "coherent"
+  ],
+  "rhos": [
+    0.05,
+    0.0625,
+    0.1,
+    0.25,
+    0.4,
+    0.49,
+    0.51,
+    0.6,
+    0.8
+  ],
+  "depth": 4,
+  "steps": 2000,
+  "seeds": [
+    42
+  ],
+  "matched_architecture": true,
+  "predicted_shift": "DIRECTIONAL: symmetric recovers at lower \u03c1 than coherent at fixed rate. Not a claim that \u03c1_50 lands on 1/K or 1/2.",
+  "predicted_negative": "no split: both curves sit together (typically near ~0.85)",
+  "verdict": {
+    "probe_rho": 0.25,
+    "symmetric_minus_coherent_at_0.25": -0.05859375,
+    "frontier_rho50_symmetric": 0.4,
+    "frontier_rho50_coherent": 0.51,
+    "frontier_order_coh_minus_sym": 0.10999999999999999,
+    "shift_if": "DIRECTIONAL: at \u03c1=0.25, symmetric\u2212coherent \u2265 0.15, or \u03c1_50(coherent)\u2212\u03c1_50(symmetric) \u2265 0.1. Do not require \u03c1_50 \u2248 1/K or 1/2. Offset toward ~0.85 is expected (D.10).",
+    "negative_if": "no split: |\u0394acc| at \u03c1=0.25 < 0.1 and |\u0394\u03c1_50| < 0.1 (both curves sit together, typically near ~0.85)",
+    "not_a_failure": "landing away from 0.5 / 0.0625 is not NEGATIVE if the curves split",
+    "decision": "SHIFT"
+  },
+  "csv": "results/closure_handcoded/transformer_law/confirm/accuracy.csv",
+  "figure": "results/closure_handcoded/transformer_law/confirm/accuracy.png",
+  "smoke": false,
+  "n_rows": 54
+}

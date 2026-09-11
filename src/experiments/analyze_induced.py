@@ -2,8 +2,6 @@
 import json, sys
 from pathlib import Path
 
-import _paths  # noqa: F401
-
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -11,8 +9,9 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 from src.plot_style import apply_style
+from src.experiments import reject_extra_flags
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 RES = ROOT / "results"
 FIG = ROOT / "Paper" / "figures"
 
@@ -174,7 +173,8 @@ def readout_validity(df):
         min_on_set=("state_on_set_mass", "min")).round(4)
 
 
-def main():
+def main(argv=None):
+    reject_extra_flags(argv, __doc__)
     apply_style()
     dpath, tpath = RES / "induced_rule" / "depth.csv", RES / "induced_rule" / "trajectory.csv"
     depth_df = pd.read_csv(dpath) if dpath.exists() else pd.DataFrame()

@@ -9,7 +9,6 @@ import hashlib
 import json
 from pathlib import Path
 
-import _paths  # noqa: F401
 import matplotlib
 
 matplotlib.use("Agg")
@@ -18,8 +17,9 @@ import numpy as np
 import pandas as pd
 
 from src.plot_style import apply_style
+from src.experiments import reject_extra_flags
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 PAPER = ROOT / "Paper"
 FIG = PAPER / "figures"
 DATA = PAPER / "data"
@@ -484,13 +484,14 @@ def write_provenance(paths):
         p = ROOT / rel
         if p.exists():
             sources.append({"file": rel, "sha256": sha256(p), "bytes": p.stat().st_size})
-    payload = {"builder": "experiments/plot_paper_figures.py", "sources": sources}
+    payload = {"builder": "python experiments/run.py plot-paper-figures", "sources": sources}
     out = DATA / "revision_figure_sources.json"
     out.write_text(json.dumps(payload, indent=2) + "\n")
     print("wrote", out)
 
 
-def main():
+def main(argv=None):
+    reject_extra_flags(argv, __doc__)
     protocol = json.loads((ROOT / "results/executor_comparison/depth_replication/protocol.json").read_text())
     frame = pd.read_csv(ROOT / "results/executor_comparison/depth_replication/metrics.csv")
     plot_legacy_reliability()

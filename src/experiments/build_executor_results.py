@@ -4,7 +4,6 @@ import hashlib
 import json
 from pathlib import Path
 
-import _paths  # noqa: F401
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -13,7 +12,7 @@ import pandas as pd
 
 from src.plot_style import apply_style
 
-ROOT=Path(__file__).resolve().parents[1]
+ROOT=Path(__file__).resolve().parents[2]
 COLORS={'process':'#087eaa','outcome':'#c56b08','both':'#6b4c9a'}
 LABELS={'process':'Process','outcome':'Outcome','both':'Mixed format'}
 
@@ -35,11 +34,11 @@ def save(fig,path):
     plt.close(fig)
 
 
-def main():
+def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--input',type=Path,default=ROOT/'results/executor_comparison/depth_replication')
     p.add_argument('--paper',type=Path,default=ROOT/'Paper')
-    args=p.parse_args();args.input=args.input.resolve();args.paper=args.paper.resolve()
+    args=p.parse_args(argv);args.input=args.input.resolve();args.paper=args.paper.resolve()
     protocol=json.loads((args.input/'protocol.json').read_text())
     frame=pd.read_csv(args.input/'metrics.csv')
     keys=['depth','seed','mode','step']

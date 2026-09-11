@@ -1,0 +1,197 @@
+{
+  "note": "uniform = App. I (52 strings equally). family = sweep sampler. Frontiers are tabular empirical-optimum \u03c1_50, not Transformer \u03c1_50. Matching sampling removes the confound; it does not explain 0.15\u21920.85.",
+  "n": 20000,
+  "rhos": [
+    0.05,
+    0.0625,
+    0.1,
+    0.25,
+    0.4,
+    0.49,
+    0.51,
+    0.6,
+    0.8
+  ],
+  "frontiers": [
+    {
+      "sampling": "uniform",
+      "symmetric_rho50": 0.25,
+      "coherent_rho50": 0.6,
+      "order_coh_minus_sym": 0.35,
+      "symmetric_at_0.25": 1.0,
+      "coherent_at_0.25": 0.057
+    },
+    {
+      "sampling": "family",
+      "symmetric_rho50": 0.25,
+      "coherent_rho50": 0.6,
+      "order_coh_minus_sym": 0.35,
+      "symmetric_at_0.25": 1.0,
+      "coherent_at_0.25": 0.063
+    }
+  ],
+  "rows": [
+    {
+      "rho": 0.05,
+      "sampling": "uniform",
+      "n": 20000,
+      "symmetric_rule": 0.018028846153846152,
+      "symmetric_answer": 0.057,
+      "coherent_rule": 0.0,
+      "coherent_answer": 0.057
+    },
+    {
+      "rho": 0.0625,
+      "sampling": "uniform",
+      "n": 20000,
+      "symmetric_rule": 0.11899038461538461,
+      "symmetric_answer": 0.064,
+      "coherent_rule": 0.0,
+      "coherent_answer": 0.057
+    },
+    {
+      "rho": 0.1,
+      "sampling": "uniform",
+      "n": 20000,
+      "symmetric_rule": 0.6995192307692307,
+      "symmetric_answer": 0.105,
+      "coherent_rule": 0.0,
+      "coherent_answer": 0.057
+    },
+    {
+      "rho": 0.25,
+      "sampling": "uniform",
+      "n": 20000,
+      "symmetric_rule": 1.0,
+      "symmetric_answer": 1.0,
+      "coherent_rule": 0.0,
+      "coherent_answer": 0.057
+    },
+    {
+      "rho": 0.4,
+      "sampling": "uniform",
+      "n": 20000,
+      "symmetric_rule": 1.0,
+      "symmetric_answer": 1.0,
+      "coherent_rule": 0.001201923076923077,
+      "coherent_answer": 0.059
+    },
+    {
+      "rho": 0.49,
+      "sampling": "uniform",
+      "n": 20000,
+      "symmetric_rule": 1.0,
+      "symmetric_answer": 1.0,
+      "coherent_rule": 0.34375,
+      "coherent_answer": 0.062
+    },
+    {
+      "rho": 0.51,
+      "sampling": "uniform",
+      "n": 20000,
+      "symmetric_rule": 1.0,
+      "symmetric_answer": 1.0,
+      "coherent_rule": 0.5637019230769231,
+      "coherent_answer": 0.076
+    },
+    {
+      "rho": 0.6,
+      "sampling": "uniform",
+      "n": 20000,
+      "symmetric_rule": 1.0,
+      "symmetric_answer": 1.0,
+      "coherent_rule": 0.9987980769230769,
+      "coherent_answer": 0.987
+    },
+    {
+      "rho": 0.8,
+      "sampling": "uniform",
+      "n": 20000,
+      "symmetric_rule": 1.0,
+      "symmetric_answer": 1.0,
+      "coherent_rule": 1.0,
+      "coherent_answer": 1.0
+    },
+    {
+      "rho": 0.05,
+      "sampling": "family",
+      "n": 20000,
+      "symmetric_rule": 0.016826923076923076,
+      "symmetric_answer": 0.066,
+      "coherent_rule": 0.0,
+      "coherent_answer": 0.063
+    },
+    {
+      "rho": 0.0625,
+      "sampling": "family",
+      "n": 20000,
+      "symmetric_rule": 0.08533653846153846,
+      "symmetric_answer": 0.07,
+      "coherent_rule": 0.0,
+      "coherent_answer": 0.063
+    },
+    {
+      "rho": 0.1,
+      "sampling": "family",
+      "n": 20000,
+      "symmetric_rule": 0.6045673076923077,
+      "symmetric_answer": 0.099,
+      "coherent_rule": 0.0,
+      "coherent_answer": 0.063
+    },
+    {
+      "rho": 0.25,
+      "sampling": "family",
+      "n": 20000,
+      "symmetric_rule": 1.0,
+      "symmetric_answer": 1.0,
+      "coherent_rule": 0.0,
+      "coherent_answer": 0.063
+    },
+    {
+      "rho": 0.4,
+      "sampling": "family",
+      "n": 20000,
+      "symmetric_rule": 1.0,
+      "symmetric_answer": 1.0,
+      "coherent_rule": 0.004807692307692308,
+      "coherent_answer": 0.061
+    },
+    {
+      "rho": 0.49,
+      "sampling": "family",
+      "n": 20000,
+      "symmetric_rule": 1.0,
+      "symmetric_answer": 1.0,
+      "coherent_rule": 0.36538461538461536,
+      "coherent_answer": 0.065
+    },
+    {
+      "rho": 0.51,
+      "sampling": "family",
+      "n": 20000,
+      "symmetric_rule": 1.0,
+      "symmetric_answer": 1.0,
+      "coherent_rule": 0.5673076923076923,
+      "coherent_answer": 0.08
+    },
+    {
+      "rho": 0.6,
+      "sampling": "family",
+      "n": 20000,
+      "symmetric_rule": 1.0,
+      "symmetric_answer": 1.0,
+      "coherent_rule": 0.9891826923076923,
+      "coherent_answer": 0.948
+    },
+    {
+      "rho": 0.8,
+      "sampling": "family",
+      "n": 20000,
+      "symmetric_rule": 1.0,
+      "symmetric_answer": 1.0,
+      "coherent_rule": 1.0,
+      "coherent_answer": 1.0
+    }
+  ]
+}

@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import copy
 import json
-import sys
 from pathlib import Path
 
 import nnsight  # noqa: F401  # import before other heavy modules; nnsight inspects the caller
@@ -18,9 +17,8 @@ import matplotlib
 
 matplotlib.use("Agg")
 
-import _paths  # noqa: F401
-
-import closure_kernel as ck
+from src.experiments import closure_kernel as ck
+from src.experiments import reject_extra_flags
 import handcoded
 from handcoded import (
     DATA_SEED,
@@ -38,7 +36,7 @@ from src.eval import executor_comparison as c
 from src.eval.local_credit import evaluate_probes, measure_induced_credit, run_patches
 from src.training.seed import set_seed
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "results" / "closure_handcoded"
 
 
@@ -59,7 +57,8 @@ def as_trainable(model, device):
     return trainable.to(device)
 
 
-def main() -> int:
+def main(argv=None) -> int:
+    reject_extra_flags(argv, __doc__)
     apply_style()
     OUT.mkdir(parents=True, exist_ok=True)
     device = torch.device("cpu")

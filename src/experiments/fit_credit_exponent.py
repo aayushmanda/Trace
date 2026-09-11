@@ -18,7 +18,6 @@ import csv
 import json
 from pathlib import Path
 
-import _paths  # noqa: F401
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -26,8 +25,9 @@ import numpy as np
 import pandas as pd
 
 from src.plot_style import apply_style
+from src.experiments import reject_extra_flags
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 IN_DIR = ROOT / 'results/executor_comparison/depth_replication'
 DATA_DIR = ROOT / 'Paper/data'
 FIG_DIR = ROOT / 'Paper/figures'
@@ -125,7 +125,8 @@ def make_figure(df):
     plt.close(fig)
 
 
-def main():
+def main(argv=None):
+    reject_extra_flags(argv, __doc__)
     df, dropped = load_data()
     print(f'{len(df)} pooled rows after merge (dropped {dropped} non-positive rows)')
     if df.empty:

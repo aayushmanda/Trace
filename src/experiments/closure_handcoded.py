@@ -19,7 +19,6 @@ import csv
 import json
 from pathlib import Path
 
-import _paths  # noqa: F401
 import matplotlib
 
 matplotlib.use("Agg")
@@ -27,7 +26,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 
-import closure_kernel as ck
+from src.experiments import closure_kernel as ck
 import handcoded as h
 from src.eval import executor_comparison as c
 from src.eval.local_credit import (
@@ -38,7 +37,7 @@ from src.eval.local_credit import (
 from src.plot_style import apply_style
 from src.training.seed import configure_device, default_device, set_seed
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "results" / "closure_handcoded"
 PROCESS = "#087eaa"
 OUTCOME = "#c56b08"
@@ -251,7 +250,7 @@ def maybe_train(args, device):
     return persists
 
 
-def main() -> int:
+def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--depths", type=int, nargs="+", default=[2, 4, 6, 8, 10, 12])
     ap.add_argument("--patch-depths", type=int, nargs="+", default=[2, 4, 6])
@@ -266,7 +265,7 @@ def main() -> int:
     ap.add_argument("--train-depths", type=int, nargs="+", default=[2, 4, 6])
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--device", default=None)
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
     OUT.mkdir(parents=True, exist_ok=True)
     device = configure_device(args.device or default_device(), compile=False, bf16=False)
     print(f"device={device}", flush=True)
