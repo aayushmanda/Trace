@@ -9,3 +9,16 @@ device=cpu
 
 === Oracle nnsight patches ===
 [oracle patch] D=2 oracle_slot=1.000 random_subspace=0.125 unstructured=0.016 wrong_layer=0.188 probe_subspace=0.266 probe_wrong_layer=0.031
+[oracle patch] D=4 oracle_slot=1.000 random_subspace=0.125 unstructured=0.055 wrong_layer=0.320 probe_subspace=0.039 probe_wrong_layer=0.070
+[oracle patch] D=6 oracle_slot=1.000 random_subspace=0.156 unstructured=0.094 wrong_layer=0.344 probe_subspace=0.052 probe_wrong_layer=0.062
+
+=== Init Def 20 credit vs D (untrained D-block net) ===
+[init] D=2 seed=42 mix=0.008  outcome credit=1.768e-02  process floor=15.002
+[init] D=2 seed=43 mix=0.007  outcome credit=1.531e-02  process floor=15.002
+[init] D=2 seed=44 mix=0.008  outcome credit=1.741e-02  process floor=15.006
+[init] D=4 seed=42 mix=0.016  outcome credit=1.478e-02  process floor=15.015
+[init] D=4 seed=43 mix=0.015  outcome credit=1.488e-02  process floor=14.997
+[init] D=4 seed=44 mix=0.014  outcome credit=1.367e-02  process floor=14.984
+[init] D=6 seed=42 mix=0.024  outcome credit=1.549e-02  process floor=15.009
+[init] D=6 seed=43 mix=0.023  outcome credit=1.474e-02  process floor=15.029
+[init] D=6 seed=44 mix=0.017  outcome credit=1.091e-02  process floor=15.002
