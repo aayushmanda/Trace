@@ -149,6 +149,33 @@ def plot_legacy_reliability():
 
 
 # ---------------------------------------------------------------------------
+# Fig 1 (single panel, Boolean only): TeX figures/boolean_reliability.pdf
+# ---------------------------------------------------------------------------
+def plot_boolean_reliability_only():
+    style()
+    bc = pd.read_csv(ROOT / "results/reliability_sweeps/boolean_circuit_8_phase_20260823_151153.csv")
+    fig, ax = plt.subplots(figsize=(4.2, 3.6), layout="constrained")
+
+    proc = bc[bc.condition != "outcome"].copy()
+    proc["rho"] = proc["rho"].astype(float)
+    for col, color, label, marker, ls in [
+        ("answer_accuracy", OUTCOME, "Answer accuracy", "o", "-"),
+        ("exact_trace_accuracy", EXACT, "Exact trace", "s", "--"),
+        ("trace_step_accuracy", PROCESS, "Trace step (free-run)", "^", ":"),
+    ]:
+        stats = seed_stats(proc, "rho", col)
+        errorbar(ax, stats, "rho", color, label, marker=marker, ls=ls)
+        scatter_seeds(ax, proc, "rho", col, color)
+    outcome_line(ax, float(bc[bc.condition == "outcome"].answer_accuracy.mean()))
+    chance_line(ax, 1 / 16)
+    ax.set(title="Boolean circuit, depth 8 (5 seeds)",
+           xlabel=r"Trace reliability $\rho$", ylabel="Accuracy",
+           xlim=(-0.02, 1.04), ylim=(-0.04, 1.06))
+    ax.legend(loc="lower right", fontsize=8, framealpha=0.9)
+    return save(fig, "boolean_reliability")
+
+
+# ---------------------------------------------------------------------------
 # Empirical centerpiece from the newer multi-seed CSVs
 # ---------------------------------------------------------------------------
 def plot_revision_reliability():
@@ -495,6 +522,7 @@ def main(argv=None):
     protocol = json.loads((ROOT / "results/executor_comparison/depth_replication/protocol.json").read_text())
     frame = pd.read_csv(ROOT / "results/executor_comparison/depth_replication/metrics.csv")
     plot_legacy_reliability()
+    plot_boolean_reliability_only()
     plot_revision_reliability()
     plot_local_rollout()
     plot_trained_bridge(frame)
