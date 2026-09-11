@@ -24,6 +24,19 @@ The animation shows:
 
 Orange denotes the learned outcome model, blue the learned process model, and purple the fixed outcome reference. The pink highlight follows one starting state. Frames advance through **measured optimization checkpoints**, not generated tokens. The matrices show model responses and internal activations, not raw attention weights.
 
+### Every evaluated circuit
+
+`animate_all_circuits` in [handcoded/animate.py](handcoded/animate.py) renders one frame per evaluated circuit rather than per checkpoint: each frame shows that circuit's full answer-probability matrix for the gold permutation, the trained outcome model, and the trained process model, side by side. It's a fast way to see the same qualitative gap the paper reports — process tracking the gold permutation closely while outcome shows visible off-target probability mass — across many circuits rather than one.
+
+The exported `all_circuits.mp4` (1000 frames, ~41 MB) is **generated locally**, the same way as `training_dynamics.mp4` above, and is not shipped in the repository:
+
+```python
+from handcoded.animate import animate_all_circuits, save_training_mp4
+
+all_circuits_animation = animate_all_circuits(circuits, models, tokenizer, device)
+save_training_mp4(all_circuits_animation, "all_circuits.mp4", fps=4, dpi=120)
+```
+
 ## Quick start
 
 Python 3.12+. Conda env `aayus`, or from the repository root:
@@ -153,8 +166,8 @@ Each condition and seed is trained along one trajectory and evaluated at its che
 
 | File | Purpose |
 |---|---|
-| [experiments/induced_rule.py](experiments/induced_rule.py) | Induced local-rule readout (`python -m src induced`) |
-| [experiments/compare_executor_rules.py](experiments/compare_executor_rules.py) | Semantic-token executor comparison (`python -m src executor`) |
+| `python -m src induced` | Induced local-rule readout |
+| `python -m src executor` | Semantic-token executor comparison |
 | [src/data/registry.py](src/data/registry.py) | Registered task names and task configurations |
 | [src/models/gpt.py](src/models/gpt.py) | GPT architecture used by the GPT-stack scripts |
 
