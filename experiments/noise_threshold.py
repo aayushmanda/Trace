@@ -273,7 +273,7 @@ def draw(results: dict) -> None:
     """Rebuild the figure from a saved summary; no sweeps are rerun."""
     recovery, structure = results["recovery"], results["structure"]
     # ---- figure -----------------------------------------------------------
-    # Transformer sweep for context; separate corpora and different gate sampling (Table 4).
+    # Transformer sweep for context; separate corpora and different gate sampling.
     transformer = {0.30: 0.078, 0.50: 0.180, 0.80: 0.620, 0.85: 0.727,
                    0.90: 0.819, 0.95: 0.870, 1.00: 0.926}
     plt.rcParams.update({"pdf.fonttype": 42, "ps.fonttype": 42, "savefig.dpi": 300,
@@ -287,7 +287,7 @@ def draw(results: dict) -> None:
     ax.errorbar(xs, ys, yerr=sd, color=PROCESS, marker="o", ms=4, lw=1.8,
                 capsize=2, label="Shared kernel (empirical optimum)")
     ax.plot(sorted(transformer), [transformer[k] for k in sorted(transformer)],
-            color=OUTCOME, marker="s", ms=4, lw=1.8, label="Trained Transformer (Table 4)")
+            color=OUTCOME, marker="s", ms=4, lw=1.8, label="Trained Transformer")
     ax.axvline(1 / K, color=CHANCE, ls="--", lw=1.2)
     ax.axhline(1 / K, color=CHANCE, ls=":", lw=1.0)
     ax.annotate(r"$\rho_c=1/K$", xy=(1 / K, 0.52), xytext=(0.13, 0.52),
