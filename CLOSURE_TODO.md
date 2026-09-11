@@ -10,22 +10,16 @@ return per unit effort.
 |---|---|---|---|
 | 1 | `python experiments/noise_threshold.py` | Cor. "reliability threshold" (ρ_c=1/K, 1/2), ρ=0 information-completeness | §3.2, App. I (Fig. 3, Tables 5–6) |
 | 2 | `python experiments/recover_mechanism_deep.py` | Table 2 provenance; escape-time table (process flat in depth, outcome censors from D=6) | §5 Table 3, App. K |
+| 3 | `python experiments/credit_suppression.py` | **Thm 4 both halves** (outcome exec.-relevant part = 0.000, process = 15.0000 exactly); **Thm 2** (‖Πq‖, ‖Πb‖ trade off 3 orders of magnitude, product constant at 2.457e-2); **Cor. 2** (fitted ε-exponent = D−1 exactly, R²≥0.998, D∈{2..12}) | App. G "Numerical Confirmation of the Credit Identities" (Fig., cross-ref'd from Thm 2/4 and Cor. 2 in body.tex) |
 
-Rerun either any time — both write from archived logs/CSVs, no training.
-
-## Done, NOT yet in the paper (write-up only, zero new compute)
-
-| # | Script | Buys | Status |
-|---|---|---|---|
-| 3 | `python experiments/credit_suppression.py` | **Thm 4 both halves** (outcome exec.-relevant part = 0.000, process ≥ 0.9375); **Thm 2** (‖Πq‖, ‖Πb‖ trade off 3 orders of magnitude, product constant); **Cor. 3** (fitted ε-exponent = D−1 exactly, R²≥0.998, D∈{2..12}) | Ran, `results/credit_suppression/summary.json` + `Paper/figures/credit_suppression.pdf` exist. **Needs**: a table + paragraph in §6 citing these numbers. This is the single highest-value item left — it's the row the reviewer scored 0–2. |
-
-Action: write §6 paragraph + table from `results/credit_suppression/summary.json`. No command to run — just prose.
+Rerun any of these any time — all three write from archived logs/CSVs or a
+closed-form no-training computation.
 
 ## Cheap reruns (minutes–hours, no GPU needed for most)
 
 | # | Command | Buys | Note |
 |---|---|---|---|
-| 4 | Already covered by #3 | ~~Cor. 3 exponent~~ | `e4_projected_kernel.yaml`'s confirmation grid is now redundant — `credit_suppression.py` already closes this more cleanly (exact ε via permutation construction vs. rejection-sampled). Don't bother running it. |
+| 4 | *(nothing to run)* | ~~Cor. 2 exponent~~ | `e4_projected_kernel.yaml`'s confirmation grid was superseded by #3 above (exact ε via permutation construction vs. rejection-sampled, and now written into App. G). Don't bother running it. |
 | 5 | `python -m src escape --config configs/experiments/escape_time.yaml` **after editing** `k: 16, m: 52`, transition-matrix coords (not row-softmax logits) | Escape exponent 0.973/1.979/3.927 vs D−2, in the substrate the theorem is stated in | Current config is the superseded K=8,M=4 pilot. The reported paper numbers came from a different, undiscovered script — this rebuilds them from scratch. |
 | 6 | `python experiments/gradient_transfer.py` (already ran once, see `results/gradient_transfer/`) | Depth-graded transfer asymmetry: cos(g_out,g_proc) rises 0.32→0.60 with D, out→proc transfer inverts sign at D=8 | Exploratory only — likely inflated by a shared "suppress irrelevant vocabulary" component. Needs decomposition before citing. Don't write up as-is. |
 
@@ -51,5 +45,6 @@ Action: write §6 paragraph + table from `results/credit_suppression/summary.jso
 
 ---
 
-**If you only do one thing:** write up #3. It costs nothing further and fixes
-the worst-scored row in every external review so far.
+**If you only do one thing:** run #5. It's the cheapest remaining item (no
+GPU, minutes) and rebuilds the escape-time exponent in the theorem's own
+substrate instead of the superseded K=8,M=4 pilot config.
