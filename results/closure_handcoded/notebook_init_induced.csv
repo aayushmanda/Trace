@@ -1,0 +1,2 @@
+model,step,mixing_radius_max,mixing_radius_mean,outcome_rule_credit_mean,outcome_rule_credit_max,n_credit_terms,process_floor_mean,state_mass_mean,readout,n_tables
+init_outcome_architecture,0,0.021690335504308836,0.016281960010644483,0.014932796848988362,0.08254469307346365,256,15.007163340493657,0.2228430211544037,gold_prefix_def20,8
