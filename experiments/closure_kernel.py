@@ -344,6 +344,22 @@ def draw(res):
     fig.savefig(OUT / "exponents.png", dpi=160, bbox_inches="tight")
     plt.close(fig)
 
+    mix = res["thm4_mixing"]
+    fig, ax = plt.subplots(figsize=(6.2, 3.6))
+    ax.plot([r["rho"] for r in mix], [r["predicted_coefficient"] for r in mix],
+            ls="--", color=CHANCE, lw=1.5, label=r"predicted $(K\rho-1)/(K-1)$")
+    ax.plot([r["rho"] for r in mix], [r["process_coefficient"] for r in mix],
+            marker="o", color=PROCESS, lw=1.7, label=r"process coefficient along $T_g-U$")
+    ax.axhline(0.0, color=OUTCOME, lw=1.6, label=r"outcome $\|\mathrm{Rule}(G)\|_F\approx 0$")
+    ax.set_xlabel(r"trace reliability $\rho$")
+    ax.set_ylabel("projected coefficient")
+    ax.set_title(r"Theorem 4 at $P_g=U$: process recovers $T_g-U$; outcome Rule is $0$")
+    ax.legend(frameon=True, loc="upper left")
+    fig.tight_layout()
+    fig.savefig(OUT / "thm4_mixing.pdf", bbox_inches="tight")
+    fig.savefig(OUT / "thm4_mixing.png", dpi=160, bbox_inches="tight")
+    plt.close(fig)
+
 
 def main() -> int:
     ap = argparse.ArgumentParser()
