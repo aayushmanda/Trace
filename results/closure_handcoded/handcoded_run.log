@@ -8,3 +8,4 @@ device=cpu
 [oracle T_g] D=12  ||q̄||=0.9682  ||b̄||=0.9682  credit=0.9375  process floor=0.9375
 
 === Oracle nnsight patches ===
+[oracle patch] D=2 oracle_slot=1.000 random_subspace=0.125 unstructured=0.016 wrong_layer=0.188 probe_subspace=0.266 probe_wrong_layer=0.031
