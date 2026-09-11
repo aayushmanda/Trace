@@ -1,7 +1,9 @@
 """Mechanism test: local credit on a deep outcome architecture (answer-only).
 
-Three conditions share the outcome residual layout except ordinary process, which
-is the known-good comparison (process tokens). L_out+local never puts trace tokens
+Three conditions share the outcome residual layout. Default process still uses the
+one-block process architecture (historical). Pass `--matched-architecture` to train
+process on the same D-block outcome net (`build_random_trainable_outcome_architecture`)
+so the depth table is not mixing architectures. L_out+local never puts trace tokens
 in the LM target: H_t is a linear readout of block-t hidden states.
 
 If outcome ≈ chance while outcome+local ≈ process ≈ 100%, that isolates credit
@@ -46,7 +48,10 @@ from handcoded.local_credit import (
     train_linear_probes,
 )
 from handcoded.models import attach_local_heads
+import numpy as np
+
 from src.eval import executor_comparison as c
+from src.eval.rule_credit import credit_summary
 
 
 CONDITIONS = ("outcome", "outcome_local", "process")
@@ -123,8 +128,8 @@ def run_patches(
 
     Works identically on the hand-built oracle and on any trained model that shares
     `HandcodedOutcomeTransformer`'s residual layout (`state_slots`, `_answer_index`,
-    `depth`) -- i.e. `outcome` and `outcome_local`, but not `process` (different,
-    reused one-block architecture with no per-step state slots to patch).
+    `depth`) — `outcome`, `outcome_local`, and process *when* it is the matched
+    D-block copy. The one-block process architecture has no per-step state slots.
 
     `probe_subspace` needs a trained linear probe per block (the Appendix-M gap).
     """
@@ -158,7 +163,7 @@ def run_patches(
                 kwargs["probe"] = probes[layer]
             else:
                 kwargs["method"] = method
-            acc = counterfactual_accuracy(model, circuits, tokenizer, layer, donor_ids=donor_ids, **kwargs)
+            acc = counterfactual_accuracy(model, circuits, tokenizer, layer, **kwargs)
             rows.append({
                 "model": model_name,
                 "layer": layer,
@@ -167,6 +172,46 @@ def run_patches(
             })
     model.train(was_training)
     return rows
+
+
+@torch.no_grad()
+def measure_induced_credit(model, tokenizer, circuits, device, depth, backgrounds=2, seed=8127):
+    """Gold-prefix Def 20 readout on a D-block (or process-length) net.
+
+    Reports mixing radius ||P̂_g − U||_2, outcome Rule credit, and the process
+    cell floor from the same tables. Not an ε^{D−1} claim unless mixing is small.
+    """
+    tables, masses = c.read_local_rules(
+        model, tokenizer, depth, device, backgrounds=backgrounds, seed=seed,
+    )
+    p_hat = tables.mean(0).detach().cpu().numpy()
+    k = tokenizer.n_states
+    uniform = np.ones((k, k), dtype=np.float64) / k
+    radii = [
+        float(np.linalg.norm(p_hat[g] - uniform, ord=2))
+        for g in range(len(tokenizer.gates))
+    ]
+    gate_index = {name: i for i, name in enumerate(tokenizer.gates)}
+    credit_mean, credit_max, n_terms = credit_summary(p_hat, gate_index, circuits, k)
+    floors = []
+    for circuit in circuits:
+        source = circuit.start
+        for t, gate in enumerate(circuit.gates):
+            gold = circuit.states[t]
+            cell = float(p_hat[gate_index[gate], source, gold])
+            floors.append((1.0 - 1.0 / k) / max(cell, 1e-30))
+            source = gold
+    return {
+        "mixing_radius_max": float(max(radii) if radii else float("nan")),
+        "mixing_radius_mean": float(np.mean(radii) if radii else float("nan")),
+        "outcome_rule_credit_mean": float(credit_mean),
+        "outcome_rule_credit_max": float(credit_max),
+        "n_credit_terms": int(n_terms),
+        "process_floor_mean": float(np.mean(floors) if floors else float("nan")),
+        "state_mass_mean": float(masses.mean().cpu()),
+        "readout": "gold_prefix_def20",
+        "n_tables": int(tables.shape[0]),
+    }
 
 
 def _mean_patch(rows, method, depth):
@@ -471,12 +516,17 @@ def run_experiment(args):
 
     base = h.build_random_trainable_outcome_architecture(tokenizer, depth, seed=args.seed, device=device)
     attach_local_heads(base, seed=args.seed + 17, device=device)
+    matched = bool(getattr(args, "matched_architecture", False))
+    if matched:
+        process_model = copy.deepcopy(base)
+    else:
+        process_model = h.build_random_trainable_process_architecture(
+            tokenizer, depth, seed=args.seed, device=device,
+        )
     models = {
         "outcome": copy.deepcopy(base),
         "outcome_local": copy.deepcopy(base),
-        "process": h.build_random_trainable_process_architecture(
-            tokenizer, depth, seed=args.seed, device=device,
-        ),
+        "process": process_model,
     }
     data = {"outcome": outcome_data, "outcome_local": outcome_data, "process": process_data}
     gold = {"outcome": outcome_gold, "outcome_local": outcome_gold, "process": None}
@@ -489,7 +539,7 @@ def run_experiment(args):
     checkpoints = sorted(set(args.checkpoints) | {0, args.steps})
     checkpoints = [k for k in checkpoints if 0 <= k <= args.steps]
 
-    metrics, probe_rows, credit_rows, trained_patch_rows = [], [], [], []
+    metrics, probe_rows, credit_rows, trained_patch_rows, induced_rows = [], [], [], [], []
     run_trained_patches = not getattr(args, "skip_trained_patches", False)
     last_loss = {name: float("nan") for name in CONDITIONS}
     last_parts = {name: {} for name in CONDITIONS}
@@ -534,11 +584,25 @@ def run_experiment(args):
                 **parts,
             }
             metrics.append(row)
-            if name == "process":
-                # HandcodedProcessTransformer has no per-step state_slots to patch
-                # (one block, reused; state lives in a KV trace, not a fixed residual
-                # slot per execution step) -- activation patching as done here does not
-                # apply to this architecture, so it is skipped, not silently omitted.
+            if getattr(args, "induced_credit", False):
+                try:
+                    induced = measure_induced_credit(
+                        model, tokenizer, val, device, depth,
+                        backgrounds=int(getattr(args, "induced_backgrounds", 2)),
+                    )
+                    induced_rows.append({
+                        "condition": name, "step": step, "depth": depth, "seed": args.seed,
+                        "theorem": "cor:near-mixing / Def 20 gold-prefix",
+                        **induced,
+                    })
+                except Exception as exc:
+                    print(json.dumps({
+                        "induced_credit_failed": True, "condition": name, "step": step,
+                        "error": f"{type(exc).__name__}: {exc}",
+                    }), flush=True)
+            if name == "process" and not matched:
+                # One-block process has no per-step state_slots. Matched D-block process
+                # shares the outcome residual layout and is patched below.
                 continue
             probes, tr_acc, ev_acc = evaluate_probes(
                 model, probe_train, probe_eval, tokenizer, device, tokenizer.n_states,
@@ -585,7 +649,7 @@ def run_experiment(args):
                     sum(r["counterfactual_accuracy"] for r in step_patches
                         if r["condition"] == name and r["method"] == "probe_subspace") / depth, 4,
                 )
-                for name in ("outcome", "outcome_local")
+                for name in (("outcome", "outcome_local", "process") if matched else ("outcome", "outcome_local"))
                 if any(r["condition"] == name for r in step_patches)
             }
         print(json.dumps(summary), flush=True)
@@ -632,6 +696,8 @@ def run_experiment(args):
         write_csv(output / "probes.csv", probe_rows)
     if credit_rows:
         write_csv(output / "credit.csv", credit_rows)
+    if induced_rows:
+        write_csv(output / "induced_credit.csv", induced_rows)
     if trained_patch_rows:
         write_csv(output / "trained_patch.csv", trained_patch_rows)
     table = []
@@ -670,7 +736,8 @@ def run_experiment(args):
     # Decodable-but-not-used pattern: high probe_eval_accuracy, probe_subspace ~ chance.
     probe_vs_patch = []
     methods_for_cmp = patch_methods_present or list(PATCH_METHODS)
-    for name in ("outcome", "outcome_local"):
+    patch_names = ("outcome", "outcome_local", "process") if matched else ("outcome", "outcome_local")
+    for name in patch_names:
         for layer in range(depth):
             probe_match = [
                 r for r in probe_rows
@@ -694,17 +761,18 @@ def run_experiment(args):
         write_csv(output / "probe_vs_patch.csv", probe_vs_patch)
 
     def _final_patch_mean(method):
+        names = ("outcome", "outcome_local", "process") if matched else ("outcome", "outcome_local")
         return {
             name: sum(
                 r["counterfactual_accuracy"] for r in trained_patch_rows
                 if r["condition"] == name and r["step"] == args.steps and r["method"] == method
             ) / depth
-            for name in ("outcome", "outcome_local")
+            for name in names
             if any(r["condition"] == name and r["step"] == args.steps for r in trained_patch_rows)
         }
 
     final_probe_eval = {}
-    for name in ("outcome", "outcome_local"):
+    for name in (("outcome", "outcome_local", "process") if matched else ("outcome", "outcome_local")):
         accs = []
         for layer in range(depth):
             match = [
@@ -724,7 +792,9 @@ def run_experiment(args):
         "no_eps_D_minus_1_claim": True,
         "smoke": bool(getattr(args, "smoke", False)),
         "device": str(device),
+        "matched_architecture": matched,
         "process_patching_not_applicable": (
+            None if matched else
             "process is a one-block, reused architecture with no per-execution-step "
             "residual state slot; activation patching as implemented here (patch a "
             "fixed layer's fixed state_slots range) does not apply to it and was not run"
@@ -799,6 +869,11 @@ def parse_args(argv=None):
                          default=bool(cfg.get("skip_trained_patches", False)),
                          help="Skip activation-patching the trained outcome/outcome_local models at each "
                               "checkpoint (patch.csv for the hand-coded oracle is always produced).")
+    parser.add_argument(
+        "--matched-architecture", action="store_true",
+        default=bool(cfg.get("matched_architecture", False)),
+        help="Train process on the same D-block outcome architecture (not the one-block process net).",
+    )
     parser.add_argument(
         "--patch-donors", nargs="+", type=int, default=cfg.get("patch_donors"),
         help="Donor states for nnsight patches (default: all 16). Smoke uses a 4-state subset.",

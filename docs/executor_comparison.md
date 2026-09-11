@@ -161,3 +161,12 @@ Suggested caption (replace run details using the actual manifest):
 ```bash
 python -m unittest tests.test_executor_comparison
 ```
+
+
+why should grad deescent tke random param of the archite and use the right thought traces to right answer
+
+now 100% of training example are . fraction of train example is wrong  think examples grad is still pointing in right direction
+
+answer is also wrong.
+
+fix the number of rigth think and increase 

@@ -1,0 +1,288 @@
+{
+  "K": 16,
+  "M": 52,
+  "D": 8,
+  "n_circuits": 20000,
+  "seeds": [
+    2001,
+    2002,
+    2003
+  ],
+  "gradient_at_mixing": [
+    {
+      "rho": 0.0,
+      "coefficient": -0.06666666666666668,
+      "predicted": -0.06666666666666667,
+      "cosine": -0.6903918658708108
+    },
+    {
+      "rho": 0.03,
+      "coefficient": -0.034729241587777335,
+      "predicted": -0.034666666666666665,
+      "cosine": -0.4488131858545744
+    },
+    {
+      "rho": 0.0625,
+      "coefficient": 0.00474039971373791,
+      "predicted": 0.0,
+      "cosine": 0.06809200578883473
+    },
+    {
+      "rho": 0.1,
+      "coefficient": 0.04580862452931026,
+      "predicted": 0.04000000000000001,
+      "cosine": 0.5495347777887768
+    },
+    {
+      "rho": 0.25,
+      "coefficient": 0.20554714422288425,
+      "predicted": 0.2,
+      "cosine": 0.9469133644079009
+    },
+    {
+      "rho": 0.5,
+      "coefficient": 0.46590250740596406,
+      "predicted": 0.4666666666666667,
+      "cosine": 0.9890329330858962
+    },
+    {
+      "rho": 1.0,
+      "coefficient": 1.0,
+      "predicted": 1.0,
+      "cosine": 0.9979016988965669
+    }
+  ],
+  "recovery": [
+    {
+      "rho": 0.02,
+      "rule_mean": 0.0,
+      "rule_sd": 0.0,
+      "answer_mean": 0.06533333333333334,
+      "answer_sd": 0.0030550504633038962
+    },
+    {
+      "rho": 0.04,
+      "rule_mean": 0.00280448717948718,
+      "rule_sd": 0.0018359678265047437,
+      "answer_mean": 0.05733333333333334,
+      "answer_sd": 0.008504900548115384
+    },
+    {
+      "rho": 0.0625,
+      "rule_mean": 0.07732371794871795,
+      "rule_sd": 0.03705225591502499,
+      "answer_mean": 0.06133333333333333,
+      "answer_sd": 0.008326663997864534
+    },
+    {
+      "rho": 0.08,
+      "rule_mean": 0.27564102564102566,
+      "rule_sd": 0.07343871306018974,
+      "answer_mean": 0.066,
+      "answer_sd": 0.0030000000000000027
+    },
+    {
+      "rho": 0.1,
+      "rule_mean": 0.6185897435897435,
+      "rule_sd": 0.08174255194102012,
+      "answer_mean": 0.09200000000000001,
+      "answer_sd": 0.014730919862656235
+    },
+    {
+      "rho": 0.15,
+      "rule_mean": 0.9795673076923076,
+      "rule_sd": 0.004333595283009618,
+      "answer_mean": 0.8503333333333334,
+      "answer_sd": 0.025540817005987388
+    },
+    {
+      "rho": 0.2,
+      "rule_mean": 1.0,
+      "rule_sd": 0.0,
+      "answer_mean": 1.0,
+      "answer_sd": 0.0
+    },
+    {
+      "rho": 0.25,
+      "rule_mean": 1.0,
+      "rule_sd": 0.0,
+      "answer_mean": 1.0,
+      "answer_sd": 0.0
+    },
+    {
+      "rho": 0.3,
+      "rule_mean": 1.0,
+      "rule_sd": 0.0,
+      "answer_mean": 1.0,
+      "answer_sd": 0.0
+    },
+    {
+      "rho": 0.5,
+      "rule_mean": 1.0,
+      "rule_sd": 0.0,
+      "answer_mean": 1.0,
+      "answer_sd": 0.0
+    },
+    {
+      "rho": 0.8,
+      "rule_mean": 1.0,
+      "rule_sd": 0.0,
+      "answer_mean": 1.0,
+      "answer_sd": 0.0
+    },
+    {
+      "rho": 1.0,
+      "rule_mean": 1.0,
+      "rule_sd": 0.0,
+      "answer_mean": 1.0,
+      "answer_sd": 0.0
+    }
+  ],
+  "gradient_descent": [
+    {
+      "rho": 0.1,
+      "rule": 0.5889423076923077,
+      "answer": 0.086
+    },
+    {
+      "rho": 0.2,
+      "rule": 0.9939903846153846,
+      "answer": 0.957
+    },
+    {
+      "rho": 0.5,
+      "rule": 1.0,
+      "answer": 1.0
+    }
+  ],
+  "rho_zero": {
+    "true_successor_never_emitted": 1.0,
+    "argmax_rule": 0.0,
+    "argmax_answer": 0.068,
+    "argmin_rule": 1.0,
+    "argmin_answer": 1.0
+  },
+  "structure": [
+    {
+      "rho": 0.05,
+      "symmetric_rule": 0.018028846153846152,
+      "symmetric_answer": 0.057,
+      "coherent_rule": 0.0,
+      "coherent_answer": 0.057
+    },
+    {
+      "rho": 0.0625,
+      "symmetric_rule": 0.11899038461538461,
+      "symmetric_answer": 0.064,
+      "coherent_rule": 0.0,
+      "coherent_answer": 0.057
+    },
+    {
+      "rho": 0.1,
+      "symmetric_rule": 0.6995192307692307,
+      "symmetric_answer": 0.105,
+      "coherent_rule": 0.0,
+      "coherent_answer": 0.057
+    },
+    {
+      "rho": 0.25,
+      "symmetric_rule": 1.0,
+      "symmetric_answer": 1.0,
+      "coherent_rule": 0.0,
+      "coherent_answer": 0.057
+    },
+    {
+      "rho": 0.4,
+      "symmetric_rule": 1.0,
+      "symmetric_answer": 1.0,
+      "coherent_rule": 0.001201923076923077,
+      "coherent_answer": 0.059
+    },
+    {
+      "rho": 0.49,
+      "symmetric_rule": 1.0,
+      "symmetric_answer": 1.0,
+      "coherent_rule": 0.34375,
+      "coherent_answer": 0.062
+    },
+    {
+      "rho": 0.51,
+      "symmetric_rule": 1.0,
+      "symmetric_answer": 1.0,
+      "coherent_rule": 0.5637019230769231,
+      "coherent_answer": 0.076
+    },
+    {
+      "rho": 0.6,
+      "symmetric_rule": 1.0,
+      "symmetric_answer": 1.0,
+      "coherent_rule": 0.9987980769230769,
+      "coherent_answer": 0.987
+    },
+    {
+      "rho": 0.8,
+      "symmetric_rule": 1.0,
+      "symmetric_answer": 1.0,
+      "coherent_rule": 1.0,
+      "coherent_answer": 1.0
+    }
+  ],
+  "counts": [
+    {
+      "n_plus": 2000,
+      "n_minus": 0,
+      "rho": 1.0,
+      "rule": 1.0,
+      "answer": 1.0
+    },
+    {
+      "n_plus": 2000,
+      "n_minus": 2000,
+      "rho": 0.5,
+      "rule": 1.0,
+      "answer": 1.0
+    },
+    {
+      "n_plus": 2000,
+      "n_minus": 10000,
+      "rho": 0.16666666666666666,
+      "rule": 0.9459134615384616,
+      "answer": 0.651
+    },
+    {
+      "n_plus": 2000,
+      "n_minus": 20000,
+      "rho": 0.09090909090909091,
+      "rule": 0.46153846153846156,
+      "answer": 0.072
+    },
+    {
+      "n_plus": 2000,
+      "n_minus": 28000,
+      "rho": 0.06666666666666667,
+      "rule": 0.12259615384615384,
+      "answer": 0.052
+    },
+    {
+      "n_plus": 2000,
+      "n_minus": 30000,
+      "rho": 0.0625,
+      "rule": 0.08173076923076923,
+      "answer": 0.062
+    },
+    {
+      "n_plus": 2000,
+      "n_minus": 32000,
+      "rho": 0.058823529411764705,
+      "rule": 0.052884615384615384,
+      "answer": 0.059
+    },
+    {
+      "n_plus": 2000,
+      "n_minus": 60000,
+      "rho": 0.03225806451612903,
+      "rule": 0.0,
+      "answer": 0.056
+    }
+  ]
+}

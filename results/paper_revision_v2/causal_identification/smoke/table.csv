@@ -1,0 +1,4 @@
+condition,answer_accuracy,train_subset_answer_accuracy,train_loss,depth,seed,s1_probe_acc,s1_oracle_slot_patch_acc,s1_probe_subspace_patch_acc,s1_random_subspace_patch_acc,s1_wrong_layer_patch_acc,s2_probe_acc,s2_oracle_slot_patch_acc,s2_probe_subspace_patch_acc,s2_random_subspace_patch_acc,s2_wrong_layer_patch_acc
+outcome,0.0,0.3125,0.9360018372535706,2,42,0.0,0.1875,0.0625,0.1875,0.1875,0.0,0.0,0.0,0.0,0.0
+outcome_local,0.0,0.25,8.29322624206543,2,42,0.0,0.0625,0.125,0.0625,0.125,0.0,0.125,0.125,0.1875,0.125
+process,0.0,0.8125,0.5656223297119141,2,42,,,,,,,,,,

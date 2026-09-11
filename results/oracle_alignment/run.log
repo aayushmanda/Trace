@@ -1,0 +1,27 @@
+device=cuda:0 depths=[2, 4, 6, 8] seeds=[42, 43, 44, 45, 46]
+[A] D=2 seed=42 blocks: out=-0.00984 proc=-0.00085 chance=-0.00031 | all: out=-0.00348 proc=-0.00626
+[A] D=2 seed=43 blocks: out=+0.00393 proc=+0.00225 chance=+0.00041 | all: out=+0.00219 proc=+0.00112
+[A] D=2 seed=44 blocks: out=+0.00801 proc=+0.00474 chance=-0.00041 | all: out=+0.00130 proc=-0.00259
+[A] D=2 seed=45 blocks: out=-0.00753 proc=-0.00981 chance=-0.00117 | all: out=-0.00317 proc=-0.00046
+[A] D=2 seed=46 blocks: out=+0.00083 proc=+0.00650 chance=-0.00075 | all: out=-0.00162 proc=+0.00396
+[A] D=4 seed=42 blocks: out=+0.00513 proc=+0.00323 chance=+0.00014 | all: out=-0.00297 proc=-0.00151
+[A] D=4 seed=43 blocks: out=-0.00614 proc=-0.00201 chance=+0.00013 | all: out=-0.00245 proc=-0.00159
+[A] D=4 seed=44 blocks: out=-0.00105 proc=+0.00254 chance=-0.00023 | all: out=+0.00395 proc=+0.00377
+[A] D=4 seed=45 blocks: out=+0.00952 proc=+0.00644 chance=+0.00026 | all: out=+0.00477 proc=+0.00550
+[A] D=4 seed=46 blocks: out=+0.00953 proc=+0.01386 chance=-0.00027 | all: out=+0.00329 proc=+0.00908
+[A] D=6 seed=42 blocks: out=+0.00155 proc=+0.00083 chance=-0.00041 | all: out=+0.00272 proc=+0.00200
+[A] D=6 seed=43 blocks: out=-0.00510 proc=-0.00310 chance=+0.00006 | all: out=-0.00558 proc=-0.00274
+[A] D=6 seed=44 blocks: out=-0.00230 proc=-0.00278 chance=+0.00006 | all: out=-0.00184 proc=-0.00315
+[A] D=6 seed=45 blocks: out=+0.00200 proc=-0.00090 chance=-0.00012 | all: out=-0.00033 proc=-0.00124
+[A] D=6 seed=46 blocks: out=+0.00325 proc=-0.00022 chance=-0.00039 | all: out=+0.00271 proc=-0.00058
+[A] D=8 seed=42 blocks: out=+0.00289 proc=+0.00218 chance=-0.00002 | all: out=+0.00284 proc=+0.00324
+[A] D=8 seed=43 blocks: out=+0.00284 proc=+0.00372 chance=-0.00014 | all: out=+0.00119 proc=+0.00281
+[A] D=8 seed=44 blocks: out=-0.00226 proc=-0.00225 chance=+0.00005 | all: out=-0.00108 proc=-0.00044
+[A] D=8 seed=45 blocks: out=-0.00233 proc=-0.00228 chance=-0.00015 | all: out=-0.00265 proc=-0.00259
+[A] D=8 seed=46 blocks: out=+0.00163 proc=+0.00388 chance=-0.00005 | all: out=+0.00115 proc=+0.00317
+[B] D=2: L_out 4.2719 -> 0.0000, L_proc 4.2758 -> 9.7467
+[B] D=4: L_out 4.2837 -> 0.0000, L_proc 4.2760 -> 8.2439
+[B] D=6: L_out 4.2641 -> 0.0000, L_proc 4.2758 -> 7.2686
+[B] D=8: L_out 4.2976 -> 0.0000, L_proc 4.2828 -> 6.6721
+
+wrote /home/hariguru/aayus/trace/results/oracle_alignment/summary.json

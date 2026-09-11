@@ -1,0 +1,58 @@
+=== (A) at complete mixing ===
+  outcome, executor-relevant part: max 0.000e+00 over 12000 occurrences
+  process, executor-relevant part: 15.0000 (bound >= 0.9375)
+
+=== (B) the two residuals along the circuit ===
+  t=1   ||Pi q||=9.682e-01  ||Pi b||=1.586e-03  product/p_y=2.457e-02
+  t=2   ||Pi q||=3.873e-01  ||Pi b||=3.966e-03  product/p_y=2.457e-02
+  t=3   ||Pi q||=1.549e-01  ||Pi b||=9.915e-03  product/p_y=2.457e-02
+  t=4   ||Pi q||=6.197e-02  ||Pi b||=2.479e-02  product/p_y=2.457e-02
+  t=5   ||Pi q||=2.479e-02  ||Pi b||=6.197e-02  product/p_y=2.457e-02
+  t=6   ||Pi q||=9.915e-03  ||Pi b||=1.549e-01  product/p_y=2.457e-02
+  t=7   ||Pi q||=3.966e-03  ||Pi b||=3.873e-01  product/p_y=2.457e-02
+  t=8   ||Pi q||=1.586e-03  ||Pi b||=9.682e-01  product/p_y=2.457e-02
+
+=== (C) depth and scale ===
+[C] eps=0.05  D=2   mean=7.502e-01 max=7.519e-01
+[C] eps=0.05  D=3   mean=3.750e-02 max=3.750e-02
+[C] eps=0.05  D=4   mean=1.875e-03 max=1.875e-03
+[C] eps=0.05  D=5   mean=9.375e-05 max=9.375e-05
+[C] eps=0.05  D=6   mean=4.687e-06 max=4.688e-06
+[C] eps=0.05  D=8   mean=1.172e-08 max=1.172e-08
+[C] eps=0.05  D=10  mean=2.930e-11 max=2.930e-11
+[C] eps=0.05  D=12  mean=7.324e-14 max=7.350e-14
+[C] eps=0.1   D=2   mean=1.501e+00 max=1.515e+00
+[C] eps=0.1   D=3   mean=1.500e-01 max=1.502e-01
+[C] eps=0.1   D=4   mean=1.500e-02 max=1.500e-02
+[C] eps=0.1   D=5   mean=1.500e-03 max=1.500e-03
+[C] eps=0.1   D=6   mean=1.500e-04 max=1.500e-04
+[C] eps=0.1   D=8   mean=1.500e-06 max=1.500e-06
+[C] eps=0.1   D=10  mean=1.500e-08 max=1.500e-08
+[C] eps=0.1   D=12  mean=1.500e-10 max=1.500e-10
+[C] eps=0.2   D=2   mean=3.031e+00 max=3.125e+00
+[C] eps=0.2   D=3   mean=6.006e-01 max=6.048e-01
+[C] eps=0.2   D=4   mean=1.200e-01 max=1.202e-01
+[C] eps=0.2   D=5   mean=2.400e-02 max=2.401e-02
+[C] eps=0.2   D=6   mean=4.800e-03 max=4.800e-03
+[C] eps=0.2   D=8   mean=1.920e-04 max=1.920e-04
+[C] eps=0.2   D=10  mean=7.680e-06 max=7.680e-06
+[C] eps=0.2   D=12  mean=3.072e-07 max=3.072e-07
+[C] eps=0.4   D=2   mean=6.856e+00 max=7.143e+00
+[C] eps=0.4   D=3   mean=2.468e+00 max=2.564e+00
+[C] eps=0.4   D=4   mean=9.682e-01 max=9.852e-01
+[C] eps=0.4   D=5   mean=3.841e-01 max=3.880e-01
+[C] eps=0.4   D=6   mean=1.536e-01 max=1.542e-01
+[C] eps=0.4   D=8   mean=2.457e-02 max=2.459e-02
+[C] eps=0.4   D=10  mean=3.932e-03 max=3.933e-03
+[C] eps=0.4   D=12  mean=6.291e-04 max=6.292e-04
+
+[fit] D=2   slope=+1.059  predicted D-1=1  R^2=0.99841
+[fit] D=3   slope=+2.012  predicted D-1=2  R^2=0.99998
+[fit] D=4   slope=+3.004  predicted D-1=3  R^2=1.00000
+[fit] D=5   slope=+4.000  predicted D-1=4  R^2=1.00000
+[fit] D=6   slope=+5.000  predicted D-1=5  R^2=1.00000
+[fit] D=8   slope=+7.000  predicted D-1=7  R^2=1.00000
+[fit] D=10  slope=+9.000  predicted D-1=9  R^2=1.00000
+[fit] D=12  slope=+11.000  predicted D-1=11  R^2=1.00000
+
+wrote /home/hariguru/aayus/trace/results/credit_suppression/summary.json and /home/hariguru/aayus/trace/Paper/figures/credit_suppression.pdf
