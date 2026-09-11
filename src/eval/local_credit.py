@@ -279,6 +279,7 @@ def write_report(output, persist, metrics, probes, credit, patches, trained_patc
         f"- depth $D$ = {depth}, seed = {persist.get('seed')}, steps = {steps}, "
         f"$\\lambda$ = {persist.get('lambda_local')}",
         f"- device = `{persist.get('device')}`, smoke = {persist.get('smoke')}",
+        f"- matched D-block process = {persist.get('matched_architecture')}",
         f"- oracle_slot mean (hand-built) = {fmt(persist.get('oracle_patch_mean'))}",
         f"- random_subspace mean (hand-built) = {fmt(persist.get('random_patch_mean'))}",
         f"- probe_subspace mean (hand-built) = {fmt(persist.get('probe_subspace_oracle_mean'))}",
@@ -306,6 +307,8 @@ def write_report(output, persist, metrics, probes, credit, patches, trained_patc
         f"- outcome probe_subspace = {fmt((persist.get('final_trained_patch_probe_subspace_mean') or {}).get('outcome'))}",
         f"- outcome_local oracle_slot = {fmt((persist.get('final_trained_patch_oracle_slot_mean') or {}).get('outcome_local'))}",
         f"- outcome_local probe_subspace = {fmt((persist.get('final_trained_patch_probe_subspace_mean') or {}).get('outcome_local'))}",
+        f"- process oracle_slot = {fmt((persist.get('final_trained_patch_oracle_slot_mean') or {}).get('process'))}",
+        f"- process probe_subspace = {fmt((persist.get('final_trained_patch_probe_subspace_mean') or {}).get('process'))}",
         "",
     ])
     if undertrained:
@@ -873,6 +876,15 @@ def parse_args(argv=None):
         "--matched-architecture", action="store_true",
         default=bool(cfg.get("matched_architecture", False)),
         help="Train process on the same D-block outcome architecture (not the one-block process net).",
+    )
+    parser.add_argument(
+        "--induced-credit", action="store_true",
+        default=bool(cfg.get("induced_credit", False)),
+        help="At each checkpoint, gold-prefix Def 20 readout of P̂_g and Rule credit vs process floor.",
+    )
+    parser.add_argument(
+        "--induced-backgrounds", type=int,
+        default=int(cfg.get("induced_backgrounds", 2)),
     )
     parser.add_argument(
         "--patch-donors", nargs="+", type=int, default=cfg.get("patch_donors"),
