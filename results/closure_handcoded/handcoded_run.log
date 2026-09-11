@@ -1,0 +1,10 @@
+device=cpu
+=== Oracle TRUE tables (Thm 1 / Thm 2 at T_g) ===
+[oracle T_g] D=2   ||q̄||=0.9682  ||b̄||=0.9682  credit=0.9375  process floor=0.9375
+[oracle T_g] D=4   ||q̄||=0.9682  ||b̄||=0.9682  credit=0.9375  process floor=0.9375
+[oracle T_g] D=6   ||q̄||=0.9682  ||b̄||=0.9682  credit=0.9375  process floor=0.9375
+[oracle T_g] D=8   ||q̄||=0.9682  ||b̄||=0.9682  credit=0.9375  process floor=0.9375
+[oracle T_g] D=10  ||q̄||=0.9682  ||b̄||=0.9682  credit=0.9375  process floor=0.9375
+[oracle T_g] D=12  ||q̄||=0.9682  ||b̄||=0.9682  credit=0.9375  process floor=0.9375
+
+=== Oracle nnsight patches ===

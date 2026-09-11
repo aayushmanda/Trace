@@ -796,6 +796,7 @@ def run_experiment(args):
         "smoke": bool(getattr(args, "smoke", False)),
         "device": str(device),
         "matched_architecture": matched,
+        "induced_credit": bool(getattr(args, "induced_credit", False)),
         "process_patching_not_applicable": (
             None if matched else
             "process is a one-block, reused architecture with no per-execution-step "

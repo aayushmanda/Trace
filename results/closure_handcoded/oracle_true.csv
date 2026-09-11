@@ -1,0 +1,7 @@
+depth,fwd_mean,bwd_mean,credit_mean,process_floor_mean,mixing_radius,n_occurrences,theorem
+2,0.9682458365518544,0.9682458365518544,0.9375000000000001,0.9375,1.0,400,thm:realizability / thm:forward-backward at T_g
+4,0.9682458365518544,0.9682458365518544,0.9375000000000001,0.9375,1.0,800,thm:realizability / thm:forward-backward at T_g
+6,0.9682458365518543,0.9682458365518543,0.9375000000000002,0.9375,1.0,1200,thm:realizability / thm:forward-backward at T_g
+8,0.9682458365518544,0.9682458365518544,0.9375000000000001,0.9375,1.0,1600,thm:realizability / thm:forward-backward at T_g
+10,0.9682458365518544,0.9682458365518544,0.9375000000000001,0.9375,1.0,2000,thm:realizability / thm:forward-backward at T_g
+12,0.9682458365518543,0.9682458365518543,0.9375000000000002,0.9375,1.0,2400,thm:realizability / thm:forward-backward at T_g
