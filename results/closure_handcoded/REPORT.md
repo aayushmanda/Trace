@@ -138,9 +138,10 @@ Theory lives at \(P_g\approx U\). Random init of
 
 | \(D\) | mean \(\|\widehat P_g-U\|_2\) | outcome Rule credit | process floor |
 |---:|---:|---:|---:|
-| 2 | 0.008 | \(1.7\times 10^{-2}\) | 15.00 |
-| 4 | 0.015 | \(1.4\times 10^{-2}\) | 15.00 |
-| 6 | 0.023 | \(1.5\times 10^{-2}\) | 15.02 |
+| 2 | 0.008 | \(1.68\times 10^{-2}\) | 15.00 |
+| 4 | 0.015 | \(1.44\times 10^{-2}\) | 15.00 |
+| 6 | 0.021 | \(1.37\times 10^{-2}\) | 15.01 |
+| 8 | 0.055 | \(2.67\times 10^{-2}\) | 15.09 |
 
 Process floor at complete mixing is \((1-1/K)/(1/K)=15\). Outcome credit is
 \(\sim 10^3\times\) smaller. **Do not** claim \(\varepsilon^{D-1}\) from this

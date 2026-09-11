@@ -22,3 +22,8 @@ device=cpu
 [init] D=6 seed=42 mix=0.024  outcome credit=1.549e-02  process floor=15.009
 [init] D=6 seed=43 mix=0.023  outcome credit=1.474e-02  process floor=15.029
 [init] D=6 seed=44 mix=0.017  outcome credit=1.091e-02  process floor=15.002
+[init] D=8 seed=42 mix=0.048  outcome credit=2.355e-02  process floor=15.076
+[init] D=8 seed=43 mix=0.064  outcome credit=3.132e-02  process floor=15.114
+[init] D=8 seed=44 mix=0.053  outcome credit=2.525e-02  process floor=15.073
+
+wrote /home/hariguru/aayus/trace/results/closure_handcoded
