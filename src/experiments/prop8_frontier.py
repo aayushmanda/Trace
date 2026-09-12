@@ -1,4 +1,4 @@
-"""Direct numerical test of Proposition 8's reliability frontier.
+"""Direct numerical test of the reliability-frontier diagnostic (App. B.7).
 
 This does not reuse the paper's own closed-form derivative. It builds the
 actual K x K matrices (T_g, U, the affine path P_g(a), the noisy mixture
@@ -57,7 +57,7 @@ A_GRID = np.linspace(0.03, 0.92, 24)
 EPS_A = 1e-4
 BISECT_TOL = 1e-7
 
-COLORS = {2: "#b42318", 3: "#c56b08", 4: "#8a7000", 6: "#2f7d32", 8: "#087eaa"}
+COLORS = {2: "#b42318", 3: "#c56b08", 4: "#8a7000", 6: "#6b4c9a", 8: "#087eaa"}
 
 
 def make_T(k: int = K, seed: int = 0) -> np.ndarray:
@@ -180,7 +180,7 @@ def draw(results: dict, path: Path) -> None:
     ax.axhline(0, color="#999999", lw=0.8)
     ax.set_xlabel(r"competence $a$")
     ax.set_ylabel(r"$\rho_c(a,D,\beta{=}1/D)$")
-    ax.set_title("Proposition 8: predicted vs. measured reliability frontier")
+    ax.set_title("Reliability-frontier diagnostic: predicted vs. measured")
     ax.legend(frameon=False, fontsize=8, ncol=2)
     fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)

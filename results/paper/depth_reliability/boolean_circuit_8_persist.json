@@ -1,0 +1,211 @@
+{
+  "experiment": "e5_reliability",
+  "task": "boolean_circuit_8",
+  "rhos": [
+    0.5,
+    0.7,
+    0.8,
+    0.9,
+    1.0
+  ],
+  "seeds": [
+    2001,
+    2002,
+    2003
+  ],
+  "checkpoints": [
+    8000
+  ],
+  "train_size": 20000,
+  "val_size": 500,
+  "train_seed": 501,
+  "val_seed": 101,
+  "ratio_seed": 777,
+  "batch_seed": 12345,
+  "include_outcome": false,
+  "csv": "results/paper/depth_reliability/boolean_circuit_8.csv",
+  "n_rows": 15,
+  "rows": [
+    {
+      "task": "boolean_circuit_8",
+      "condition": "rho=0.50",
+      "rho": 0.5,
+      "seed": 2001,
+      "step": 8000,
+      "loss": 0.2409134805202484,
+      "answer_accuracy": 0.168,
+      "exact_trace_accuracy": 0.09,
+      "trace_step_accuracy": 0.385,
+      "colon_rate": 1.0
+    },
+    {
+      "task": "boolean_circuit_8",
+      "condition": "rho=0.50",
+      "rho": 0.5,
+      "seed": 2002,
+      "step": 8000,
+      "loss": 0.2716880142688751,
+      "answer_accuracy": 0.074,
+      "exact_trace_accuracy": 0.008,
+      "trace_step_accuracy": 0.1785,
+      "colon_rate": 0.998
+    },
+    {
+      "task": "boolean_circuit_8",
+      "condition": "rho=0.50",
+      "rho": 0.5,
+      "seed": 2003,
+      "step": 8000,
+      "loss": 0.2616518437862396,
+      "answer_accuracy": 0.086,
+      "exact_trace_accuracy": 0.012,
+      "trace_step_accuracy": 0.18425,
+      "colon_rate": 0.998
+    },
+    {
+      "task": "boolean_circuit_8",
+      "condition": "rho=0.70",
+      "rho": 0.7,
+      "seed": 2001,
+      "step": 8000,
+      "loss": 0.17203736305236816,
+      "answer_accuracy": 0.336,
+      "exact_trace_accuracy": 0.29,
+      "trace_step_accuracy": 0.601,
+      "colon_rate": 1.0
+    },
+    {
+      "task": "boolean_circuit_8",
+      "condition": "rho=0.70",
+      "rho": 0.7,
+      "seed": 2002,
+      "step": 8000,
+      "loss": 0.17080192267894745,
+      "answer_accuracy": 0.244,
+      "exact_trace_accuracy": 0.188,
+      "trace_step_accuracy": 0.4755,
+      "colon_rate": 1.0
+    },
+    {
+      "task": "boolean_circuit_8",
+      "condition": "rho=0.70",
+      "rho": 0.7,
+      "seed": 2003,
+      "step": 8000,
+      "loss": 0.1592867076396942,
+      "answer_accuracy": 0.246,
+      "exact_trace_accuracy": 0.188,
+      "trace_step_accuracy": 0.45675,
+      "colon_rate": 1.0
+    },
+    {
+      "task": "boolean_circuit_8",
+      "condition": "rho=0.80",
+      "rho": 0.8,
+      "seed": 2001,
+      "step": 8000,
+      "loss": 0.12182845175266266,
+      "answer_accuracy": 0.706,
+      "exact_trace_accuracy": 0.694,
+      "trace_step_accuracy": 0.856,
+      "colon_rate": 1.0
+    },
+    {
+      "task": "boolean_circuit_8",
+      "condition": "rho=0.80",
+      "rho": 0.8,
+      "seed": 2002,
+      "step": 8000,
+      "loss": 0.13700678944587708,
+      "answer_accuracy": 0.306,
+      "exact_trace_accuracy": 0.258,
+      "trace_step_accuracy": 0.56725,
+      "colon_rate": 1.0
+    },
+    {
+      "task": "boolean_circuit_8",
+      "condition": "rho=0.80",
+      "rho": 0.8,
+      "seed": 2003,
+      "step": 8000,
+      "loss": 0.09768711030483246,
+      "answer_accuracy": 0.65,
+      "exact_trace_accuracy": 0.616,
+      "trace_step_accuracy": 0.7825,
+      "colon_rate": 1.0
+    },
+    {
+      "task": "boolean_circuit_8",
+      "condition": "rho=0.90",
+      "rho": 0.9,
+      "seed": 2001,
+      "step": 8000,
+      "loss": 0.06810004264116287,
+      "answer_accuracy": 0.776,
+      "exact_trace_accuracy": 0.776,
+      "trace_step_accuracy": 0.895,
+      "colon_rate": 1.0
+    },
+    {
+      "task": "boolean_circuit_8",
+      "condition": "rho=0.90",
+      "rho": 0.9,
+      "seed": 2002,
+      "step": 8000,
+      "loss": 0.09015242010354996,
+      "answer_accuracy": 0.608,
+      "exact_trace_accuracy": 0.564,
+      "trace_step_accuracy": 0.80975,
+      "colon_rate": 1.0
+    },
+    {
+      "task": "boolean_circuit_8",
+      "condition": "rho=0.90",
+      "rho": 0.9,
+      "seed": 2003,
+      "step": 8000,
+      "loss": 0.07860095798969269,
+      "answer_accuracy": 0.762,
+      "exact_trace_accuracy": 0.708,
+      "trace_step_accuracy": 0.87275,
+      "colon_rate": 1.0
+    },
+    {
+      "task": "boolean_circuit_8",
+      "condition": "rho=1.00",
+      "rho": 1.0,
+      "seed": 2001,
+      "step": 8000,
+      "loss": 0.0015987696824595332,
+      "answer_accuracy": 0.924,
+      "exact_trace_accuracy": 0.922,
+      "trace_step_accuracy": 0.97225,
+      "colon_rate": 1.0
+    },
+    {
+      "task": "boolean_circuit_8",
+      "condition": "rho=1.00",
+      "rho": 1.0,
+      "seed": 2002,
+      "step": 8000,
+      "loss": 0.005779594648629427,
+      "answer_accuracy": 0.824,
+      "exact_trace_accuracy": 0.8,
+      "trace_step_accuracy": 0.9205,
+      "colon_rate": 1.0
+    },
+    {
+      "task": "boolean_circuit_8",
+      "condition": "rho=1.00",
+      "rho": 1.0,
+      "seed": 2003,
+      "step": 8000,
+      "loss": 0.001906421734020114,
+      "answer_accuracy": 0.886,
+      "exact_trace_accuracy": 0.868,
+      "trace_step_accuracy": 0.94425,
+      "colon_rate": 1.0
+    }
+  ],
+  "note": "Terminal answers remain correct; rho is trace reliability. Local = trace_step_accuracy, rollout = exact_trace_accuracy / answer_accuracy."
+}

@@ -24,7 +24,7 @@
   "batch_seed": 12345,
   "include_outcome": false,
   "csv": "results/paper/depth_reliability/boolean_circuit_4.csv",
-  "n_rows": 7,
+  "n_rows": 15,
   "rows": [
     {
       "task": "boolean_circuit_4",
@@ -108,6 +108,102 @@
       "answer_accuracy": 0.744,
       "exact_trace_accuracy": 0.736,
       "trace_step_accuracy": 0.8515,
+      "colon_rate": 1.0
+    },
+    {
+      "task": "boolean_circuit_4",
+      "condition": "rho=0.80",
+      "rho": 0.8,
+      "seed": 2002,
+      "step": 8000,
+      "loss": 0.10497836768627167,
+      "answer_accuracy": 0.796,
+      "exact_trace_accuracy": 0.796,
+      "trace_step_accuracy": 0.9,
+      "colon_rate": 1.0
+    },
+    {
+      "task": "boolean_circuit_4",
+      "condition": "rho=0.80",
+      "rho": 0.8,
+      "seed": 2003,
+      "step": 8000,
+      "loss": 0.13106375932693481,
+      "answer_accuracy": 0.476,
+      "exact_trace_accuracy": 0.452,
+      "trace_step_accuracy": 0.6815,
+      "colon_rate": 1.0
+    },
+    {
+      "task": "boolean_circuit_4",
+      "condition": "rho=0.90",
+      "rho": 0.9,
+      "seed": 2001,
+      "step": 8000,
+      "loss": 0.07037115097045898,
+      "answer_accuracy": 0.906,
+      "exact_trace_accuracy": 0.904,
+      "trace_step_accuracy": 0.957,
+      "colon_rate": 1.0
+    },
+    {
+      "task": "boolean_circuit_4",
+      "condition": "rho=0.90",
+      "rho": 0.9,
+      "seed": 2002,
+      "step": 8000,
+      "loss": 0.06273885071277618,
+      "answer_accuracy": 0.888,
+      "exact_trace_accuracy": 0.888,
+      "trace_step_accuracy": 0.948,
+      "colon_rate": 1.0
+    },
+    {
+      "task": "boolean_circuit_4",
+      "condition": "rho=0.90",
+      "rho": 0.9,
+      "seed": 2003,
+      "step": 8000,
+      "loss": 0.07502951472997665,
+      "answer_accuracy": 0.656,
+      "exact_trace_accuracy": 0.654,
+      "trace_step_accuracy": 0.8005,
+      "colon_rate": 1.0
+    },
+    {
+      "task": "boolean_circuit_4",
+      "condition": "rho=1.00",
+      "rho": 1.0,
+      "seed": 2001,
+      "step": 8000,
+      "loss": 0.002795742591843009,
+      "answer_accuracy": 0.95,
+      "exact_trace_accuracy": 0.954,
+      "trace_step_accuracy": 0.9805,
+      "colon_rate": 1.0
+    },
+    {
+      "task": "boolean_circuit_4",
+      "condition": "rho=1.00",
+      "rho": 1.0,
+      "seed": 2002,
+      "step": 8000,
+      "loss": 0.00048437368241138756,
+      "answer_accuracy": 0.98,
+      "exact_trace_accuracy": 0.978,
+      "trace_step_accuracy": 0.9935,
+      "colon_rate": 1.0
+    },
+    {
+      "task": "boolean_circuit_4",
+      "condition": "rho=1.00",
+      "rho": 1.0,
+      "seed": 2003,
+      "step": 8000,
+      "loss": 0.004721207544207573,
+      "answer_accuracy": 0.884,
+      "exact_trace_accuracy": 0.876,
+      "trace_step_accuracy": 0.927,
       "colon_rate": 1.0
     }
   ],

@@ -1,0 +1,320 @@
+{
+  "experiment": "e1_five_condition",
+  "config": "configs/experiments/e1_five_condition_rerun.yaml",
+  "note": "This is the Table 1 confirmation run (not the pilot in e1_five_condition.yaml). Completion independently timestamped in results/paper/gpu2_progress.log ('finished Table 1 rerun Sat Sep 12 11:31:37 IST 2026'). The 'pilot': true field and stock note written by earlier versions of src/eval/supervision.py were a hardcoded artifact of that script, unconditional on which config was passed, and have been corrected here and in the script; no row data below was changed.",
+  "tasks": [
+    "boolean_circuit_8"
+  ],
+  "modes": [
+    "outcome",
+    "answer_first",
+    "filler",
+    "process",
+    "corrupted"
+  ],
+  "seeds": [
+    2001,
+    2002,
+    2003,
+    2004,
+    2005
+  ],
+  "steps": 8000,
+  "train_size": 20000,
+  "val_size": 1000,
+  "csv": "results/paper/e1_five_condition_rerun/table1_rerun.csv",
+  "rows": [
+    {
+      "task": "boolean_circuit_8",
+      "mode": "outcome",
+      "seed": 2001,
+      "steps": 8000,
+      "loss": 0.3276141583919525,
+      "accuracy": 0.076,
+      "pilot": true
+    },
+    {
+      "task": "boolean_circuit_8",
+      "mode": "outcome",
+      "seed": 2002,
+      "steps": 8000,
+      "loss": 0.3184221684932709,
+      "accuracy": 0.079,
+      "pilot": true
+    },
+    {
+      "task": "boolean_circuit_8",
+      "mode": "outcome",
+      "seed": 2003,
+      "steps": 8000,
+      "loss": 0.3316982686519623,
+      "accuracy": 0.072,
+      "pilot": true
+    },
+    {
+      "task": "boolean_circuit_8",
+      "mode": "outcome",
+      "seed": 2004,
+      "steps": 8000,
+      "loss": 0.3187199532985687,
+      "accuracy": 0.078,
+      "pilot": true
+    },
+    {
+      "task": "boolean_circuit_8",
+      "mode": "outcome",
+      "seed": 2005,
+      "steps": 8000,
+      "loss": 0.3160850703716278,
+      "accuracy": 0.081,
+      "pilot": true
+    },
+    {
+      "task": "boolean_circuit_8",
+      "mode": "answer_first",
+      "seed": 2001,
+      "steps": 8000,
+      "loss": 0.035900820046663284,
+      "accuracy": 0.092,
+      "pilot": true
+    },
+    {
+      "task": "boolean_circuit_8",
+      "mode": "answer_first",
+      "seed": 2002,
+      "steps": 8000,
+      "loss": 0.038077887147665024,
+      "accuracy": 0.079,
+      "pilot": true
+    },
+    {
+      "task": "boolean_circuit_8",
+      "mode": "answer_first",
+      "seed": 2003,
+      "steps": 8000,
+      "loss": 0.04329415410757065,
+      "accuracy": 0.08,
+      "pilot": true
+    },
+    {
+      "task": "boolean_circuit_8",
+      "mode": "answer_first",
+      "seed": 2004,
+      "steps": 8000,
+      "loss": 0.04362067952752113,
+      "accuracy": 0.067,
+      "pilot": true
+    },
+    {
+      "task": "boolean_circuit_8",
+      "mode": "answer_first",
+      "seed": 2005,
+      "steps": 8000,
+      "loss": 0.04409680888056755,
+      "accuracy": 0.08,
+      "pilot": true
+    },
+    {
+      "task": "boolean_circuit_8",
+      "mode": "filler",
+      "seed": 2001,
+      "steps": 8000,
+      "loss": 0.03427638113498688,
+      "accuracy": 0.077,
+      "pilot": true
+    },
+    {
+      "task": "boolean_circuit_8",
+      "mode": "filler",
+      "seed": 2002,
+      "steps": 8000,
+      "loss": 0.03393547236919403,
+      "accuracy": 0.085,
+      "pilot": true
+    },
+    {
+      "task": "boolean_circuit_8",
+      "mode": "filler",
+      "seed": 2003,
+      "steps": 8000,
+      "loss": 0.0339963436126709,
+      "accuracy": 0.072,
+      "pilot": true
+    },
+    {
+      "task": "boolean_circuit_8",
+      "mode": "filler",
+      "seed": 2004,
+      "steps": 8000,
+      "loss": 0.03375210240483284,
+      "accuracy": 0.073,
+      "pilot": true
+    },
+    {
+      "task": "boolean_circuit_8",
+      "mode": "filler",
+      "seed": 2005,
+      "steps": 8000,
+      "loss": 0.03420582413673401,
+      "accuracy": 0.081,
+      "pilot": true
+    },
+    {
+      "task": "boolean_circuit_8",
+      "mode": "process",
+      "seed": 2001,
+      "steps": 8000,
+      "loss": 0.001688831252977252,
+      "accuracy": 0.879,
+      "pilot": true
+    },
+    {
+      "task": "boolean_circuit_8",
+      "mode": "process",
+      "seed": 2002,
+      "steps": 8000,
+      "loss": 0.004556861240416765,
+      "accuracy": 0.773,
+      "pilot": true
+    },
+    {
+      "task": "boolean_circuit_8",
+      "mode": "process",
+      "seed": 2003,
+      "steps": 8000,
+      "loss": 0.0017164909513667226,
+      "accuracy": 0.907,
+      "pilot": true
+    },
+    {
+      "task": "boolean_circuit_8",
+      "mode": "process",
+      "seed": 2004,
+      "steps": 8000,
+      "loss": 0.006868982687592506,
+      "accuracy": 0.718,
+      "pilot": true
+    },
+    {
+      "task": "boolean_circuit_8",
+      "mode": "process",
+      "seed": 2005,
+      "steps": 8000,
+      "loss": 0.004913682583719492,
+      "accuracy": 0.823,
+      "pilot": true
+    },
+    {
+      "task": "boolean_circuit_8",
+      "mode": "corrupted",
+      "seed": 2001,
+      "steps": 8000,
+      "loss": 0.31366318464279175,
+      "accuracy": 0.072,
+      "pilot": true
+    },
+    {
+      "task": "boolean_circuit_8",
+      "mode": "corrupted",
+      "seed": 2002,
+      "steps": 8000,
+      "loss": 0.31377652287483215,
+      "accuracy": 0.069,
+      "pilot": true
+    },
+    {
+      "task": "boolean_circuit_8",
+      "mode": "corrupted",
+      "seed": 2003,
+      "steps": 8000,
+      "loss": 0.31523457169532776,
+      "accuracy": 0.048,
+      "pilot": true
+    },
+    {
+      "task": "boolean_circuit_8",
+      "mode": "corrupted",
+      "seed": 2004,
+      "steps": 8000,
+      "loss": 0.31229889392852783,
+      "accuracy": 0.052,
+      "pilot": true
+    },
+    {
+      "task": "boolean_circuit_8",
+      "mode": "corrupted",
+      "seed": 2005,
+      "steps": 8000,
+      "loss": 0.3132075071334839,
+      "accuracy": 0.065,
+      "pilot": true
+    }
+  ],
+  "summary": [
+    {
+      "task": "boolean_circuit_8",
+      "mode": "outcome",
+      "mean_pct": 7.720000000000001,
+      "std_pct": 0.34205262752974164,
+      "runs": [
+        7.6,
+        7.9,
+        7.2,
+        7.8,
+        8.1
+      ]
+    },
+    {
+      "task": "boolean_circuit_8",
+      "mode": "answer_first",
+      "mean_pct": 7.959999999999999,
+      "std_pct": 0.8848728722251572,
+      "runs": [
+        9.2,
+        7.9,
+        8.0,
+        6.7,
+        8.0
+      ]
+    },
+    {
+      "task": "boolean_circuit_8",
+      "mode": "filler",
+      "mean_pct": 7.76,
+      "std_pct": 0.5458937625582474,
+      "runs": [
+        7.7,
+        8.5,
+        7.2,
+        7.3,
+        8.1
+      ]
+    },
+    {
+      "task": "boolean_circuit_8",
+      "mode": "process",
+      "mean_pct": 82.0,
+      "std_pct": 7.692853826766765,
+      "runs": [
+        87.9,
+        77.3,
+        90.7,
+        71.8,
+        82.3
+      ]
+    },
+    {
+      "task": "boolean_circuit_8",
+      "mode": "corrupted",
+      "mean_pct": 6.119999999999999,
+      "std_pct": 1.061602562167217,
+      "runs": [
+        7.2,
+        6.9,
+        4.8,
+        5.2,
+        6.5
+      ]
+    }
+  ]
+}

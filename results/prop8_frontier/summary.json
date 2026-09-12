@@ -666,7 +666,7 @@
       "predicted_rho_c": -1.1655475665906694,
       "measured_rho_c": null,
       "bracketed": false,
-      "Jprime_at_rho0": -0.8974726839873093,
+      "Jprime_at_rho0": -0.8974726839828684,
       "Jprime_at_rho1": -1.6674714542493534
     },
     {
@@ -1136,7 +1136,7 @@
       "predicted_rho_c": 0.14708948948265324,
       "measured_rho_c": 0.14708950172275298,
       "bracketed": true,
-      "Jprime_at_rho0": 0.4245230364575049,
+      "Jprime_at_rho0": 0.42452303645528444,
       "Jprime_at_rho1": -2.461645397584249,
       "abs_error": 1.2240099739324606e-08
     },
@@ -1396,7 +1396,7 @@
       "predicted_rho_c": -2.482227144881767,
       "measured_rho_c": null,
       "bracketed": false,
-      "Jprime_at_rho0": -1.7547310596024146,
+      "Jprime_at_rho0": -1.7547310596068555,
       "Jprime_at_rho1": -2.4616475768399138
     },
     {
@@ -1936,7 +1936,7 @@
       "predicted_rho_c": 0.31864295185883695,
       "measured_rho_c": 0.31864294918447744,
       "bracketed": true,
-      "Jprime_at_rho0": 0.9669880328489987,
+      "Jprime_at_rho0": 0.9669880328467783,
       "Jprime_at_rho1": -2.0677224966994037,
       "abs_error": 2.6743595116229812e-09
     },
@@ -1947,7 +1947,7 @@
       "predicted_rho_c": 0.3374832562474447,
       "measured_rho_c": 0.3374832840661408,
       "bracketed": true,
-      "Jprime_at_rho0": 0.9752555102561197,
+      "Jprime_at_rho0": 0.9752555102538992,
       "Jprime_at_rho1": -1.9145365342606468,
       "abs_error": 2.781869612444865e-08
     },
@@ -2112,7 +2112,7 @@
       "predicted_rho_c": 0.15404098009812156,
       "measured_rho_c": 0.15404093912142514,
       "bracketed": true,
-      "Jprime_at_rho0": 1.046140913802921,
+      "Jprime_at_rho0": 1.04614091379848,
       "Jprime_at_rho1": -5.745206163819518,
       "abs_error": 4.0976696424888104e-08
     },
@@ -2197,7 +2197,7 @@
       "predicted_rho_c": -1.6164606964187882,
       "measured_rho_c": null,
       "bracketed": false,
-      "Jprime_at_rho0": -1.2774504407221685,
+      "Jprime_at_rho0": -1.2774504407266094,
       "Jprime_at_rho1": -2.067724741139593
     },
     {
@@ -2217,7 +2217,7 @@
       "predicted_rho_c": 29.16517956828759,
       "measured_rho_c": null,
       "bracketed": false,
-      "Jprime_at_rho0": -1.8457717937050235,
+      "Jprime_at_rho0": -1.8457717937094644,
       "Jprime_at_rho1": -1.7824852281224954
     },
     {
@@ -2247,7 +2247,7 @@
       "predicted_rho_c": 4.853160385583292,
       "measured_rho_c": null,
       "bracketed": false,
-      "Jprime_at_rho0": -1.8601745322446124,
+      "Jprime_at_rho0": -1.8601745322401715,
       "Jprime_at_rho1": -1.4768839556729658
     },
     {
@@ -2308,7 +2308,7 @@
       "predicted_rho_c": 0.6627173968943102,
       "measured_rho_c": 0.662717463975966,
       "bracketed": true,
-      "Jprime_at_rho0": 2.1609191828722167,
+      "Jprime_at_rho0": 2.1609191828766576,
       "Jprime_at_rho1": -1.0997736006043524,
       "abs_error": 6.708165578572789e-08
     },
@@ -2319,7 +2319,7 @@
       "predicted_rho_c": 0.8043876787220611,
       "measured_rho_c": 0.8043877653134465,
       "bracketed": true,
-      "Jprime_at_rho0": 4.33784275076613,
+      "Jprime_at_rho0": 4.3378427507616895,
       "Jprime_at_rho1": -1.0548791854037478,
       "abs_error": 8.65913853953515e-08
     },
@@ -2693,7 +2693,7 @@
       "predicted_rho_c": 0.3703589943873731,
       "measured_rho_c": 0.3703589946054816,
       "bracketed": true,
-      "Jprime_at_rho0": 1.4479538199575965,
+      "Jprime_at_rho0": 1.447953819955376,
       "Jprime_at_rho1": -2.461644374152354,
       "abs_error": 2.1810853123582774e-10
     },
@@ -2847,7 +2847,7 @@
       "predicted_rho_c": 0.8756977429871392,
       "measured_rho_c": 0.8756977852373719,
       "bracketed": true,
-      "Jprime_at_rho0": 7.431556407776194,
+      "Jprime_at_rho0": 7.431556407771753,
       "Jprime_at_rho1": -1.0548760916870066,
       "abs_error": 4.225023264581296e-08
     },
@@ -2957,7 +2957,7 @@
       "predicted_rho_c": 0.312124448492618,
       "measured_rho_c": 0.3121244194549919,
       "bracketed": true,
-      "Jprime_at_rho0": 1.1169724973126969,
+      "Jprime_at_rho0": 1.116972497303815,
       "Jprime_at_rho1": -2.4616447051337076,
       "abs_error": 2.9037626081418466e-08
     },
@@ -2979,7 +2979,7 @@
       "predicted_rho_c": 0.24301098617320194,
       "measured_rho_c": 0.2430109455072284,
       "bracketed": true,
-      "Jprime_at_rho0": 0.6637848685154444,
+      "Jprime_at_rho0": 0.6637848685110035,
       "Jprime_at_rho1": -2.067722799902977,
       "abs_error": 4.0665973533027255e-08
     },
@@ -3021,7 +3021,7 @@
       "predicted_rho_c": -4.338095075929822,
       "measured_rho_c": null,
       "bracketed": false,
-      "Jprime_at_rho0": -1.2729636714727002,
+      "Jprime_at_rho0": -1.2729636714682593,
       "Jprime_at_rho1": -1.566401535491208
     },
     {
@@ -3041,7 +3041,7 @@
       "predicted_rho_c": 3.1806753004685278,
       "measured_rho_c": null,
       "bracketed": false,
-      "Jprime_at_rho0": -2.037690462333377,
+      "Jprime_at_rho0": -2.037690462337818,
       "Jprime_at_rho1": -1.3970445857546128
     },
     {
@@ -3061,7 +3061,7 @@
       "predicted_rho_c": 2.6477100677015453,
       "measured_rho_c": null,
       "bracketed": false,
-      "Jprime_at_rho0": -2.0258768652505763,
+      "Jprime_at_rho0": -2.0258768652461354,
       "Jprime_at_rho1": -1.2607352867140265
     },
     {
@@ -3102,7 +3102,7 @@
       "predicted_rho_c": 0.7002930257318021,
       "measured_rho_c": 0.7002931701697704,
       "bracketed": true,
-      "Jprime_at_rho0": 2.464833754505507,
+      "Jprime_at_rho0": 2.464833754509948,
       "Jprime_at_rho1": -1.0548810584145913,
       "abs_error": 1.4443796836349776e-07
     },
@@ -3410,7 +3410,7 @@
       "predicted_rho_c": 0.1631790466407553,
       "measured_rho_c": 0.16317902814501523,
       "bracketed": true,
-      "Jprime_at_rho0": 1.1203024070582612,
+      "Jprime_at_rho0": 1.1203024070560408,
       "Jprime_at_rho1": -5.745206089657731,
       "abs_error": 1.8495740078394718e-08
     },
@@ -3465,7 +3465,7 @@
       "predicted_rho_c": 0.3440367587404788,
       "measured_rho_c": 0.3440367420476079,
       "bracketed": true,
-      "Jprime_at_rho0": 1.4269998439610427,
+      "Jprime_at_rho0": 1.4269998439588223,
       "Jprime_at_rho1": -2.720816108590396,
       "abs_error": 1.6692870863366238e-08
     },
@@ -3476,7 +3476,7 @@
       "predicted_rho_c": 0.379627236469659,
       "measured_rho_c": 0.379627259912908,
       "bracketed": true,
-      "Jprime_at_rho0": 1.5063624868962282,
+      "Jprime_at_rho0": 1.5063624868984486,
       "Jprime_at_rho1": -2.461644315743521,
       "abs_error": 2.3443249008714417e-08
     },
@@ -3729,7 +3729,7 @@
       "predicted_rho_c": 0.3403135521973308,
       "measured_rho_c": 0.3403135453581215,
       "bracketed": true,
-      "Jprime_at_rho0": 1.4035899306554125,
+      "Jprime_at_rho0": 1.4035899306509716,
       "Jprime_at_rho1": -2.7208161319994484,
       "abs_error": 6.839209254483336e-09
     },
@@ -3827,7 +3827,7 @@
       "predicted_rho_c": -3.81153771792343,
       "measured_rho_c": null,
       "bracketed": false,
-      "Jprime_at_rho0": -1.106691267591786,
+      "Jprime_at_rho0": -1.1066912676006677,
       "Jprime_at_rho1": -1.3970436547546135
     },
     {
