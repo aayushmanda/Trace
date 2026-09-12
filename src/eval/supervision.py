@@ -46,7 +46,6 @@ def main(args):
                 row = {
                     "task": task_name, "mode": mode, "seed": int(seed),
                     "steps": int(args.steps), "loss": float(loss), "accuracy": float(accuracy),
-                    "pilot": True,
                 }
                 rows.append(row)
                 print(f"{task_name:18s} {mode:12s} seed={seed} loss={loss:.4f} accuracy={100 * accuracy:.2f}%")
@@ -74,8 +73,7 @@ def main(args):
         persist = out.with_name(out.stem + "_persist.json")
         persist.write_text(json.dumps({
             "experiment": "e1_five_condition",
-            "pilot": True,
-            "note": "Pilot accuracies are not Table 1. Confirmation protocol is frozen in YAML only.",
+            "config": str(getattr(args, "config", None)) if getattr(args, "config", None) else None,
             "tasks": list(args.tasks),
             "modes": list(args.modes),
             "seeds": list(args.seeds),

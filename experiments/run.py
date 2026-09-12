@@ -39,7 +39,7 @@ COMMANDS = {
     ),
     "prop8-frontier": (
         "src.experiments.prop8_frontier",
-        "Prop. 8: measured vs. predicted rho_c(a,D,beta) reliability frontier",
+        "Reliability-frontier diagnostic: measured vs. predicted rho_c(a,D,beta)",
     ),
     "fraction-vs-amount": (
         "src.experiments.fraction_vs_amount",

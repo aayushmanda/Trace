@@ -39,7 +39,7 @@ SEEDS = (2001, 2002, 2003)
 N_POPULATION = 400_000  # large-N anchor for the population ceiling at each rho
 
 COLORS = {0.08: "#b42318", 0.10: "#c56b08", 0.15: "#8a7000",
-          0.20: "#2f7d32", 0.30: "#087eaa"}
+          0.20: "#6b4c9a", 0.30: "#087eaa"}
 
 
 def run() -> dict:
