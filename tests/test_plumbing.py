@@ -1,7 +1,5 @@
 """Unit tests for the restructured package. Quiet tqdm via TRACE_TQDM=0 in unittest argv."""
-import json
 import math
-import tempfile
 import unittest
 from pathlib import Path
 
@@ -17,7 +15,7 @@ from src.training.seed import set_seed
 
 
 class PlumbingTests(unittest.TestCase):
-    def test_length_and_induced_depths_registered(self):
+    def test_boolean_circuit_depths_registered(self):
         for depth in (2, 3, 4, 6, 8, 10, 12, 16, 20):
             self.assertIn(depth, BOOLEAN_CIRCUIT_DEPTHS)
             self.assertIn(f"boolean_circuit_{depth}", TASKS)
@@ -33,19 +31,6 @@ class PlumbingTests(unittest.TestCase):
         self.assertTrue(callable(gpt_lm_loss))
         self.assertTrue(callable(train_steps))
         set_seed(0)
-
-    def test_architecture_plan_does_not_clobber(self):
-        from src.eval.architecture_controls import plan
-        from argparse import Namespace
-        with tempfile.TemporaryDirectory() as tmp:
-            out = Path(tmp)
-            proto = {"rates": [0.001], "confirmation_seeds": [1]}
-            (out / "protocol.json").write_text(json.dumps(proto))
-            args = Namespace(output=out, depth=4, rates=[0.002], confirmation_seeds=[9],
-                             calibration_steps=1, steps=1, train_size=1, val_size=1,
-                             test_size=1, batch_size=1)
-            got = plan(args)
-            self.assertEqual(got["rates"], [0.001])
 
     def test_compile_disabled_under_unittest(self):
         from src.training.seed import compile_enabled, maybe_compile
@@ -108,13 +93,13 @@ class PlumbingTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[1]
         default = load_yaml(root / "configs" / "train" / "default.yaml")
         self.assertIs(default["compile"], False)
-        ns, cfg = load_experiment(root / "configs" / "experiments" / "smoke.yaml")
+        ns, cfg = load_experiment(root / "configs" / "experiments" / "e1_five_condition.yaml")
         nested = (cfg.get("train") or {}).get("compile")
         self.assertFalse(bool(getattr(ns, "compile", nested if nested is not None else False)))
-        hand = load_yaml(root / "configs" / "handcoded_smoke.yaml")
-        self.assertIs(hand["compile"], False)
-        exec_cfg = load_yaml(root / "configs" / "experiments" / "executor_comparison.yaml")
-        self.assertIs(exec_cfg["compile"], True)
+        hand_smoke = load_yaml(root / "configs" / "handcoded_smoke.yaml")
+        self.assertIs(hand_smoke["compile"], False)
+        hand = load_yaml(root / "configs" / "handcoded.yaml")
+        self.assertIs(hand["compile"], True)
 
     def test_yaml_distributed_off_by_default(self):
         from src.training.config import load_yaml
@@ -158,56 +143,10 @@ class PlumbingTests(unittest.TestCase):
         out = model.generate(idx, max_new_tokens=1)
         self.assertEqual(tuple(out.shape), (1, 3))
 
-    def test_architecture_yaml_compile_off(self):
-        from src.training.config import load_yaml
-        from pathlib import Path
-        cfg = load_yaml(Path(__file__).resolve().parents[1] / "configs/experiments/architecture_controls.yaml")
-        self.assertFalse(bool(cfg.get("compile")))
-        self.assertEqual(cfg.get("devices"), ["cuda:2", "cuda:3"])
-        self.assertEqual(len(cfg.get("rates") or []), 5)
-        self.assertEqual(len(cfg.get("confirmation_seeds") or []), 10)
+    def test_configs_referenced_by_run_md_exist(self):
         root = Path(__file__).resolve().parents[1]
-        for name in ("induced_rule", "architecture_controls", "length_generalization",
-                     "margin_histograms", "executor_comparison", "smoke", "pullback",
-                     "split_verdict", "escape_time", "lora_transfer",
-                     "e1_five_condition", "e2_architecture", "e3_mask_trace", "e4_projected_kernel"):
+        for name in ("e1_five_condition", "e1_five_condition_rerun", "lora_transfer"):
             self.assertTrue((root / "configs" / "experiments" / f"{name}.yaml").exists())
-
-    def test_architecture_summarize_counts_unstable_as_failure(self):
-        from argparse import Namespace
-        from src.eval.architecture_controls import summarize
-
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            cell = root / "confirmation" / "process_process_s42_lr0.001_clip1"
-            cell.mkdir(parents=True)
-            (cell / "result.json").write_text(json.dumps({
-                "status": "complete",
-                "config": {"architecture": "process", "mode": "process", "seed": 42,
-                           "lr": 0.001, "clip": 1.0},
-                "selected_test": {"free_answer_accuracy": 1.0},
-            }))
-            bad = root / "confirmation" / "process_process_s43_lr0.001_clip1"
-            bad.mkdir(parents=True)
-            (bad / "result.json").write_text(json.dumps({
-                "status": "unstable",
-                "config": {"architecture": "process", "mode": "process", "seed": 43,
-                           "lr": 0.001, "clip": 1.0},
-                "reason": "Non-finite training loss",
-            }))
-            (root / "protocol.json").write_text(json.dumps({
-                "confirmation_seeds": [42, 43],
-                "clips": [1.0],
-            }))
-            summary = summarize(Namespace(output=root))
-            self.assertEqual(len(summary), 1)
-            row = summary[0]
-            self.assertEqual(row["n_attempted"], 2)
-            self.assertEqual(row["n_success"], 1)
-            self.assertEqual(row["n_unstable"], 1)
-            self.assertEqual(row["fraction_gt_95"], 0.5)
-            payload = json.loads((root / "success_fraction.json").read_text())
-            self.assertEqual(payload[0]["fraction_gt_95"], 0.5)
 
     def test_lora_model_flag_without_download(self):
         from src.training.config import load_yaml
