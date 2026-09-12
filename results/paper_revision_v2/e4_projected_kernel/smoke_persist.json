@@ -1,8 +1,0 @@
-{
-  "experiment": "e4_projected_kernel",
-  "parameterization": "projected_simplex",
-  "not_a_proof": true,
-  "csv": "results/paper_revision_v2/e4_projected_kernel/smoke.csv",
-  "n_rows": 20,
-  "note": "Discrete Dini ratios do not prove T2. See Paper/T2_CANDIDATE.md."
-}

@@ -1,4 +1,0 @@
-condition,answer_accuracy,depth,seed,s1_probe_acc,s2_probe_acc
-outcome,0.0,2,42,0.0,0.125
-outcome_local,0.0,2,42,0.0,0.125
-process,0.0,2,42,,

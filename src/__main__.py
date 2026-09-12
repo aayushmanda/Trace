@@ -14,88 +14,20 @@ def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
     p = argparse.ArgumentParser(prog="python -m src", description="Trace paper experiments")
     p.add_argument("command", nargs="?", default="help",
-                   choices=["help", "induced", "pullback", "split-verdict", "escape", "projected", "length", "margins", "architecture",
-                            "executor", "executor-depths", "analyze", "supervision", "reliability", "smoke", "lora",
-                            "outcome-local"])
+                   choices=["help", "supervision", "reliability", "lora"])
     args, rest = p.parse_known_args(argv)
     if args.command in {None, "help"}:
         print(__doc__)
-        print("commands:", ", ".join(p._option_string_actions and []))
         print("""
-GPT stack
-  python -m src induced --config configs/experiments/induced_rule.yaml --depth 2 --condition both --seed 2001 --with-pullback
-  python -m src pullback --config configs/experiments/pullback.yaml --depth 4 --seed 2001
-  python -m src split-verdict --config configs/experiments/split_verdict.yaml
-  python -m src escape --smoke
-  python -m src projected --smoke
-  python -m src supervision --config configs/experiments/e1_five_condition.yaml
-  python -m src length --config configs/experiments/length_generalization.yaml
-  python -m src margins --config configs/experiments/margin_histograms.yaml
+  python -m src supervision --config configs/experiments/e1_five_condition.yaml   # Table 1
   python -m src supervision --tasks boolean_circuit_4 --seeds 2001 --steps 100 --train-size 1000
-  python -m src reliability --task boolean_circuit_8 --rhos 0.8 --seeds 2001
-  python -m src analyze
-  python -m src smoke
-  python -m src lora --help
+  python -m src reliability --task boolean_circuit_8 --rhos 0.8 --seeds 2001       # Figures 1-2, Table 3
+  python -m src lora --help                                                       # LoRA adaptation study
 
-Handcoded / semantic-token stack
-  python -m src architecture plan|calibrate|confirm|summarize --config configs/experiments/architecture_controls.yaml
-  python -m src executor --config configs/experiments/executor_comparison.yaml
-  python -m src executor-depths --config configs/experiments/executor_depths.yaml
-  python -m src outcome-local --smoke
+Everything else (noise-threshold, credit-suppression, clean-convergence,
+prop8-frontier, fraction-vs-amount, figure builders) is
+`python experiments/run.py <command>`; see experiments/README.md.
 """)
-        return 0
-    if args.command == "architecture":
-        from src.eval.architecture_controls import main as m
-        sys.argv = ["architecture", *rest]
-        m()
-        return 0
-    if args.command == "executor":
-        from src.eval.executor_comparison import main as m
-        sys.argv = ["executor", *rest]
-        m()
-        return 0
-    if args.command == "executor-depths":
-        from src.eval.executor_depths import main as m
-        sys.argv = ["executor-depths", *rest]
-        m()
-        return 0
-    if args.command == "induced":
-        from src.cli import run_induced
-        ns = _induced_ns(rest)
-        run_induced(ns)
-        return 0
-    if args.command == "pullback":
-        from src.cli import run_pullback
-        ns = _pullback_ns(rest)
-        run_pullback(ns)
-        return 0
-    if args.command == "split-verdict":
-        from src.cli import run_split_verdict
-        ns = _split_verdict_ns(rest)
-        run_split_verdict(ns)
-        return 0
-    if args.command == "escape":
-        from src.cli import run_escape
-        ns = _escape_ns(rest)
-        run_escape(ns)
-        return 0
-    if args.command == "projected":
-        from src.eval.projected_kernel import run as run_projected
-        run_projected(_projected_ns(rest))
-        return 0
-    if args.command == "length":
-        from src.cli import run_length
-        ns = _length_ns(rest)
-        run_length(ns)
-        return 0
-    if args.command == "margins":
-        from src.cli import run_margins
-        ns = _margins_ns(rest)
-        run_margins(ns)
-        return 0
-    if args.command == "analyze":
-        from src.eval.analyze_revision import main as m
-        m()
         return 0
     if args.command == "supervision":
         from src.eval.supervision import main as m
@@ -105,157 +37,11 @@ Handcoded / semantic-token stack
         from src.eval.reliability import main as m
         m(_reliability_ns(rest))
         return 0
-    if args.command == "smoke":
-        from src.cli import run_induced
-        ns = _induced_ns(["--config", "configs/experiments/smoke.yaml", "--depth", "2",
-                          "--condition", "both", "--seed", "2001"])
-        run_induced(ns)
-        return 0
-    if args.command == "outcome-local":
-        from src.eval.local_credit import main as m
-        m(rest)
-        return 0
     if args.command == "lora":
         from src.eval.lora import main as m
         m(rest)
         return 0
     return 1
-
-
-def _induced_ns(rest):
-    p = argparse.ArgumentParser()
-    p.add_argument("--config", default="configs/experiments/induced_rule.yaml")
-    p.add_argument("--depth", type=int, default=None)
-    p.add_argument("--condition", default=None, choices=["both", "outcome", "process"])
-    p.add_argument("--trace-fraction", type=float, default=0.5)
-    p.add_argument("--seed", type=int, default=None)
-    p.add_argument("--train-size", type=int, default=None)
-    p.add_argument("--val-size", type=int, default=None)
-    p.add_argument("--probe-size", type=int, default=None)
-    p.add_argument("--probe-step", type=int, default=1)
-    p.add_argument("--probe-steps", type=int, nargs="+", default=None)
-    p.add_argument("--n-fillers", type=int, default=None)
-    p.add_argument("--with-pullback", action="store_true")
-    p.add_argument("--skip-readout", action="store_true", default=None)
-    p.add_argument("--ckpt-dir", default=None)
-    p.add_argument("--batch-size", type=int, default=None)
-    p.add_argument("--lr", type=float, default=None)
-    p.add_argument("--n-embd", type=int, default=None)
-    p.add_argument("--n-head", type=int, default=None)
-    p.add_argument("--n-layer", type=int, default=None)
-    p.add_argument("--checkpoints", type=int, nargs="+", default=None)
-    p.add_argument("--device", default=None)
-    p.add_argument("--out", default=None)
-    p.add_argument("--dump-tables", default=None)
-    add_compile_bf16_flags(p, from_yaml=False)
-    return p.parse_args(rest)
-
-
-def _pullback_ns(rest):
-    p = argparse.ArgumentParser()
-    p.add_argument("--config", default="configs/experiments/pullback.yaml")
-    p.add_argument("--depth", type=int, default=None)
-    p.add_argument("--seed", type=int, default=None)
-    p.add_argument("--train-size", type=int, default=None)
-    p.add_argument("--val-size", type=int, default=None)
-    p.add_argument("--probe-size", type=int, default=None)
-    p.add_argument("--trace-fraction", type=float, default=None)
-    p.add_argument("--batch-size", type=int, default=None)
-    p.add_argument("--lr", type=float, default=None)
-    p.add_argument("--n-embd", type=int, default=None)
-    p.add_argument("--n-head", type=int, default=None)
-    p.add_argument("--n-layer", type=int, default=None)
-    p.add_argument("--checkpoints", type=int, nargs="+", default=None)
-    p.add_argument("--device", default=None)
-    p.add_argument("--out", default=None)
-    p.add_argument("--skip-readout", action="store_true", default=None)
-    add_compile_bf16_flags(p, from_yaml=False)
-    return p.parse_args(rest)
-
-
-def _split_verdict_ns(rest):
-    p = argparse.ArgumentParser()
-    p.add_argument("--config", default="configs/experiments/split_verdict.yaml")
-    p.add_argument("--input", default=None)
-    p.add_argument("--pullback", default=None)
-    p.add_argument("--out", default=None)
-    p.add_argument("--figure", default=None)
-    return p.parse_args(rest)
-
-
-def _escape_ns(rest):
-    p = argparse.ArgumentParser()
-    p.add_argument("--config", default="configs/experiments/escape_time.yaml")
-    p.add_argument("--smoke", action="store_true")
-    p.add_argument("--shared", action="store_true", default=True)
-    p.add_argument("--device", default=None)
-    p.add_argument("--out", default=None)
-    add_compile_bf16_flags(p, from_yaml=False)
-    return p.parse_args(rest)
-
-
-def _projected_ns(rest):
-    p = argparse.ArgumentParser()
-    p.add_argument("--config", default="configs/experiments/e4_projected_kernel.yaml")
-    p.add_argument("--smoke", action="store_true")
-    p.add_argument("--device", default=None)
-    p.add_argument("--out", default=None)
-    add_compile_bf16_flags(p, from_yaml=False)
-    return p.parse_args(rest)
-
-
-def _length_ns(rest):
-    p = argparse.ArgumentParser()
-    p.add_argument("--config", default="configs/experiments/length_generalization.yaml")
-    p.add_argument("--train-depth", type=int, default=None)
-    p.add_argument("--eval-depths", nargs="+", type=int, default=None)
-    p.add_argument("--modes", nargs="+", default=None)
-    p.add_argument("--seeds", nargs="+", type=int, default=None)
-    p.add_argument("--train-size", type=int, default=None)
-    p.add_argument("--val-size", type=int, default=None)
-    p.add_argument("--steps", type=int, default=None)
-    p.add_argument("--batch-size", type=int, default=None)
-    p.add_argument("--eval-batch-size", type=int, default=None)
-    p.add_argument("--lr", type=float, default=None)
-    p.add_argument("--weight-decay", type=float, default=0.0)
-    p.add_argument("--grad-clip", type=float, default=1.0)
-    p.add_argument("--embedding", type=int, default=None)
-    p.add_argument("--heads", type=int, default=None)
-    p.add_argument("--layers", type=int, default=None)
-    p.add_argument("--dropout", type=float, default=0.0)
-    p.add_argument("--workers", type=int, default=0)
-    p.add_argument("--batch-seed", type=int, default=12345)
-    p.add_argument("--device", default=None)
-    p.add_argument("--ckpt-dir", type=Path, default=None)
-    p.add_argument("--out", type=Path, default=None)
-    add_compile_bf16_flags(p, from_yaml=False)
-    return p.parse_args(rest)
-
-
-def _margins_ns(rest):
-    p = argparse.ArgumentParser()
-    p.add_argument("--config", default="configs/experiments/margin_histograms.yaml")
-    p.add_argument("--task", default=None)
-    p.add_argument("--rho", type=float, default=None)
-    p.add_argument("--seeds", nargs="+", type=int, default=None)
-    p.add_argument("--train-size", type=int, default=None)
-    p.add_argument("--val-size", type=int, default=None)
-    p.add_argument("--steps", type=int, default=None)
-    p.add_argument("--batch-size", type=int, default=None)
-    p.add_argument("--eval-batch-size", type=int, default=128)
-    p.add_argument("--lr", type=float, default=None)
-    p.add_argument("--weight-decay", type=float, default=0.0)
-    p.add_argument("--grad-clip", type=float, default=1.0)
-    p.add_argument("--embedding", type=int, default=None)
-    p.add_argument("--heads", type=int, default=None)
-    p.add_argument("--layers", type=int, default=None)
-    p.add_argument("--dropout", type=float, default=0.0)
-    p.add_argument("--workers", type=int, default=0)
-    p.add_argument("--batch-seed", type=int, default=12345)
-    p.add_argument("--device", default=None)
-    p.add_argument("--out", type=Path, default=None)
-    add_compile_bf16_flags(p, from_yaml=False)
-    return p.parse_args(rest)
 
 
 def _supervision_ns(rest):

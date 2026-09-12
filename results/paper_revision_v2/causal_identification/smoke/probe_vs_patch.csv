@@ -1,5 +1,0 @@
-condition,depth,seed,layer,probe_eval_accuracy,patch_oracle_slot,patch_random_subspace,patch_unstructured,patch_wrong_layer,patch_probe_subspace,patch_probe_wrong_layer
-outcome,2,42,0,0.0,0.1875,0.1875,0.1875,0.1875,0.0625,0.3125
-outcome,2,42,1,0.0,0.0,0.0,0.0,0.0,0.0,0.1875
-outcome_local,2,42,0,0.0,0.0625,0.0625,0.125,0.125,0.125,0.0625
-outcome_local,2,42,1,0.0,0.125,0.1875,0.1875,0.125,0.125,0.125

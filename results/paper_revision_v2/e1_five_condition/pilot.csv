@@ -1,6 +1,0 @@
-task,mode,seed,steps,loss,accuracy,pilot
-boolean_circuit_8,outcome,2001,100,0.6137638092041016,0.0,True
-boolean_circuit_8,answer_first,2001,100,1.428837537765503,0.0,True
-boolean_circuit_8,filler,2001,100,0.12226995825767517,0.0,True
-boolean_circuit_8,process,2001,100,1.444972276687622,0.0,True
-boolean_circuit_8,corrupted,2001,100,1.4398225545883179,0.0,True

@@ -24,11 +24,11 @@ heads: 4
 layers: 2
 dropout: 0.0
 workers: 0
-output: results/paper_revision_v2/e1_five_condition/pilot.csv
-note: "Pilot numbers are not Table 1. Do not paste into the PDF."
+output: results/paper/e1_five_condition/pilot.csv
+note: "Pilot numbers are not Table 1. Do not paste into the PDF. For the real Table 1 rerun use e1_five_condition_rerun.yaml, which promotes the confirmation: block below to top level unchanged."
 
 confirmation:
-  do_not_launch_from_week2: true
+  do_not_launch_from_this_file: true
   tasks: [boolean_circuit_8]
   modes: [outcome, answer_first, filler, process, corrupted]
   seeds: [2001, 2002, 2003, 2004, 2005]
@@ -40,4 +40,4 @@ confirmation:
   heads: 4
   layers: 2
   lr: 0.0003
-  output: results/paper_revision_v2/e1_five_condition/confirm.csv
+  output: results/paper/e1_five_condition/confirm.csv
