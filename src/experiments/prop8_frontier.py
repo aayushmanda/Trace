@@ -5,17 +5,20 @@ actual K x K matrices (T_g, U, the affine path P_g(a), the noisy mixture
 Q_g = rho*T_g + (1-rho)*C_g) exactly, evaluates the combined population
 objective
 
-    J_{rho,beta}(a) = L_tr^rho(a) + beta * L_out(a)
+    J_{rho,beta}(a) = L_tr^rho(a) + beta * [rho*L_copy + (1-rho)*L_out(a)]
 
 from first principles (L_tr^rho(a) as the expected process cross-entropy
-under Q_g, L_out(a) as the expected outcome cross-entropy of the true final
-state after D compositions of P_g(a), computed via matrix power -- no
-closed-form substitution), differentiates J numerically via central finite
-differences in a, and bisects in rho for the sign flip of J'_{rho,beta}(a).
-That measured boundary is then compared against the paper's closed-form
+under Q_g; L_out(a) as the expected outcome cross-entropy of the true final
+state after D compositions of P_g(a), computed via matrix power; L_copy an
+a-independent constant modeling the answer position after a *clean*
+displayed trace, which is a copy of the immediately preceding token, not an
+occasion to exercise the transition-table competence a -- no closed-form
+substitution), differentiates J numerically via central finite differences
+in a, and bisects in rho for the sign flip of J'_{rho,beta}(a). That
+measured boundary is then compared against the paper's closed-form
 
-    rho_c(a, D, beta) = [1+(K-1)a]/K
-        - beta * D(K-1) a^{D-1} (1-a) (1+(K-1)a) / [K (1+(K-1)a^D)]
+    rho_c(a, D, beta) = [1 + (K-1)a - beta*C(a,D)] / [K - beta*C(a,D)]
+    C(a,D) = D(K-1) a^{D-1} (1-a) (1+(K-1)a) / (1+(K-1)a^D)
 
 (\\cref{eq:rescue-threshold} / \\cref{prop:outcome-rescue}). Agreement here is
 an independent check of the algebra, not a restatement of it.
@@ -92,8 +95,16 @@ def L_out(a: float, D: int, T: np.ndarray, U: np.ndarray) -> float:
     return float(-np.log(probs).mean())
 
 
+def L_answer(a: float, rho: float, D: int, T: np.ndarray, U: np.ndarray,
+             l_copy: float = 0.0) -> float:
+    """rho*L_copy + (1-rho)*L_out(a): clean traces make the answer a copy of
+    the immediately preceding (correct) displayed token -- a-independent by
+    assumption -- while corrupted traces need the full D-fold composition."""
+    return rho * l_copy + (1 - rho) * L_out(a, D, T, U)
+
+
 def J(a: float, rho: float, D: int, beta: float, T: np.ndarray, U: np.ndarray) -> float:
-    return L_tr(a, rho, T, U) + beta * L_out(a, D, T, U)
+    return L_tr(a, rho, T, U) + beta * L_answer(a, rho, D, T, U)
 
 
 def Jprime_numeric(a: float, rho: float, D: int, beta: float, T: np.ndarray, U: np.ndarray,
@@ -104,10 +115,9 @@ def Jprime_numeric(a: float, rho: float, D: int, beta: float, T: np.ndarray, U: 
 
 
 def closed_form_rho_c(a: float, D: int, beta: float, K: int = K) -> float:
-    num = 1 + (K - 1) * a
-    correction = (beta * D * (K - 1) * a ** (D - 1) * (1 - a) * (1 + (K - 1) * a)
-                  / (1 + (K - 1) * a ** D))
-    return (num - correction) / K
+    c = (D * (K - 1) * a ** (D - 1) * (1 - a) * (1 + (K - 1) * a)
+         / (1 + (K - 1) * a ** D))
+    return (1 + (K - 1) * a - beta * c) / (K - beta * c)
 
 
 def measured_rho_c(a: float, D: int, beta: float, T: np.ndarray, U: np.ndarray,

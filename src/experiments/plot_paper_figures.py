@@ -519,29 +519,12 @@ def write_provenance(paths):
 
 def main(argv=None):
     reject_extra_flags(argv, __doc__)
-    protocol = json.loads((ROOT / "results/executor_comparison/depth_replication/protocol.json").read_text())
-    frame = pd.read_csv(ROOT / "results/executor_comparison/depth_replication/metrics.csv")
-    plot_legacy_reliability()
+    # Only these two figures are used by the current paper (Paper/figures/
+    # {boolean_reliability,architectures}.pdf); the other plot_* functions in
+    # this file build figures the paper no longer includes and are kept
+    # un-called rather than deleted outright.
     plot_boolean_reliability_only()
-    plot_revision_reliability()
-    plot_local_rollout()
-    plot_trained_bridge(frame)
-    plot_trained_depths(frame, protocol)
-    plot_transfer_limit(frame, protocol)
-    plot_induced_and_split()
     plot_architectures()
-    write_provenance([
-        "results/reliability_sweeps/state_machine_16_phase_20260824_045723.csv",
-        "results/reliability_sweeps/boolean_circuit_8_phase_20260823_151153.csv",
-        "results/reliability_sweeps/register_machine_16_seeds_2001-2003.csv",
-        "results/reliability_sweeps/boolean_circuit_8_seeds_1000-1800.csv",
-        "results/mechanism/mechanism_summary_20260824_012625.csv",
-        "results/executor_comparison/depth_replication/metrics.csv",
-        "results/executor_comparison/depth_replication/protocol.json",
-        "results/induced_rule/depth.csv",
-        "results/induced_rule/fraction.csv",
-        "results/induced_rule/trajectory.csv",
-    ])
 
 
 if __name__ == "__main__":

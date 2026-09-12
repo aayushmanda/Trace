@@ -17,29 +17,9 @@ if str(ROOT) not in sys.path:
 
 # command -> (module, one-line help)
 COMMANDS = {
-    "transformer-law": (
-        "src.experiments.closure_transformer_law",
-        "PRIMARY GPU: symmetric vs coherent corruption on the D-block Transformer",
-    ),
-    "table2": (
-        "src.experiments.closure_table2",
-        "CPU: Cor. 2 / Table 2 pre-registered check against recovered.csv",
-    ),
     "tabular-sampling": (
         "src.experiments.closure_tabular_sampling",
         "CPU: App. I 1/K vs 1/2 under uniform vs family gate sampling",
-    ),
-    "kernel": (
-        "src.experiments.closure_kernel",
-        "CPU: Thm 4 / Thm 2 / Cor. 3 in the shared kernel",
-    ),
-    "handcoded": (
-        "src.experiments.closure_handcoded",
-        "Oracle patches + init Def 20 on HandcodedOutcomeTransformer",
-    ),
-    "notebook-closure": (
-        "src.experiments.notebook_closure_run",
-        "CPU kernel + Thm 1 patches / Def 20 / C_t at notebook depth",
     ),
     "noise-threshold": (
         "src.experiments.noise_threshold",
@@ -51,15 +31,11 @@ COMMANDS = {
     ),
     "clean-convergence": (
         "src.experiments.clean_convergence",
-        "CPU: Cor. 5 clean process GD trajectory toward T_g",
+        "Cor. 5: GD trajectory converging to T_g under clean process supervision",
     ),
     "credit-suppression": (
         "src.experiments.credit_suppression",
         "Thm 2 residuals, Thm 4 both halves, Cor. 2 exponent",
-    ),
-    "clean-convergence": (
-        "src.experiments.clean_convergence",
-        "Cor. 5: GD trajectory converging to T_g under clean process supervision",
     ),
     "prop8-frontier": (
         "src.experiments.prop8_frontier",
@@ -69,45 +45,9 @@ COMMANDS = {
         "src.experiments.fraction_vs_amount",
         "Fixed-rho, varying-N grid separating fraction from corpus size",
     ),
-    "recover-mechanism-deep": (
-        "src.experiments.recover_mechanism_deep",
-        "Recover Tables 2–3 and escape times from crashed-run logs",
-    ),
-    "oracle-alignment": (
-        "src.experiments.oracle_alignment",
-        "Gradient cosine against constructed oracle (documented negative)",
-    ),
-    "gradient-transfer": (
-        "src.experiments.gradient_transfer",
-        "Init-point transfer of process vs outcome gradients",
-    ),
-    "analyze-induced": (
-        "src.experiments.analyze_induced",
-        "Tables + induced_rule.pdf from archived CSVs",
-    ),
-    "build-executor-results": (
-        "src.experiments.build_executor_results",
-        "Figures 4–5 and Table 7 TeX from depth_replication",
-    ),
-    "build-rule-credit-table": (
-        "src.experiments.build_rule_credit_table",
-        "Rule-credit CSV from depth_replication checkpoints",
-    ),
-    "fit-credit-exponent": (
-        "src.experiments.fit_credit_exponent",
-        "Fit credit exponent from rule_credit_table.csv",
-    ),
     "plot-paper-figures": (
         "src.experiments.plot_paper_figures",
         "Rebuild paper figures from archived CSVs",
-    ),
-    "plot-reliability-panels": (
-        "src.experiments.plot_reliability_panels",
-        "Four-panel reliability figure (RM16 + Boolean-8)",
-    ),
-    "summarize-alignment": (
-        "src.experiments.summarize_alignment",
-        "Aggregate results/oracle_alignment/summary.json",
     ),
 }
 

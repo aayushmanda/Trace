@@ -1,0 +1,28 @@
+# E1 five-condition supervision RERUN, with preserved per-seed logs.
+# Promotes e1_five_condition.yaml's `confirmation:` block to top level,
+# unchanged, so this matches Table 1's existing settings exactly (no
+# expansion): same tasks/modes/seeds/steps/sizes/architecture.
+experiment: e1_five_condition_rerun
+claim: "Table 1 rerun with preserved logs (outcome / answer_first / filler / process / corrupted)."
+compile: false
+bf16: true
+tasks: [boolean_circuit_8]
+modes: [outcome, answer_first, filler, process, corrupted]
+seeds: [2001, 2002, 2003, 2004, 2005]
+steps: 8000
+train_size: 20000
+val_size: 1000
+train_seed: 501
+val_seed: 101
+batch_seed: 12345
+batch_size: 128
+eval_batch_size: 128
+lr: 0.0003
+weight_decay: 0.0
+grad_clip: 1.0
+embedding: 128
+heads: 4
+layers: 2
+dropout: 0.0
+workers: 0
+output: results/paper/e1_five_condition_rerun/table1_rerun.csv
