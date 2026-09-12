@@ -1,0 +1,55 @@
+{
+  "experiment": "e5_reliability",
+  "task": "boolean_circuit_4",
+  "rhos": [
+    0.5,
+    0.7,
+    0.8,
+    0.9,
+    1.0
+  ],
+  "seeds": [
+    2001,
+    2002,
+    2003
+  ],
+  "checkpoints": [
+    8000
+  ],
+  "train_size": 20000,
+  "val_size": 500,
+  "train_seed": 501,
+  "val_seed": 101,
+  "ratio_seed": 777,
+  "batch_seed": 12345,
+  "include_outcome": false,
+  "csv": "results/paper/depth_reliability/boolean_circuit_4.csv",
+  "n_rows": 2,
+  "rows": [
+    {
+      "task": "boolean_circuit_4",
+      "condition": "rho=0.50",
+      "rho": 0.5,
+      "seed": 2001,
+      "step": 8000,
+      "loss": 0.22292257845401764,
+      "answer_accuracy": 0.392,
+      "exact_trace_accuracy": 0.35,
+      "trace_step_accuracy": 0.602,
+      "colon_rate": 1.0
+    },
+    {
+      "task": "boolean_circuit_4",
+      "condition": "rho=0.50",
+      "rho": 0.5,
+      "seed": 2002,
+      "step": 8000,
+      "loss": 0.21997512876987457,
+      "answer_accuracy": 0.356,
+      "exact_trace_accuracy": 0.328,
+      "trace_step_accuracy": 0.6155,
+      "colon_rate": 1.0
+    }
+  ],
+  "note": "Terminal answers remain correct; rho is trace reliability. Local = trace_step_accuracy, rollout = exact_trace_accuracy / answer_accuracy."
+}
