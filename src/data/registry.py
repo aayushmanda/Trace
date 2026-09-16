@@ -4,6 +4,7 @@ from src.data.boolean_circuit_tasks import (
     BOOLEAN_CIRCUIT_BLOCK_SIZE,
     BOOLEAN_CIRCUIT_MAX_NEW_TOKENS,
     BOOLEAN_CIRCUIT_SAMPLERS,
+    make_boolean_circuit_sampler_coherent,
 )
 from src.data.dataclass import Task
 from src.data.hard_word_index_tasks import (
@@ -26,6 +27,7 @@ from src.data.sequential_tasks import (
     MODULAR_PROGRAM_SAMPLERS,
     REGISTER_MACHINE_SAMPLERS,
     STACK_MACHINE_SAMPLERS,
+    make_register_machine_sampler_coherent,
 )
 from src.data.state_machine_tasks import STATE_MACHINE_SAMPLERS
 from src.data.task import (
@@ -94,6 +96,14 @@ TASKS.update({
     for steps, sampler in REGISTER_MACHINE_SAMPLERS.items()
 })
 TASKS.update({
+    "register_machine_16_coherent": Task(
+        name="register_machine_16_coherent", block_size=192, max_new_tokens=128,
+        sample=make_register_machine_sampler_coherent(16), chance_acc=1 / 17, ceiling_acc=1.0,
+        description="16-step register machine, corrupted traces follow one fixed wrong permutation per instruction",
+        answer_pattern=r"\d+",
+    ),
+})
+TASKS.update({
     f"stack_machine_{steps}": Task(
         name=f"stack_machine_{steps}", block_size=384, max_new_tokens=320,
         sample=sampler, chance_acc=1 / 17, ceiling_acc=1.0,
@@ -156,4 +166,14 @@ TASKS.update({
         answer_pattern=r"[01]{4}",
     )
     for depth, sampler in BOOLEAN_CIRCUIT_SAMPLERS.items()
+})
+TASKS.update({
+    "boolean_circuit_8_coherent": Task(
+        name="boolean_circuit_8_coherent",
+        block_size=BOOLEAN_CIRCUIT_BLOCK_SIZE,
+        max_new_tokens=BOOLEAN_CIRCUIT_MAX_NEW_TOKENS[8],
+        sample=make_boolean_circuit_sampler_coherent(8), chance_acc=1 / 16, ceiling_acc=1.0,
+        description="depth-8 Boolean circuit, corrupted traces follow one fixed wrong permutation per gate",
+        answer_pattern=r"[01]{4}",
+    ),
 })

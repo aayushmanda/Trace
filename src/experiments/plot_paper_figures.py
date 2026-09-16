@@ -89,7 +89,7 @@ def chance_line(ax, p, label=None):
 
 
 def outcome_line(ax, value, label="Outcome-only"):
-    ax.axhline(value, color=OUTCOME, ls=":", lw=2.2, label=label)
+    ax.axhline(value, color=OUTCOME, ls="-.", lw=2.2, label=label)
 
 
 def plot_boolean_reliability_only():
@@ -99,20 +99,21 @@ def plot_boolean_reliability_only():
 
     proc = bc[bc.condition != "outcome"].copy()
     proc["rho"] = proc["rho"].astype(float)
-    for col, color, label, marker, ls in [
-        ("answer_accuracy", OUTCOME, "Answer accuracy", "o", "-"),
-        ("exact_trace_accuracy", EXACT, "Exact trace", "s", "--"),
-        ("trace_step_accuracy", PROCESS, "Trace step (free-run)", "^", ":"),
-    ]:
-        stats = seed_stats(proc, "rho", col)
-        errorbar(ax, stats, "rho", color, label, marker=marker, ls=ls)
-        scatter_seeds(ax, proc, "rho", col, color)
+    stats = seed_stats(proc, "rho", "answer_accuracy")
+    ax.fill_between(
+        stats["rho"], stats["mean"] - stats["std"], stats["mean"] + stats["std"],
+        color=OUTCOME, alpha=0.20, linewidth=0, zorder=2,
+    )
+    ax.plot(
+        stats["rho"], stats["mean"], color=OUTCOME, marker="o", ms=7, lw=2.0,
+        label="Answer accuracy", zorder=3,
+    )
     outcome_line(ax, float(bc[bc.condition == "outcome"].answer_accuracy.mean()))
     chance_line(ax, 1 / 16)
     ax.set(title="Boolean circuit, depth 8 (5 seeds)",
            xlabel=r"Trace reliability $\rho$", ylabel="Accuracy",
            xlim=(-0.02, 1.04), ylim=(-0.04, 1.06))
-    ax.legend(loc="lower right", fontsize=8, framealpha=0.9)
+    ax.legend(loc="upper left", fontsize=8, framealpha=0.9)
     return save(fig, "boolean_reliability")
 
 

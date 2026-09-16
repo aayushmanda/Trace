@@ -36,3 +36,11 @@ Paper/
 
 
 
+reward.ipynb
+train_hh.csv
+test_hh.csv
+train.csv
+hh_prompt_chosen_test.npy
+hh_prompt_chosen_train.npy
+hh_prompt_rejected_test.npy
+hh_prompt_rejected_train.npy

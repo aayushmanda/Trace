@@ -74,6 +74,58 @@ def make_boolean_circuit_sampler(n_gates: int):
     return sample
 
 
+_COHERENT_WRONG_MASK_SEED = "boolean_circuit_coherent_wrong_mask_v1"
+_coherent_wrong_mask_cache: dict[str, int] = {}
+
+
+def _coherent_wrong_mask(gate: str) -> int:
+    """A fixed, nonzero per-gate XOR mask, deterministic across the whole run.
+
+    wrong(s) := correct(s) XOR mask is then itself a permutation (XOR by a
+    fixed value is a bijection) that disagrees with the correct gate at
+    every state, i.e. exactly one coherent wrong rule per gate, not a fresh
+    uniform draw per occurrence as in make_boolean_circuit_sampler above.
+    """
+    if gate not in _coherent_wrong_mask_cache:
+        rng = random.Random(f"{_COHERENT_WRONG_MASK_SEED}:{gate}")
+        _coherent_wrong_mask_cache[gate] = rng.randrange(1, 2 ** N_BITS)
+    return _coherent_wrong_mask_cache[gate]
+
+
+def make_boolean_circuit_sampler_coherent(n_gates: int):
+    """Like make_boolean_circuit_sampler, but wrong traces follow one fixed
+    wrong permutation per gate (via _coherent_wrong_mask) instead of a fresh
+    uniform-over-K-1 draw at each occurrence, matching the "one coherent
+    wrong rule" corruption law of app:noise-threshold's tabular study."""
+    if n_gates < 1:
+        raise ValueError("n_gates must be positive")
+
+    def sample() -> Instance:
+        start = _bits(random.randrange(2 ** N_BITS))
+        gates = [_sample_gate() for _ in range(n_gates)]
+        prompt = f"i{_state_text(start)};u{''.join(gates)}"
+        state = start
+        correct_steps = []
+        for gate in gates:
+            state = _apply_gate(state, gate)
+            correct_steps.append(f"{gate}>{_state_text(state)}")
+        gold = _state_text(state)
+        wrong_state = start
+        wrong_steps = []
+        for gate in gates:
+            true_next = _apply_gate(wrong_state, gate)
+            true_value = int(_state_text(true_next), 2)
+            wrong_value = true_value ^ _coherent_wrong_mask(gate)
+            wrong_state = _bits(wrong_value)
+            wrong_steps.append(f"{gate}>{_state_text(wrong_state)}")
+        correct = " ".join(correct_steps)
+        wrong = " ".join(wrong_steps)
+        assert len(correct) == len(wrong) and correct != wrong
+        return Instance(prompt, correct, wrong, gold)
+
+    return sample
+
+
 BOOLEAN_CIRCUIT_SAMPLERS = {
     depth: make_boolean_circuit_sampler(depth) for depth in BOOLEAN_CIRCUIT_DEPTHS
 }

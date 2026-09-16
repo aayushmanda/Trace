@@ -170,6 +170,12 @@ def main(argv=None):
     p.add_argument("--workers", type=int, default=0)
     p.add_argument("--compile", action="store_true", default=False)
     p.add_argument("--bf16", action="store_true", default=False)
+    p.add_argument("--train-mode", choices=["process", "outcome"], default="process",
+                    help="Which objective to actually train under; g_local/g_proc/g_out "
+                         "are always evaluated at every checkpoint regardless, so choosing "
+                         "'outcome' makes g_out the real (not counterfactual) trained-objective "
+                         "gradient and g_proc the counterfactual one, the mirror image of the "
+                         "default 'process' run.")
     args = p.parse_args(argv)
 
     n_gates = int(args.task.rsplit("_", 1)[-1])
@@ -188,7 +194,7 @@ def main(argv=None):
     rows = []
     for seed in args.seeds:
         set_seed(seed)
-        train_dataset = SupervisionDataset(train_instances, task, "process")
+        train_dataset = SupervisionDataset(train_instances, task, args.train_mode)
         loader = make_loader(train_dataset, args, device)
         model = build_gpt(task, args, device)
         optimizer = make_optimizer(model, args, device)
@@ -219,16 +225,18 @@ def main(argv=None):
             model.train()
 
         train_with_checkpoints(model, loader, optimizer, device, checkpoints, on_checkpoint,
-                                grad_clip=args.grad_clip, desc=f"grad-align/s{seed}")
+                                grad_clip=args.grad_clip, desc=f"grad-align-{args.train_mode}/s{seed}")
         del model
         if device.type == "cuda":
             torch.cuda.empty_cache()
 
     OUT.mkdir(parents=True, exist_ok=True)
-    csv_path = OUT / "gradient_alignment.csv"
+    suffix = "" if args.train_mode == "process" else f"_{args.train_mode}_trained"
+    csv_path = OUT / f"gradient_alignment{suffix}.csv"
     write_csv(csv_path, rows)
     persist = {
-        "experiment": "gradient_alignment",
+        "experiment": f"gradient_alignment{suffix}",
+        "train_mode": args.train_mode,
         "task": args.task,
         "seeds": list(args.seeds),
         "steps": args.steps,
@@ -245,7 +253,7 @@ def main(argv=None):
         "csv": str(csv_path),
         "rows": rows,
     }
-    (OUT / "gradient_alignment_persist.json").write_text(json.dumps(persist, indent=2) + "\n")
+    (OUT / f"gradient_alignment{suffix}_persist.json").write_text(json.dumps(persist, indent=2) + "\n")
     print(f"saved: {csv_path}")
 
 
