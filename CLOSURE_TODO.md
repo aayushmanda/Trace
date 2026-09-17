@@ -1709,3 +1709,531 @@ rather than something to do unilaterally, consistent with the standing
 Compiled with `/home/hariguru/.local/bin/tectonic main.tex` (no
 `pdflatex`/`latexmk` on PATH in this environment) -- 41 total pages, 0
 errors, only pre-existing underfull-hbox warnings (cosmetic).
+
+## Update 2026-09-16: abstract rewrite, Scope consolidation, theorem split, discrepancy-to-footnote
+
+Executed a 6-item editorial plan (4 of 6 items; figure and notation-table
+items deferred, see below).
+
+**Abstract cut to one closing hedge.** Rewrote to end on a single sentence
+covering all three disclaimers (prove-vs-measure, direction-vs-dynamics,
+population-vs-frontier) instead of three separate inline ones. Verified
+every number/claim against current body.tex before adopting; adjusted one
+clause ("process target supplies both signals directly") to the paper's
+more precise existing phrasing ("exposes the local transition directly,
+giving an exact, depth-independent gradient") since the literal
+"supplies both signals" reading overstated the mechanism.
+
+**New sec:scope subsection in Setup, one hard rule.** Added a ~20-line
+Scope subsection stating what's proved vs measured, once, right after
+Setup. Deleted the redundant restatements: intro's "statement of genre"
++ Makkuva-in-intro sentence (Makkuva stays only in Related Work), intro's
+full "What is proved, and what is measured" paragraph (superseded by
+sec:scope), Section 6's "so the answer is a transfer test..." clause, and
+a third restatement of the same "no canonical Pg-axis" point in the
+Discussion section. Shrank three of four appendix "Scope" paragraphs
+(app:noise-threshold's, app:fraction-vs-amount's, app:gradient-alignment's)
+to one-sentence pointers at sec:scope; kept A.2's Scope paragraph at full
+length since it carries content (what nabla_psi does NOT cover) that
+exists nowhere else.
+
+**Split Theorem 4 (cor:noise-threshold) into five objects.** Was one
+25-line theorem block mixing a definition, an unconditional convergence
+claim, the general recovery threshold, two named special cases, and a
+gradient identity requiring strictly stronger hypotheses (uniform s0,
+doubly-stochastic C_g) -- all in one box, making the hypothesis-scoping
+read as hedging rather than as the mathematical content it is. Split into
+Definition 4 (local reliability), Proposition 5 (convergence, any
+row-stochastic C_g), Theorem 6 (recovery threshold rho_i(C_g), row-stochastic
+only), Corollary 7 (named 1/K and 1/2 cases), Proposition 8 (gradient
+witness at P_g=U, the one object needing the stronger hypotheses).
+Verified rendered numbering matches exactly (checked compiled PDF text).
+Updated ~6 downstream references in appendix_architectures.tex and
+appendix_theory.tex that specifically meant the gradient-witness
+proposition or the local-reliability definition, not the umbrella
+theorem (they were citing eq:noisy-process-credit/eq:symmetric-noise-credit
+by way of the old single label). Left ~18 other references pointing at
+cor:noise-threshold unchanged, since they genuinely mean "the recovery
+threshold" umbrella result.
+
+**Two dedup/relocation fixes.** Converted the 82%/92.6% discrepancy from
+an inline paragraph interrupting Section 3's results narrative into a
+footnote at the point the number first appears, keeping the full
+statistical trace but out of the main flow. Cut the main-text
+near-duplicate of appendix B.6's "comparison in one normalization"
+paragraph (both independently derived the same
+depth-independent-floor-vs-O(rulestr^{D-1})-ceiling contrast) down to one
+sentence pointing at the appendix, which keeps the full derivation.
+
+**Fixed the "six of six" arithmetic error** the critique caught: Appendix
+E.1's own text said "reversed at rho=0.3" for Boolean-circuit two
+sentences before claiming "six of six matched conditions" -- an internal
+contradiction. Corrected to "five of six" (all three register-machine
+conditions, two of three Boolean-circuit conditions), matching the
+critique's exact suggested wording. Also surfaced this trained-network
+corruption-structure result directly in Section 3's main text (two
+sentences, per the critique), not just in the appendix.
+
+**Page-count reality check.** After all of the above, main text
+(Sections 1-8 + Reproducibility Statement) is still exactly 12 pages
+(pdftotext per-page line-density check unchanged at the same boundary
+as before this batch). The Scope consolidation and theorem split
+improved clarity and internal consistency but were roughly a wash on
+raw line count -- content was relocated/deduped, not net-deleted at the
+scale needed. Real progress toward the 9-page target requires either
+accepting a larger cut than editorial polish alone can deliver, or a
+scope decision on which subsections lose in-text detail (not just
+redundant hedging). Deferred: the mechanism figure (item 4) and notation
+table (item 5) from the critique, both of which would ADD length and so
+work against the still-open page target -- flagged to the user rather
+than added unilaterally.
+
+Compiled with tectonic: 41 total pages, 0 errors, only pre-existing
+cosmetic underfull-hbox warnings.
+
+## Update 2026-09-16: Corollary 2 restated as a compositional credit-transmission bound
+
+Per a user proposal to strengthen the theory's center (not add new scope),
+verified and implemented a generalization of Corollary 2 (cor:near-mixing).
+
+**Verification first.** The user's proposed general bound was stated for
+arbitrary row-stochastic P_g. Checked this directly: the clean telescoping
+argument (U absorbing under left/right multiplication, cross terms
+canceling) requires double stochasticity specifically -- without column-
+stochasticity, P·U != U in general and the cross terms in a product don't
+cancel, leaving an uncontrolled leftover term the product-of-norms bound
+doesn't cover. This is the same failure mode already fixed earlier this
+session in Theorem 6's proof (f_g/K vs pi_{g,i}). Reported this to the
+user rather than implementing the bound as literally proposed.
+
+**What actually changed.** Corollary 2's existing hypothesis (P_j doubly
+stochastic) already matches what the general bound needs, so restated it
+under the SAME hypotheses: proved ||Rule(-grad P_t l_out)||_F <=
+(1-1/K)/alpha * chi_t, where chi_t = prod_{j!=t} ||Pi P_{g_j} Pi||_2 is a
+newly named "credit-transmission coefficient" (exactly P_g - U for doubly
+stochastic P_g, verified: Pi P Pi = P - U follows from row- and
+column-stochasticity absorbing U from both sides). Today's eps_rule^{D-1}
+bound now falls out as an immediate corollary (uniform bound on each
+factor of chi_t), rather than being the primary stated result. Updated
+the appendix proof (appendix_theory.tex) to state the exact per-gate
+product before specializing, added the P-U identity as an explicit
+lemma step, and added discussion connecting chi_t=0 to Theorem 3's
+zero-credit result and to process supervision's depth-independent
+gradient bypassing the transmission bottleneck.
+
+Kept the same label (cor:near-mixing) and equation label
+(eq:depth-credit-bound) to avoid touching ~10 downstream references
+elsewhere in the paper that cite "the corollary" generically; only added
+a new eq:general-credit-bound and eq:credit-transmissivity for the new
+content.
+
+**Scope discipline.** Explicitly declined two further extensions the user
+also proposed (a sample-complexity/SGD heuristic argument, and a
+necessary-and-sufficient characterization of when outcome credit
+vanishes) since neither has a verified clean proof yet and the user's own
+message flagged "only if the proof is clean, do not force it." Asked the
+user directly which scope to take via AskUserQuestion; they chose the
+minimal, verified option (restate Corollary 2 only).
+
+Recompiled with tectonic: 41 total pages (no change), 0 errors, no
+undefined references. Rendered numbering confirmed correct by reading
+the compiled PDF text directly (Corollary 2, Equations 14-16, Theorem 3
+cross-reference all render as intended).
+
+## Update 2026-09-16: trained-network validation of Theorem 1's forward x backward factorization (in progress)
+
+Per the user's third proposed theory-strengthening route (after declining
+the tight/matching bound and Dobrushin generalization as too risky to
+force), designed and launched an experiment testing the EXACT Theorem 1
+identity (outcome credit = forward signal x backward signal) directly in
+the trained two-block GPT, rather than testing Corollary 2's chi_t bound
+(which is not expected to be pointwise tight -- see prior log entry).
+
+**Design.** For each D in {2,4,6,8} (same architecture/optimizer/budget
+as the depth-capacity sweep, outcome-only supervision, 3 seeds,
+8000 steps, 20000 train instances), at the frozen final checkpoint on a
+fresh held-out probe set (2000 instances):
+  - forward proxy: held-out linear-probe (sklearn LogisticRegression)
+    accuracy for the true intermediate state s_1 (16-way), read from the
+    residual stream between the two Transformer blocks at the position
+    right after gate 1.
+  - backward proxy: mean L2 norm of d(outcome loss)/d(that same
+    activation) across the probe batch -- a measurable analogue of "how
+    much would the final answer change if this position's representation
+    were different," which needs backprop through the remaining D-1
+    gates' worth of the second block's attention to be nonzero.
+Fixed the probed position at "right after gate 1" across all D, so
+composition depth varies without moving the probed position itself: the
+forward proxy should be roughly D-invariant (depends only on gate 1) while
+the backward proxy is the one expected to contract with D.
+
+New file: src/experiments/credit_transmission_probe.py.
+
+**A real bug caught and fixed during smoke-testing.** The first version
+hooked the OUTPUT of model.blocks (the full residual stream just before
+ln_f/lm_head) and got EXACTLY ZERO backward gradient at every non-loss
+position, including the gate-1 position. Root cause: ln_f and lm_head are
+position-wise operations, so once you are at the output of the full block
+stack, the loss (masked to only the answer positions) has zero direct
+functional dependence on any OTHER position's row at that same tensor --
+the actual cross-position mixing that lets an early position influence a
+later position's loss happens INSIDE the attention layers, upstream of
+that point. Fixed by hooking between the two blocks (output of block 0 /
+input of block 1) instead, so gradient must still pass through block 1's
+attention to reach the loss. Verified on a random-init model with a
+single-position mask that this produces the expected nonzero gradient
+pattern before trusting it on a real (if tiny, 30-step) training run,
+where it also produced the qualitatively expected direction (backward
+proxy larger at D=2 than D=4) before launching the real 8000-step version.
+
+Launched in background (GPU 0, PID tracked, watcher confirms real
+completion rather than the launcher shell). Not yet analyzed -- result
+pending. Will compare each proxy's decay shape across D against the
+already-measured outcome-only accuracy decay (88.07/28.87/11.20/7.80 at
+D=2/4/6/8) and write up honestly regardless of outcome, including if the
+product does not track the accuracy decay cleanly.
+
+## Update 2026-09-16: closed out both experimental threads, landed compact identifiability presentation
+
+**Both new experiments (credit-transmission probe, identifiability probe)
+completed but were NOT added to the paper, per explicit user decision
+after seeing the actual results.**
+
+Credit-transmission probe results: forward proxy 0.45-0.63 across D=2,4,6,8
+(well above chance, flat with depth as predicted); backward proxy x
+forward proxy product: 5.09e-6 (D=2) -> 5.44e-6 (D=4) -> 2.24e-6 (D=6) ->
+0.96e-6 (D=8). Compared against the measured outcome-accuracy decay
+(88.07/28.87/11.20/7.80): the product completely MISSES the steepest real
+transition (D=2->D=4, where accuracy drops to 33% of its value but the
+product slightly INCREASES), only tracking the gentler D=4->D=8 decline.
+User's diagnosis, which stands as the final word on this thread: this
+shows the Transformer proxy (probe-accuracy x gradient-norm) is not a
+reliable operationalization of chi_t, not that the theory is wrong --
+Theorem 1's exact factorization only claims the outcome-credit NORM
+factors as forward x backward in the shared-table coordinates, never that
+a linear-probe/gradient-norm proxy should quantitatively predict a trained
+network's final-answer accuracy. Decision: stop, do not add to paper. The
+existing gradient-alignment result (Table 3, Section 6) remains the
+correct and sufficient trained-network bridge for the credit-assignment
+claim.
+
+Identifiability probe results: had two real problems, not just noise.
+(1) A confirmed bug: final-answer accuracy eval used a fixed
+max_new_tokens=6, far too short for process mode's ~55-character target;
+training loss actually converged to 0.0000 for process mode, so the
+reported ~5.6% "chance-level" accuracy was simply wrong, not a real
+result. (2) A deeper, non-bug problem the user identified precisely: a
+hidden-state linear probe tests whether one specific residual-stream
+position happens to linearly encode s_t, which is NOT what the
+identifiability theorem claims (observational equivalence of two
+DIFFERENT global executors on terminal maps) -- a causal Transformer is
+free to defer state computation to generation time via attention rather
+than computing incrementally mid-prompt, so a null probing result at a
+chosen position is uninterpretable either way, independent of the
+eval bug. Decision: stop, do not repair, do not replace with a different
+experiment either -- the theorem's evidentiary burden does not require a
+trained-network validation to be worth keeping.
+
+**Compact main-text presentation of the identifiability theorem added**
+per the user's exact 4-part recipe: (1) states the third obstruction is
+coverage-independent, distinct from the vanishing-gradient/under-excitation
+pair already discussed; (2) gives thm:group-symmetry-nonidentifiability's
+statement inline; (3) gives the Z_16 worked example in ~3 sentences;
+(4) points to app:shift-symmetry-task for the full construction. Placed
+right after the existing under-excitation paragraph in Section 4 (extends
+the existing "two separate obstructions" framing to three), not as a
+full section-order restructure -- the "Identifiability -> Credit assignment
+-> Robustness" whole-paper reframing remains a separate, larger,
+not-yet-authorized decision.
+
+**Cleaned up all now-stale experiment-dependent claims**: removed the
+Related Work paragraph's promise that app:shift-symmetry-task "tests
+whether a trained network's own internal representation reflects the
+identifiability gap" (rewritten to say the obstruction is "addressed here
+by an exact construction rather than a trained-network measurement").
+Rewrote app:shift-symmetry-task itself from an experimental "Protocol"
+section into an explicit "worked example, not an empirical validation"
+framing, removing all mention of the linear-probe methodology and its
+(unreported) results.
+
+Left src/experiments/identifiability_probe.py and
+credit_transmission_probe.py in the repo as harmless, unused exploratory
+code (not referenced by the paper, no ARTIFACT_MANIFEST entries added,
+since no results from them are cited).
+
+**Net page effect**: this batch made the main-text page count slightly
+WORSE, not better (Reproducibility Statement now starts on page 13, up
+from page 12), since the new Section 4 paragraph costs more main-text
+space than the Related Work trim and appendix rewrite saved (those are
+appendix/Related-work space, appendix doesn't count toward the 9-page
+limit anyway). The page-budget problem is now the single most overdue
+open item, explicitly reprioritized as "highest expected value" by the
+user in this same message.
+
+## Update 2026-09-16: page-budget recovery pass
+
+Recovered the page lost to the last two additions (Related Work
+identifiability paragraph, Section 4 compact presentation): main text was
+at page 13 (Reproducibility Statement boundary), now back to page 12.
+
+Concrete cuts made:
+- De-formalized Proposition 8 (gradient witness at P_g=U) from a boxed
+  proposition+proof into inline prose with the same two equations kept
+  (eq:noisy-process-credit, eq:symmetric-noise-credit) -- the proof was
+  pure redundancy anyway, since appendix_theory.tex's app:noise-threshold-proof
+  already proves both equations in full under different internal labels;
+  removing the boxed environment removed real overhead (~15 lines) with
+  zero content loss. Fixed the ~5 downstream \cref{prop:noise-gradient-witness}
+  references in appendix_architectures.tex/appendix_theory.tex to point at
+  eq:noisy-process-credit instead (caught and fixed a duplicate-\label
+  amsmath error this introduced before it reached the user).
+- Merged Related Work's "Representability against optimization" paragraph
+  (3 sentences) into the end of the new "Identifiability" paragraph, since
+  they are thematically adjacent (both about separating a structural fact
+  from optimizer dynamics) -- removes one paragraph-break's worth of
+  vertical spacing overhead, zero content loss.
+
+Net: still at 12 main-text pages, NOT the 9-page target. This is the same
+plateau this session has hit repeatedly -- safe, content-preserving cuts
+(redundant formalization, paragraph merges, duplicate hedging) reliably
+recover 1 page-equivalent when things regress, but do not by themselves
+close a 3-page gap. Closing the remaining gap requires cutting real,
+non-redundant content (a full subsection's discussion moved to
+appendix-only, or accepting 10-11 pages), which is an editorial call, not
+a mechanical one -- flagged to the user rather than done unilaterally.
+
+## Update 2026-09-16: corrected converse identifiability theorem, verified against actual repo code
+
+**A real error in my own earlier attempt, caught before it reached the
+paper.** A prior turn sketched "trivial centralizer of <T_g> implies
+{T_g} is the unique zero-loss executor" as an easy converse to the
+group-symmetry theorem. Re-derived it from scratch to check: it is FALSE.
+Constructed the disproof directly: the existing group-symmetry
+construction's own T' only needs A^D=I for the FULL D-length composition,
+not for every intermediate suffix, so a trivial centralizer of <T_g> does
+not rule out this kind of position-dependent escape. Did not add the
+naive theorem.
+
+**Derived and independently verified the correct version**, using the
+DIFFERENCE group H := <T_g T_h^-1 : g,h> rather than <T_g> itself.
+Re-derived the full proof from first principles (not just checked the
+sketch): (1) full support + zero outcome loss forces every used P_g to be
+a genuine permutation matrix, via a nonnegative-matrix-with-nonnegative-
+inverse-is-monomial argument; (2) using a fixed reference gate h_0 and
+its (D-1)-fold power as a reference block, get two one-sided
+decompositions S_g = T_g*A and S_g = B*T_g; (3) equating them shows B
+commutes with every T_g T_h^-1, landing in C(H); (4) trivial C(H) forces
+B=I hence S_g=T_g for every g. This is a genuinely correct theorem
+(thm:fixed-depth-identifiability), and actually simpler to present than
+the originally-proposed sketch (no separate "length-two prefix" lemma
+needed -- the D-1-th-power trick handles general D directly).
+
+**Computationally verified the specific claim about this paper's own
+Boolean gate family, against the actual repository code, not a
+reconstruction of it.** New script src/experiments/identifiability_certificate.py
+imports boolean_circuit_tasks.py's real _apply_gate directly, builds all
+52 gate permutations, computes H = <T_g T_h^-1> via sympy.combinatorics:
+|H| = 16!/2 = 10,461,394,944,000 exactly, every generator even, so H=A_16
+exactly (not just isomorphic); sympy's centralizer computation confirms
+C_S16(H) = {I}. This gives a real positive result about the paper's own
+primary task: the Boolean circuit's depth-8 outcome failure is NOT
+attributable to an alternative exact factorization -- it's a credit
+problem specifically, not a candidate-among-several explanation.
+
+**Replaced the Z_16 toy example with the verified sink-bit Boolean-circuit
+construction** in app:shift-symmetry-task (this edit was described but
+not actually made in the previous turn -- caught and fixed the gap this
+turn). Brute-forced the exact restricted gate family against the real
+generator: 31 of 52 gate strings (4 NOT, 9 CNOT, 6 SWAP, 12 Toffoli)
+commute with "flip bit 4"; corrected the stated restriction from "bit 4
+only ever a target" (insufficient -- SWAP has no control/target split and
+also breaks commutation when it touches bit 4) to "no gate reads or
+permutes the sink bit into another coordinate." Verified computationally:
+T'_g != T_g at all 16 states for every one of the 31 gates; D=8
+composition matches across 20,000 random trials; D=7 mismatches in all
+2,000 trials tested (confirming the parity dependence). Non-abelian
+(NOT on bit 1 and CNOT controlled by bit 1 don't commute), a materially
+better example than the abelian Z_16 toy case.
+
+**Declined the proposed D=8->D=9 length-generalization Transformer
+experiment** for now, per the assessment that it's not diagnostic until
+the D=8 terminal fit is much closer to saturating than it currently is
+(current outcome-only D=8 accuracy is near chance) -- flagged as
+optional/risky ROI, not run, consistent with the standing decision to
+close the experimental thread on this topic. No action taken.
+
+**Corrected a stale claim I introduced but failed to fully clean up
+last turn**: appendix_theory.tex still said app:shift-symmetry-task
+"measures whether a trained network's own internal representation...
+reflects this ambiguity" -- missed when body.tex and appendix_results.tex
+were fixed. Now corrected everywhere.
+
+Page-budget note: this batch added real content (a full theorem + proof,
+two appendix subsections, a verification script) but almost all of it
+landed in the appendix, which does not count toward the 9-page limit.
+Main text grew by about one paragraph (replacing the old, less useful
+Z_16 mention) and did NOT cross the page-12 boundary. Recompiled clean:
+44 total pages (up 1 from appendix growth), 0 errors, main text
+unchanged at 12 pages.
+
+## Update 2026-09-17: self-inflicted file corruption during notation cleanup, full recovery
+
+**What happened.** While renaming the tensor notation `A_g[i,j]` to `\Lambda_g[i,j]`
+in appendix_architectures.tex (part of the communication/simplicity pass), a
+Python regex script included a badly-escaped "no-op safeguard" line
+(`re.sub(r'\\|A_g\\\|', r'', content)`) that actually matched and stripped
+EVERY backslash from the entire 478-line file. This file is not git-tracked
+(Paper/ is in .gitignore), so there was no automatic backup to restore from.
+
+**Recovery approach.** Rather than guess-reconstruct the file, did a careful,
+verifiable restoration: (1) rebuilt backslashes for ~80 distinct LaTeX
+command tokens via word-boundary-safe regex, starting with unambiguous ones
+and individually classifying every occurrence of ambiguous tokens that also
+collide with English words (in, to, text, sum, log, star, paragraph, small,
+subsection, centering, softmax) by reading full context for each one before
+deciding whether to add a backslash back -- since several of these appear
+BOTH as genuine LaTeX commands and as ordinary English prose in the same
+file (e.g. "This subsection closes that gap" is prose; "\subsection{Title}"
+is a command). Iteratively recompiled after each batch of fixes, using
+tectonic's own error messages (Missing $ inserted, Misplaced \noalign,
+Multiple \label's, There's no line here to end, Illegal unit of measure)
+to surface remaining issues one at a time, plus custom Python scripts to
+detect (a) "glued" multi-command sequences left over from backslash-stripped
+adjacent commands (e.g. "inmathbb" -> \in\mathbb, "bmPi" -> \bm\Pi),
+(b) math-mode-only commands appearing outside $...$ or display math
+(a systematic check across ~50 command names), (c) commands normally
+requiring a {argument} appearing without one, and (d) no-vowel suspicious
+tokens. Caught and fixed a genuine false-positive class multiple times over
+(commands that are ALSO common English words used as prose in this exact
+file: paragraph, small, subsection x2, centering, sum x4, times x2) --
+each required reverting an over-eager backslash insertion back to plain
+text. Also fixed several classes of SILENT (non-compile-error) corruption
+that would not have surfaced without a careful rendered-output read-through:
+unescaped literal set braces (\{2,4,6,8\} had become bare {2,4,6,8}),
+unescaped percent signs (6.25% needed 6.25\%), missing \\ row/line
+separators in a table and two align blocks, and unescaped underscores in
+a \texttt{} shell-command citation. Verified the final result both via
+compile-cleanliness (0 errors) AND by reading the actual rendered PDF text
+for pages 16-21 end to end against the known-correct mathematical content.
+
+**Outcome**: full recovery confirmed. 44 total pages (matching pre-incident
+state), main text still exactly 12 pages (unchanged), 0 compile errors,
+no undefined references, table of contents structure intact (no bogus
+subsection entries from the transient \subsection-in-prose bug).
+
+**Process lesson**: for any future find-and-replace across this file (or
+any non-git-tracked file), test regex substitutions on a small sample or
+copy first, and never include an untested "safeguard" pattern in the same
+batch as real fixes.
+
+## Update 2026-09-17: continued simplicity-list cleanup (post-recovery)
+
+Resumed the communication/simplicity list after the appendix_architectures.tex
+recovery. Confirmed one earlier verification was WRONG and fixed it: found
+a manually-built "Table of Contents" block in main.tex (\ref/\nameref/
+\pageref/\dotfill for every appendix section, not an automatic
+\tableofcontents, which is why the earlier grep for that command found
+nothing) that genuinely duplicates the "Organization" paragraph's content.
+Removed the ToC block (pure navigation, no explanatory content) and kept
+the Organization paragraph (carries the actual "what is proved where"
+content). Recompiled clean, page count unchanged (44 total, main text
+still 12) -- the ToC block didn't sit at a page boundary, so no immediate
+page-count win, but it is a real, confirmed duplication removed.
+
+Checked the "6.25% appears ~8 times, consolidate to once" suggestion:
+found only 2 of the 8 occurrences are in main text (body.tex), and both
+serve genuine local purposes -- one is inside a figure caption (needs to
+stand alone for a reader looking at just the figure) and one derives the
+specific value 1/K=6.25% at the point it's first used as a threshold.
+Did not act on this one; the actual distribution is more justified than
+the raw repetition count suggested.
+
+Checked and compressed appendix_theory.tex's B.5 "projection can change
+sign" proofstep (app:mixture-proof): verified via reference search that
+nothing \cref's it directly (only the subsection's general mixture-gradient
+identity is cited elsewhere), supporting the critique's "orphaned" read.
+Compressed from ~13 lines to ~6, keeping the exact same mathematical
+content (the sign-change formula, the fixed-checkpoint caveat, and the
+forward pointer to prop:noisy-process-credit) -- pure compression, no
+content loss. Recompiled clean.
+
+Deliberately did NOT act on the "D.1 forensics: two pages to half a page"
+suggestion after re-reading it: this is the 82%/92.6% discrepancy
+investigation trace (Welch's t-test + the three-factor diagnostic:
+train-size, seed-identity, code-path isolation) that was built up
+carefully earlier this session and is specifically what the reproducibility
+score credited. Cutting it to "half a page" would remove substance, not
+just reformat it, unlike the other folds -- flagged as a judgment call
+for the user rather than cut unilaterally, consistent with the standing
+"nothing here removes a result" framing of the original request.
+
+Still open, unstarted: A/A_g rename downstream consistency spot-check,
+rho's three-meanings subscripting, chi_t/eps_rule double-statement, em-dash
+density, the mechanism figure, Figure 1/5(a) merge (needs plotting-code
+changes, not just LaTeX text), table caption trims, Lemma A.2 shortening
+(paper's own text already argues this specific bound isn't citable
+elsewhere, so declined without literature verification), E's duplicate
+restatement.
+
+## Update 2026-09-17: the five prioritized edits (abstract, intro, split, B.3, Lambda/A)
+
+Executed all five of the critique's prioritized edits.
+
+1. **Abstract rewritten to end on the gradient finding.** Cut the closing
+   prove/measure disclaimer (already stated in sec:scope) and ended
+   instead on: "The same directional asymmetry that separates the two
+   objectives in the population mechanism reappears, unprompted, in the
+   actual gradients of a trained network."
+
+2. **Intro's "Two claims are closed exactly" paragraph now names the
+   identifiability separation** as a third structural fact, one sentence,
+   without promoting it to an equal-weight third contribution: "whether
+   terminal behavior determines the local rules at all is a different
+   question from whether it supplies useful gradient information once it
+   does, and this paper's own Boolean task is shown to be identifiable."
+
+3. **Split the compressed Section 4 identifiability discussion into three
+   paragraphs** matching the critique's exact outline: (a) non-identifiable
+   outcome rules, from coverage or structural symmetry; (b) identifiability
+   and credit are different properties; (c) the main Boolean task is
+   identifiable, so its failure is a credit problem specifically.
+
+4. **Moved thm:fixed-depth-identifiability's statement from
+   appendix-only to the main text** (body.tex, within paragraph 3 above),
+   matching how every other major theorem in the paper is already handled
+   (statement in body.tex, full proof in the appendix's app:X-proof
+   section). Left the appendix with just a one-line pointer + the proof.
+   Checked all cross-references into this label from
+   appendix_results.tex/appendix_architectures.tex still read correctly
+   now that it lives in main text.
+
+5. **Completed the Lambda/A notation migration in appendix_architectures.tex.**
+   The tensor rename from an earlier session (A_g -> Lambda_g) had left
+   the BARE, unsubscripted "A" -- used throughout as the whole-tensor
+   function argument, e.g. theta(A,psi*), P_g(A) -- untouched, which is
+   exactly the collision the critique flagged (A is also the centralizer
+   permutation in the identifiability theorem, now sitting in the main
+   text next to this appendix's own material). Found and fixed every
+   remaining occurrence via a careful multi-pass search (function-argument
+   forms, subscripted forms like P_{g_1}(A) and A_{g^star}, and plain
+   prose references like "every A", "random A", "the transition logits A
+   vary") rather than a single blind regex, verifying zero bare "A"
+   tokens remain via a final automated scan before recompiling. Also
+   caught two more leftover corruption-recovery artifacts surfaced during
+   this pass: "A_{g}[i,\cdot]" (braced-g variant my earlier A_g->Lambda_g
+   fix didn't match) and "P_bullet" (missing backslash before \bullet),
+   both fixed.
+
+Page-budget note: main text moved from 12 to 13 pages, entirely from
+item 4 (the theorem statement is real, deliberately-requested content,
+not accidental bloat). The user was informed. The 9-page target is
+further away than before this batch, which is an explicit, known
+trade-off of following this prioritized list rather than a regression.
+
+Recompiled clean after every step: 44 total pages, 0 errors, no
+undefined references. Did not touch the remaining smaller items from
+this message (A.2 further compression, caption command-line trims, the
+82/92.6 footnote further simplification) or the earlier list's leftovers
+(rho subscripting, chi_t/eps_rule restatement, em-dash density, mechanism
+figure, Figure 1/5a merge) given time already spent on high-priority items
+plus the need for care after the recovery incident.

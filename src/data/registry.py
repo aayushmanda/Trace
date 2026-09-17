@@ -28,6 +28,7 @@ from src.data.sequential_tasks import (
     REGISTER_MACHINE_SAMPLERS,
     STACK_MACHINE_SAMPLERS,
     make_register_machine_sampler_coherent,
+    make_shift_symmetry_sampler,
 )
 from src.data.state_machine_tasks import STATE_MACHINE_SAMPLERS
 from src.data.task import (
@@ -166,6 +167,15 @@ TASKS.update({
         answer_pattern=r"[01]{4}",
     )
     for depth, sampler in BOOLEAN_CIRCUIT_SAMPLERS.items()
+})
+TASKS.update({
+    "shift_symmetry_8": Task(
+        name="shift_symmetry_8", block_size=136, max_new_tokens=100,
+        sample=make_shift_symmetry_sampler(8), chance_acc=1 / 16, ceiling_acc=1.0,
+        description="8-step additive shift on Z_16; gate-to-permutation "
+                    "assignment is not identifiable from outcome supervision alone",
+        answer_pattern=r"\d+",
+    ),
 })
 TASKS.update({
     "boolean_circuit_8_coherent": Task(

@@ -162,6 +162,56 @@ def make_register_machine_sampler_coherent(n_steps: int):
     return sample
 
 
+SHIFT_MODULUS = 16
+_SHIFT_SYMMETRY_ELEMENT = SHIFT_MODULUS // 2  # order-2 central element: adding 8 twice is +16=0.
+
+
+def make_shift_symmetry_sampler(n_steps: int):
+    """Additive shifts on Z_16: T_g(s) = (s+g) mod 16 for gate g in 1..15.
+
+    Every gate commutes with every other (Z_16 is abelian), so the constant
+    A = "+8 mod 16" (order 2) commutes with every T_g. For any EVEN n_steps,
+    T'_g := T_g + A (i.e. "+((g+8) mod 16)") is a different gate-to-permutation
+    assignment (T'_g != T_g for every g, since A != 0) whose D-step composition
+    is IDENTICAL to the true one for every gate sequence, because the D copies
+    of A accumulate to A^D = "+8D mod 16" = identity when D is even. This is
+    the constructive half of the group-symmetry non-identifiability theorem
+    (app:group-symmetry-nonidentifiability): outcome supervision cannot
+    distinguish {T_g} from {T'_g} even with perfect coverage of every D-gate
+    word, while process supervision (which displays s_t under the canonical
+    T-labeling) pins down {T_g} uniquely.
+    """
+    if n_steps < 1:
+        raise ValueError("n_steps must be positive")
+    if n_steps % 2 != 0:
+        raise ValueError("n_steps must be even for the order-2 A^D=I symmetry")
+
+    def sample() -> Instance:
+        start = random.randrange(SHIFT_MODULUS)
+        offsets = [random.randrange(1, SHIFT_MODULUS) for _ in range(n_steps)]
+        gates_str = "".join(f"+{offset:02d}" for offset in offsets)
+        prompt = f"s{_num(start)};u{gates_str}"
+        current = start
+        correct_steps = []
+        for offset in offsets:
+            current = (current + offset) % SHIFT_MODULUS
+            correct_steps.append(f"+{offset:02d}>{_num(current)}")
+        gold = _num(current)
+        wrong_current = start
+        wrong_steps = []
+        for offset in offsets:
+            true_next = (wrong_current + offset) % SHIFT_MODULUS
+            wrong_next = _different_value(true_next, SHIFT_MODULUS)
+            wrong_steps.append(f"+{offset:02d}>{_num(wrong_next)}")
+            wrong_current = wrong_next
+        correct = " ".join(correct_steps)
+        wrong = " ".join(wrong_steps)
+        assert len(correct) == len(wrong) and correct != wrong
+        return Instance(prompt, correct, wrong, gold)
+
+    return sample
+
+
 def _sample_stack_program(n_steps: int, max_depth: int = 4):
     operations = []
     depth = 0
