@@ -67,7 +67,7 @@ def main():
         Permutation(list(range(1, K)) + [0]),
     ]
     S16 = PermutationGroup(s16_gens)
-    centralizer_order = H.centralizer(S16).order()
+    centralizer_order = S16.centralizer(H).order()
 
     print(f"gate alphabet size: {len(gates)}")
     print(f"|H| = |<T_g T_h^-1>| = {order}")

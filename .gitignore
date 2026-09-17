@@ -24,7 +24,7 @@ training_dynamics.html
 training_dynamics.mp4
 
 # --- the manuscript lives outside the code artifact --------------------------
-Paper/
+# Paper/
 
 # --- editor ------------------------------------------------------------------
 .vscode/
@@ -38,3 +38,4 @@ Paper/
 
 review.py
 PAT_Review_Report.md
+course_poster_sr_scientist

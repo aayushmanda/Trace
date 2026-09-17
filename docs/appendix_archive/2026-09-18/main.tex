@@ -1,0 +1,122 @@
+\documentclass{article}
+% For LaTeX2e
+% Anonymous double-blind submission copy: no package option (adds required
+% reviewer line numbers and the "Submitted to..." footer, keeps anonymity).
+\usepackage{neurips_2026}
+% After acceptance, switch to the camera-ready copy with real author names:
+%     \usepackage[final]{neurips_2026}
+% For a de-anonymized arXiv preprint instead, with real author names:
+%     \usepackage[preprint]{neurips_2026}
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{xcolor}         % colors
+\usepackage{subcaption}
+
+\title{Why Process Supervision Survives Wrong Reasoning Traces: Credit Geometry in a Shared Transition-Table Model}
+
+\author{%
+    Anonymous Author(s)\\
+    Anonymous Institution
+}
+
+% Commands
+\input{commands}
+
+% commands.tex loads cleveref after amsthm and before theorem declarations.
+
+\hypersetup{
+    colorlinks,
+    linkcolor=blue,
+    citecolor=red,
+    urlcolor=blue
+}
+
+\begin{document}
+\maketitle
+% Keep natural equation and heading spacing on pages containing large floats.
+\raggedbottom
+
+\input{body}            % abstract through conclusion
+
+\section*{Reproducibility statement}
+The artifact rebuilds reliability-sweep figures and tables from hashed archived
+CSVs and numerically checks the shared transition-table model's credit and gradient identities
+without training. \texttt{results/paper/ARTIFACT\_MANIFEST.md} lists, for every
+table and figure, the exact source file, its SHA-256 hash, and the command
+that produced it. The corrupted-trace study fits tabular rules to sampled
+local pairs and rebuilds its figure from saved results. It shares gate
+semantics and the local corruption law with the Transformer sweeps, but uses
+uniform gate-string sampling rather than uniform gate-family sampling, a
+difference checked directly and found not to explain the gap between their
+recovery frontiers. The LoRA adaptation study (\cref{app:legacy-protocol})
+has since been rerun in full, with raw per-seed generations, adapters, and
+local-margin CSVs archived under \texttt{results/paper/smollm/artifacts/}.
+The five-condition comparison (\cref{tab:supervision-comparison}), whose
+original run logs were never located, has likewise been rerun in full at
+its own recorded settings, with per-seed rows, configuration, and console
+log archived under \texttt{results/paper/e1\_five\_condition\_rerun/}.
+Neither aggregate carries a provenance gap any longer. The only open item
+is the numerical gap between this rerun's clean-process point and the
+separately run reliability sweep's, which \cref{sec:reliability} traces
+to training-set size and seed identity for most of its size, with a
+roughly four-point residual remaining unexplained.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Bibliography
+\bibliographystyle{plainnat}
+\bibliography{main}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% APPENDIX.  Three merged parts:
+%   appendix_architectures.tex  exact Transformer executors and their proof
+%   appendix_theory.tex         shared transition-table credit and gradient-identity proofs
+%   appendix_results.tex        protocol, numerics, and the noise-threshold study
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\clearpage
+\appendix
+\counterwithin{theorem}{section}
+\raggedbottom
+\setlength{\parskip}{2pt plus 1pt minus 1pt}
+\setlength{\abovedisplayskip}{8pt plus 2pt minus 2pt}
+\setlength{\belowdisplayskip}{8pt plus 2pt minus 2pt}
+\setlist[itemize]{itemsep=2pt,topsep=3pt}
+\setlist[enumerate]{itemsep=2pt,topsep=3pt}
+
+\paragraph{Organization.}
+\Cref{app:architectures} gives a short realizability sanity check
+(\cref{thm:realizability}): both supervision formats admit finite-parameter
+Transformer executors with zero greedy execution error, ruling out an
+unrepresentable-computation explanation for the training gap without
+carrying the full construction. \Cref{app:shared-kernel-embedding} then
+shows the shared transition-table model itself is an explicit mechanistic
+subspace of the process architecture's parameters, not an external
+surrogate, up to a routing error that vanishes as the construction's
+attention score grows (\cref{prop:shared-kernel-embedding}).
+\Cref{app:operator-proofs} proves the
+shared transition-table credit, depth-suppression, complete-mixing, and
+true-rule-direction results, and \cref{app:credit-suppression} confirms
+them numerically without training. \Cref{app:noise-threshold-proof} proves
+the reliability threshold, and \cref{app:outcome-rescue-diagnostic} gives
+the full statement, proof, and figure for the one-dimensional clean-answer
+diagnostic only summarized in \cref{sec:outcome-rescue}.
+\Cref{app:noise-threshold} reports finite-sample recovery together with
+the corruption-structure and gate-sampling checks. \Cref{app:legacy-protocol}
+gives the protocol for the five-condition comparison, the reliability
+sweeps, and the LoRA adaptation study. \Cref{app:gradient-alignment} gives
+the full protocol and per-transition results for the gradient-level
+credit-asymmetry diagnostic summarized in \cref{sec:gradient-alignment}.
+\Cref{app:other-substrates} checks the same reliability pattern on two
+further task families beyond the Boolean circuit.
+
+\input{appendix_architectures}
+\input{appendix_theory}
+\input{appendix_results}
+
+\end{document}

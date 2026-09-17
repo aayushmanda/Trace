@@ -1,0 +1,1099 @@
+% !TEX root = main.tex
+% Main narrative: credit assignment, robust learning, and reliable execution.
+% Transformer constructions and trained-model tests establish scope.
+
+\begin{abstract}
+Process supervision can recover a sequential computation even when many
+of the supplied reasoning traces are wrong. We explain why, in a shared
+transition-table model. Outcome credit for a local rule factors into a
+forward state signal and a backward answer signal. Composition
+suppresses this product until it vanishes entirely at the uniform,
+least-informed table. A process target exposes the local transition
+directly, giving an exact, depth-independent gradient toward the true rule.
+Under corrupted process targets, gradient descent
+converges to the induced successor law $\bm{Q}_g$, so recovery depends
+on how corrupted mass is distributed among competing successors rather
+than on the corruption rate alone: $\rho>1/K$ under symmetric corruption
+and $\rho>1/2$ against one coherent wrong rule are two evaluations of
+the same functional. In the same two-block GPT used for the behavioral
+experiments, process gradients stay aligned with an oracle
+local-transition gradient throughout training while outcome gradients
+do not, and measured reliability frontiers sit well above the
+population threshold across four experimental settings (Boolean-circuit,
+state-machine, register-machine, and pretrained-model adaptation). The
+same directional asymmetry that separates the two objectives in the
+population mechanism reappears, unprompted, in the actual gradients of
+a trained network.
+\end{abstract}
+
+\section{Introduction}
+\label{sec:intro}
+
+Intermediate traces often make multi-step computations easier to learn
+\citep{nye2021scratchpads,wei2022cot}, and supervising those traces is now a
+common approach to training reasoning models
+\citep{cobbe2021training,uesato2022solving,lightman2023verify}, even though
+many of the traces such systems see in practice are themselves wrong.
+This paper asks why training can still succeed when it does: why does
+supervising the trace help at all, and why does that help survive when
+many of the supplied traces are incorrect? We answer both questions
+exactly, in a model simple enough to answer them by proof rather than by
+analogy, and test whether the resulting signatures reappear in actually
+trained networks. Throughout, the prompt already determines the answer,
+so a trace adds supervision to the computation without adding information
+about the answer conditional on the prompt: whatever a trace buys, it is
+a \emph{learning} effect, not an information effect.
+
+Two claims are closed exactly, inside a shared transition-table model
+of the computation: \emph{process supervision exposes local rule credit
+that outcome supervision suppresses under composition}
+(\cref{sec:operator-credit}), and \emph{under noisy local targets,
+recoverability depends on corruption structure rather than corruption rate
+alone} (\cref{sec:credit-under-noise}). A third, structural fact separates
+identifiability from credit: whether terminal behavior determines the
+local rules at all is a different question from whether it supplies
+useful gradient information once it does, and this paper's own Boolean
+task is identifiable under the population/full-support assumptions,
+ruling out exact executor non-identifiability as an explanation for its
+outcome failure without isolating credit assignment from other
+architectural or optimization obstructions
+(\cref{thm:group-symmetry-nonidentifiability,thm:fixed-depth-identifiability}).
+Boolean-circuit, state-machine,
+register-machine, and pretrained-model-adaptation experiments then test
+whether these two mechanisms manifest qualitatively outside that model,
+in actually trained Transformers (\cref{sec:reliability}). These experiments provide
+external validation of the mechanism, not verification of a quantitative
+theory of Transformer optimization (\cref{sec:scope} states exactly what
+is proved and what is measured, once, for the whole paper).
+
+\paragraph{Why does supervising the trace succeed where supervising only the answer does not?}
+Consider a bit that must be flipped twice: $0\to1\to0$. A final-answer target
+checks only the last bit, whereas a process target also checks the intermediate
+state. Suppose a learned rule flips its input with probability $(1+a)/2$ and
+leaves it unchanged with probability $(1-a)/2$, where $0\le a\le1$ measures
+progress from a random rule to the correct flip. Then
+\begin{equation}
+ \Pr(\text{correct local transition})=\frac{1+a}{2},\qquad
+ \Pr(\text{correct final answer})=\frac{1+a^2}{2}.
+ \label{eq:two-flip-probabilities}
+\end{equation}
+The final answer is correct after either two flips or two failures to flip, so
+near $a=0$ improving the local rule changes the final-answer probability only
+at \emph{second} order while it changes the local target probability at
+\emph{first} order --- a smooth final-answer loss can be nearly flat exactly
+where the local rule is easiest to learn:
+\begin{equation}
+ \ell_{\rm out}(a)=\log2-\log(1+a^2),
+ \qquad
+ \ell_{\rm proc}(a)=\log2-\log(1+a).
+ \label{eq:two-flip-losses}
+\end{equation}
+
+This is the $D=2$ case of a general fact. In a shared transition table,
+the outcome-loss gradient for one rule is an outer product of a forward
+signal (which state the model believes it is in) and a backward signal
+(how much the answer would change if that state were different)
+(\cref{thm:forward-backward}). Composition suppresses this product
+geometrically in $D$ (\cref{cor:near-mixing}), and at the least-informed
+starting point it vanishes exactly (\cref{thm:complete-mixing}). A process
+target supplies the missing signal directly instead: its gradient at that
+same point is an exact, depth-independent vector toward the true rule, and
+the population process loss is convex and separable, so gradient descent
+reaches the true rule from any finite initialization
+(\cref{cor:clean-convergence}) --- guarantees the outcome loss lacks.
+\Cref{sec:operator-credit} proves all of this.
+
+\paragraph{Why does training still succeed when some fraction of traces are wrong?}
+A model trained on a mixture of correct and corrupted local targets learns
+to predict that mixture. Its greedy decision favors the true successor
+whenever it is still the single most likely one there, which only requires
+\emph{outvoting each rival separately}, not commanding a majority. Spread
+uniformly over the other $K-1$ states, corruption needs $\rho>1/K$ to lose
+that race. Concentrated on one coherent wrong rule, it becomes a two-way
+race needing $\rho>1/2$. These thresholds are two evaluations of one
+corruption-structure functional: the same corruption \emph{rate} gives
+opposite outcomes depending only on how the errors are structured
+(\cref{cor:noise-threshold}, proved in \cref{sec:credit-under-noise}).
+
+\paragraph{Fraction, amount, and execution.}
+Population recoverability depends on the target distribution. Finite
+samples determine how reliably that distribution is estimated
+(\cref{sec:identifiability} separates these and compares both with the
+trained-Transformer frontier). Robust local credit is only useful if
+learned rules actually compose into correct execution, from noisy local
+targets to learned transitions to complete rollout: Boolean-circuit and
+pretrained-model-adaptation experiments show valid traces improving
+execution, with local prediction becoming accurate well before full
+rollout does (\cref{sec:reliability}).
+
+\begin{table}[h]
+\small
+\centering
+\begin{tabular}{@{}p{2.6cm}p{5.6cm}p{4.1cm}@{}}
+\toprule
+Level & Question & Status \\
+\midrule
+Population shared-table model & Why does process supervision give stronger local rule credit? & Exact theorem (\cref{thm:forward-backward,cor:clean-convergence}) \\
+Corrupted finite data & When can the true rule still be recovered? & Exact population threshold + finite-sample bound (\cref{cor:noise-threshold,prop:finite-sample-recovery}) \\
+Transformer parameter space & Does this mechanism exist inside a Transformer's own parameters? & Explicit constructed subspace (\cref{app:shared-kernel-embedding}) \\
+Ordinary Transformer SGD & Does training actually follow that subspace or its dynamics? & Directional diagnostic, not proved (\cref{sec:gradient-alignment}) \\
+\bottomrule
+\end{tabular}
+\caption{Levels of analysis and the status of the corresponding claims.}
+\label{tab:closure-ladder}
+\end{table}
+
+\section{Setup}
+\label{sec:background}
+\label{sec:background-circuits}
+\label{sec:background-supervision}
+
+\paragraph{Notation.}
+We write $[n]=\{1,\ldots,n\}$ and $\bm{e}_i$ for a standard basis vector.
+Computation steps use $t$, token positions $i$, and Transformer blocks $k$.
+Symbols specific to a model or result are defined where they first appear.
+
+\paragraph{The computation.}
+Let $\mathcal S=[K]$ be the state set, $\mathcal G=[M]$ the gate set, and
+$\Phi:\mathcal S\times\mathcal G\to\mathcal S$ deterministic, with $\Phi(\cdot,g)$
+a bijection for every $g$ in the tasks we run. A depth-$D$ prompt is
+$x=(s_0,g_{1:D})$, with trace and answer defined by
+\begin{equation}
+ s_t=\Phi(s_{t-1},g_t),\quad t\in[D],\qquad a(x)=s_D.
+ \label{eq:computation}
+\end{equation}
+Evaluation uses held-out instances.  The Boolean task uses four-bit states, so $K=16$, and
+$M=52$ gate strings: $4$ NOT, $12$ CNOT, $12$ ordered SWAP, and $24$ Toffoli
+strings. Distinct strings may denote the same permutation, so $M$ counts gate
+strings, not distinct permutations.  Finite-state and circuit families of
+this kind are standard probes of Transformer computation
+\citep{liu2023automata,deletang2023chomsky,zhou2024algorithms}.
+
+The property we use repeatedly is that the whole trace, and in particular the
+answer $s_D$, is a deterministic function of the prompt.  Every conditional
+target distribution in the realizability analysis is therefore a point mass. The
+randomly corrupted training traces of \cref{sec:reliability} define a different
+data law.
+
+\paragraph{Two placements of supervision.}
+Both objectives receive the same input $x=(s_0,g_{1:D})$.  Writing
+$\tau(x)=((g_1,s_1),\ldots,(g_D,s_D))$ for its trace and $a(x)=s_D$ for its
+answer, the target formats are
+\begin{align}
+  \outcome &: \quad a(x),\label{eq:outcome-format}\\
+  \proc &: \quad (\tau(x),a(x)),\label{eq:process-format}
+\end{align}
+with the fixed serialization suppressed.  Prompt tokens carry no loss, training
+uses teacher forcing, and evaluation is free running: generated tokens are fed
+back, never gold ones.  Process supervision therefore changes three things at
+once --- the supervised positions, the prefixes available at those positions,
+and the number of autoregressive steps available during generation.  The controls in \cref{sec:reliability} test whether additional positions or
+invalid traces reproduce the gains. The shared transition-table model of
+\cref{sec:operator-credit} isolates gradient placement mathematically.
+
+\subsection{Scope}
+\label{sec:scope}
+Two claims are exact theorems inside the shared transition-table model:
+outcome local-rule credit factorizes and is compositionally suppressed
+(\cref{thm:forward-backward,cor:near-mixing,thm:complete-mixing}), and
+process gradient descent under corruption converges to $\bm{Q}_g$, with
+recovery depending on corruption structure rather than rate
+(\cref{cor:noise-threshold}). Gradient statements in the model are local
+unless stated otherwise. \Cref{cor:clean-convergence} and
+\cref{cor:noise-threshold}'s own convergence argument are the two
+exceptions, proving global convergence at $\rho=1$ and $\rho>1/K$
+respectively. Two further statements are direct measurements in the
+actual two-block GPT, not verification of a quantitative theory of
+Transformer optimization: process gradients remain more stably
+rule-directed than counterfactual outcome gradients
+(\cref{sec:gradient-alignment}), and the trained network's reliability
+frontier sits at a location we report but do not derive
+(\cref{sec:sharp-jump,sec:identifiability}). Every experiment in this
+paper --- Boolean-circuit, state-machine, register-machine, and
+pretrained-model adaptation --- is external validation in this second
+sense: evidence that the mechanism's qualitative signature reappears
+outside the model, not a test of whether it governs Transformer
+optimization quantitatively. This distinction is stated once, here, and
+not repeated at each result below.
+
+% ==========================================================================
+\section{How Trace Reliability Affects Learning and Execution}
+\label{sec:reliability}
+\label{sec:formats}
+
+We first establish the empirical behavior that motivates the analysis.
+Valid intermediate targets improve execution, but their reliability affects
+local prediction and complete rollout differently. The experiments in this
+section use learned Transformers and pretrained-model adaptation. We first
+compare supervision formats, then vary trace reliability within a fixed format.
+The shared transition-table model isolates how local targets change credit.
+
+\paragraph{Five supervision conditions.}
+Write $\widetilde\tau(x)$ for a corrupted trace of the same length and $f(x)$
+for length-matched filler.  All five conditions share the prompt and, except
+where noted, the correct answer: \outcome{} $a(x)$; \proc{} $(\tau(x),a(x))$;
+\textsc{Corrupted} $(\widetilde\tau(x),a(x))$, which keeps trace content and a
+correct answer but destroys transition validity; \textsc{Answer-first}
+$(a(x),\tau(x))$, whose trace cannot condition an earlier answer in a causal
+model; and \textsc{Filler} $(f(x),a(x))$, which adds equally many pre-answer
+positions carrying no valid transition.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lrrrrrr}
+\toprule
+Task & Chance & Outcome & Answer-first & Filler & Process & Corrupted\\
+\midrule
+Boolean-8 & 6.25 & \(7.72_{\;\text{0.34}}\) & \(7.96_{\;\text{0.88}}\) & \(7.76_{\;\text{0.55}}\) & \(82.00_{\;\text{7.69}}\) & \(6.12_{\;\text{1.06}}\)\\
+\bottomrule
+\end{tabular}
+\caption{\textbf{Held-out answer accuracy (\%) on the depth-8 Boolean circuit.}
+Means with sample standard deviations in subscripts across five seeds
+$2001$--$2005$, exactly the architecture and optimizer settings of
+\cref{app:legacy-protocol}'s supervision comparison. The reproduction command,
+per-seed rows, and configuration are archived in \cref{app:legacy-protocol}
+and the artifact manifest.}
+\label{tab:supervision-comparison}
+\end{table}
+
+A valid trace before the answer produces the only large gain: process
+reaches \(82.00_{\;\text{7.69}}\%\) against outcome's
+\(7.72_{\;\text{0.34}}\%\).\footnote{A separately run reliability sweep
+gives a higher $92.6_{\;\text{2.9}}\%$ at its clean endpoint
+(\cref{tab:legacy-circuit}). \Cref{app:legacy-protocol} traces most of
+this gap to training-set size and seed identity, with a small residual
+left unexplained.}
+Filler positions alone do not reproduce
+it (\(7.76_{\;\text{0.55}}\%\)), and answer-first and corrupted traces
+stay near the no-computation baseline. Filler controls the number of
+positions, not the learning dynamics at them --- filler tokens can carry
+hidden computation under supervision designed to elicit it
+\citep{pfau2024filler}.
+
+\paragraph{Trace reliability.}
+The sweeps interpolate between \proc{} and \textsc{Corrupted}: each training
+example keeps its correct answer $a(x_i)$ but receives the correct trace
+$\tau(x_i)$ with probability $\rho$ and a corrupted trace $\widetilde\tau(x_i)$
+otherwise.  Thus $\rho$ is the reliability of a \emph{whole supplied trace},
+not the probability that an independently corrupted step is correct, and the
+sweep reuses assignment scores across values of $\rho$, making the clean-example
+sets nested (\cref{app:legacy-protocol}).
+
+\begin{figure}[t]
+ \centering
+ \includegraphics[width=0.62\linewidth]{figures/boolean_reliability.pdf}
+ \caption{\textbf{Reliability sweep after $8{,}000$ updates.}
+ Depth-8 Boolean-circuit answer accuracy across five seeds. The line shows the
+ mean and the shaded band one sample standard deviation. The flat
+ dash-dotted orange line is the measured outcome-only baseline, and the
+ dashed grey line is chance ($6.25\%$).}
+ \label{fig:legacy-reliability}
+\end{figure}
+
+\subsection{Trained-model recovery lags the population picture}
+\label{sec:sharp-jump}
+\label{sec:local-rollout}
+
+The reliability sweep (\cref{tab:legacy-circuit}, the separately run
+experiment already distinguished from \cref{tab:supervision-comparison}
+above) is sensitive to both reliability and the training run itself: mean
+final-answer accuracy rises from $18.02\%$ at $\rho=0.50$ to $61.98\%$ at
+$0.80$ and $92.61\%$ at $1.00$, against an outcome-only mean of $8.39\%$,
+with seeds at $\rho=0.80$ spanning $36.0\%$ to $83.15\%$. Pretrained-model adaptation shows
+the same qualitative pattern at a still higher reliability: using
+SmolLM2-135M \citep{allal2025smollm2} with rank-eight LoRA
+\citep{hu2022lora}, fully reliable process supervision reaches $89.67\%$
+answer accuracy, while at $\rho=0.50$ local state accuracy is $82.49\%$
+against only $23.78\%$ exact rollout (\cref{app:legacy-protocol} specifies
+the evaluation). The gap between these trained-model frontiers and the
+population threshold derived below is measured directly in
+\cref{sec:identifiability}. The same architecture reaches $88.07\%$ under
+outcome-only supervision at $D=2$ and degrades smoothly through $D=4,6$
+to $7.80\%$ at $D=8$ (\cref{app:depth-capacity}). This rules out a blanket,
+depth-independent inability to learn outcome prediction, while leaving
+open a capacity limit that emerges only at larger depth.
+
+The same qualitative pattern --- outcome supervision near chance, process
+supervision at $\rho=1$ far above it --- holds outside the Boolean circuit
+too (\cref{tab:cross-task-summary}). The full sweeps and per-seed variance
+are in \cref{app:other-substrates}.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lrrr}
+\toprule
+Task & Chance & Outcome & Process ($\rho=1$)\\
+\midrule
+Boolean-8 & 6.25 & \(8.39\) & \(92.61_{\;\text{2.9}}\)\\
+Register-machine-16 & 5.88 & \(6.33_{\;\text{0.76}}\) & \(99.87_{\;\text{0.23}}\)\\
+State-machine-16 & 6.25 & \(7.20_{\;\text{1.51}}\) & \(67.47_{\;\text{53.9}}\)\\
+\bottomrule
+\end{tabular}
+\caption{\textbf{Same qualitative pattern across three task families.}
+Answer accuracy (\%), mean with sample standard deviation. Full per-seed
+results and discussion of the state-machine variance are in
+\cref{app:other-substrates}.}
+\label{tab:cross-task-summary}
+\end{table}
+
+These observations motivate asking why a correct final answer gives weak
+credit to an individual transition, and when corrupted process targets
+retain enough directional signal to recover the rule --- the observed
+reliability frontier is a learner- and budget-dependent quantity that
+need not equal the population recovery threshold.
+
+\section{Why Outcome Credit Disappears Under Composition}
+\label{sec:operator-credit}
+
+The two-flip example in \cref{sec:intro} shows how composition can hide a
+first-order improvement in a local rule. We now identify the two signals whose
+product causes this effect: a local rule receives outcome credit only when
+the prefix distinguishes source states and the suffix distinguishes candidate
+destinations, repeated mixing weakens both, and at complete mixing the
+population gradient can vanish altogether. Both objectives optimize the same
+transition tables, so the analysis isolates credit placement before
+introducing noisy targets in \cref{sec:credit-under-noise}.
+
+\subsection{Transition tables and gradient coordinates}
+
+Any sufficiently expressive autoregressive learner --- a Transformer among
+them, but not only a Transformer --- computes, at each step of this task,
+some conditional law over the next state given its full running context,
+in general depending on more than just the current source state $s_{t-1}$
+and gate $g_t$. This section analyzes exactly the regime where that
+dependence collapses to a function of $(s_{t-1},g_t)$ alone, shared
+identically across every occurrence of a gate --- a regime that is not
+vacuous, since \cref{app:shared-kernel-embedding} exhibits an explicit
+finite-parameter Transformer construction realizing it approximately at
+any finite attention score and exactly only in the limit, with a gradient
+that pulls back to the coordinates below up to that same vanishing
+routing error. Within this regime, write $\bm{P}_g\in\R^{K\times K}$ for the
+shared, context-independent table any such learner induces for gate $g$.
+It is row-stochastic:
+$(\bm{P}_g)_{ij}\ge0$ and $\bm{P}_g\mathbf1=\mathbf1$. Row $i$ is the distribution over
+successor states given source state $i$. The true deterministic rule is
+$(\bm{T}_g)_{ij}=\one\{j=\Phi(i,g)\}$; for reversible gates, $\bm{T}_g$ is a permutation
+matrix. We represent state distributions as column vectors, so applying a gate
+updates $\bm{q}$ to $\bm{P}_g^\top \bm{q}$. For a prompt $(s_0,g_{1:D})$, the model assigns
+terminal state $y$ probability
+\begin{equation}
+ p_y=\bm{e}_{s_0}^{\top}\bm{P}_{g_1}\cdots \bm{P}_{g_D}\bm{e}_y .
+ \label{eq:terminal-probability}
+\end{equation}
+The two population objectives are
+\begin{align}
+ L_{\rm out}
+ &=\mathbb E\!\left[-\log
+ \bm{e}_{s_0}^{\top}\bm{P}_{g_1}\cdots \bm{P}_{g_D}\bm{e}_{s_D}\right],
+ \label{eq:shared-outcome-loss}\\
+ L_{\rm proc}
+ &=\frac1D\sum_{t=1}^{D}
+   \mathbb E\!\left[-\log(\bm{P}_{g_t})_{s_{t-1},s_t}\right].
+ \label{eq:shared-process-loss}
+\end{align}
+Expectations are over prompts and their true traces. Both objectives have the
+correct executor $\bm{P}_g=\bm{T}_g$ as a global minimizer. They need not have identical
+sets of minimizers.
+
+To specify which gradient component we study, define
+\begin{equation}
+ \bm{u}=\frac{\mathbf1}{K},\qquad \bm{U}=\frac{\mathbf1\mathbf1^\top}{K},\qquad
+ \bm{\Pi}=\bm{I}-\bm{U},\qquad \Rule{\bm{G}}=\bm{\Pi} \bm{G}\bm{\Pi} .
+ \label{eq:credit-coordinates}
+\end{equation}
+Here $\bm{U}$ predicts a uniform successor from every source, and $\bm{\Pi}$ centers a
+vector by subtracting its mean. All matrix gradients below are Euclidean
+gradients in the entries of $\bm{P}_g$. A feasible perturbation of a row-stochastic
+table has zero row sums, so the feasible component of a gradient $\bm{G}$ is $\bm{G}\bm{\Pi}$.
+The further projection $\Rule{\bm{G}}$ removes column means as well, retaining the
+component with both row and column sums zero. It measures changes in
+source-dependent transitions after removing a common destination preference.
+Every direction $\bm{T}_g-\bm{U}$ for a permutation rule lies in this subspace. We call
+the projected negative gradient \emph{rule credit}. It is distinct from the
+full feasible gradient. \Cref{app:operator-proofs} verifies these projections.
+
+Everything through \cref{sec:credit-under-noise} characterizes
+$\nabla_{\bm{P}_g}L$ exactly in these table coordinates. Recovering a
+statement about a learner's own parameters $\bm\theta$, if
+$\bm{P}_g=\bm{P}_g(\bm\theta)$, is then one chain-rule step,
+$\nabla_{\bm\theta}L=\sum_g J_g(\bm\theta)^\top\operatorname{vec}(\nabla_{\bm{P}_g}L)$
+with $J_g=\partial\operatorname{vec}\bm{P}_g(\bm\theta)/\partial\bm\theta$, so
+architecture enters only through this Jacobian, not the credit results
+themselves. \Cref{app:shared-kernel-embedding} carries out this step for
+the Transformer construction above. \Cref{sec:gradient-alignment} then
+measures whether the resulting asymmetry persists in an unrestricted,
+fully trained Transformer, outside this constructed regime.
+
+\subsection{Forward and backward signals}
+
+Fix a prompt and its correct answer $y=s_D$. Write $\bm{P}_t=\bm{P}_{g_t}$ for the table
+at occurrence $t$, and define
+\begin{equation}
+ \bm{q}_{t-1}=\bm{P}_{t-1}^{\top}\cdots \bm{P}_1^{\top}\bm{e}_{s_0},
+ \qquad \bm{b}_t=\bm{P}_{t+1}\cdots \bm{P}_De_y .
+ \label{eq:forward-backward}
+\end{equation}
+Empty products are identities. The entry $\bm{q}_{t-1}(i)$ is the probability of
+arriving at source $i$ before gate $t$; $\bm{b}_t(j)$ is the probability of reaching
+$y$ after choosing destination $j$ there. Thus $p_y=\bm{q}_{t-1}^\top \bm{P}_t\bm{b}_t$.
+Their centered versions are
+\begin{equation}
+ \fwdsig_{t-1}=\bm{\Pi} \bm{q}_{t-1}=\bm{q}_{t-1}-\bm{u},
+ \qquad
+ \bwdsig_t=\bm{\Pi} \bm{b}_t=\bm{b}_t-\operatorname{mean}(\bm{b}_t)\mathbf1 .
+ \label{eq:centered-signals}
+\end{equation}
+
+\paragraph{Where does outcome credit for one transition come from?}
+Changing $\bm{P}_t$ can affect the final answer only through the state
+distribution that reaches step $t$ and through the effect of step $t$'s
+own output on that answer. \Cref{thm:forward-backward} makes this
+factorization exact.
+
+\begin{theorem}[Factorization of local rule credit]
+\label{thm:forward-backward}
+For row-stochastic tables and $p_y>0$, the loss
+$\ell_{\rm out}=-\log p_y$ satisfies
+\begin{equation}
+ \Rule{-\nabla_{\bm{P}_t}\ell_{\rm out}}
+ =\frac{\fwdsig_{t-1}\bwdsig_t^\top}{p_y}.
+ \label{eq:conditional-credit}
+\end{equation}
+For a local target $\ell_t=-\log(\bm{P}_t)_{s_{t-1},s_t}$ with positive target
+probability,
+\begin{equation}
+ \left\|\Rule{-\nabla_{\bm{P}_t}\ell_t}\right\|_F
+ =\frac{1-1/K}{(\bm{P}_t)_{s_{t-1},s_t}}\ge1-\frac1K .
+ \label{eq:process-credit-lower}
+\end{equation}
+Occurrence derivatives treat repeated uses of a gate as separate factors;
+the derivative with respect to its shared table is their sum.
+\end{theorem}
+
+\paragraph{Derivation.}
+Differentiating $\bm{q}_{t-1}^\top \bm{P}_t\bm{b}_t$ gives the unprojected negative gradient
+$\bm{q}_{t-1}\bm{b}_t^\top/p_y$. Multiplication by $\bm{\Pi}$ on both sides gives
+\cref{eq:conditional-credit}. The lower bound in \cref{eq:process-credit-lower}
+is per occurrence. Averaging positions, sharing parameters, or changing to
+logit coordinates requires the corresponding normalization or chain rule.
+
+\paragraph{Interpretation.}
+The outer product in \cref{eq:conditional-credit} vanishes exactly when
+either factor is uninformative. If the forward signal is uniform, the
+loss cannot identify which source row should change. If the backward
+signal is constant, it cannot identify which destination should be
+preferred. Outcome credit therefore needs both at once, whereas a process target
+supplies both explicitly, bypassing the product entirely.
+
+\subsection{Depth suppresses rule credit near mixing}
+
+Assume now that each learned table is \emph{doubly stochastic}, so its columns
+as well as its rows sum to one. Then $\bm\Pi\bm P_g\bm\Pi=\bm P_g-\bm U$
+exactly, since row- and column-stochasticity together make $\bm U$ absorb
+under multiplication by $\bm P_g$ from either side
+(\cref{app:factorization-proof}). The norm $\|\cdot\|_F$ below is the
+Frobenius norm and $\|\cdot\|_2$ the spectral norm.
+
+Outcome credit must pass through every other transition in the composed
+computation to reach occurrence $t$, and each one contracts it by its own
+distance from uniform. The corollary below states this as one
+compositional bound, of which today's near-uniform, equal-contraction
+case is an immediate special case.
+
+\begin{corollary}[Compositional credit-transmission bound]
+\label{cor:near-mixing}
+Suppose every participating $\bm{P}_j$ is doubly stochastic and $p_y\ge\alpha>0$.
+Write $\bar{\bm P}_g:=\bm\Pi\bm P_g\bm\Pi=\bm P_g-\bm U$, and define the
+\emph{credit-transmission coefficient} at occurrence $t$,
+\begin{equation}
+ \chi_t:=\prod_{j\ne t}\|\bar{\bm P}_{g_j}\|_2.
+ \label{eq:credit-transmissivity}
+\end{equation}
+Then, at every occurrence $t$,
+\begin{equation}
+ \left\|\Rule{-\nabla_{\bm{P}_t}\ell_{\rm out}}\right\|_F
+ \le\frac{1-1/K}{\alpha}\,\chi_t.
+ \label{eq:general-credit-bound}
+\end{equation}
+If, further, $\|\bar{\bm P}_j\|_2\le\rulestr$ for every participating $j$
+(the near-uniform case $\bm{P}_j=\bm{U}+\bm{E}_j$, $\|\bm E_j\|_2\le\rulestr$),
+then $\chi_t\le\rulestr^{D-1}$ and
+\begin{equation}
+ \left\|\Rule{-\nabla_{\bm{P}_t}\ell_{\rm out}}\right\|_F
+ \le\frac{1-1/K}{\alpha}\,\rulestr^{D-1}.
+ \label{eq:depth-credit-bound}
+\end{equation}
+\end{corollary}
+
+Outcome supervision must transmit local credit through every other
+participating transition, and $\chi_t$ is exactly that transmission
+coefficient: it vanishes whenever any single participating table is
+uniform ($\bar{\bm P}_g=\bm 0$ for that $g$), recovering the projected-credit
+part of \cref{thm:complete-mixing}'s zero-credit result as the
+$\chi_t=0$ endpoint. Process supervision needs no such product: its
+gradient is depth-independent at every table (\cref{eq:process-credit-lower}),
+bypassing this transmission bottleneck entirely. For $\rulestr<1$ and an
+answer-probability lower bound $\alpha$ held fixed, \cref{eq:depth-credit-bound}
+decreases exponentially with depth. \Cref{eq:general-credit-bound} is an
+upper bound on projected credit. Particular products can cancel further.
+It does not bound all components of the gradient in an arbitrary
+parameterization.
+\Cref{app:credit-suppression} evaluates \cref{eq:conditional-credit,eq:process-credit-lower,eq:depth-credit-bound} directly on the repository's Boolean-circuit generator: the position-invariant conditional credit and the predicted $D-1$ exponent both hold exactly.
+For a shared gate $g$, summing its occurrences gives a population
+outcome-credit ceiling $O(D f_g\rulestr^{D-1})$, where
+$f_g=D^{-1}\sum_t\Pr(g_t=g)$ and $K$ and $\alpha$ are held fixed
+(\cref{app:factorization-proof}). The population process credit at complete
+mixing under clean supervision is $f_g(\bm T_g-\bm U)$: its explicit
+$1/D$ normalization cancels the occurrence count. For fixed $K$ and gates
+whose $f_g$ is bounded below independently of depth, this process-credit
+norm is $\Theta(1)$, while the outcome ceiling remains exponentially
+suppressed for fixed $\rulestr<1$, up to the polynomial prefactor $D$.
+
+\subsection{Population stationarity at complete mixing}
+
+At $\bm{P}_g=\bm{U}$, the projected outcome credit vanishes on every example for $D\ge2$.
+To show that the \emph{full feasible population gradient} vanishes as well,
+we additionally require uniform initial states and reversible true rules.
+These assumptions make the true terminal state uniform conditional on any gate
+sequence, canceling the remaining destination preference in expectation.
+
+\begin{theorem}[Population gradient separation]
+\label{thm:complete-mixing}
+Let $D\ge2$, let $s_0$ be uniform and independent of $g_{1:D}$, and let each
+$\bm{T}_g$ be a permutation matrix. Define the expected gate frequency
+$f_g=D^{-1}\sum_{t=1}^D\Pr(g_t=g)$. At $\bm{P}_g=\bm{U}$ for every gate,
+\begin{equation}
+ (-\nabla_{\bm{P}_g}L_{\rm out})\bm{\Pi}=0,\qquad
+ \Rule{-\nabla_{\bm{P}_g}L_{\rm proc}}=f_g(\bm{T}_g-\bm{U}).
+ \label{eq:process-recovers-table}
+\end{equation}
+Consequently, for every $g$ with $f_g>0$, the row maximizers of the process
+rule credit identify all successors of $\bm{T}_g$.
+\end{theorem}
+
+This is stationarity on the space of row-stochastic tables (\cref{sec:intro}).
+\Cref{app:credit-suppression} confirms the exact zero/nonzero split at
+$\bm{P}_g=\bm{U}$ numerically, without training any model.
+
+One direction along which the loss decreases: the second-order effect in
+\cref{eq:two-flip-probabilities} generalizes to
+order $D$: near uniform prediction, all $D$ learned transitions must
+contribute to the outcome's improvement along the true-rule direction,
+while each local process term still improves at first order.
+\Cref{prop:loss-path} in \cref{app:affine-path-proof} makes this exact and
+prompt-distribution-independent: along the affine path
+$\bm{P}_g(a)=\bm{U}+a(\bm{T}_g-\bm{U})$, $L_{\rm out}(a)=\log K-\log(1+(K-1)a^D)$
+has its first $D-1$ derivatives vanish at $a=0$, while
+$L_{\rm proc}(a)=\log K-\log(1+(K-1)a)$ has $L_{\rm proc}'(0)=-(K-1)$ ---
+the two-flip losses above are its $D=2$ case.
+
+\subsection{Population convergence under clean process supervision}
+
+The preceding results describe credit at a stated table. The next one
+describes where gradient descent on $L_{\rm proc}$ actually goes.
+\Cref{cor:clean-convergence} in \cref{app:noise-threshold-proof} records
+the clean ($\rho=1$) case: in row-logit coordinates the population process
+loss is convex and separable, so gradient descent reaches the true rule
+from any finite initialization and induction then gives exact greedy
+execution, while \cref{thm:complete-mixing} shows $L_{\rm out}$ carries no
+such guarantee and no first-order rule-directed signal at that point. The
+same argument extends unchanged to noisy targets, as the $\rho=1$ case of
+\cref{cor:noise-threshold} below.
+
+We do not characterize $L_{\rm out}$'s full population minimizer set in
+general, but under-excitation already suffices to construct one: outcome
+supervision can therefore suffer from two separate obstructions at once,
+the vanishing-gradient geometry of \cref{thm:complete-mixing,cor:near-mixing}
+and non-identifiability whenever some source--gate pair is never visited
+on any supported trajectory. \Cref{prop:outcome-nonidentifiability} in
+\cref{app:factorization-proof} gives the formal construction.
+\Cref{app:credit-suppression} tracks this convergence numerically: gradient
+descent from random logits reaches exact rule-cell and answer-accuracy
+recovery within a few thousand steps, while the underlying distribution
+approaches, but never exactly reaches, the one-hot true rule.
+
+A third obstruction is coverage-independent: it survives even when every
+$(g,i)$ pair is visited. Whenever the gate family's generated permutation
+group has a nontrivial element $\bm A$ commuting with every $\bm T_g$ and
+satisfying $\bm A^D=\bm I$, the distinct assignment
+$\bm T'_g:=\bm T_g\bm A$ induces exactly the same terminal map as
+$\{\bm T_g\}$ on every depth-$D$ word
+(\cref{thm:group-symmetry-nonidentifiability}): $L_{\rm out}$ cannot tell
+$\{\bm T_g\}$ from $\{\bm T'_g\}$ apart from any amount of outcome-only
+data, however complete, while a process target displays $s_t$ under the
+$\{\bm T_g\}$-labeling and distinguishes them immediately. A minimal
+instance exists by restricting this paper's own Boolean gates so that one
+bit is never read or permuted elsewhere, only flipped: the resulting
+non-abelian family still satisfies $\bm A^D=\bm I$ at $D=8$
+(\cref{app:shift-symmetry-task}), so a network trained on it could learn a
+different, unidentifiable local rule while still answering every prompt
+correctly.
+
+Identifiability and credit are different properties, and neither implies
+the other. A factorization can be identifiable in principle and still
+supply outcome supervision with almost no usable first-order signal, or
+it can fail to be identifiable at all regardless of how much first-order
+signal a particular gradient step happens to carry: this is a structural
+fact about what terminal observations determine, orthogonal to the
+vanishing-gradient geometry above.
+
+A sufficient criterion for identifiability uses the centralizer of the
+group generated by pairwise gate \emph{differences}: triviality of this
+centralizer rules out alternative zero-loss executors.
+
+\begin{theorem}[Fixed-depth identifiability via the difference group]
+\label{thm:fixed-depth-identifiability}
+Let $\{\bm T_g\}_{g\in\mathcal G}\subset S_K$ be the true gate permutations,
+let the training distribution have full support on $[K]\times\mathcal G^D$
+(every starting state and every depth-$D$ gate word), and let
+$H:=\bigl\langle \bm T_g\bm T_h^{-1}: g,h\in\mathcal G\bigr\rangle\le S_K$
+be the group generated by pairwise gate differences. If $C_{S_K}(H)=\{\bm I\}$,
+then $\bm P_g=\bm T_g$ for every $g\in\mathcal G$ is the unique row-stochastic
+assignment with $L_{\rm out}=0$.
+\end{theorem}
+
+This paper's own unrestricted Boolean-circuit family satisfies exactly
+that condition by direct computation
+(\cref{app:identifiability-certificate}): it is structurally identifiable
+under the theorem's population/full-support assumptions, which rules out
+exact executor non-identifiability as the explanation for its depth-$8$
+outcome failure. It does not rule out every other architectural or
+optimization obstruction. The credit obstruction analyzed independently
+below remains present regardless.
+
+\section{Why Wrong Process Targets Can Still Teach the Right Rule}
+\label{sec:credit-under-noise}
+
+Direct local credit helps only when its target distribution favors the true
+transition. We now ask how that preference survives trace corruption, how
+sensitive a correct decision becomes near the recovery threshold, and what
+finite samples preserve. This links the credit analysis to the reliability
+sweeps of \cref{sec:reliability}.
+
+\subsection{Recovery under structured process corruption}
+The effect of corruption is determined by the conditional successor law $\bm{Q}_g$.
+For symmetric errors, the true successor competes against $K-1$ alternatives
+sharing the incorrect mass. For one coherent wrong rule, it competes against a
+single alternative. These are two instances of one general threshold.
+
+\begin{definition}[Local reliability]
+\label{def:local-reliability}
+Let each $\bm T_g$ be a permutation matrix. Suppose the local conditional
+law of the displayed successor, given displayed source and gate, is
+\(\bm{Q}_g=\rho \bm{T}_g+(1-\rho)\bm{C}_g\) for some row-stochastic \(\bm{C}_g\)
+depending only on the displayed source state and the gate. This coincides
+with the whole-trace corruption rate when $\bm{C}_g$ is doubly stochastic
+(\cref{app:noise-threshold-proof}); for a general $\bm{C}_g$, this equation
+is instead the \emph{definition} of the local reliability $\rho$, since a
+non-doubly-stochastic corruption process can otherwise make the displayed
+source's own distribution depend on whether a trace was corrupted, and
+$\rho$ should then be read row-by-row rather than as one global rate.
+\end{definition}
+
+\begin{proposition}[Convergence under corrupted process targets]
+\label{prop:noise-convergence}
+Assume each row $(g,i)$ is visited with positive probability
+(\cref{app:noise-threshold-proof} makes this precise for non-uniform
+visitation; under \cref{thm:complete-mixing}'s hypotheses it reduces to
+$f_g>0$). By the same row-logit convexity and separability as
+\cref{cor:clean-convergence}, gradient descent on $L_{\rm proc}$ converges
+to $\bm{Q}_g$ of \cref{def:local-reliability} rather than $\bm{T}_g$, for
+\emph{any} row-stochastic $\bm{C}_g$.
+\end{proposition}
+
+Its greedy decoder therefore recovers the true rule from row $i$ exactly
+when the true successor is the unique most probable displayed successor
+there.
+
+\begin{theorem}[Recovery threshold]
+\label{cor:noise-threshold}
+Writing $c_T=\bm{C}_g(i,\bm{T}_g(i))$ for the corruption mass placed on the
+true successor and $c_\star=\max_{j\ne \bm{T}_g(i)}\bm{C}_g(i,j)$ for the mass
+on the strongest wrong competitor, and assuming $c_T<1$ for every gate and
+source, \cref{prop:noise-convergence}'s recovery condition is exactly
+\begin{equation}
+ \rho>\rho_i(\bm{C}_g):=\frac{c_\star-c_T}{1+c_\star-c_T}.
+ \label{eq:general-corruption-threshold}
+\end{equation}
+Setting $\kappa(\bm{C}):=\max_{g,i}(c_\star-c_T)$, every row is recovered
+simultaneously whenever $\rho>\rho_{\rm pop}(\bm{C}):=\kappa(\bm{C})/(1+\kappa(\bm{C}))$.
+This threshold assumes only row-stochasticity of $\bm{C}_g$, nothing more.
+\end{theorem}
+\begin{proof}
+Row $i$ of $\bm{Q}_g$ places mass $\rho+(1-\rho)c_T$ on $\bm{T}_g(i)$ and mass
+$(1-\rho)\bm{C}_g(i,j)$ on each $j\ne \bm{T}_g(i)$, maximized over such $j$ at
+$(1-\rho)c_\star$; this uses only that $\bm{C}_g$ is a valid row-stochastic
+conditional law, not double stochasticity. The true successor is the
+unique row maximizer exactly when $\rho+(1-\rho)c_T>(1-\rho)c_\star$, i.e.\
+$\rho>(1-\rho)(c_\star-c_T)$, i.e.\ $\rho(1+c_\star-c_T)>c_\star-c_T$, which
+is \cref{eq:general-corruption-threshold} since $1+c_\star-c_T>0$. Taking
+the maximum of the right side over $(g,i)$ gives a single $\rho$ sufficient
+for every row. \Cref{prop:noise-convergence}'s convergence claim is
+likewise general, proved for any row-stochastic target law in
+\cref{app:noise-threshold-proof}.
+\end{proof}
+
+\begin{corollary}[Named corruption structures]
+\label{cor:noise-threshold-cases}
+Two corruption laws give \cref{eq:general-corruption-threshold}'s named
+special cases: one uniform on the $K-1$ wrong states has $c_T=0$,
+$c_\star=1/(K-1)$, so $\kappa=1/(K-1)$ and $\rho_{\rm pop}=1/K$; one instead
+following a fixed wrong permutation disagreeing with $\bm{T}_g$ in every row
+has $c_T=0$, $c_\star=1$, so $\kappa=1$ and $\rho_{\rm pop}=1/2$.
+\end{corollary}
+
+The population threshold above governs the row-stochastic limit. A finite
+corpus instead needs the true successor to win a \emph{plurality} of each
+row's empirical counts, and concentration gives a sample size sufficient
+for that with high probability.
+
+\begin{proposition}[Finite-sample recovery]
+\label{prop:finite-sample-recovery}
+With the row margin $\Delta_{g,i}:=\bm{Q}_g(i,\bm{T}_g(i))-\max_{j\ne \bm{T}_g(i)}\bm{Q}_g(i,j)>0$
+of \cref{cor:noise-threshold}'s proof, if row $(g,i)$ is observed $N_{g,i}$
+times i.i.d.\ from $\bm{Q}_g(i,\cdot)$ and
+\begin{equation}
+ N_{g,i}\ \ge\ \frac{2}{\Delta_{g,i}^2}\log\frac{K^2M}{\delta}
+ \quad\text{for every }(g,i),
+ \label{eq:finite-sample-recovery}
+\end{equation}
+then the empirical row plurality equals $\bm{T}_g(i)$ at every $(g,i)$
+simultaneously with probability at least $1-\delta$
+(\cref{app:noise-threshold-proof}).
+\end{proposition}
+
+This is a sufficient condition from a Hoeffding and union-bound argument,
+not a tight characterization, and it says nothing about an unrestricted
+Transformer's optimizer. \Cref{app:noise-threshold} reports the measured
+finite-sample frontier directly rather than substituting this bound for it.
+
+If, additionally, $s_0$ is uniform and independent of $g_{1:D}$
+(\cref{thm:complete-mixing}'s hypotheses) and every $\bm{C}_g$ is doubly
+stochastic, this recovery threshold has an exact closed-form gradient
+witness at the least-informed table, proved in
+\cref{app:noise-threshold-proof}: at $\bm{P}_g=\bm{U}$,
+\begin{equation}
+ \Rule{-\nabla_{\bm{P}_g}L_{\rm proc}}=f_g\left(\bm{Q}_g-\bm{U}\right),
+ \label{eq:noisy-process-credit}
+\end{equation}
+whose row-wise maximizer is exactly \cref{eq:general-corruption-threshold}'s
+recovery condition, and which for symmetric corruption specifically
+becomes
+\begin{equation}
+ \Rule{-\nabla_{\bm{P}_g}L_{\rm proc}}=f_g\,\tfrac{K\rho-1}{K-1}\left(\bm{T}_g-\bm{U}\right),
+ \label{eq:symmetric-noise-credit}
+\end{equation}
+pointing along the true rule for
+$\rho>1/K$, vanishing at $\rho=1/K$, and pointing away below. Double
+stochasticity and \cref{thm:complete-mixing}'s hypotheses enter only this
+closed-form identity, not the general recovery threshold above.
+
+At $\rho=1/K$ under symmetric corruption, $\bm{Q}_g=\bm{U}$, so local pairs provide no
+rule-identifying signal. At $\rho=0$, recovery by the least-probable successor
+uses the known corruption structure, as in \cref{sec:identifiability}.
+\Cref{app:noise-threshold-proof} distinguishes this population recovery from
+finite-sample estimation. These tabular conclusions do not specify a
+Transformer training threshold.
+\Cref{app:noise-threshold} evaluates \cref{eq:symmetric-noise-credit}'s
+coefficient directly across this $\rho$ range, including the sign flip at
+$\rho=1/K$. \Cref{app:credit-suppression} adds that the outcome half of
+\cref{thm:complete-mixing} stays at floating-point zero across the same
+sweep, since it does not depend on the process corruption law.
+
+\label{sec:outcome-rescue}
+\Cref{app:outcome-rescue-diagnostic} verifies, along the affine competence
+path $\bm{P}_g(a)=\bm{U}+a(\bm{T}_g-\bm{U})$ under symmetric corruption,
+that including the clean terminal target leaves the initial $1/K$
+threshold unchanged and characterizes how its contribution changes away
+from initialization. This auxiliary calculation concerns one fixed path,
+not arbitrary Transformer SGD.
+
+\subsection{Finite-sample recovery and the measured reliability frontier}
+\label{sec:identifiability}
+
+The population threshold describes the noisy conditional law. A finite corpus
+must also estimate that law accurately enough to preserve its row maxima,
+which \cref{prop:finite-sample-recovery} makes precise: a per-row sample
+size scaling as $\Delta_{g,i}^{-2}\log(K^2M/\delta)$ in the margin
+$\Delta_{g,i}$ suffices for every row's empirical plurality to match the
+truth with probability $1-\delta$. This is a sufficient condition, not a
+prediction of the measured frontier below, which the small cross-entropy
+gap near the threshold can still make fragile in practice.
+For $K=16$, recovery is possible in the population for every $\rho>6.25\%$,
+but the small cross-entropy gap near that threshold makes finite-sample
+recovery fragile. \Cref{app:noise-threshold} measures this with a tabular
+executor sharing the Boolean gate semantics and local corruption law with
+the Transformer sweeps, but separate corpora sampled uniformly over gate
+strings rather than gate families. Its empirical cross-entropy minimizer
+recovers all $KM=832$ rules and achieves $100\%$ held-out answer accuracy
+at every tested $\rho\ge0.20$ ($97.96\%$ of rules and $85.03\%$ answer
+accuracy at $\rho=0.15$; gradient descent from random logits reaches
+$95.70\%$ at $\rho=0.20$ using only the displayed local pairs), against
+the Transformer sweep's $7.8_{\;\text{0.9}}\%$ at $\rho=0.30$ and
+$18.0_{\;\text{7.1}}\%$ at $\rho=0.50$, where the tabular fit reaches
+$100\%$ --- demonstrating recovery under the corruption law, though the
+differing sampling and model classes prevent attributing the numerical
+gap solely to optimization. (Resampling the tabular fit under the sweep's
+gate-family sampling instead moves its $50\%$-crossing from
+$\rho\approx0.127$ to $\rho\approx0.138$: sampling is not what separates
+the two frontiers.)
+
+\Cref{fig:noise-threshold} (\cref{app:noise-threshold}) plots (a) the
+model's empirical optimum alongside the measured trained-model accuracy
+of \cref{tab:legacy-circuit} against the threshold \(\rho_c=1/K\) and
+chance, and (b) the same corruption rate under uniform wrong successors
+versus one fixed wrong rule, against thresholds \(1/K\) and \(1/2\).
+
+Even at $\rho=0$, where every displayed transition is invalid under its own
+prefix, the true successor remains identifiable as each row's unique
+least-frequent state, reversing rather than following the usual decoder's
+preference (\cref{app:noise-threshold}). Replacing uniform wrong
+successors by one fixed incorrect permutation changes the predicted
+threshold from $1/K$ to $1/2$: at $\rho=0.25$, the tabular study achieves
+$100\%$ answer accuracy under symmetric corruption but only $5.70\%$ under
+the coherent alternative (\cref{fig:noise-threshold}(b)) --- the amount of
+corruption alone does not determine recoverability, and the distinction
+between a population threshold, finite-sample estimation, and
+trained-model performance is essential when interpreting a measured
+reliability frontier. The same ordering appears in trained networks in
+five of six matched conditions across two task families. On the register
+machine, symmetric versus coherent corruption yields $69.8\%$ vs.\
+$13.3\%$ at $\rho=0.3$ and $88.7\%$ vs.\ $47.7\%$ at $\rho=0.5$
+(\cref{app:trained-corruption-structure}).
+
+% ==========================================================================
+\section{Gradient Directions in the Trained Transformer}
+\label{sec:gradient-alignment}
+
+The credit factorization and corruption-structure results above are exact
+inside the shared transition-table model, in coordinates
+$\Rule{-\nabla_{\bm{P}_g}L}$ with no canonical axis in an unrestricted
+Transformer (\cref{app:shared-kernel-embedding} realizes them only at one
+fixed, hand-constructed routing, not the routing an ordinarily trained
+network settles on). This section instead tests the corresponding
+\emph{angular-alignment} question: how closely does the training gradient
+align with the gradient of true local-transition supervision? We use
+$g_{\rm local}$ as an empirical reference direction, the gradient of directly
+supervising the true local transitions (only the $D\times4$ state-bit
+character positions in the displayed trace, excluding gate specifiers,
+separators, and the answer). \Cref{sec:operator-credit}'s credit
+factorization motivates the hypothesis of greater angular alignment for
+$g_{\rm proc}$ than $g_{\rm out}$. The test is $\cos(g_{\rm proc},g_{\rm local})\gg
+\cos(g_{\rm out},g_{\rm local})$, and \cref{tab:gradient-alignment} finds
+$0.80$--$0.88$ against approximately $0$. We compare $g_{\rm local}$
+against $g_{\rm proc}$ (the
+paper's own process-loss gradient) and $g_{\rm out}$ (the
+\emph{counterfactual} gradient of the paper's own outcome loss --- a
+wholly separate, trace-free encoding of the same instance, identical in
+construction to \cref{tab:supervision-comparison}'s \textsc{Outcome}
+condition but evaluated at process-trained parameters $L_{\rm out}$ itself
+never optimized) by cosine similarity and by the norm ratio
+$\|g\|/\|g_{\rm local}\|$, which reflects magnitude rather than only
+angle.
+
+We evaluate this diagnostic at initialization and at $25\%$, $50\%$, and
+$100\%$ of an $8{,}000$-step process-mode training run, for three seeds
+($2001$--$2003$), on a fixed held-out batch, using the same two-block GPT
+and training budget already behind \cref{tab:supervision-comparison},
+with no new architecture, task, or benchmark.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lrrrr}
+\toprule
+& Init & $25\%$ ($2{,}000$ steps) & $50\%$ ($4{,}000$ steps) & $100\%$ ($8{,}000$ steps)\\
+\midrule
+$\cos(g_{\rm local},g_{\rm proc})$ & $0.878_{\;0.005}$ & $0.804_{\;0.242}$ & $0.820_{\;0.129}$ & $0.826_{\;0.157}$\\
+$\cos(g_{\rm local},g_{\rm out})$ & $0.583_{\;0.027}$ & $0.062_{\;0.192}$ & $-0.006_{\;0.080}$ & $0.051_{\;0.041}$\\
+\midrule
+$\|g_{\rm proc}\|/\|g_{\rm local}\|$ & $0.553_{\;0.008}$ & $0.533_{\;0.144}$ & $0.524_{\;0.099}$ & $0.497_{\;0.088}$\\
+$\|g_{\rm out}\|/\|g_{\rm local}\|$ & $0.751_{\;0.016}$ & $47.7_{\;38.9}$ & $38.2_{\;12.2}$ & $79.1_{\;26.5}$\\
+\bottomrule
+\end{tabular}
+\caption{\textbf{Gradient-level credit asymmetry in the actual trained GPT.}
+Mean with sample standard deviation across three seeds, at each checkpoint
+of one process-mode training run. Cosine similarity of the process gradient
+and the counterfactual outcome gradient (both evaluated at the same
+process-trained $\theta$) with the oracle local-transition gradient, and
+the separate gradient-norm ratio, which isolates magnitude from the
+direction the cosine row already reports. Reproduction command, full
+per-seed values, and per-transition-position results in
+\cref{app:gradient-alignment}.}
+\label{tab:gradient-alignment}
+\end{table}
+
+At the same process-trained parameter states, the process gradient
+remains consistently rule-directed throughout training (cosine
+$0.80$--$0.88$, stable norm ratio $\approx0.50$--$0.55$), while the
+counterfactual outcome gradient's cosine with the oracle collapses
+toward zero and its norm grows to $38$--$79\times$ larger by
+mid-to-late training. This establishes weak angular alignment for the
+outcome gradient. Its large norm means its signed projection need not be
+small (\cref{app:gradient-alignment}).
+Because $L_{\rm local}$ supervises positions contained within the process
+objective, positive process--local alignment is partly structural. The
+informative part is its stable magnitude alongside the large-magnitude,
+near-zero-cosine outcome gradient at identical parameters, an asymmetry
+that appears at all eight transition positions, not just one
+(\cref{app:gradient-alignment}).
+
+Initialization is the checkpoint closest to the uniform table
+\cref{thm:complete-mixing} describes, yet shows the mildest measured
+asymmetry (cosine $0.58$, norm ratio $0.75$) --- not a discrepancy, since
+that theorem is an exact fact about the uniform \emph{table}, not about a
+randomly initialized Transformer's actual parameters, which need not
+realize it.
+
+The exact mechanism concerns $\bm P_g$-projected credit, whereas these
+measurements concern full-network gradients with no canonical map to the
+table coordinates. They establish an angular asymmetry, not its cause or
+a bound on raw first-order improvement. The signed oracle-projection
+coefficient $\langle g,g_{\rm local}\rangle/\|g_{\rm local}\|^2$ is positive
+and stable for the process gradient in the archived runs. For the outcome
+gradient it varies substantially across seeds and checkpoints and can
+be large and positive despite a small cosine (\cref{app:gradient-alignment}).
+
+Everything above evaluates $g_{\rm out}$ counterfactually, at
+process-trained parameters. The mirror experiment --- training under
+outcome supervision instead, and evaluating all three gradients at
+\emph{those} checkpoints --- shows the same asymmetry from the other
+side: the actual, no-longer-counterfactual outcome gradient's cosine
+with the oracle collapses to near zero ($0.01$--$0.12$ from step $2000$
+onward) and its norm becomes much smaller than the oracle's, while the now
+counterfactual process gradient at those same parameters stays strongly
+rule-directed (cosine $0.88$--$0.92$), if anything higher than at
+process-trained checkpoints (\cref{app:gradient-alignment}).
+
+% ==========================================================================
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{Traces and process supervision.}
+Scratchpads and chain-of-thought externalize intermediate computation
+\citep{nye2021scratchpads,wei2022cot}, and process supervision makes those
+objects targets \citep{cobbe2021training,uesato2022solving,lightman2023verify}.
+Why decomposition helps has been attributed to sample complexity and learnable
+sub-tasks \citep{wies2023subtask,hanneke2026samplecomplexityautoregressivereasoning},
+to training-distribution locality \citep{prystawski2023think}, to a
+globality barrier \citep{abbe2024globality,abbe2023sgd}, and to added serial
+computation
+\citep{feng2023towards,merrill2024expressive,li2024chain,malach2023autoregressive},
+with compositional failures at depth in \citet{dziri2023faith}.  Our focus is
+credit assignment: the shared transition-table model's objectives share
+parameters and a common correct solution, so their local gradients compare
+directly.
+
+\paragraph{Noisy reasoning traces and process-versus-outcome theory.}
+Fine-tuning on algorithmic chains of thought tolerates substantial
+trace-level noise empirically \citep{havrilla2024noise}, and robustness
+to noisy or irrelevant rationales at inference time is a related, active
+question \citep{zhou2024noisyrationales}. Both operate without the
+shared-parameter, exact-executor structure analyzed here.
+\citet{jia2025verify} give a statistical-complexity comparison of process
+and outcome supervision under coverage assumptions, addressing a
+different obstruction to the same qualitative claim: our comparison
+concerns the local optimization geometry of a shared transition table.
+Within this model, \cref{cor:noise-threshold}'s $\rho>1/K$ threshold
+under symmetric corruption is the local-rule specialization of the
+classical multiclass noise-tolerance argument discussed below, not a new
+fact about noise tolerance by itself. Our contribution is the
+supervision-placement analysis of local credit in a shared compositional
+model (\cref{sec:operator-credit}), together with the corruption-structure
+functional governing its recovery (\cref{cor:noise-threshold}).
+\Cref{prop:outcome-rescue} adds a pathwise consequence when the clean
+terminal answer is included: composition depth and that supervision's
+weight jointly determine how the threshold moves away from $\rho=1/K$,
+since terminal credit enters the combined objective only at order
+$a^{D-1}$ in the local rule's own competence.
+
+\paragraph{Identifiability of local structure from terminal behavior.}
+Whether terminal supervision determines the process that produced it is a
+different axis from either statistical learnability or optimization
+geometry. \citet{jia2025verify}'s comparison shows outcome supervision
+need not be statistically much harder than process supervision under
+coverage assumptions, up to polynomial factors in horizon.
+\citet{hanneke2026samplecomplexityautoregressivereasoning} show that
+revealing the autoregressive chain can remove a dependence on generation
+length in a distinct sample-complexity framework. Neither addresses
+whether the terminal map itself determines its local generators:
+\cref{thm:group-symmetry-nonidentifiability} shows it need not, via a
+commuting symmetry $\bm A^D=\bm I$ that leaves every depth-$D$ terminal
+observation unchanged while changing every local rule. The general
+question --- when two structured maps agree on every input of a given
+form --- is old: equality sets of free-monoid homomorphisms have been
+studied since \citet{salomaa1978equality}. What is specific here is the
+placement of that ambiguity inside the process-versus-outcome supervision
+question, as a third obstruction distinct from the other two: statistical
+learnability, factor identifiability, and optimization credit are
+different quantities, addressed here by an exact construction
+(\cref{thm:group-symmetry-nonidentifiability}) rather than a trained-network
+measurement, alongside \cref{cor:near-mixing}'s credit-transmission gap and
+\cref{cor:noise-threshold}'s corruption-recovery gap. A related discipline
+separates correct solutions from bad optimization geometry rather than
+identifiability specifically: \citet{makkuva2025attentionmarkov} do so in a
+small Markov-prediction model, and \cref{thm:complete-mixing} follows the
+same discipline, identifying a stationary population point without
+asserting that gradient descent reaches or remains near it.
+
+\paragraph{Learning from corrupted supervision.}
+Learning from corrupted class labels is a developed subject: unbiased risk
+estimators and loss correction under known noise rates
+\citep{natarajan2013noisy,patrini2017loss}, uniform-label-noise tolerance of
+risk minimization \citep{manwani2013noise}, which losses inherit that
+tolerance and which --- cross-entropy among them --- do not
+\citep{ghosh2017robust}, and the surrounding literature
+\citep{frenay2014classification}. \Cref{cor:noise-threshold} is the
+local-rule counterpart of the symmetric-noise statement there. Process
+credit at complete mixing is governed by the noisy conditional law
+$\bm{Q}_g$, whose row maximizer is the classical noise-tolerant one. We
+claim no novelty for that step. Three things are specific here.
+First, the corrupted object is a trajectory, so per-row correctness must
+survive a conjunction over $D$ steps rather than one per-label statement.
+Second, the threshold compares two \emph{placements} of supervision at one
+parameter, against an outcome gradient that is exactly zero there even
+with perfect answers. Third, at $\rho=0$ the corpus still determines the executor while
+the cross-entropy optimum decodes to a wrong rule in every row, an
+instance of that objective's lack of noise tolerance
+\citep{ghosh2017robust} whose discarded information can be exhibited
+(\cref{sec:identifiability,app:noise-threshold-proof}).
+
+% ==========================================================================
+\section{Discussion and Limitations}
+\label{sec:discussion}
+
+\paragraph{Summary.} Together, the results establish four points:
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=2pt]
+ \item Process supervision helps because it supplies local rule credit
+ directly, instead of through the outcome loss's forward $\times$ backward
+ product (\cref{sec:operator-credit}).
+ \item Composition hurts outcome supervision specifically because that
+ product is suppressed geometrically in depth and vanishes exactly at the
+ least-informed point (\cref{thm:complete-mixing}).
+ \item Wrong traces can still teach the right rule because recovery
+ depends on corruption structure, not corruption rate alone
+ (\cref{cor:noise-threshold}), and a finite corpus preserves it above an
+ explicit, margin-dependent sample size (\cref{prop:finite-sample-recovery}).
+ \item The mechanism is realizable inside actual Transformer parameters at
+ fixed routing (\cref{app:shared-kernel-embedding}), and its directional
+ signature is observed in a trained Transformer's own gradients
+ (\cref{sec:gradient-alignment}).
+\end{itemize}
+
+\paragraph{Limitations and what remains open.}
+The shared transition-table model's analysis establishes projected credit
+bounds and population stationarity under its stochasticity and data
+assumptions. It does not by itself establish that a trained network's
+optimizer reaches or stays near the identified point. The tasks are
+synthetic finite sequential computations, the observed reliability
+frontiers depend on corruption, sampling, architecture, and training
+budget, and the tabular noise study uses a different gate-sampling
+distribution from the Transformer sweep (the reproducibility statement
+identifies provenance and rerun details for every archived result). The
+cross-task replication in \cref{tab:cross-task-summary} covers only two
+further families and, for the state machine, with substantially higher
+seed variance than the other two. What remains open is quantitative
+prediction of the unrestricted Transformer's own optimization trajectory
+and reliability frontier.

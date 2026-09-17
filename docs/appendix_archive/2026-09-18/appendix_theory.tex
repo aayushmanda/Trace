@@ -1,0 +1,1297 @@
+% !TEX root = main.tex
+%=============================================================================
+% appendix_theory.tex  --  credit identities and proofs for the shared
+% shared transition-table model results (theory content scoped to the kept sections).
+%=============================================================================
+
+\section{Proofs for the Shared Transition-Table Model}
+\label{app:operator-proofs}
+
+This appendix proves \cref{thm:forward-backward,cor:near-mixing,prop:outcome-nonidentifiability,thm:complete-mixing,prop:loss-path}. All
+gradients are Euclidean gradients in transition-probability coordinates. If a
+gate occurs more than once, its shared-matrix gradient is the sum of the
+occurrence-level gradients.
+
+\subsection{Tangent-space projections}
+\label{app:tangent-projections}
+
+Let
+\[
+ \mathcal T=\{X\in\mathbb R^{K\times K}:X\mathbf1=0\},\qquad
+ \mathcal C=\{X\in\mathcal T:\mathbf1^\top X=0\}.
+\]
+For any matrix \(\bm{G}\),
+\begin{equation}
+ \operatorname{Proj}_{\mathcal T}(\bm{G})=\bm{G}\bm{\Pi},\qquad
+ \operatorname{Proj}_{\mathcal C}(\bm{G})=\bm{\Pi} \bm{G}\bm{\Pi}.
+ \label{eq:tangent-projections}
+\end{equation}
+To verify the first identity, note that \(\bm{G}\bm{\Pi}\) has zero row sums. The
+discarded matrix \(GU\) is constant within each row and is orthogonal to every
+\(X\in\mathcal T\). Applying the same argument to columns proves the second
+identity. This also gives the orthogonal decomposition
+\[
+ \mathcal T=\mathcal M\oplus\mathcal C,\qquad
+ \mathcal M=\{\mathbf1c^\top:\mathbf1^\top c=0\}.
+\]
+The subspace \(\mathcal M\) changes destination marginals equally for every
+source. The subspace \(\mathcal C\) changes source-dependent destinations.
+Since a permutation matrix is doubly stochastic, \(\bm{T}_g-\bm{U}\in\mathcal C\).
+
+This is the operator the main text calls \(\Rule{\cdot}\):
+\begin{equation}
+ \Rule{\bm{G}}\;\define\;\operatorname{Proj}_{\mathcal C}(\bm{G})=\bm{\Pi} \bm{G}\bm{\Pi} .
+ \label{eq:rule-operator}
+\end{equation}
+The centered signals of \cref{eq:centered-signals} are the same projection
+applied to vectors. For any probability vector \(\bm{q}\) and any vector \(\bm{b}\),
+\[
+ \bm{\Pi} \bm{q}=\bm{q}-\bm{u}=\fwdsig,
+ \qquad
+ \bm{\Pi} \bm{b}=\bm{b}-\operatorname{mean}(\bm{b})\mathbf1=\bwdsig ,
+\]
+so \(\bm{\Pi}\) removes exactly the part of a signal that is common to every state.
+Below we write \(\operatorname{Proj}_{\mathcal C}\) and \(\bm{\Pi}\) directly.
+
+\subsection{Factorization and the depth bound}
+\label{app:factorization-proof}
+
+\begin{proof}
+\emph{Step 1: differentiate the terminal probability.}
+Fix an occurrence of gate $g$ at position $t$ and write $\bm P_t=\bm P_g$ for
+its table. By associativity and \cref{eq:forward-backward},
+\[
+ p_y=\bm{q}_{t-1}^{\top}\bm{P}_t\bm{b}_t=\sum_{i=1}^K\sum_{j=1}^K(\bm q_{t-1})_i(\bm P_t)_{ij}(\bm b_t)_j.
+\]
+Neither $\bm q_{t-1}$ nor $\bm b_t$ depends on the entries of this particular
+occurrence of $\bm P_t$: $\bm q_{t-1}$ is built only from tables at earlier
+positions and $\bm b_t$ only from tables at later positions. Differentiating
+the display entrywise therefore treats $(\bm q_{t-1})_i$ and $(\bm b_t)_j$ as
+constants, giving
+\[
+ \frac{\partial p_y}{\partial(\bm{P}_t)_{ij}}
+ =(\bm{q}_{t-1})_i(\bm{b}_t)_j
+ \quad\text{for every }i,j,
+ \qquad\text{i.e.}\qquad
+ \nabla_{\bm P_t}p_y=\bm q_{t-1}\bm b_t^\top.
+\]
+Since $\ell_{\rm out}=-\log p_y$, the chain rule gives
+$\nabla_{\bm P_t}\ell_{\rm out}=-p_y^{-1}\nabla_{\bm P_t}p_y$, so
+\[
+ -\nabla_{\bm{P}_t}\ell_{\rm out}
+ =\frac{\bm{q}_{t-1}\bm{b}_t^\top}{p_y}.
+\]
+By \cref{eq:tangent-projections}, projecting a matrix $\bm G$ onto the
+feasible tangent space $\mathcal T$ means right-multiplying by $\bm\Pi$; doing
+so here, and using that $\bm\Pi$ passes through the scalar $1/p_y$ and acts
+only on the second factor of the outer product, $(\bm q_{t-1}\bm b_t^\top)\bm\Pi=\bm q_{t-1}(\bm b_t^\top\bm\Pi)=\bm q_{t-1}(\bm\Pi\bm b_t)^\top$
+(using $\bm\Pi^\top=\bm\Pi$), gives
+\begin{equation}
+ -\operatorname{Proj}_{\mathcal T}\nabla_{\bm{P}_t}\ell_{\rm out}
+ =\frac{\bm{q}_{t-1}\bwdsig_t^{\top}}{p_y}.
+ \label{eq:feasible-credit}
+\end{equation}
+Projecting once more onto $\mathcal C$ means left-multiplying \cref{eq:feasible-credit}
+by $\bm\Pi$ as well: $\bm\Pi\bigl(\bm q_{t-1}\bwdsig_t^\top\bigr)=(\bm\Pi\bm q_{t-1})\bwdsig_t^\top=\fwdsig_{t-1}\bwdsig_t^\top$,
+which gives exactly \cref{eq:conditional-credit}.
+
+\emph{Step 2: characterize vanishing conditional credit.}
+A rank-one matrix $\bm x\bm y^\top\in\R^{K\times K}$ is the zero matrix if and
+only if $\bm x=\bm0$ or $\bm y=\bm0$: if instead $x_i\ne0$ and $y_j\ne0$ for
+some $i,j$, then $(\bm x\bm y^\top)_{ij}=x_iy_j\ne0$. Applying this to
+\cref{eq:conditional-credit}, the conditional credit at occurrence $t$
+vanishes exactly when $\fwdsig_{t-1}=\bm0$ or $\bwdsig_t=\bm0$. Since
+$\bm q_{t-1}$ is a probability vector, $\fwdsig_{t-1}=\bm\Pi\bm q_{t-1}=\bm q_{t-1}-\bm u=\bm0$
+exactly when $\bm q_{t-1}=\bm u$, i.e.\ the belief state reaching step $t$ is
+exactly uniform. Likewise $\bwdsig_t=\bm b_t-\operatorname{mean}(\bm b_t)\mathbf1=\bm0$
+exactly when every entry of $\bm b_t$ agrees with the mean, i.e.\ $\bm b_t$ is
+a scalar multiple of $\mathbf1$.
+
+\emph{Step 3: compute the local process gradient and its lower bound.}
+For the local target $\ell_t=-\log(\bm P_t)_{r,d}$ with $r=s_{t-1}$, $d=s_t$,
+this loss depends on $\bm P_t$ only through the single entry
+$(\bm P_t)_{r,d}$, so the identical differentiation as in Step 1 (with
+$\bm q_{t-1}\bm b_t^\top$ replaced by the rank-one matrix $\bm e_r\bm e_d^\top$,
+which has a $1$ at $(r,d)$ and $0$ elsewhere) gives
+$-\nabla_{\bm P_t}\ell_t=\bm e_r\bm e_d^\top/(\bm P_t)_{r,d}$, and hence, by the
+same two-sided $\bm\Pi$-multiplication as in Step 1,
+\[
+ \operatorname{Proj}_{\mathcal C}(-\nabla_{\bm P_t}\ell_t)
+ =\frac{(\bm{\Pi} \bm{e}_r)(\bm{\Pi} \bm{e}_d)^\top}{(\bm{P}_t)_{r,d}}.
+\]
+To bound its Frobenius norm, first note that for any $\bm x,\bm y\in\R^K$,
+\[
+ \|\bm x\bm y^\top\|_F^2=\sum_{i,j}(x_iy_j)^2
+ =\Bigl(\sum_i x_i^2\Bigr)\Bigl(\sum_j y_j^2\Bigr)=\|\bm x\|_2^2\|\bm y\|_2^2,
+ \qquad\text{so}\qquad
+ \|\bm x\bm y^\top\|_F=\|\bm x\|_2\|\bm y\|_2 .
+\]
+Next, for any basis vector $\bm e_i$, $\bm\Pi\bm e_i=\bm e_i-\bm u$ has $k$-th
+entry $\delta_{ik}-1/K$, so
+\[
+ \|\bm\Pi\bm e_i\|_2^2
+ =\Bigl(1-\tfrac1K\Bigr)^2+(K-1)\Bigl(\tfrac1K\Bigr)^2
+ =1-\tfrac2K+\tfrac1{K^2}+\tfrac{K-1}{K^2}
+ =1-\tfrac2K+\tfrac1K=1-\tfrac1K,
+\]
+independently of $i$. Combining the last two displays with $r,d$ in place of
+$i$,
+\[
+ \left\|\operatorname{Proj}_{\mathcal C}(-\nabla_{\bm P_t}\ell_t)\right\|_F
+ =\frac{\|\bm\Pi\bm e_r\|_2\|\bm\Pi\bm e_d\|_2}{(\bm P_t)_{r,d}}
+ =\frac{1-1/K}{(\bm P_t)_{r,d}}\ge1-\frac1K,
+\]
+the last inequality because $(\bm P_t)_{r,d}\le1$. This proves
+\cref{eq:process-credit-lower}.
+
+\emph{Step 4: the forward and backward residuals contract geometrically.}
+Now assume every participating table is doubly stochastic and write
+$\bm{P}_j=\bm{U}+\bm{E}_j$ with $\|\bm E_j\|_2\le\rulestr$. Doubly stochastic means
+$\bm P_j\mathbf1=\mathbf1$ and $\mathbf1^\top\bm P_j=\mathbf1^\top$; since also
+$\bm U\mathbf1=\mathbf1$ and $\mathbf1^\top\bm U=\mathbf1^\top$ (as $\bm U=\mathbf1\mathbf1^\top/K$),
+subtracting gives $\bm E_j\mathbf1=\bm0$ and $\mathbf1^\top\bm E_j=\bm0^\top$ for
+every participating $j$. Consequently
+\[
+ \bm U\bm E_j=\tfrac1K\mathbf1(\mathbf1^\top\bm E_j)=\bm0,
+ \qquad
+ \bm E_j\bm U=\tfrac1K(\bm E_j\mathbf1)\mathbf1^\top=\bm0,
+\]
+and since $\bm\Pi=\bm I-\bm U$, also $\bm\Pi\bm E_j=\bm E_j-\bm U\bm E_j=\bm E_j$
+and $\bm E_j\bm\Pi=\bm E_j-\bm E_j\bm U=\bm E_j$. Transposing both identities
+and using $\bm\Pi^\top=\bm\Pi$ shows the same absorption holds for the
+transpose: $\bm\Pi\bm E_j^\top=\bm E_j^\top\bm\Pi=\bm E_j^\top$. In
+particular $\bm\Pi\bm P_j\bm\Pi=\bm\Pi(\bm U+\bm E_j)\bm\Pi=\bm\Pi\bm U\bm\Pi+\bm\Pi\bm E_j\bm\Pi
+=\bm0+\bm E_j=\bm E_j$ (using $\bm\Pi\bm U=\bm0$ and $\bm\Pi\bm E_j\bm\Pi=(\bm\Pi\bm E_j)\bm\Pi=\bm E_j\bm\Pi=\bm E_j$),
+so $\bm E_j=\bar{\bm P}_j$ exactly, matching \cref{cor:near-mixing}'s notation.
+
+We claim $\bm{P}_1\cdots \bm{P}_r=\bm{U}+\bm{E}_1\cdots \bm{E}_r$ for every $r\ge1$
+(with the empty product at $r=0$ equal to $\bm I$), by induction on $r$. The
+base case $r=1$ is the definition $\bm P_1=\bm U+\bm E_1$. For the inductive
+step, suppose $\bm P_1\cdots\bm P_{r-1}=\bm U+\bm F$ with
+$\bm F=\bm E_1\cdots\bm E_{r-1}$; then $\bm F\mathbf1=\bm E_1\cdots\bm E_{r-2}(\bm E_{r-1}\mathbf1)=\bm0$
+by repeated use of $\bm E_j\mathbf1=\bm0$, so $\bm F\bm U=\tfrac1K\bm F\mathbf1\mathbf1^\top=\bm0$.
+Then, using $\bm U\bm U=\bm U$ (since $\bm U^2=\tfrac1{K^2}\mathbf1(\mathbf1^\top\mathbf1)\mathbf1^\top=\tfrac1{K^2}\mathbf1\cdot K\cdot\mathbf1^\top=\bm U$),
+\[
+ \bm P_1\cdots\bm P_r=(\bm U+\bm F)(\bm U+\bm E_r)
+ =\bm U\bm U+\bm U\bm E_r+\bm F\bm U+\bm F\bm E_r
+ =\bm U+\bm0+\bm0+\bm E_1\cdots\bm E_r,
+\]
+proving the claim.
+
+Fix an occurrence $t$. Writing $\bm F_{t-1}=\bm E_1\cdots\bm E_{t-1}$ for the
+$r=t-1$ instance of the claim, and using $\bm q_{t-1}=(\bm P_1\cdots\bm P_{t-1})^\top\bm e_{s_0}$,
+\[
+ \bm q_{t-1}=(\bm U+\bm F_{t-1})^\top\bm e_{s_0}=\bm U\bm e_{s_0}+\bm F_{t-1}^\top\bm e_{s_0}=\bm u+\bm F_{t-1}^\top\bm e_{s_0},
+\]
+using $\bm U^\top=\bm U$ and $\bm U\bm e_{s_0}=\bm u$. Since $\bm\Pi\bm u=\bm u-\bm u=\bm0$,
+\[
+ \fwdsig_{t-1}=\bm\Pi\bm q_{t-1}=\bm\Pi\bm F_{t-1}^\top\bm e_{s_0}.
+\]
+Because $\bm F_{t-1}^\top=\bm E_{t-1}^\top\cdots\bm E_1^\top$ and each factor
+absorbs a left $\bm\Pi$ (shown above), $\bm\Pi\bm F_{t-1}^\top=\bm F_{t-1}^\top$
+exactly, so $\fwdsig_{t-1}=\bm F_{t-1}^\top\bm e_{s_0}$. Writing
+$\bm e_{s_0}=\bm u+\bm\Pi\bm e_{s_0}$ and noting
+$\bm E_1^\top\bm u=\bm0$ (transpose of $\mathbf1^\top\bm E_1=\bm0^\top$, giving
+$\bm E_1^\top\mathbf1=\bm0$, hence $\bm E_1^\top\bm u=\bm E_1^\top\mathbf1/K=\bm0$),
+we get $\bm F_{t-1}^\top\bm u=\bm E_{t-1}^\top\cdots\bm E_2^\top(\bm E_1^\top\bm u)=\bm0$,
+so
+\[
+ \fwdsig_{t-1}=\bm F_{t-1}^\top\bm e_{s_0}=\bm F_{t-1}^\top\bm\Pi\bm e_{s_0}.
+\]
+Taking norms and applying submultiplicativity of the spectral norm across
+the $t-1$ factors of $\bm F_{t-1}^\top$,
+\begin{equation}
+ \|\fwdsig_{t-1}\|_2\le\|\bm E_1^\top\|_2\cdots\|\bm E_{t-1}^\top\|_2\,\|\bm\Pi\bm e_{s_0}\|_2
+ =\Bigl(\textstyle\prod_{j<t}\|\bm E_j\|_2\Bigr)\sqrt{1-\tfrac1K},
+ \label{eq:forward-tail-bound}
+\end{equation}
+using $\|\bm E_j^\top\|_2=\|\bm E_j\|_2$ and the norm
+$\|\bm\Pi\bm e_{s_0}\|_2=\sqrt{1-1/K}$ from Step 3. The identical argument
+applied to $\bm b_t=(\bm E_{t+1}\cdots\bm E_D)\bm e_y+\bm u$ (the same claim
+with $r=D-t$ factors $\bm E_{t+1},\ldots,\bm E_D$, applied on the left instead
+of transposed, since $\bm b_t=\bm P_{t+1}\cdots\bm P_D\bm e_y$ needs no
+transpose) gives
+\begin{equation}
+ \|\bwdsig_t\|_2\le\Bigl(\textstyle\prod_{j>t}\|\bm E_j\|_2\Bigr)\sqrt{1-\tfrac1K}.
+ \label{eq:backward-tail-bound}
+\end{equation}
+If a common bound $\|\bm E_j\|_2\le\rulestr$ holds for every participating
+$j$, \cref{eq:forward-tail-bound,eq:backward-tail-bound} specialize to
+$\|\fwdsig_{t-1}\|_2\le\rulestr^{t-1}\sqrt{1-1/K}$ and
+$\|\bwdsig_t\|_2\le\rulestr^{D-t}\sqrt{1-1/K}$.
+
+\emph{Step 5: combine.} By \cref{eq:conditional-credit} and
+$\|\bm x\bm y^\top\|_F=\|\bm x\|_2\|\bm y\|_2$ again, and using
+$\bm E_j=\bar{\bm P}_j$ from Step 4 and $p_y\ge\alpha$,
+\[
+ \left\|\operatorname{Proj}_{\mathcal C}(-\nabla_{\bm{P}_t}\ell_{\rm out})\right\|_F
+ =\frac{\|\fwdsig_{t-1}\|_2\|\bwdsig_t\|_2}{p_y}
+ \le\frac{1-1/K}{\alpha}\prod_{j\ne t}\|\bar{\bm P}_{g_j}\|_2
+ =\frac{1-1/K}{\alpha}\,\chi_t,
+\]
+which is \cref{eq:general-credit-bound}. If additionally
+$\|\bar{\bm P}_j\|_2\le\rulestr$ for every participating $j$, then
+$\chi_t\le\rulestr^{(t-1)+(D-t)}=\rulestr^{D-1}$ regardless of $t$, giving
+\cref{eq:depth-credit-bound}. This proves \cref{cor:near-mixing}.
+\end{proof}
+
+\paragraph{A comparison in one normalization.} \Cref{eq:process-credit-lower}
+and \cref{eq:depth-credit-bound} are both per-occurrence bounds, so contrasting
+$1-1/K$ against $\rulestr^{D-1}/\alpha$ already compares like with like; the
+population objectives are not automatically comparable, since $L_{\rm proc}$
+in \cref{eq:shared-process-loss} averages $D$ such occurrences with an
+explicit $1/D$ while $L_{\rm out}$ does not. Carrying the per-occurrence
+process bound through that average does not, however, introduce a hidden
+$D^{-1}$ decay: \cref{thm:complete-mixing} computes the resulting population
+credit exactly as $f_g(\bm{Q}_g-\bm{U})$, with $f_g=D^{-1}\sum_t\Pr(g_t=g)$ the
+gate's own visiting \emph{frequency}, not a count --- $\Theta(1)$ in $D$
+whenever a gate's per-step probability does not itself vanish with $D$, as
+in this paper's tasks. The shared-table outcome gradient instead sums
+occurrences without a $1/D$ factor:
+\[
+ \nabla_{\bm P_g}L_{\rm out}
+ =\mathbb E\!\left[\sum_{t=1}^D\mathbf1\{g_t=g\}
+      \nabla_{\bm P_t}\ell_{\rm out}\right].
+\]
+Linearity of $\Rule{\cdot}$, the triangle inequality, and
+\cref{cor:near-mixing}, with the same $\alpha$ and $\rulestr$ for every
+example, therefore give
+\begin{equation}
+ \left\|\Rule{-\nabla_{\bm P_g}L_{\rm out}}\right\|_F
+ \le D f_g\,\frac{1-1/K}{\alpha}\,\rulestr^{D-1}.
+ \label{eq:population-outcome-credit-bound}
+\end{equation}
+For clean supervision at complete mixing, process credit is
+$f_g(\bm T_g-\bm U)$; for fixed $K$ and $f_g$ bounded below independently
+of $D$, its norm is $\Theta(1)$. With fixed $\alpha>0$, the population
+outcome ceiling is $O(D f_g\rulestr^{D-1})$, still exponentially suppressed
+for fixed $\rulestr<1$ despite the polynomial prefactor $D$. The
+per-occurrence ceiling remains $O(\rulestr^{D-1})$, and the exact zero at
+complete mixing is unchanged. These are upper bounds on outcome credit,
+not matching lower bounds, since particular products can cancel further.
+
+Outcome supervision can fail to identify the true rule for a second,
+independent reason beyond the vanishing-gradient geometry just proved: a
+source--gate pair that is never visited on any supported trajectory leaves
+no trace in $L_{\rm out}$ at all, regardless of gradient magnitude.
+
+\begin{proposition}[Outcome non-identifiability under under-excitation]
+\label{prop:outcome-nonidentifiability}
+Let $\bm{P}_g=\bm{T}_g$ for every gate except possibly at one row $i^\star$ of
+one gate $g^\star$, where $\bm{P}_{g^\star}(i^\star,\cdot)=\bm{v}$ for an
+arbitrary row-stochastic $\bm{v}$. If the pair $(g^\star,i^\star)$ is never
+visited on the true trajectory of any prompt in the training distribution's
+support --- i.e., $(g_t,s_{t-1})\ne(g^\star,i^\star)$ for every $t\in[D]$ and
+every $(s_0,g_{1:D})$ with positive probability --- then $L_{\rm out}$ is
+unchanged by this replacement for every such $\bm{v}$: the modified table is
+a global minimizer of $L_{\rm out}$ whenever $\bm{P}_g=\bm{T}_g$ everywhere
+is, so $L_{\rm out}$ alone cannot identify $\bm{T}_{g^\star}(i^\star,\cdot)$
+from any amount of training data drawn from this distribution.
+\end{proposition}
+\begin{proof}
+Since every other row of every $\bm{P}_g$ already equals $\bm{T}_g$'s and each
+$\bm{T}_g$ is a permutation, induction on $t$ shows the model's own belief
+state $\bm{q}_t=\bm{P}_{g_t}^\top\cdots\bm{P}_{g_1}^\top\bm{e}_{s_0}$ equals
+$\bm{e}_{s_t}$ exactly, for the true trajectory $s_t$, at every step of
+every supported prompt: $\bm{q}_0=\bm{e}_{s_0}$ by definition, and if
+$\bm{q}_{t-1}=\bm{e}_{s_{t-1}}$ with $(g_t,s_{t-1})\ne(g^\star,i^\star)$ by
+hypothesis, then $\bm{q}_t=\bm{P}_{g_t}^\top\bm{e}_{s_{t-1}}=\bm{T}_{g_t}^\top
+\bm{e}_{s_{t-1}}=\bm{e}_{s_t}$ regardless of $\bm{v}$, since row $i^\star$ of
+$\bm{P}_{g^\star}$ is never the row selected. Row $i^\star$ is therefore
+never read by the forward computation of any supported prompt, so
+$p_y=\bm{e}_{s_0}^\top\bm{P}_{g_1}\cdots\bm{P}_{g_D}\bm{e}_y$ --- and hence
+$L_{\rm out}$, an expectation over this same distribution --- does not
+depend on $\bm{v}$.
+\end{proof}
+
+\Cref{prop:outcome-nonidentifiability}'s ambiguity closes under full
+coverage: if every $(g,i)$ pair is visited with positive probability, the
+argument no longer applies. A second, independent source of
+non-identifiability survives even then.
+
+\begin{theorem}[Group-symmetry non-identifiability]
+\label{thm:group-symmetry-nonidentifiability}
+Let $\{\bm{T}_g\}_{g\in\mathcal G}\subset S_K$ be the true gate permutations
+and let $\bm A\in S_K$, $\bm A\ne\bm I$, commute with every $\bm T_g$ (an
+element of the centralizer of the generated group
+$\langle\bm T_g:g\in\mathcal G\rangle$), with $\bm A^D=\bm I$ for the task's
+fixed depth $D$. Define $\bm T'_g:=\bm T_g\bm A$ for every $g\in\mathcal G$.
+Then $\bm T'_g\ne\bm T_g$ for every $g$, yet
+\[
+ \bm T'_{g_1}\cdots\bm T'_{g_D}=\bm T_{g_1}\cdots\bm T_{g_D}
+\]
+for every sequence $g_1,\ldots,g_D\in\mathcal G$ (repeats allowed), so
+$\{\bm T'_g\}$ and $\{\bm T_g\}$ are distinct gate-to-permutation
+assignments inducing identical terminal behavior on every depth-$D$ word.
+Consequently $L_{\rm out}$ does not identify $\{\bm T_g\}$ from
+$\{\bm T'_g\}$ under any training distribution supported on depth-$D$
+prompts, however complete its coverage, whereas process supervision (which
+displays $s_t=\bm T_{g_t}(s_{t-1})$ under the fixed labeling that defines
+$\{\bm T_g\}$) distinguishes them at every step.
+\end{theorem}
+\begin{proof}
+$\bm T'_g=\bm T_g\iff\bm T_g\bm A=\bm T_g\iff\bm A=\bm I$ (multiply by
+$\bm T_g^{-1}$), contradicting $\bm A\ne\bm I$; so $\bm T'_g\ne\bm T_g$ for
+every $g$. For the composition, since $\bm A$ commutes with every $\bm T_g$,
+\[
+ \bm T'_{g_1}\cdots\bm T'_{g_D}
+ =(\bm T_{g_1}\bm A)(\bm T_{g_2}\bm A)\cdots(\bm T_{g_D}\bm A)
+ =\bm T_{g_1}\bm T_{g_2}\cdots\bm T_{g_D}\,\bm A^D
+ =\bm T_{g_1}\cdots\bm T_{g_D},
+\]
+moving each $\bm A$ rightward past every subsequent $\bm T_{g_j}$ one
+factor at a time (each such transposition uses
+$\bm A\bm T_{g_j}=\bm T_{g_j}\bm A$) and using $\bm A^D=\bm I$. Both
+assignments therefore give the same $p_y=\bm e_{s_0}^\top\bm T_{g_1}\cdots
+\bm T_{g_D}\bm e_y$ for every prompt, hence the same $L_{\rm out}$ for every
+distribution over depth-$D$ prompts, so no amount of outcome-only training
+data distinguishes them. A process target instead displays $s_t$ directly
+under the $\{\bm T_g\}$-labeling at every step, so a model matching
+$\{\bm T'_g\}$ at row $i$ is directly penalized whenever
+$\bm T'_g(i)=\bm T_g(\bm A(i))\ne\bm T_g(i)$, which holds exactly when
+$\bm A(i)\ne i$ (since $\bm T_g$ is injective) --- i.e.\ at every row $\bm A$
+moves, and every row unless $\bm A$ happens to fix it.
+\end{proof}
+
+Whether such an $\bm A$ exists depends entirely on the gate family: a
+generating set rich enough to produce all or most of $S_K$ has trivial
+centralizer (the centralizer of $S_n$ in itself is trivial for $n\ge3$), so
+this specific construction gives nothing for a near-universal family like
+this paper's Boolean-circuit gates. It is not vacuous, however: any abelian
+generated group has this property with room to spare, since every element
+commutes with every other. \Cref{app:shift-symmetry-task} constructs one
+such family explicitly, as a worked example rather than a trained-network
+measurement.
+
+A trivial centralizer of $\langle\bm T_g\rangle$ itself is not the right
+sufficient condition for identifiability, however: a gate family can have
+trivial centralizer and still admit a distinct zero-loss executor at a
+fixed depth $D$, since the escaping symmetry need only commute with the
+\emph{differences} between gates, not with each gate individually. A
+sufficient criterion uses the difference group.
+
+\Cref{thm:fixed-depth-identifiability} is stated in \cref{sec:operator-credit}.
+This appendix gives the proof.
+\begin{proof}
+\emph{Step 1: every $\bm P_g$ is a permutation.} Full support gives
+$\bm P_{g_1}\cdots\bm P_{g_D}=\bm T_{g_1}\cdots\bm T_{g_D}=:\bm T$, a
+permutation, for every word. Taking determinants, every $\bm P_{g_i}$ is
+invertible ($\det\bm T=\pm1\ne0$ forces every factor's determinant nonzero).
+Isolating one factor, $\bm P_{g_1}^{-1}=(\bm P_{g_2}\cdots\bm P_{g_D})\bm T^{-1}$
+is a product of nonnegative matrices, hence nonnegative; since $\bm P_{g_1}$
+is also nonnegative (row-stochastic), it is a nonnegative matrix with a
+nonnegative inverse, hence a monomial matrix, and row-stochasticity forces
+its single nonzero entry per row to equal $1$: $\bm P_{g_1}$ is a genuine
+permutation matrix. The same argument isolates every other factor of every
+word, so every $\bm P_g:=\bm S_g$ used anywhere is a permutation.
+
+\emph{Step 2: two one-sided decompositions of $\bm S_g$.} Fix a reference
+gate $h_0$. Full support gives, for every $g\in\mathcal G$,
+\[
+ \bm S_g\bm S_{h_0}^{D-1}=\bm T_g\bm T_{h_0}^{D-1}
+ \quad\text{and}\quad
+ \bm S_{h_0}^{D-1}\bm S_g=\bm T_{h_0}^{D-1}\bm T_g,
+\]
+the first from words $(g,h_0,\ldots,h_0)$, the second from words
+$(h_0,\ldots,h_0,g)$ (each with $D-1$ copies of $h_0$). Since every
+$\bm S_g,\bm T_g$ is invertible, these give
+\[
+ \bm S_g=\bm T_g\bm A,\qquad \bm A:=\bm T_{h_0}^{D-1}\bm S_{h_0}^{-(D-1)},
+ \qquad\qquad
+ \bm S_g=\bm B\bm T_g,\qquad \bm B:=\bm S_{h_0}^{-(D-1)}\bm T_{h_0}^{D-1},
+\]
+for every $g\in\mathcal G$, with $\bm A,\bm B$ independent of $g$.
+
+\emph{Step 3: $\bm B\in C_{S_K}(H)$.} Equating the two decompositions,
+$\bm T_g\bm A=\bm B\bm T_g$, i.e.\ $\bm A=\bm T_g^{-1}\bm B\bm T_g$, for
+every $g$. Since the left side does not depend on $g$, for any
+$g_1,g_2\in\mathcal G$, $\bm T_{g_1}^{-1}\bm B\bm T_{g_1}=\bm T_{g_2}^{-1}
+\bm B\bm T_{g_2}$, and rearranging,
+$\bm B(\bm T_{g_2}\bm T_{g_1}^{-1})=(\bm T_{g_2}\bm T_{g_1}^{-1})\bm B$: $\bm B$
+commutes with every generator of $H$, so $\bm B\in C_{S_K}(H)$.
+
+\emph{Step 4: conclude.} If $C_{S_K}(H)=\{\bm I\}$, then $\bm B=\bm I$, so
+$\bm T_g=\bm S_g\bm B^{-1}\cdot\bm B=\bm B\bm T_g$ gives (from Step 2's second
+relation) $\bm S_g=\bm B\bm T_g=\bm T_g$ directly, for every $g\in\mathcal G$.
+\end{proof}
+
+This gives a complementary sufficient identifiability criterion to
+\cref{thm:group-symmetry-nonidentifiability}'s ambiguity construction.
+Any alternative zero-loss executor induces a nonidentity
+$\bm B\in C_{S_K}(H)$; the proof does not show that every such centralizer
+element constructs an alternative at the chosen depth.
+Since $H\le\langle\bm T_g\rangle$ and this inclusion can be strict,
+$C_{S_K}(\langle\bm T_g\rangle)\le C_{S_K}(H)$; triviality of the former
+does not imply triviality of the latter in general. The sufficient
+criterion therefore concerns differences between gates.
+\Cref{app:identifiability-certificate} verifies $C_{S_K}(H)=\{\bm I\}$
+computationally for this paper's own Boolean-circuit gate family, so its
+outcome failure is not attributable to an alternative exact factorization
+of the terminal map.
+
+\subsection{Population stationarity}
+\label{app:population-stationarity}
+\begin{proof}
+Throughout, fix the gate sequence $g_{1:D}$ and reason about the randomness
+in $s_0$ conditional on it; by hypothesis $s_0$ is uniform and independent
+of $g_{1:D}$.
+
+\emph{Step 1: the true trajectory is uniform at every step.} Each $\bm T_g$
+is a permutation matrix, so for the fixed sequence $g_{1:D}$ the map
+$s_0\mapsto s_t$ obtained by applying $\bm T_{g_1},\ldots,\bm T_{g_t}$ in
+turn is a composition of $t$ permutations of $[K]$, hence itself a
+permutation of $[K]$. A permutation applied to a uniform random variable is
+again uniform, so conditional on $g_{1:D}$, each $s_t$ ($t=0,\ldots,D$) is
+uniform on $[K]$.
+
+\emph{Step 2: the outcome credit vanishes identically for $t<D$.} Set
+$\bm P_g=\bm U$ for every gate. Fix an occurrence at position $t<D$; by
+\cref{eq:forward-backward}, $\bm b_t=\bm P_{t+1}\cdots\bm P_D\bm e_y=\bm U\cdots\bm U\bm e_y$,
+a product of at least one $\bm U$ applied (possibly repeatedly) to $\bm e_y$.
+Since $\bm U\bm x=\mathbf1(\mathbf1^\top\bm x)/K$ is always a multiple of
+$\mathbf1$ for any vector $\bm x$, and $\bm U\bm u=\bm u$ (because
+$\mathbf1^\top\bm u=1$), applying $\bm U$ once already gives $\bm u$, and
+applying it again leaves $\bm u$ unchanged; so $\bm b_t=\bm u$ regardless of
+how many factors of $\bm U$ remain in the product. Hence
+$\bwdsig_t=\bm\Pi\bm b_t=\bm\Pi\bm u=\bm0$, and by \cref{eq:conditional-credit}
+the projected credit at this occurrence,
+$\Rule{-\nabla_{\bm P_t}\ell_{\rm out}}=\fwdsig_{t-1}\bwdsig_t^\top/p_y$, is
+the zero matrix --- for every realization of the prompt, not merely in
+expectation.
+
+\emph{Step 3: the outcome credit at $t=D$ vanishes only after averaging over
+$s_D$.} At the final occurrence, $\bm q_{D-1}=\bm P_{D-1}^\top\cdots\bm P_1^\top\bm e_{s_0}=\bm U^\top\cdots\bm U^\top\bm e_{s_0}=\bm u$
+by the same collapsing argument (using $\bm U^\top=\bm U$), and
+$\bm b_D=\bm e_y=\bm e_{s_D}$ (the empty product). Then
+$p_y=\bm q_{D-1}^\top\bm P_D\bm b_D=\bm u^\top\bm U\bm e_{s_D}=\bm u^\top\bm u=1/K$,
+using $\bm U\bm e_{s_D}=\bm u$ and $\mathbf1^\top\bm u=1$ so
+$\bm u^\top\bm u=(1/K)\mathbf1^\top\bm u=1/K$. By \cref{eq:feasible-credit},
+the tangent-space (not yet fully $\mathcal C$-projected) credit at this
+occurrence is
+\[
+ -\operatorname{Proj}_{\mathcal T}\nabla_{\bm P_D}\ell_{\rm out}
+ =\frac{\bm q_{D-1}\bwdsig_D^\top}{p_y}
+ =\frac{\bm u(\bm\Pi\bm e_{s_D})^\top}{1/K}
+ =K\bm u(\bm\Pi\bm e_{s_D})^\top
+ =\mathbf1(\bm\Pi\bm e_{s_D})^\top,
+\]
+using $K\bm u=\mathbf1$. For a \emph{fixed} realization of $s_D$ this need
+not be zero: the outcome objective can retain a nonzero tangent-space
+signal at any single instance. But taking the expectation over $s_D$
+conditional on $g_{1:D}$, and using Step 1 ($s_D$ uniform given $g_{1:D}$,
+so $\E[\bm e_{s_D}\mid g_{1:D}]=\bm u$),
+\[
+ \E\bigl[\bm\Pi\bm e_{s_D}\mid g_{1:D}\bigr]=\bm\Pi\,\E[\bm e_{s_D}\mid g_{1:D}]=\bm\Pi\bm u=\bm0,
+\]
+so the $t=D$ contribution to the \emph{population} feasible gradient
+vanishes as well. Combining Steps 2 and 3, and summing over any repeated
+occurrences of the same gate across positions (\cref{app:operator-proofs}'s
+convention that a shared table's gradient is the sum of its occurrence-level
+gradients), gives $(-\nabla_{\bm P_g}L_{\rm out})\bm\Pi=\bm0$ for every gate
+$g$: the first identity in \cref{eq:process-recovers-table}.
+
+\emph{Step 4: the process credit equals $f_g(\bm T_g-\bm U)$ exactly.} Fix
+an occurrence of gate $g$ at position $t$, and let $r=s_{t-1}$ be the
+(random) source state reached there. At $\bm P_t=\bm U$ every entry equals
+$1/K$, including the true local target $(\bm P_t)_{r,\bm T_g(r)}=1/K$, so by
+the computation in \cref{app:factorization-proof} the projected local-process
+credit at this occurrence is
+\[
+ \operatorname{Proj}_{\mathcal C}(-\nabla_{\bm P_t}\ell_t)
+ =\frac{(\bm{\Pi} \bm{e}_r)(\bm{\Pi} \bm{e}_{\bm{T}_g(r)})^\top}{1/K}
+ =K(\bm{\Pi} \bm{e}_r)(\bm{\Pi} \bm{e}_{\bm{T}_g(r)})^\top.
+\]
+By Step 1, conditional on $g_{1:D}$ the source $r$ is uniform on $[K]$, so
+averaging over $r$,
+\begin{align*}
+ \frac1K\sum_{r=1}^K K(\bm{\Pi} \bm{e}_r)(\bm{\Pi} \bm{e}_{\bm{T}_g(r)})^\top
+ &=\bm{\Pi}\left(\sum_{r=1}^K\bm e_r\bm e_{\bm{T}_g(r)}^\top\right)\bm{\Pi}\\
+ &=\bm{\Pi} \bm{T}_g\bm{\Pi},
+\end{align*}
+where the first equality distributes $\bm\Pi$ out of the finite sum by
+linearity, and the second uses that $\sum_r\bm e_r\bm e_{\bm T_g(r)}^\top$ is
+exactly the entrywise definition of the permutation matrix $\bm T_g$ (its
+$(r,j)$ entry is $1$ iff $j=\bm T_g(r)$). Since $\bm T_g$ is doubly
+stochastic, the same computation as for $\bm E_j$ in
+\cref{app:factorization-proof} gives $\bm U\bm T_g=\bm T_g\bm U=\bm U$
+(concretely, $\bm U\bm T_g=\tfrac1K\mathbf1(\mathbf1^\top\bm T_g)=\tfrac1K\mathbf1\mathbf1^\top=\bm U$,
+using $\mathbf1^\top\bm T_g=\mathbf1^\top$), so
+\[
+ \bm\Pi\bm T_g\bm\Pi=(\bm I-\bm U)\bm T_g(\bm I-\bm U)
+ =\bm T_g-\bm U\bm T_g-\bm T_g\bm U+\bm U\bm T_g\bm U
+ =\bm T_g-\bm U-\bm U+\bm U=\bm T_g-\bm U.
+\]
+Averaging further over the $D$ positions of the sequence, and summing
+repeated occurrences of gate $g$ as before, the definition
+$f_g=D^{-1}\sum_{t=1}^D\Pr(g_t=g)$ gives exactly
+\[
+ \Rule{-\nabla_{\bm P_g}L_{\rm proc}}=f_g(\bm T_g-\bm U),
+\]
+the second identity in \cref{eq:process-recovers-table}.
+
+\emph{Step 5: the row maximizer recovers $\bm T_g$.} Row $i$ of $\bm T_g$ is
+the one-hot row vector with a $1$ at column $\bm T_g(i)$, so row $i$ of
+$\bm T_g-\bm U$ has value $1-1/K$ at column $\bm T_g(i)$ and value $-1/K$ at
+every other column. Since $1-1/K>-1/K$ for every $K\ge1$, the unique row
+maximizer of $f_g(\bm T_g-\bm U)$'s row $i$, whenever $f_g>0$, is column
+$\bm T_g(i)$; this holds for every $i$, so the row-wise maximizer of the
+process rule credit identifies every successor of $\bm T_g$.
+\end{proof}
+
+\subsection{Loss on the affine table path}
+\label{app:affine-path-proof}
+
+\begin{proposition}[Order of improvement along the true rules]
+\label{prop:loss-path}
+Let each $\bm{T}_g$ be a permutation matrix and set $\bm{P}_g(a)=\bm{U}+a(\bm{T}_g-\bm{U})$ for
+$0\le a\le1$. For any prompt distribution and depth $D\ge2$,
+\begin{align}
+ L_{\rm out}(a)&=\log K-\log\!\left(1+(K-1)a^D\right),
+ \label{eq:outcome-flat-path}\\
+ L_{\rm proc}(a)&=\log K-\log\!\left(1+(K-1)a\right).
+ \label{eq:process-linear-path}
+\end{align}
+At $a=0$, the first $D-1$ outcome derivatives vanish, while
+$L_{\rm proc}'(0)=-(K-1)$.
+\end{proposition}
+\begin{proof}
+Fix any gates $g_1,\ldots,g_D$ and write $\bm E_g=\bm T_g-\bm U$, so
+$\bm P_g(a)=\bm U+a\bm E_g$ by definition.
+
+\emph{Step 1: $\bm U\bm E_g=\bm E_g\bm U=\bm0$, and
+$\bm E_g\bm E_h=\bm T_g\bm T_h-\bm U$ for any two gates $g,h$.} Since $\bm T_g$
+is a permutation matrix it is doubly stochastic:
+$\bm T_g\mathbf1=\mathbf1$, $\mathbf1^\top\bm T_g=\mathbf1^\top$; and
+$\bm U\mathbf1=\mathbf1$, $\mathbf1^\top\bm U=\mathbf1^\top$ as well. Subtracting
+gives $\bm E_g\mathbf1=\bm0$ and $\mathbf1^\top\bm E_g=\bm0^\top$, exactly as
+in \cref{app:factorization-proof}, from which
+$\bm U\bm E_g=\tfrac1K\mathbf1(\mathbf1^\top\bm E_g)=\bm0$ and
+$\bm E_g\bm U=\tfrac1K(\bm E_g\mathbf1)\mathbf1^\top=\bm0$. For the product
+identity, expand directly:
+\[
+ \bm E_g\bm E_h=(\bm T_g-\bm U)(\bm T_h-\bm U)
+ =\bm T_g\bm T_h-\bm T_g\bm U-\bm U\bm T_h+\bm U\bm U.
+\]
+Since $\bm T_g$ is doubly stochastic, the same computation shows
+$\bm T_g\bm U=\tfrac1K(\bm T_g\mathbf1)\mathbf1^\top=\tfrac1K\mathbf1\mathbf1^\top=\bm U$,
+and symmetrically $\bm U\bm T_h=\bm U$; and $\bm U\bm U=\bm U$ since
+$\bm U^2=\tfrac1{K^2}\mathbf1(\mathbf1^\top\mathbf1)\mathbf1^\top=\tfrac1{K^2}\mathbf1\cdot K\cdot\mathbf1^\top=\bm U$.
+Substituting,
+\[
+ \bm E_g\bm E_h=\bm T_g\bm T_h-\bm U-\bm U+\bm U=\bm T_g\bm T_h-\bm U.
+\]
+
+\emph{Step 2: the product formula, by induction on $D$.} We claim
+\[
+ \prod_{t=1}^D\bm P_{g_t}(a)=\prod_{t=1}^D(\bm U+a\bm E_{g_t})
+ =\bm U+a^D\bigl(\bm T_{g_1}\cdots\bm T_{g_D}-\bm U\bigr)
+\]
+for every $D\ge1$. The base case $D=1$ is the definition
+$\bm P_{g_1}(a)=\bm U+a\bm E_{g_1}=\bm U+a^1(\bm T_{g_1}-\bm U)$. For the
+inductive step, suppose the claim holds at $D-1$, i.e.\
+$\prod_{t=1}^{D-1}\bm P_{g_t}(a)=\bm U+a^{D-1}\bm F$ with
+$\bm F:=\bm T_{g_1}\cdots\bm T_{g_{D-1}}-\bm U$. Since a product of
+permutation matrices is again a permutation matrix, Step 1 applies to $\bm F$
+exactly as it did to each $\bm E_g$, giving $\bm U\bm F=\bm F\bm U=\bm0$.
+Then, using $\bm U\bm U=\bm U$,
+\begin{align*}
+ \prod_{t=1}^D\bm P_{g_t}(a)
+ &=\bigl(\bm U+a^{D-1}\bm F\bigr)\bigl(\bm U+a\bm E_{g_D}\bigr)\\
+ &=\bm U\bm U+a\,\bm U\bm E_{g_D}+a^{D-1}\bm F\bm U+a^D\bm F\bm E_{g_D}\\
+ &=\bm U+\bm0+\bm0+a^D\bm F\bm E_{g_D},
+\end{align*}
+using $\bm U\bm E_{g_D}=\bm0$ (Step 1 applied to $g_D$). Finally, the same
+product identity as in Step 1 --- which only used that both factors are
+built from doubly stochastic matrices minus $\bm U$ --- gives
+$\bm F\bm E_{g_D}=(\bm T_{g_1}\cdots\bm T_{g_{D-1}}-\bm U)(\bm T_{g_D}-\bm U)=\bm T_{g_1}\cdots\bm T_{g_D}-\bm U$,
+proving the claim at $D$.
+
+\emph{Step 3: reading off the terminal and local entries.} Fix a prompt
+$(s_0,g_{1:D})$ with true answer $y$, so that $\bm T_{g_1}\cdots\bm T_{g_D}$'s
+$(s_0,y)$ entry equals $1$ (this composed permutation matrix's row $s_0$ has
+its single $1$ exactly at column $y$, the true terminal state). By
+\cref{eq:terminal-probability} and Step 2,
+\[
+ p_y(a)=\bm e_{s_0}^\top\Bigl[\bm U+a^D(\bm T_{g_1}\cdots\bm T_{g_D}-\bm U)\Bigr]\bm e_y
+ =\frac1K+a^D\Bigl(1-\frac1K\Bigr)=\frac{1+(K-1)a^D}{K},
+\]
+using $\bm e_{s_0}^\top\bm U\bm e_y=1/K$ (every entry of $\bm U$ equals $1/K$)
+and $\bm e_{s_0}^\top(\bm T_{g_1}\cdots\bm T_{g_D})\bm e_y=1$ (the $(s_0,y)$
+entry just identified). The right-hand side does not depend on which prompt
+was fixed, only on $a$, $K$, $D$; since $L_{\rm out}(a)=\E[-\log p_y(a)]$ and
+$-\log p_y(a)=\log K-\log(1+(K-1)a^D)$ identically for every prompt in the
+support, the expectation over prompts equals this same constant:
+\[
+ L_{\rm out}(a)=\log K-\log\bigl(1+(K-1)a^D\bigr),
+\]
+proving \cref{eq:outcome-flat-path}.
+
+For the process loss, fix any single occurrence of a gate $g$ with true
+local transition $r\to\bm T_g(r)$. By definition $\bm P_g(a)=\bm U+a(\bm T_g-\bm U)$,
+and row $r$ of $\bm T_g$ places a $1$ at column $\bm T_g(r)$, so
+\[
+ (\bm P_g(a))_{r,\bm T_g(r)}=\frac1K+a\Bigl(1-\frac1K\Bigr)=\frac{1+(K-1)a}{K},
+\]
+again independent of $r$, $g$, and the prompt. Every one of the $D$ local
+terms in $L_{\rm proc}(a)=D^{-1}\sum_t\E[-\log(\bm P_{g_t}(a))_{s_{t-1},s_t}]$
+therefore equals the same constant $\log K-\log(1+(K-1)a)$, and so does
+their average:
+\[
+ L_{\rm proc}(a)=\log K-\log\bigl(1+(K-1)a\bigr),
+\]
+proving \cref{eq:process-linear-path}.
+
+\emph{Step 4: the derivative claims.} Using the Taylor expansion
+$\log(1+z)=z-\tfrac12z^2+O(z^3)$ as $z\to0$: setting $z=(K-1)a^D$ in the
+outcome-loss identity,
+\[
+ L_{\rm out}(a)=\log K-(K-1)a^D+O(a^{2D}),
+\]
+whose derivatives of order $1,\ldots,D-1$ at $a=0$ all vanish, since every
+nonconstant term is $O(a^D)$ or higher order; the $D$-th derivative at $a=0$
+is $-(K-1)D!$, nonzero. Setting $z=(K-1)a$ in the process-loss identity,
+\[
+ L_{\rm proc}(a)=\log K-(K-1)a+O(a^2),\qquad\text{so}\qquad L_{\rm proc}'(0)=-(K-1).
+\]
+Since the identities in Step 3 hold for every individual prompt (not merely
+after averaging), and each population loss is obtained by averaging the
+\emph{same} function of $a$ over the prompt distribution, both
+\cref{eq:outcome-flat-path,eq:process-linear-path} and the derivative
+claims hold regardless of how the initial state $s_0$ is distributed.
+\end{proof}
+
+\subsection{Reliability mixtures and gradient contributions}
+\label{app:mixture-proof}
+
+The constructions above concern deterministic correct targets.  To model the
+reliability experiment, instead let $X$ be a prompt, let $B$ be an independent
+Bernoulli variable with success probability $\rho$, and let the trace be drawn
+from the clean or corrupt condition according to $B$.  The final answer remains
+correct.  Within the corrupt condition, the trace may also be random.
+
+\paragraph{Gradient of a reliability mixture.}
+Let $\mathcal L_{\rm clean}(\bm{\theta};X)$ and
+$\mathcal L_{\rm corrupt}(\bm{\theta};X,Z)$ be differentiable per-example losses,
+where $Z$ describes trace corruption.  Suppose the data laws are independent of
+$\bm{\theta}$ and differentiation commutes with expectation, as it does for finite
+support at differentiable parameter values.  Use a fixed per-example weighting
+rule.  Then
+\begin{equation}
+ L_\rho=\rho L_{\rm clean}+(1-\rho)L_{\rm corrupt},\qquad
+ \nabla L_\rho=\rho g_{\rm clean}+(1-\rho)g_{\rm corrupt},
+ \label{eq:mixture-gradient}
+\end{equation}
+where $g_b=\nabla L_b$ at the same parameter value. This is an elementary
+consequence of the law of total expectation, used repeatedly below. We
+record it once here rather than re-deriving it at each use.
+
+\begin{proof}
+Write the per-example loss as
+$\mathcal L(\bm\theta;X,Z,B)=B\,\mathcal L_{\rm clean}(\bm\theta;X)+(1-B)\,\mathcal L_{\rm corrupt}(\bm\theta;X,Z)$,
+so that $\mathcal L=\mathcal L_{\rm clean}$ when $B=1$ (probability $\rho$) and
+$\mathcal L=\mathcal L_{\rm corrupt}$ when $B=0$ (probability $1-\rho$),
+matching the description of the reliability experiment. Taking the
+expectation over $B$ first, with $(X,Z)$ held fixed, and then over $(X,Z)$,
+\begin{align*}
+ L_\rho&=\E_{X,Z,B}[\mathcal L(\bm\theta;X,Z,B)]\\
+ &=\E_{X,Z}\Bigl[\E_B[B]\,\mathcal L_{\rm clean}(\bm\theta;X)+\E_B[1-B]\,\mathcal L_{\rm corrupt}(\bm\theta;X,Z)\Bigr]\\
+ &=\rho L_{\rm clean}+(1-\rho)L_{\rm corrupt},
+\end{align*}
+using $\E_B[B]=\rho$, $\E_B[1-B]=1-\rho$, and that $B$ is independent of
+$(X,Z)$ so it may be integrated out first. This is the first identity in
+\cref{eq:mixture-gradient}. Because $\rho$ and $1-\rho$ do not depend on
+$\bm\theta$, and differentiation commutes with the expectations defining
+$L_{\rm clean}$ and $L_{\rm corrupt}$ by hypothesis,
+\begin{align*}
+ \nabla L_\rho&=\nabla\bigl[\rho L_{\rm clean}(\bm\theta)+(1-\rho)L_{\rm corrupt}(\bm\theta)\bigr]\\
+ &=\rho\nabla L_{\rm clean}(\bm\theta)+(1-\rho)\nabla L_{\rm corrupt}(\bm\theta)
+ =\rho g_{\rm clean}+(1-\rho)g_{\rm corrupt}
+\end{align*}
+by linearity of the gradient operator, where both $g_{\rm clean}$ and
+$g_{\rm corrupt}$ are evaluated at the \emph{same} $\bm\theta$: the identity
+is silent about gradients computed at different parameter values, so it
+does not license substituting in gradients from two separately trained
+models.
+\end{proof}
+
+\proofstep{Normalization and finite datasets.}
+The proposition uses per-example averaging.  If loss is instead normalized by
+the total number of supervised tokens, the effective clean weight depends on
+mean token counts: in a population token average it is
+$\rho\,\E[T_{\rm clean}]/(\rho\E[T_{\rm clean}]+(1-\rho)\E[T_{\rm corrupt}])$.
+The intended weight $\rho$ is recovered when those means agree.  In a fixed
+finite dataset the exact identity uses the empirical clean fraction and the
+losses on the assigned subsets.  Reusing nested assignments does not make every
+subset identical across $\rho$.
+
+\proofstep{From a fixed-checkpoint sign change to an actual threshold.}
+For a fixed reference direction $v$ with $a=\ip{g_{\rm clean}}{v}>0>b=\ip{g_{\rm corrupt}}{v}$,
+the mixture projection $\ip{\nabla L_\rho}{v}=\rho a+(1-\rho)b$ changes sign at
+some $\rho_\star\in(0,1)$. By itself this is only a fixed-checkpoint fact,
+silent about training dynamics. \Cref{prop:noisy-process-credit} below
+computes $a$ and $b$ explicitly for the corruption law these experiments
+use, turning this observation into the actual recovery threshold.
+
+\proofstep{Between-condition gradient variation.}
+If a sampled gradient $\bm{G}$ has conditional means $\bm{g}_{\rm clean},\bm{g}_{\rm corrupt}$
+and conditional covariance matrices $\bm{\Sigma}_{\rm clean},\bm{\Sigma}_{\rm corrupt}$,
+then the law of total covariance gives
+\begin{align}
+ \operatorname{Cov}(\bm{G})
+ &=\rho\bm{\Sigma}_{\rm clean}+(1-\rho)\bm{\Sigma}_{\rm corrupt}\\
+ &\quad+\rho(1-\rho)(g_{\rm clean}-g_{\rm corrupt})
+                         (g_{\rm clean}-g_{\rm corrupt})^\top.
+ \label{eq:mixture-covariance}
+\end{align}
+To verify the last term, the conditional means differ from the mixture mean by
+$(1-\rho)(g_{\rm clean}-g_{\rm corrupt})$ and
+$-\rho(g_{\rm clean}-g_{\rm corrupt})$, respectively.  Weighting their outer
+products gives the stated coefficient $\rho(1-\rho)$.  Thus reliability can
+change both the mean gradient and its variability.
+
+Assigning corruption per whole trace (matching the released generators,
+\cref{app:legacy-protocol}) versus per occurrence changes this covariance
+without changing the mean gradient, since both share the same
+$\rho$-weighted average. We do not carry that comparison further here, as
+it concerns gradient variance rather than the reliability threshold of
+\cref{cor:noise-threshold}, which depends only on the mean.
+
+
+\subsection{The reliability threshold for local credit}
+\label{app:noise-threshold-proof}
+
+This subsection proves
+\cref{prop:noise-convergence,cor:noise-threshold,eq:noisy-process-credit},
+in the shared transition-table model of \cref{sec:operator-credit}. The
+convergence and recovery-threshold claims hold for any row-stochastic
+corruption law $\bm{C}_g$; only the closed-form gradient identity at
+$\bm{P}_g=\bm{U}$ additionally needs \cref{thm:complete-mixing}'s
+hypotheses (uniform $s_0$ independent of $g_{1:D}$) and double
+stochasticity of every $\bm{C}_g$. We
+first record the clean ($\rho=1$) special case, which the general argument
+below extends unchanged to noisy targets.
+
+\begin{remark}[Clean convergence, the $\rho=1$ case]
+\label{cor:clean-convergence}
+Let each $\bm{T}_g$ be a permutation matrix and $f_g>0$. In row-logit coordinates
+$\bm{P}_{g,i,\cdot}=\softmax(a_{g,i})$, the population process loss $L_{\rm proc}$
+is convex in each $a_{g,i}$ and separable across the $KM$ pairs $(g,i)$. A
+clean target places all its mass on the true successor, so a sufficiently
+small constant step size drives gradient-descent loss values to their
+infimum from any finite initialization, with every predicted row
+$\bm{P}_{g,i,\cdot}$ converging to the one-hot distribution $\bm{T}_g[i,\cdot]$
+(unattained at finite parameters, since $\bm{T}_g$ is a permutation). Once
+every row favors the true successor, induction gives exact greedy
+execution. No comparable guarantee holds for $L_{\rm out}$:
+\cref{thm:complete-mixing} shows its projected gradient is exactly zero at
+the natural starting point $\bm{P}_g=\bm{U}$, so at that point there is no
+first-order rule-directed signal toward $\bm{T}_g$.
+\end{remark}
+
+\proofstep{What the corruption law is.}
+The released generators build a corrupted trace from its own displayed prefix:
+at step $t$ they compute the valid successor $\Phi(\widetilde s_{t-1},g_t)$ of
+the \emph{corrupted} state and then emit a different state, so every displayed
+transition is invalid under its own prefix rather than merely different from the
+clean trajectory.  Write $\bm{C}_g$ for the resulting conditional law of the
+displayed successor given the displayed source and the gate.  A
+$\rho$-reliable pool then induces the conditional local law
+\begin{equation}
+ \bm{Q}_g=\rho \bm{T}_g+(1-\rho)\bm{C}_g ,
+ \label{eq:induced-local-law}
+\end{equation}
+provided the displayed source has the same law in the clean and the corrupted
+condition.  It does whenever $\bm{C}_g$ is doubly stochastic: the initial state is
+uniform, every $\bm{T}_g$ is a permutation, and a doubly stochastic kernel preserves
+the uniform law, so the displayed state is uniform at every step of both walks.
+Assigning corruption to whole traces rather than to single steps therefore
+changes how displayed pairs are correlated \emph{within} a trace, but not this
+conditional law, and only the conditional law enters the population gradient.
+For a general, non-doubly-stochastic $\bm{C}_g$, a whole-trace $\rho$-reliable
+pool need not induce \cref{eq:induced-local-law} exactly, since the
+displayed source's own law can then depend on whether the trace was
+corrupted; \cref{def:local-reliability} sidesteps this by taking
+\cref{eq:induced-local-law} itself as the definition of the local
+reliability $\rho$, which coincides with the whole-trace rate exactly in
+the doubly-stochastic case just verified.
+The two assignments do change the \emph{variance} of the aggregated gradient,
+through the within-condition terms of \cref{app:mixture-proof}'s general
+mixture-variance identity (\cref{eq:mixture-covariance}); that appendix does
+not carry the per-trace-versus-per-occurrence comparison further, since
+neither the mean gradient nor the reliability threshold below depends on it.
+
+\begin{proposition}[Population process credit under corrupted targets]
+\label{prop:noisy-process-credit}
+In the setting above, with every $\bm{C}_g$ doubly stochastic, at $\bm{P}_g=\bm{U}$
+\begin{equation}
+ \Rule{-\nabla_{\bm{P}_g}L_{\rm proc}}
+ =f_g\,\bm{\Pi} \bm{Q}_g\bm{\Pi}
+ =f_g\left(\bm{Q}_g-\bm{U}\right),
+ \label{eq:noisy-credit-proof}
+\end{equation}
+and the row-wise maximizer of $\Rule{-\nabla_{\bm{P}_g}L_{\rm proc}}$ equals the
+row-wise maximizer of $\bm{Q}_g$.  If a corrupted target is uniform on the $K-1$
+states other than the valid successor, then
+$\bm{C}_g-\bm{U}=-\frac{1}{K-1}(\bm{T}_g-\bm{U})$ and
+\begin{equation}
+ \Rule{-\nabla_{\bm{P}_g}L_{\rm proc}}
+ =f_g\,\frac{K\rho-1}{K-1}\left(\bm{T}_g-\bm{U}\right),
+ \label{eq:symmetric-credit-proof}
+\end{equation}
+so the credit is positively aligned with the true rule iff $\rho>1/K$, zero at
+$\rho=1/K$, and negatively aligned below.  If instead every corrupted target
+follows one fixed rule $\bm{T}_g'$ with $\bm{T}_g'(i)\ne \bm{T}_g(i)$, the row maximizer is
+correct iff $\rho>1/2$.
+\end{proposition}
+
+\begin{proof}
+\emph{Step 1: one displayed pair, at $\bm P_g=\bm U$.} For an occurrence of
+gate $g$ with displayed source $i$ and displayed target $j$, the per-example
+process term is $\ell=-\log(\bm P_g)_{ij}$. This is exactly the local target
+considered in \cref{app:factorization-proof} with $r=i$, $d=j$, so its
+feasible conditional gradient is, by that proof,
+\[
+ \Rule{-\nabla_{\bm P_g}\ell}=\frac{(\bm\Pi\bm e_i)(\bm\Pi\bm e_j)^\top}{(\bm P_g)_{ij}}.
+\]
+At $\bm P_g=\bm U$, every entry $(\bm P_g)_{ij}=1/K$, so this equals
+$K(\bm\Pi\bm e_i)(\bm\Pi\bm e_j)^\top$.
+
+\emph{Step 2: average over the displayed target $j$, then the displayed
+source $i$.} Conditional on the displayed source $i$, the displayed target
+$j$ has law $\bm Q_g(i,\cdot)$ by \cref{eq:induced-local-law} --- a mixture
+of the true successor (probability $\rho$) and the corrupted successor
+(probability $1-\rho$); this is \cref{eq:mixture-gradient}'s
+mixture-linearity applied to the indicator vector $\bm e_j$ in place of a
+whole loss. Since $\E[\bm e_j\mid i]=\bm Q_g(i,\cdot)^\top$ (the row
+$\bm Q_g(i,\cdot)$ read as a column vector), averaging Step 1's expression
+over $j$ gives $K(\bm\Pi\bm e_i)\bigl(\bm\Pi\,\bm Q_g(i,\cdot)^\top\bigr)^\top$
+for each fixed $i$.
+
+The displayed source $i$ is itself uniform on $[K]$ (the same argument as
+Step 1 of \cref{app:population-stationarity}, which used only that each
+$\bm T_g$ is a permutation and $s_0$ is uniform, both still assumed here),
+so averaging further over $i$,
+\[
+ \frac1K\sum_{i=1}^{K}K\,\bm{\Pi} \bm{e}_i\bigl(\bm\Pi\,\bm Q_g(i,\cdot)^\top\bigr)^\top
+ =\bm{\Pi}\Bigl(\sum_{i=1}^K \bm{e}_i\,\bm Q_g(i,\cdot)\Bigr)\bm{\Pi}
+ =\bm{\Pi} \bm{Q}_g\bm{\Pi},
+\]
+where the first equality distributes $\bm\Pi$ out of the finite sum by
+linearity, and the second uses that $\sum_i\bm e_i\bm Q_g(i,\cdot)$
+reassembles $\bm Q_g$ row by row. Averaging further over the $D$ positions
+of the sequence contributes the visitation frequency $f_g$, exactly as in
+\cref{eq:process-recovers-table}, giving
+$\Rule{-\nabla_{\bm P_g}L_{\rm proc}}=f_g\,\bm{\Pi} \bm{Q}_g\bm{\Pi}$.
+
+It remains to simplify $\bm\Pi\bm Q_g\bm\Pi$. Since
+$\bm{Q}_g=\rho \bm{T}_g+(1-\rho)\bm{C}_g$ is a convex combination of two doubly
+stochastic matrices, it is itself doubly stochastic:
+$\bm Q_g\mathbf1=\rho\bm T_g\mathbf1+(1-\rho)\bm C_g\mathbf1=\rho\mathbf1+(1-\rho)\mathbf1=\mathbf1$,
+and symmetrically $\mathbf1^\top\bm Q_g=\mathbf1^\top$. As in
+\cref{app:factorization-proof}, this gives
+$\bm U\bm Q_g=\tfrac1K\mathbf1(\mathbf1^\top\bm Q_g)=\tfrac1K\mathbf1\mathbf1^\top=\bm U$
+and symmetrically $\bm Q_g\bm U=\bm U$, so
+\[
+ \bm{\Pi} \bm{Q}_g\bm{\Pi}
+ =(\bm I-\bm U)\bm Q_g(\bm I-\bm U)
+ =\bm{Q}_g-\bm{U}\bm{Q}_g-\bm{Q}_g\bm{U}+\bm{U}\bm{Q}_g\bm{U}
+ =\bm{Q}_g-\bm{U}-\bm U+\bm U=\bm{Q}_g-\bm{U},
+\]
+using $\bm U\bm Q_g\bm U=\bm U(\bm Q_g\bm U)=\bm U\bm U=\bm U$. This proves
+\cref{eq:noisy-credit-proof}. Because $\bm U$ adds the same constant $1/K$
+to every entry of a row, subtracting it from $\bm Q_g$ shifts every entry of
+that row by the same amount and so does not change which column achieves
+the row maximum: the row-wise maximizer of
+$\Rule{-\nabla_{\bm{P}_g}L_{\rm proc}}=f_g(\bm{Q}_g-\bm{U})$ (whenever $f_g>0$)
+coincides with the row-wise maximizer of $\bm Q_g$ itself.
+
+\emph{Step 3: the two named corruption laws.} For the symmetric law, a
+corrupted target is uniform on the $K-1$ wrong states, so row $i$ of
+$\bm C_g$ places mass $1/(K-1)$ on every $j\ne\bm T_g(i)$ and $0$ on
+$\bm T_g(i)$; equivalently
+$\bm{C}_g=\frac{1}{K-1}(\mathbf1\mathbf1^\top-\bm{T}_g)=\frac{K\bm U-\bm{T}_g}{K-1}$
+(using $\mathbf1\mathbf1^\top=K\bm U$). Then
+\[
+ \bm{C}_g-\bm{U}
+ =\frac{K\bm U-\bm{T}_g}{K-1}-\bm U
+ =\frac{K\bm U-\bm{T}_g-(K-1)\bm{U}}{K-1}
+ =\frac{\bm U-\bm T_g}{K-1}
+ =-\frac{1}{K-1}(\bm{T}_g-\bm{U}).
+\]
+Substituting into $\bm Q_g-\bm U=\rho(\bm T_g-\bm U)+(1-\rho)(\bm C_g-\bm U)$
+(which follows from $\bm Q_g=\rho\bm T_g+(1-\rho)\bm C_g$ by subtracting
+$\bm U=\rho\bm U+(1-\rho)\bm U$ from both sides),
+\[
+ \bm{Q}_g-\bm{U}
+ =\rho(\bm{T}_g-\bm{U})-\frac{1-\rho}{K-1}(\bm T_g-\bm U)
+ =\Bigl[\rho-\tfrac{1-\rho}{K-1}\Bigr](\bm{T}_g-\bm{U})
+ =\frac{K\rho-1}{K-1}(\bm{T}_g-\bm{U}),
+\]
+where the last step multiplies numerator and denominator by $K-1$ and
+simplifies $\rho(K-1)-(1-\rho)=K\rho-1$. Since $\bm T_g\ne\bm U$ for
+$K\ge2$ (a permutation matrix is not uniform), this coefficient's sign
+determines the alignment of the credit with $\bm T_g-\bm U$: positive for
+$\rho>1/K$, zero at $\rho=1/K$, and negative for $\rho<1/K$, proving
+\cref{eq:symmetric-credit-proof} and the stated trichotomy.
+
+For a coherent wrong rule $\bm{T}_g'$ disagreeing with $\bm T_g$ everywhere,
+row $i$ of $\bm C_g$ places all its mass on the single state
+$\bm T_g'(i)\ne\bm T_g(i)$, so row $i$ of
+$\bm Q_g=\rho\bm T_g+(1-\rho)\bm C_g$ places mass $\rho$ on $\bm T_g(i)$,
+mass $1-\rho$ on $\bm T_g'(i)$, and $0$ elsewhere. The row maximizer is
+$\bm{T}_g(i)$ exactly when $\rho>1-\rho$, i.e.\ $\rho>1/2$.
+\end{proof}
+
+\proofstep{What gradient descent reaches.}
+\Cref{eq:noisy-credit-proof} is a statement at one parameter.  In this
+substrate it extends to the solution actually reached, for any
+row-stochastic $\bm{C}_g$, not only doubly stochastic ones. Write
+$\pi_{g,i}:=D^{-1}\sum_t\Pr(g_t=g,\text{ displayed source}_{t}=i)$ for the
+frequency with which gate $g$ is applied at displayed source $i$; under
+\cref{thm:complete-mixing}'s hypotheses and doubly stochastic $\bm{C}_g$, the
+displayed source is uniform on $[K]$ independent of $g$ (as in
+\cref{prop:noisy-process-credit}'s proof), giving the special case
+$\pi_{g,i}=f_g/K$ used there, but the argument below needs only
+$\pi_{g,i}>0$ at each row it claims recovered. Positive gate frequency
+$f_g>0$ alone does not give this: a corruption law that is not doubly
+stochastic can make some displayed sources at gate $g$ arbitrarily rare
+or entirely unreached, so row coverage $\pi_{g,i}>0$ is the relevant,
+possibly strictly stronger, condition in general. In row-logit
+coordinates $\bm{P}_{g,i,\cdot}=\softmax(a_{g,i})$, the population process loss is
+\[
+ L_{\rm proc}
+ =-\sum_{g,i}\pi_{g,i}\sum_{j=1}^{K}
+   Q_{g,i,j}\log\softmax(a_{g,i})_j ,
+\]
+a sum of softmax cross-entropies that is convex in each $a_{g,i}$ and separable
+across the $KM$ pairs $(g,i)$, with minimizing distribution
+$\bm{P}_{g,i,\cdot}=\bm{Q}_{g,i,\cdot}$ whenever $\pi_{g,i}>0$. Each row Hessian is
+$\pi_{g,i}(\operatorname{diag}(p)-pp^\top)$ and has operator norm at most
+$\pi_{g,i}/2$. A sufficiently small constant step size, for example
+$0<\eta\le1/\max_{g,i}\pi_{g,i}$, therefore gives convergence of gradient-descent
+loss values to their infimum from any finite initialization. The excess loss
+is $\sum_{g,i}\pi_{g,i}\KL(\bm{Q}_{g,i,\cdot}\|\bm{P}_{g,i,\cdot})$, so the predicted
+rows with $\pi_{g,i}>0$ approach $\bm{Q}_g(i,\cdot)$. When $\bm{Q}_g$ has zero entries, this limit can require
+unbounded logits; a finite logit minimizer is not asserted. If every true
+successor is a strict row maximum of $\bm{Q}_g$ at every row with $\pi_{g,i}>0$, convergence eventually makes
+all decoded rules correct, and induction gives exact execution. This argument
+concerns the tabular population objective; the finite-sample fit minimizes a
+different, empirical objective.
+
+\proofstep{A fully corrupted corpus still determines the executor.}
+At $\rho=0$ with symmetric corruption, $\bm{C}_g(i,j)=\frac{1}{K-1}
+\one\{j\ne \bm{T}_g(i)\}$, so $\bm{T}_g(i)$ is the unique $j$ with $\bm{C}_g(i,j)=0$: the law
+of the displayed pairs determines $\bm{T}_g$ exactly.  The cross-entropy optimum is
+$\bm{P}_g=\bm{C}_g$, whose row maximizer is never $\bm{T}_g(i)$, and by
+\cref{eq:symmetric-credit-proof} the credit is $-\frac{f_g}{K-1}(\bm{T}_g-\bm{U})$, anti-aligned
+with the true rule at $\frac{1}{K-1}$ of the clean magnitude.  Identifiability
+of the executor from a corpus and recovery of it by this objective are thus
+different properties, and the \textsc{Corrupted} condition of
+\cref{tab:supervision-comparison} separates them;
+\cref{app:noise-threshold} measures both.
+
+\proofstep{Finite samples.}
+The population statement requires the true successor to carry the largest
+share of a row of $\bm{Q}_g$; the finite-sample statement requires it to win a
+plurality of that row's counts.  With $N$ circuits of depth $D$ there are
+$ND/(KM)$ displayed pairs per cell on average under uniform gate-string
+sampling.
+
+\begin{proof}[Proof of \cref{prop:finite-sample-recovery}]
+Fix $(g,i)$, write $T=\bm{T}_g(i)$, $p_j=\bm{Q}_g(i,j)$,
+$p_\star=\max_{j\ne T}p_j=p_T-\Delta_{g,i}$, $N=N_{g,i}$, and $\Delta=\Delta_{g,i}$,
+and let $n_j$ be the empirical count of successor $j$ among $N$ i.i.d.\ draws
+from $\bm{Q}_g(i,\cdot)$. Each $n_j$ is marginally $\mathrm{Binomial}(N,p_j)$,
+so Hoeffding's inequality gives $\Pr[n_T\le N(p_T-\Delta/2)]\le\exp(-N\Delta^2/2)$,
+and for every $j\ne T$, since $p_j\le p_\star$,
+\[
+ \Pr\bigl[n_j\ge N(p_\star+\Delta/2)\bigr]
+ \ \le\ \Pr\bigl[n_j\ge N(p_j+\Delta/2)\bigr]
+ \ \le\ \exp(-N\Delta^2/2).
+\]
+If $n_T>N(p_T-\Delta/2)$ and $n_j<N(p_\star+\Delta/2)$ for every $j\ne T$, then
+since $p_\star+\Delta/2=p_T-\Delta/2$, every $n_j<n_T$ and the empirical
+plurality at row $(g,i)$ is $T$. A union bound over the $K-1$ wrong states
+and the lower-tail event gives
+$\Pr[\text{row }(g,i)\text{ fails}]\le K\exp(-N_{g,i}\Delta_{g,i}^2/2)$; a
+further union bound over the $KM$ cells, each budgeted failure probability
+$\delta/(KM)$, gives \cref{eq:finite-sample-recovery} and the simultaneous
+guarantee.
+\end{proof}
+
+Sampling error can prevent recovery even above $1/K$, particularly
+when the population margin is small, and \cref{eq:finite-sample-recovery}
+is a sufficient condition, not a tight one: it says nothing about which
+rows fail when it is violated, or about how per-cell counts $N_{g,i}$
+concentrate around their mean $ND/(KM)$ under the sampler actually used.
+For fixed $\rho>1/K$ and positive gate
+frequencies, empirical row frequencies converge to $\bm{Q}_g$ as the number of
+independently sampled circuits grows; finite-sample recovery need not vary
+monotonically with sample size or reliability.  We report the measured
+finite-sample frontier in \cref{app:noise-threshold} rather than rely on
+this bound alone, and the count form of the same statement --- a fixed
+number of valid traces against a growing number of corrupted ones, with the
+population direction surviving while corrupted traces number strictly fewer
+than $(K-1)$ times the valid ones --- is measured there too.
+
+\proofstep{Scope.}
+This is a population and finite-sample fact about the tabular objective
+alone. The measured gap between $1/K$ and the trained-network frontier of
+\cref{fig:legacy-reliability} is a separate quantity, reported rather than
+derived here.
+
+\subsection{A one-dimensional diagnostic under a clean terminal answer}
+\label{app:outcome-rescue-diagnostic}
+
+This subsection gives the full statement, proof, and figure behind
+\cref{sec:outcome-rescue}'s diagnostic. \Cref{cor:noise-threshold} analyzes
+the process objective in isolation, but the paper's own process condition
+never actually presents a noisy trace alone: every process example
+supervises a possibly corrupted trace \emph{together with} the
+always-correct final answer (\cref{sec:formats,sec:reliability}). We ask
+here, as a one-dimensional diagnostic and nothing more, what that
+combination does to the threshold, restricting to symmetric corruption and
+the affine path $\bm{P}_g(a)=\bm{U}+a(\bm{T}_g-\bm{U})$ of
+\cref{prop:loss-path}. This restriction is not a simplification we could
+lift by substituting \cref{cor:noise-threshold}'s general
+corruption-structure functional \cref{eq:general-corruption-threshold}: along the affine path every row of
+$\bm{P}_g(a)$ places the same mass $(1-a)/K$ on \emph{every} wrong
+successor, by construction, so no point on this path can distinguish a
+strong competitor from a weak one --- exactly the distinction
+$\kappa(\bm{C})=\max_{g,i}(c_\star-c_T)$ needs. A one-dimensional path that
+also tracked competing-mass concentration would need an additional
+coordinate moving toward a specific wrong successor, not just away from
+the uniform table. \Cref{prop:outcome-rescue} and \cref{cor:noise-threshold}
+are complementary for this reason, not two special cases of one formula.
+Along this path the noisy local-target loss is,
+exactly,
+\begin{equation}
+ L^\rho_{\rm tr}(a) = \log K - \rho\log\bigl(1+(K-1)a\bigr) - (1-\rho)\log(1-a),
+ \label{eq:noisy-process-path-loss}
+\end{equation}
+and \cref{prop:loss-path} gives the clean terminal-answer loss
+$L_{\rm out}(a)=\log K-\log(1+(K-1)a^D)$, the loss of a predictor with no
+displayed trace to condition on, marginalizing over $D$ compositions from
+$s_0$. The paper's own process examples do not present this task at the
+answer position: the displayed trace before it is entirely clean or
+entirely corrupted (\cref{sec:reliability}). When clean, the token just
+before the answer is already the true final state, so predicting the
+answer is a \emph{copy} of the immediately preceding displayed token, a
+task we take to draw on a copying capability rather than the shared
+transition-table competence $a$, and whose loss $L_{\rm copy}$ we
+accordingly treat as independent of $a$. When corrupted, the displayed
+trace ends at a corrupted state unrelated to the true answer, so recovering
+it requires the same $D$-fold composition from the (uncorrected) prompt as
+$L_{\rm out}(a)$. The answer position's loss is therefore the mixture
+$\rho L_{\rm copy}+(1-\rho)L_{\rm out}(a)$, and since $L_{\rm copy}$ does not
+depend on $a$ it contributes only an additive constant, dropped below. For a
+relative weight $\beta\ge0$ on the terminal answer, define the combined
+objective
+\begin{equation}
+ J_{\rho,\beta}(a) := L^\rho_{\rm tr}(a) + \beta(1-\rho)\, L_{\rm out}(a).
+ \label{eq:combined-loss}
+\end{equation}
+This is closer to the paper's actual per-example process loss than simply
+weighting $L_{\rm out}(a)$ by a $\rho$-independent $\beta$, though it still
+rests on treating $L_{\rm copy}$ as $a$-independent. Separately, the
+paper's own per-character training loss masks every character of the
+target string, not only the $D$ state positions and the final answer: gate
+specifiers and separators are supervised too. These structural characters
+are copied verbatim from the prompt and never corrupted, so their
+per-character loss does not depend on $\rho$ or $a$ either and drops out of
+$dJ/da$ the same way. Restricted to the state and answer characters ---
+encoded in the same $\log_2K$ bits in this paper's tasks --- the mask
+weights the $D$ noisy positions against the $1$ clean position in a $D:1$
+ratio, which is what corresponds to $\beta=1/D$. This equal-width
+coincidence, not an even split over $D+1$ positions, is what that part of
+the correspondence rests on.
+
+\begin{proposition}[Reliability frontier under a clean terminal answer]
+\label{prop:outcome-rescue}
+Let each $\bm{T}_g$ be a permutation matrix, $D\ge2$, $0\le a<1$, and let
+$\beta\ge0$ satisfy, at every $(a,D)$ considered,
+\begin{equation}
+ K-\beta\, C(a,D)>0,
+ \label{eq:rescue-beta-condition}
+\end{equation}
+with $C(a,D)$ as defined in \cref{eq:rescue-correction} below --- the exact
+condition under which the denominator of \cref{eq:rescue-threshold} stays
+strictly positive. A simple sufficient condition, proved below and
+independent of $a$ and $D$, is
+\begin{equation}
+ 0\le\beta<\frac{2}{K-1};
+ \label{eq:rescue-beta-sufficient}
+\end{equation}
+the paper's own $\beta=1/D$ falls outside this sufficient range at small
+$D$ (e.g.\ $1/2>2/15$ at $D=2$, $K=16$), but is checked below, and
+numerically in \cref{fig:prop8-frontier}, to satisfy
+\cref{eq:rescue-beta-condition} directly at $K=16$ for every $D$ from $2$
+to at least $64$, where the denominator stays above $8.48$. This is a
+claim about \emph{where the derivative of one fixed diagnostic objective
+changes sign along one fixed path}, not about the trajectory of a trained
+network under arbitrary SGD: along \cref{eq:combined-loss},
+$J_{\rho,\beta}'(a)<0$ --- i.e., moving further along this path lowers the
+objective --- exactly when $\rho>\rho_c(a,D,\beta)$, where, writing
+\begin{equation}
+ C(a,D):=\frac{D(K-1)a^{D-1}(1-a)\bigl(1+(K-1)a\bigr)}{1+(K-1)a^D},
+ \label{eq:rescue-correction}
+\end{equation}
+\begin{equation}
+ \rho_c(a,D,\beta):=\frac{1+(K-1)a-\beta\, C(a,D)}{K-\beta\, C(a,D)}.
+ \label{eq:rescue-threshold}
+\end{equation}
+At $a=0$, $C(0,D)=0$, so \cref{eq:rescue-beta-condition} holds trivially
+and $\rho_c(0,D,\beta)=1/K$ for every $\beta\ge0$: at complete mixing the
+terminal-answer term contributes nothing regardless of its weight,
+recovering \cref{cor:noise-threshold}'s threshold exactly. At $\beta=0$,
+\cref{eq:rescue-threshold} reduces to the process-only threshold
+$\frac{1+(K-1)a}{K}$ used in \cref{cor:noise-threshold}'s proof; for
+$\beta>0$ and $a\in(0,1)$, $\rho_c(a,D,\beta)$ is strictly smaller, so the
+clean answer never raises the reliability an oracle-directed step needs
+\emph{relative to not having it at all}, at the same competence $a$ ---
+whether the threshold rises or falls as $a$ itself increases is a separate
+question, addressed below.
+\end{proposition}
+\begin{proof}
+$D(K-1)a^{D-1}(1-a)\le\frac{K-1}2$ for every $a\in[0,1]$, $D\ge2$: writing
+$f(a):=Da^{D-1}(1-a)$, $f'(a)=0$ at $a^\star=(D-1)/D$, where
+$f(a^\star)=(1-1/D)^{D-1}$, a sequence in $D\ge2$ maximized at $D=2$
+(value $\tfrac12$) and decreasing thereafter, so $f(a)\le\tfrac12$
+always. Since also $\frac{1+(K-1)a}{1+(K-1)a^D}\le K$ (numerator at most
+$K$, denominator at least $1$, as $a\le1$), $C(a,D)\le\frac{K(K-1)}2$ for
+every $a,D$. Hence $\beta<\frac2{K-1}$ (\cref{eq:rescue-beta-sufficient})
+gives $\beta\,C(a,D)<\frac2{K-1}\cdot\frac{K(K-1)}2=K$, i.e.\
+\cref{eq:rescue-beta-condition}, so \cref{eq:rescue-beta-sufficient} is
+indeed sufficient for the assumed \cref{eq:rescue-beta-condition}, though
+not necessary: the paper's own $\beta=1/D$ falls outside the sufficient
+range \cref{eq:rescue-beta-sufficient} at small $D$ (e.g.\ $1/2>2/15$ at
+$D=2$, $K=16$) yet satisfies \cref{eq:rescue-beta-condition} directly ---
+verified numerically above by evaluating $K-\beta C(a,D)$ across
+$a\in[0,1)$ for $K=16$ and every $D$ from $2$ to $64$, where it stays
+above $8.48$ --- which is all the proposition requires. If instead
+$\beta C(a,D)>K$ at some $(a,D)$, i.e.\ \cref{eq:rescue-beta-condition}
+fails there, the argument below still identifies the sign change, but
+dividing by the now-negative $K-\beta C(a,D)$ reverses the inequality, so
+$J_{\rho,\beta}'(a)<0$ would hold for $\rho<\rho_c(a,D,\beta)$ instead; we
+do not use or need this regime, since \cref{eq:rescue-beta-condition} is
+assumed throughout.
+
+Differentiating \cref{eq:noisy-process-path-loss} as in
+\cref{cor:noise-threshold}'s proof gives
+$\frac{dL^\rho_{\rm tr}}{da}=\frac{1-K\rho+(K-1)a}{(1-a)[1+(K-1)a]}$, and
+\cref{prop:loss-path}'s proof gives
+$\frac{dL_{\rm out}}{da}=-\frac{D(K-1)a^{D-1}}{1+(K-1)a^D}$. By
+\cref{eq:combined-loss},
+\[
+ J_{\rho,\beta}'(a)
+ =\frac{1-K\rho+(K-1)a}{(1-a)[1+(K-1)a]}
+ -\beta(1-\rho)\,\frac{D(K-1)a^{D-1}}{1+(K-1)a^D}.
+\]
+Both denominators are positive for $0\le a<1$, so, multiplying through by
+$(1-a)(1+(K-1)a)(1+(K-1)a^D)>0$, $J_{\rho,\beta}'(a)<0$ iff
+\[
+ \bigl(1-K\rho+(K-1)a\bigr)\bigl(1+(K-1)a^D\bigr)
+ <\beta(1-\rho)\,D(K-1)a^{D-1}(1-a)\bigl(1+(K-1)a\bigr),
+\]
+i.e., in the notation of \cref{eq:rescue-correction},
+$1-K\rho+(K-1)a<\beta(1-\rho)C(a,D)$. Expanding
+$\beta(1-\rho)C(a,D)=\beta C(a,D)-\beta C(a,D)\rho$ and collecting the
+$\rho$ terms gives
+$1+(K-1)a-\beta C(a,D)<\rho\bigl(K-\beta C(a,D)\bigr)$. Under the assumed
+\cref{eq:rescue-beta-condition}, $K-\beta C(a,D)>0$, so dividing by it
+gives exactly \cref{eq:rescue-threshold}.
+At $a=0$ and $D\ge2$, $a^{D-1}=0$, so $C(0,D)=0$ and
+$\rho_c(0,D,\beta)=1/K$. For $\beta=0$ the correction vanishes entirely,
+giving the process-only threshold; for $\beta>0$ and $a\in(0,1)$,
+$C(a,D)>0$, and $\rho_c(a,D,\beta)<\frac{1+(K-1)a}{K}$ follows from
+$K\bigl(1+(K-1)a-\beta C\bigr)<\bigl(1+(K-1)a\bigr)(K-\beta C)$, which
+rearranges to $\beta C\bigl(1-(1+(K-1)a)\bigr)<0$, true since $a<1$.
+\end{proof}
+
+This is a statement about where $J_{\rho,\beta}$'s derivative changes sign
+along one fixed, hand-specified path (\cref{prop:loss-path}'s affine
+$\bm{P}_g(a)$), not a claim about the trajectory of a trained network under
+unrestricted SGD, which moves in a much higher-dimensional parameter space
+and need not stay near this path at all.
+The variable $a$ remains the population-projected coordinate of \cref{prop:loss-path},
+held fixed across this analysis as elsewhere. As competence increases, the
+process-only reliability requirement $\frac{1+(K-1)a}{K}$ rises. Clean
+terminal supervision partially offsets this rise (\cref{eq:rescue-threshold}
+is always at most that baseline), but whether it offsets enough to prevent
+the net threshold from increasing depends on depth. Near $a=0$,
+$\rho_c(a,D,\beta)=\frac1K\bigl[1+(K-1)a\bigr]-\beta\,\frac{D(K-1)^2}{K^2}a^{D-1}+O(a^D)$
+for $D\ge3$ (at $D=2$ the correction instead enters at the same order as
+the leading term and modifies its coefficient directly): the offset is
+higher order in $a$ as $D$ grows, so it matters least at small $a$ for
+deep compositions. This local statement does not extend to the whole
+interval $(0,1)$: at the paper's own $K=16$ and $\beta=1/D$,
+$\rho_c(a,2,\tfrac12)$ is numerically negative for $a\in(0.079,0.421)$,
+meaning $J_{\rho,\beta}$ already favors increasing $a$ there even at
+$\rho=0$, full process corruption, purely from the clean answer term ---
+at this one shallow depth the clean answer alone can carry a wrong rule
+toward the true one. For $D\in\{4,6,8\}$, numerical evaluation of
+$\rho_c(a,D,1/D)$ shows an increasing threshold over the plotted range.
+At $D=3$ it is non-monotone over an intermediate interval: for example,
+$\rho_c(0.2,3,1/3)=0.1600$, whereas
+$\rho_c(0.3,3,1/3)\approx0.1464$. At each of these depths the threshold
+ultimately tends to $1$ as $a\to1$. At $D=8$, for instance, it rises from
+$0.06$ at $a=0$ through $0.52$ at $a=0.5$ to $0.90$ at $a=0.9$ and
+$0.95$ at $a=0.95$ (\cref{fig:prop8-frontier}). Clean supervision lowers
+the threshold relative to the process-only baseline at every $a>0$,
+but does not remove the high reliability requirement near $a=1$. This is a barrier to \emph{increasing confidence},
+not to \emph{correctness}: along $\bm{P}_g(a)$, the true successor's row
+entry is $1/K+a(K-1)/K$ against $(1-a)/K$ for every rival, a margin of
+exactly $a$, so greedy decoding from $\bm{P}_g(a)$ already selects the true
+successor at every $a>0$ on this path, independent of $\rho$. What
+$\rho_c$ governs is instead whether gradient descent along this one path
+keeps moving toward higher $a$ at all: at fixed $\rho$, $a$ keeps
+increasing locally only while $\rho>\rho_c(a,D,1/D)$. Stationary points
+satisfy $\rho_c(a^\star,D,1/D)=\rho$. Non-monotonicity can yield multiple
+such points, so a unique stalling point is not guaranteed. Reaching high confidence
+at depth $D\ge3$ needs $\rho$ close to $1$, not close to $1/K$, even
+though low confidence there is already decodable correctly. One
+hypothesis consistent with, but not established by, this diagnostic is
+that the measured Boolean-8 frontier's late, steep climb
+(\cref{fig:noise-threshold}, between $\rho=0.80$ and $\rho=0.90$ rather
+than gradually away from $1/K\approx0.06$) reflects a trained network
+needing confident, robust competence rather than merely the bare
+existence of a correct greedy decision. Testing this specific hypothesis
+would need a direct confidence or margin measurement in the trained
+network, which \cref{sec:gradient-alignment}'s diagnostic does not
+provide. Three caveats keep this reading honest even as a hypothesis.
+First, $\rho_c(a,D,\beta)$ is a stalling threshold along one fixed path,
+computed from the objective's derivative at each $a$ separately. It is
+not a claim about a trained optimizer's trajectory, and $a$ is not
+identified with any of the measured accuracy numbers
+above. Second, the sign change is depth-dependent, not monotone the way
+this reading suggests: at the one shallow depth $D=2$, the clean answer
+cuts the other way and can carry a wrong rule toward the true one from
+$\rho=0$, rather than raising the bar. Third, the margin argument above is
+specific to this affine path and this population-level table. It says
+nothing about the margin realized by a trained Transformer's own
+parameters, which need not move along $\bm{P}_g(a)$ at all.
+What a trained network's trajectory does on either side of either regime is
+not addressed by this static fact.
+
+\begin{figure}[htbp]
+ \centering
+ \includegraphics[width=0.62\linewidth]{figures/prop8_frontier.pdf}
+ \caption{\textbf{The stalling threshold becomes more demanding at high
+ competence, with shallow-depth non-monotonicity.} Predicted curves
+ (\cref{eq:rescue-threshold}) for $D\in\{2,3,4,6,8\}$ at $K=16$ and
+ $\beta=1/D$. Open circles are measured independently from the loss
+ definitions (finite differences in $a$, bisection in $\rho$).
+ $D\in\{4,6,8\}$ increases over the plotted range. At $D=3$ there is a shallow
+ non-monotone region, while $D=2$ dips below zero over an intermediate
+ interval. Computed by \texttt{python experiments/run.py prop8-frontier}.
+ No model is trained.}
+ \label{fig:prop8-frontier}
+\end{figure}
+
+This subsection's claims are all about where one fixed path's derivative
+changes sign in the shared transition-table model, not about a trained
+Transformer.
+\Cref{sec:sharp-jump,app:noise-threshold} give the trained-model and
+finite-sample numbers separately, as external validation of the
+qualitative mechanism rather than verification of this diagnostic's
+threshold value.

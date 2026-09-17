@@ -1,0 +1,470 @@
+% !TEX root = main.tex
+%=============================================================================
+% appendix_architectures.tex -- realizability sanity check (short form).
+% Full multi-lemma finite-attention proof intentionally not carried here:
+% this result is representational-capacity, secondary to the paper's actual
+% question of optimization under noisy supervision. See CLOSURE_TODO.md for
+% why this was cut down from a full ~8-page constructive proof.
+%=============================================================================
+
+\section{Construction Assumptions and Transformer Executors}
+\label{app:architectures}
+
+This appendix gives a short realizability sanity check: both supervision
+formats admit finite-parameter Transformer executors with zero greedy
+execution error, so the training gap analyzed in the main text
+(\cref{sec:reliability}) cannot be attributed to outcome supervision asking
+for something unrepresentable. We sketch the construction and state what it
+proves. The full finite-attention argument is checked numerically in the
+released artifact rather than carried here, since this is a
+representational-capacity fact, not an optimization one, and the paper's
+actual contribution is the latter.
+
+\paragraph{Constructions.} Both architectures are decoder-only Transformers
+with causal softmax attention, residual connections, absolute position
+features, a ReLU feed-forward layer, and a linear readout
+\citep{vaswani2017attention}, in the style of hand-constructed Transformer
+programs \citep{weiss2021thinking,liu2023automata,makkuva2025attentionmarkov}.
+The \emph{process} architecture reuses one causal block autoregressively:
+two attention heads retrieve the predecessor state and current gate at each
+output position, a $KM$-unit ReLU layer looks up the transition, and every
+intermediate state is emitted as a token. The \emph{outcome} architecture
+instead uses $D$ blocks, one per transition, each attending to its own gate
+and writing the resulting state into a fresh residual slot. Only the final
+block's state is read out. The two constructions are deliberately different
+architectures --- one reused block against $D$ dedicated ones, each shaped
+to its own supervision format's natural computation rather than held fixed
+across formats --- so the theorem below compares two zero-error solutions
+of comparable parametric size, not two instances of one shared architecture,
+and \emph{neither} construction is the fixed two-block architecture the
+released experiments actually train (\cref{app:legacy-protocol}). See the
+Scope paragraph below. \Cref{fig:architectures} illustrates both.
+
+\begin{figure}[htbp]
+ \centering
+ \includegraphics[width=0.85\linewidth]{figures/architectures.pdf}
+ \caption{\textbf{Two exact executors of the same computation.} The
+ process architecture reuses one causal block and emits each $s_t$, whereas the
+ outcome architecture performs one transition per block in hidden state.
+ Both contain a zero-error solution (\cref{thm:realizability}).}
+ \label{fig:architectures}
+\end{figure}
+
+\begin{theorem}[Constructive realizability]
+\label{thm:realizability}
+Let $D\ge1$, $K\ge2$, $M\ge1$, $\mathcal S=[K]$, $\mathcal G=[M]$, and
+$\Phi:\mathcal S\times\mathcal G\to\mathcal S$ deterministic. For every
+fixed $D$, there exist finite parameters $\bm{\theta}^\star_{\rm P}$ in the
+process architecture and $\bm{\theta}^\star_{\rm O}$ in the outcome architecture
+such that:
+\begin{enumerate}
+ \item[(i)] after suppressing the fixed serialization, greedy decoding
+ gives $\mathrm{Decode}_{\bm{\theta}^\star_{\rm P}}(x)=(\tau(x),a(x))$ and
+ $\mathrm{Decode}_{\bm{\theta}^\star_{\rm O}}(x)=a(x)$ for every prompt
+ $x=(s_0,g_{1:D})$;
+ \item[(ii)] both have zero free-running execution error on the whole
+ finite prompt universe;
+ \item[(iii)] $\inf_{\bm{\theta}} L(\bm{\theta})=0$ for each training loss, approached
+ by scaling only the readout by $R\to\infty$ with all other parameters
+ fixed, and not attained at finite parameters, since finite softmax logits
+ keep strictly positive probability on competitors.
+\end{enumerate}
+\end{theorem}
+\begin{proof}[Proof sketch]
+Positional attention with a finite score $C$ retrieves the current gate
+and predecessor state into disjoint coordinate blocks, with off-target
+attention mass shrinking as $O(1/e^C)$ uniformly over the finite prompt
+universe; a two-layer ReLU unit indexed by each state--gate pair $(s,g)$
+activates only for the matching pair and writes the correct successor with
+a bounded margin over every competitor. Composing this lookup across $D$
+autoregressive positions (process) or $D$ blocks (outcome), and taking $C$
+large enough that the routing error stays below this margin, makes every
+greedy decision correct with a strictly positive logit gap, proving
+(i)--(ii). Scaling the readout by $R\to\infty$ then drives the
+cross-entropy of every correctly-decoded position to zero without changing
+any greedy decision, while every finite $R$ keeps strictly positive mass on
+competitors, proving (iii). The released artifact builds both executors
+explicitly, checks the resulting greedy margins and free-running accuracy
+on sampled deterministic maps including non-invertible ones, and verifies
+the loss-infimum claim numerically. We do not carry the multi-lemma
+finite-attention argument in the main paper.
+\end{proof}
+
+This rules out unrepresentability only within the two constructed
+architectures, not the single two-block architecture the released
+experiments actually train (\cref{app:legacy-protocol}).
+
+\subsection{Does the trained two-block architecture's outcome failure track depth, or its own capacity?}
+\label{app:depth-capacity}
+
+The constructive realizability result above uses $D$ outcome blocks for a
+depth-$D$ computation, not the fixed two-block architecture
+\cref{sec:reliability}'s outcome condition actually trains --- so by
+itself it cannot rule out the alternative explanation that the trained
+outcome condition's near-chance accuracy reflects that fixed
+architecture's own capacity limit at depth $8$, rather than the
+compositional credit-suppression mechanism of
+\cref{sec:operator-credit}. A depth sweep can test whether the architecture
+learns outcome prediction at shallower depths. Success there would rule
+out a blanket inability to learn the outcome task, but would not distinguish
+compositional credit suppression from a capacity ceiling that emerges
+only for longer compositions.
+
+We trained the identical two-block architecture, optimizer, and update
+budget as \cref{tab:supervision-comparison} on outcome-only and clean
+process ($\rho=1$) supervision at $D\in\{2,4,6,8\}$ (three seeds each,
+$8{,}000$ steps, $20{,}000$ training instances; chance accuracy is
+$6.25\%$ at every depth, since $K=16$ is fixed and only $D$ varies).
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{lrrrr}
+\toprule
+& $D=2$ & $D=4$ & $D=6$ & $D=8$ \\
+\midrule
+Outcome & $88.07_{\;6.99}$ & $28.87_{\;6.72}$ & $11.20_{\;0.92}$ & $7.80_{\;1.06}$ \\
+Process ($\rho=1$) & $97.87_{\;1.72}$ & $93.47_{\;3.52}$ & $90.53_{\;1.79}$ & $86.93_{\;6.35}$ \\
+\bottomrule
+\end{tabular}
+\caption{\textbf{Outcome accuracy degrades with depth from a successful
+shallow baseline. It is not already at chance.} Mean answer accuracy (\%)
+with sample standard deviation across three seeds, same two-block
+architecture and budget at every $D$. Reproduced by
+\texttt{python -m src reliability --task boolean\_circuit\_\{2,4,6,8\}
+--rhos 1.0 --seeds 2001 2002 2003 --checkpoints 8000 --train-size 20000
+--include-outcome}. Hashes are in \texttt{ARTIFACT\_MANIFEST.md}.}
+\label{tab:depth-capacity}
+\end{table}
+
+At $D=2$, outcome-only supervision already reaches $88.07\%$, close to
+process supervision's $97.87\%$ --- the same architecture clearly can
+express and learn the depth-2 outcome mapping, ruling out a blanket
+capacity limit. Outcome accuracy then degrades smoothly and
+progressively as $D$ grows (\cref{tab:depth-capacity}), converging toward
+the $6.25\%$ chance floor by $D=8$, while process accuracy declines only
+mildly over the same range ($97.87\%\to86.93\%$). This qualitative
+pattern is consistent with the per-occurrence outcome-credit suppression
+in \cref{cor:near-mixing}, but does not rule out a depth-dependent capacity
+ceiling. In particular, the sweep does not prove that the two-block
+architecture can express the depth-$8$ outcome mapping at some other
+parameter setting.
+
+\subsection{The Shared Transition-Table Model as a Transformer Parameter Submanifold}
+\label{app:shared-kernel-embedding}
+
+\Cref{thm:realizability} shows both formats admit \emph{some} zero-error
+Transformer. It does not show that the shared transition-table model
+analyzed in \cref{sec:operator-credit,sec:reliability} is itself a
+restriction of Transformer parameter space, rather than an external
+surrogate the main results are merely analogous to. This subsection closes
+that gap for the \emph{process} architecture, by exhibiting the model's
+transition logits as literally a subset of that architecture's own
+parameters.
+
+\paragraph{Construction.} Fix the process architecture's routing,
+embeddings, and positional features exactly as in \cref{thm:realizability}'s
+proof --- two attention heads retrieving the predecessor state and current
+gate with score $C$ --- and fix a linear readout scale. Call this fixed
+part $\bm{\psi}^\star$. The table block is the same $KM$-unit ReLU layer
+already used in \cref{thm:realizability}'s construction, with only its
+second (readout) layer's weights changed. Concretely, with the retrieved
+(approximately one-hot) state and gate representations
+$\bm{r}^{(s)}\in\mathbb R^K,\bm{r}^{(g)}\in\mathbb R^M$ concatenated into
+one vector fed to the block, the hidden layer has one ReLU unit per pair
+$(i,g)\in[K]\times[M]$,
+\begin{equation}
+ h_{i,g}=\relu\bigl(r^{(s)}_i+r^{(g)}_g-1\bigr),
+ \label{eq:table-hidden}
+\end{equation}
+an ordinary affine pre-activation (each unit reads exactly two fixed
+input coordinates with weight $1$ and bias $-1$) followed by the standard
+ReLU nonlinearity. This is exactly \cref{thm:realizability}'s lookup unit,
+unchanged. The second layer is an ordinary \emph{linear} readout,
+\begin{equation}
+ z_j=\sum_{i,g}h_{i,g}\Lambda_g[i,j],
+ \label{eq:table-readout}
+\end{equation}
+whose weight matrix is a reshaping of a parameter tensor
+$\Lambda=\{\Lambda_g\}_{g=1}^M\in(\mathbb R^{K\times K})^M$, one real matrix of logits
+per gate, rather than the hard-coded margin weights of
+\cref{thm:realizability}. No operation here is anything other than a
+standard affine map, ReLU, or softmax. The parameter $\Lambda$ enters only as ordinary linear
+readout weights, not as a new primitive. Write $\bm{\theta}(\Lambda,\bm{\psi}^\star)$
+for the resulting parameters and $\bm{P}_g(\Lambda):=\softmax_{\rm row}(\Lambda_g)$ for
+the row-softmax of $\Lambda_g$, matching \cref{sec:operator-credit}'s notation
+exactly when $\Lambda_g$ is read as a row-logit table. Let $n$ bound the number
+of causal positions any one retrieval head competes over; the process
+architecture's prefix has length linear in $D$, so $n=O(D)$.
+
+\begin{lemma}[Softmax is $1$-Lipschitz from $\ell_\infty$ to $\ell_1$]
+\label{lem:softmax-lipschitz}
+For any $z,z'\in\mathbb R^K$, $|\softmax(z)-\softmax(z')|_1\le|z-z'|_\infty$.
+\end{lemma}
+\begin{proof}
+Write $p(t):=\softmax\bigl(z'+t(z-z')\bigr)$ for $t\in[0,1]$, so
+$p(0)=\softmax(z')$, $p(1)=\softmax(z)$, and $v:=z-z'$. The softmax
+Jacobian is $\partial p_i/\partial w_j=p_i(\delta_{ij}-p_j)$, so, writing
+$\bar v(t):=\sum_jp_j(t)v_j$,
+\[
+ \tfrac{d}{dt}p_i(t)=\sum_j p_i(\delta_{ij}-p_j)v_j
+ =p_i(t)\bigl[v_i-\bar v(t)\bigr],
+\]
+whence $\sum_i|\tfrac{d}{dt}p_i(t)|=\sum_ip_i(t)|v_i-\bar v(t)|$. For any
+probability vector $p$ and real vector $v$ with $\bar v:=\sum_ip_iv_i$,
+$\sum_ip_i|v_i-\bar v|$ is a convex function of $v$ on the box
+$[-|v|_\infty,|v|_\infty]^K$ (a pointwise maximum of linear functions
+of $v$), so it is maximized at a vertex $v_i=\pm|v|_\infty$. At such a
+vertex, writing $q$ for the $p$-mass on the coordinates with
+$v_i=+|v|_\infty$, $\bar v=(2q-1)|v|_\infty$ and
+$\sum_ip_i|v_i-\bar v|=4q(1-q)|v|_\infty\le|v|_\infty$, since
+$4q(1-q)\le1$ for every $q\in[0,1]$. Hence
+$\sum_i|\tfrac{d}{dt}p_i(t)|\le|z-z'|_\infty$ for every $t$, and
+integrating over $t\in[0,1]$ using
+$|p(1)-p(0)|_1\le\int_0^1\sum_i|\tfrac{d}{dt}p_i(t)|,dt$ gives the
+claim. This constant is tight: at $z=z'+\varepsilon v$ with $K$ even,
+$z'=0$, and $v$ alternating $\pm1$, the ratio
+$|\softmax(z)-\softmax(z')|_1/|z-z'|_\infty\to1$ as $\varepsilon\to0$,
+confirmed numerically to five decimal places.
+\end{proof}
+
+This is a different quantity from the norm-uniform, same-norm softmax Lipschitz
+bound of \citet{nair2025softmax} ($\ell_p$-to-$\ell_p$, constant $1/2$): the
+mixed $\ell_\infty$-to-$\ell_1$ bound needed here is a distinct, elementary
+fact, proved above independently, and happens also to be tight at $1$ rather
+than $2$.
+
+\begin{proposition}[Shared-kernel embedding and gradient pullback]
+\label{prop:shared-kernel-embedding}
+There are constants $c_1,c_2,c_3>0$, depending only on $K$, $M$, $D$
+(through $n$), and a bound $B\ge\max_g|\Lambda_g|_\infty$, such that for every
+attention score $C>0$, every prompt, and every $\Lambda$ with $|\Lambda_g|_\infty\le
+B$ for all $g$:
+
+\emph{(i) Local and terminal embedding.}
+\begin{align}
+ \bigl|p_{\bm{\theta}(\Lambda,\bm{\psi}^\star)}(\cdot\mid s,g)-\bm{P}_g(\Lambda)_{s,\cdot}\bigr|_1
+ &\le c_1e^{-C},
+ \label{eq:embedding-local}\\
+ \Bigl|p_{\bm{\theta}(\Lambda,\bm{\psi}^\star)}(y\mid s_0,g_{1:D})
+ -\bm{e}_{s_0}^\top \bm{P}_{g_1}(\Lambda)\cdots \bm{P}_{g_D}(\Lambda)\bm{e}_y\Bigr|
+ &\le c_2De^{-C}.
+ \label{eq:embedding-terminal}
+\end{align}
+Explicitly, $c_1=2Bn(K+M)$ and $c_2=2Bn(K+M)$ work. Holding $\Lambda$ and
+$\bm{\psi}^\star$'s non-attention parameters fixed, both bounds vanish as
+$C\to\infty$, and \cref{eq:embedding-local,eq:embedding-terminal} become
+the exact identities $p_{\bm{\theta}(\Lambda,\bm{\psi}^\star)}(\cdot\mid
+s,g)=\bm{P}_g(\Lambda)_{s,\cdot}$ and $p_{\bm{\theta}(\Lambda,\bm{\psi}^\star)}(y\mid
+s_0,g_{1:D})=\bm{e}_{s_0}^\top \bm{P}_{g_1}(\Lambda)\cdots \bm{P}_{g_D}(\Lambda)\bm{e}_y$
+exactly; at every finite $C$ these are approximations, not identities: a
+finite attention score always leaves $O(e^{-C})$ mass on the wrong
+retrieval, exactly as in \cref{thm:realizability}(iii).
+
+\emph{(ii) Gradient pullback, up to routing error.} Let $\ell(\Lambda)$ denote
+the process cross-entropy at one occurrence (gate $g^\star$, source $s$,
+displayed target $y$). Then
+\begin{equation}
+ \Bigl|\nabla_{\Lambda_{g}[i,\cdot]}\ell_{\rm Transformer}(\bm{\theta}(\Lambda,\bm{\psi}^\star))
+ -\nabla_{\Lambda_{g}[i,\cdot]}\ell_{\rm kernel}(\Lambda)\Bigr|_1
+ \le c_3,e^{-C}\quad\text{for every }(g,i),
+ \label{eq:gradient-pullback}
+\end{equation}
+with $c_3=2n(K+M)\bigl(2+B(1+2n)\bigr)$, not depending on $\Lambda$ or $C$;
+averaging \cref{eq:gradient-pullback} over occurrences and gates gives the
+same bound for $\nabla_\Lambda L_{\rm Transformer}^{\rm proc}-\nabla_\Lambda L_{\rm
+proc}(\bm P_\bullet(\Lambda))$. This is a row-logit (softmax-parameterized)
+gradient, not the $\bm P$-space Euclidean gradient of
+\cref{eq:noisy-process-credit}: at $\bm P_g=\bm U$ the two are related
+by the softmax Jacobian $\frac1K\bm\Pi$, so the population row-logit
+gradient is $\frac1K$ times \cref{eq:noisy-process-credit}'s $\bm
+P$-space coefficient, not equal to it (derived in the proof).
+
+\emph{(iii) Threshold transfer.} This population and sign-transfer claim
+additionally assumes \cref{thm:complete-mixing}'s hypotheses (uniform
+$s_0$ independent of $g_{1:D}$, each $\bm T_g$ a permutation) and
+\cref{eq:noisy-process-credit}'s symmetric-corruption setting,
+evaluated at $\bm P_g(\Lambda)=\bm U$; the raw per-occurrence bound
+\cref{eq:gradient-pullback} itself needs neither. Consequently, whenever
+\begin{equation}
+ \frac{f_g}{K}\left|\frac{K\rho-1}{K-1}\right|>c_3e^{-C},
+ \label{eq:gradient-pullback-threshold}
+\end{equation}
+the embedded Transformer's gradient $-\nabla_\Lambda L_{\rm Transformer}^{\rm
+proc}(\bm{\theta}(\Lambda,\bm{\psi}^\star))$ has the same sign, row by row, as the
+model's $\Rule{-\nabla_{\bm{P}_g}L_{\rm proc}}$: the $\rho>1/K$ threshold
+transfers to this parameterization of an actual Transformer, with an error
+that vanishes as $C\to\infty$ --- at a fixed target margin, the required
+routing constant $C$ must now grow by $\log K$ to compensate for this
+extra $1/K$ factor.
+\end{proposition}
+\begin{proof}[Proof of part (i)]
+\proofstep{Attention leakage.} At the retrieval step for the state head,
+the query scores the correct position at $C$ and every one of the (at
+most) $n$ competing positions at most $0$; softmax gives the correct
+position weight $w^\star\ge e^C/(e^C+n)=1/(1+ne^{-C})$, so the total
+leaked weight is $1-w^\star\le ne^{-C}$. Writing
+$\bm{r}^{(s)}=\bm{e}_s+\bm\delta^{(s)}$ for the retrieved value (a weighted
+sum of one-hot state embeddings), $|\bm\delta^{(s)}|_1
+\le|\bm r^{(s)}-w^\star\bm e_s|_1+|w^\star-1|
+\le(1-w^\star)+(1-w^\star)\le2ne^{-C}$, since the first term is a
+sum of leaked weights on one-hot vectors (each contributing its weight to
+the $\ell_1$ norm) and the second is the leaked weight on the correct
+coordinate itself. The identical argument gives
+$|\bm\delta^{(g)}|_1\le2ne^{-C}$ for the gate head.
+
+\proofstep{Hidden-layer error.} By \cref{eq:table-hidden}, $h_{i,g}$ and
+$h^\star_{i,g}:=[i=s][g=g^\star]$ (writing $g^\star$ for the true gate)
+are both $\relu$ applied to $r^{(s)}_i+r^{(g)}_g-1$ and
+$(\bm e_s)_i+(\bm e_{g^\star})_g-1$ respectively, and $\relu$ is
+$1$-Lipschitz, so $|h_{i,g}-h^\star_{i,g}|\le|\delta^{(s)}_i|+|\delta^{(g)}_g|$.
+Summing over all $KM$ pairs,
+\[
+ \sum_{i,g}|h_{i,g}-h^\star_{i,g}|
+ \le M|\bm\delta^{(s)}|_1+K|\bm\delta^{(g)}|_1
+ \le2n(K+M)e^{-C}.
+\]
+
+\proofstep{Logit error.} By \cref{eq:table-readout}, writing
+$z^\star_j:=\Lambda_{g^\star}[s,j]$ for the exact-retrieval logits,
+\[
+ |z_j-z^\star_j|=\Bigl|\sum_{i,g}(h_{i,g}-h^\star_{i,g})\Lambda_g[i,j]\Bigr|
+ \le B\sum_{i,g}|h_{i,g}-h^\star_{i,g}|\le2Bn(K+M)e^{-C}
+\]
+for every $j$, so $|\bm z-\bm z^\star|_\infty\le2Bn(K+M)e^{-C}$.
+
+\proofstep{Local bound.} By \cref{lem:softmax-lipschitz},
+$\bigl|p_{\bm\theta(\Lambda,\bm\psi^\star)}(\cdot\mid s,g)-\bm P_g(\Lambda)_{s,\cdot}\bigr|_1
+=|\softmax(\bm z)-\softmax(\bm z^\star)|_1\le|\bm z-\bm z^\star|_\infty
+\le2Bn(K+M)e^{-C}$, giving \cref{eq:embedding-local} with $c_1=2Bn(K+M)$.
+
+\proofstep{Terminal bound.} $\bm e_{s_0}^\top\bm P_{g_1}(\Lambda)\cdots\bm
+P_{g_D}(\Lambda)\bm e_y$ and the Transformer's free-running terminal probability
+each factor into $D$ row-stochastic steps; replacing one factor at a time
+by its exact counterpart changes the product, at any fixed prefix, by at
+most that factor's own $\ell_1$ error (each row-stochastic factor is a
+contraction in $\ell_1$, so downstream errors do not grow under
+composition), and the local bound above applies to each of the $D$
+factors. Summing the $D$ one-step errors, each bounded by
+\cref{eq:embedding-local}, gives total error at most $D,c_1,e^{-C}$, i.e.
+$c_2=c_1=2Bn(K+M)$ in \cref{eq:embedding-terminal}.
+\end{proof}
+
+The underlying $O(e^{-C})$ softmax leakage this proof composes was also
+checked directly: for a query with score $C$ against the correct key and
+score $0$ against $n$ competitors, the softmax mass left on the
+competitors is $n/(e^C+n)$; fitting $\log(text{leakage})$ against $C$ over
+$C\in\{10,\dots,40\}$ at $n\in\{15,67\}$ (state- and gate-sized competitor
+counts) recovers slope $-1.00$ and intercept $\log n$ to three figures.
+The chain above (leakage $\to$ hidden-layer error $\to$ logit error $\to$
+\cref{lem:softmax-lipschitz}) was checked numerically as well, on random
+$\Lambda$ with $|\Lambda_g|_\infty\le B=5$, $K=16$, $M=52$, $n=20$: the observed
+$|\bm z-\bm z^\star|_\infty$ stayed under $0.5\%$ of the proved bound
+$2Bn(K+M)e^{-C}$ at $C\in\{10,20,30\}$, confirming the bound holds (with
+room to spare, since several individual steps used loose triangle
+inequalities rather than tight constants).
+
+\begin{proof}[Proof of parts (ii) and (iii)]
+The cross-entropy $\ell=-\log p_y$ composed with $\bm p=\softmax(\bm z)$
+has the standard gradient $\nabla_{\bm z}\ell=\bm p-\bm e_y$ (differentiate
+$-z_y+\log\sum_ke^{z_k}$ directly). By \cref{eq:table-readout},
+$z_j=\sum_{i,g}h_{i,g}\Lambda_g[i,j]$ is linear in $\Lambda$ with $h$ held fixed (the
+hidden layer depends only on the attention retrieval, not on $\Lambda$), so
+$\partial z_j/\partial \Lambda_g[i,j']=h_{i,g}\delta_{jj'}$, and the chain rule
+gives the \emph{exact} identity
+\begin{equation}
+ \nabla_{\Lambda_g[i,\cdot]}\ell_{\rm Transformer}=h_{i,g},(\bm p-\bm e_y).
+ \label{eq:exact-grad-identity}
+\end{equation}
+The shared transition-table loss $\ell_{\rm kernel}(\Lambda)=-\log\softmax(\Lambda_{g^\star}[s,\cdot])_y$
+is the same construction with $h$ replaced by the exact indicator
+$h^\star_{i,g}=[i=s][g=g^\star]$ and $\bm z$ by
+$\bm z^\star=\Lambda_{g^\star}[s,\cdot]$, giving identically
+$\nabla_{\Lambda_g[i,\cdot]}\ell_{\rm kernel}=h^\star_{i,g}(\bm p^\star-\bm e_y)$,
+$\bm p^\star:=\softmax(\bm z^\star)=\bm P_{g^\star}(\Lambda)_{s,\cdot}$. Subtracting,
+\[
+ \nabla_{\Lambda_g[i,\cdot]}\ell_{\rm Transformer}-\nabla_{\Lambda_g[i,\cdot]}\ell_{\rm kernel}
+ =(h_{i,g}-h^\star_{i,g})(\bm p^\star-\bm e_y)+h_{i,g}(\bm p-\bm p^\star).
+\]
+The first term has $\ell_1$ norm at most $|h_{i,g}-h^\star_{i,g}|\cdot2$
+(since $|\bm p^\star-\bm e_y|_1\le2$), and $|h_{i,g}-h^\star_{i,g}|$ is one
+term of the double sum bounded by $2n(K+M)e^{-C}$ in
+\cref{prop:shared-kernel-embedding}'s hidden-layer-error step, hence itself
+at most $2n(K+M)e^{-C}$, so the first term contributes at most
+$4n(K+M)e^{-C}$. The second term has $|\bm p-\bm p^\star|_1\le
+2Bn(K+M)e^{-C}$ by \cref{eq:embedding-local}, and $h_{i,g}\le1+2ne^{-C}\le
+1+2n$ for $C\ge0$ (the matching unit, the largest), so the second term
+contributes at most $(1+2n)\cdot2Bn(K+M)e^{-C}$. Combining,
+\begin{align*}
+ \bigl|\nabla_{\Lambda_g[i,\cdot]}\ell_{\rm Transformer}-\nabla_{\Lambda_g[i,\cdot]}\ell_{\rm kernel}\bigr|_1
+ &\le4n(K+M)e^{-C}+2Bn(K+M)(1+2n)e^{-C}\\
+ &=2n(K+M)\bigl(2+B(1+2n)\bigr)e^{-C},
+\end{align*}
+which is $c_3e^{-C}$ for $c_3=2n(K+M)\bigl(2+B(1+2n)\bigr)$, proving
+\cref{eq:gradient-pullback}. Since
+$\ell_{\rm kernel}(\Lambda)$ at the row-stochastic evaluation point
+$\bm P_g(\Lambda)$ is exactly the per-occurrence process loss of
+\cref{sec:operator-credit}, an unweighted average of
+\cref{eq:gradient-pullback} over occurrences and gates (each occurrence
+contributing a bound of the same form) gives the stated bound for the full
+gradients $\nabla_\Lambda L_{\rm Transformer}^{\rm proc}$ and $\nabla_\Lambda L_{\rm
+proc}(\bm P_\bullet(\Lambda))$.
+
+\proofstep{Population $\Lambda$-gradient at $U$.} Fix gate $g$ and row $i$, and
+write $\pi_{g,i}:=D^{-1}\sum_t\Pr(g_t=g,s_{t-1}=i)$ for the frequency with
+which this row is visited; under the uniform, independent source of
+\cref{thm:complete-mixing}, $\pi_{g,i}=f_g/K$ for every $i$, exactly the
+per-row weight used in \cref{prop:noisy-process-credit}'s proof before its
+source average. Averaging \cref{eq:exact-grad-identity}'s population
+form $-\nabla_{\Lambda_g[i,\cdot]}\ell_{\rm kernel}=h^\star_{i,g}(\bm e_y-\bm
+p^\star)$ over occurrences at $(g,i)$: conditional on source $i$ the
+displayed target has law $\bm Q_g(i,\cdot)$, so averaging $\bm e_y$ gives
+$\bm Q_g(i,\cdot)-\bm p^\star$, weighted by $\pi_{g,i}$. At $\bm P_g=\bm
+U$, so $\bm p^\star=\bm u$, row $i$ of the population row-logit gradient
+is
+\begin{equation}
+ -\nabla_{\Lambda_g[i,\cdot]}L_{\rm kernel}=\pi_{g,i}\bigl(\bm Q_g(i,\cdot)-\bm u\bigr)
+ =\frac{f_g}{K}\bigl(\bm Q_g(i,\cdot)-\bm u\bigr),
+ \label{eq:logit-gradient-at-u}
+\end{equation}
+already zero-sum and so unaffected by the projection $\Rule\cdot$. This is
+$\frac1K$ times row $i$ of \cref{eq:noisy-process-credit}'s $\bm P$-space
+credit, $f_g\bigl(\bm Q_g(i,\cdot)-\bm u\bigr)$
+(\cref{eq:noisy-process-credit}), not equal to it, because the two are
+different gradients of the same loss: \cref{eq:noisy-process-credit} is
+the Euclidean gradient in the free entries of $\bm P_g(i,\cdot)$, namely
+$-\pi_{g,i}\bm Q_g(i,\cdot)/\bm P_g(i,\cdot)$ pointwise, which at $\bm
+P_g(i,\cdot)=\bm u$ is $\pi_{g,i}K\bm Q_g(i,\cdot)=f_g\bm Q_g(i,\cdot)$
+before centering; the row-logit gradient instead pulls this back through
+the softmax Jacobian $\partial\bm p/\partial\bm z=\operatorname{diag}(\bm
+p)-\bm p\bm p^\top$, which equals $\frac1K\bm\Pi$ at $\bm p=\bm u$, so
+$-\nabla_{\Lambda_g[i,\cdot]}\ell_{\rm kernel}=\frac1K\bm\Pi\bigl(f_g\bm
+Q_g(i,\cdot)\bigr)=\frac{f_g}{K}\bigl(\bm Q_g(i,\cdot)-\bm u\bigr)$,
+recovering \cref{eq:logit-gradient-at-u} and identifying the missing
+$1/K$ as exactly this Jacobian factor. For symmetric corruption the
+row-logit coefficient is therefore $\frac{f_g}{K}\cdot\frac{K\rho-1}{K-1}$,
+giving \cref{eq:gradient-pullback-threshold}. The sign-transfer statement
+follows because this coefficient is exactly
+$-\nabla_{\Lambda_g[i,\cdot]}\ell_{\rm kernel}$'s row-maximizer margin at
+$\bm P_g=\bm U$; when its magnitude exceeds the bound just proved, the
+Transformer's actual gradient cannot have crossed zero.
+\end{proof}
+
+We verified \cref{eq:exact-grad-identity} and the resulting bound
+numerically (same random-$\Lambda$ setup as above): the exact identity matched
+the analytically differentiated construction to floating-point precision,
+and the observed gradient discrepancy stayed under $0.02\%$ of the proved
+$2n(K+M)(2+B(1+2n))e^{-C}$ bound at $C\in\{10,20,30\}$.
+
+\Cref{prop:shared-kernel-embedding} shows the shared transition-table model
+of \cref{sec:operator-credit} is an explicit mechanistic subspace of the
+process architecture's own parameters --- fixing routing and
+representation while the transition logits $\Lambda$ vary. Writing the
+full Transformer parameters as $\bm{\theta}=(\Lambda,\bm{\psi})$, this
+subsection characterizes $\nabla_\Lambda L(\Lambda,\bm{\psi}^\star)$ at one
+\emph{fixed}, hand-constructed $\bm{\psi}^\star$. Real Transformer training
+instead follows coupled dynamics $(\Lambda_t,\bm{\psi}_t)$ over all of
+$\bm{\theta}$ jointly, with routing, embeddings, and readout moving
+together with the transition logits. This result locates the phenomenon
+inside that parameter space and characterizes only this fixed-routing
+slice of it.
