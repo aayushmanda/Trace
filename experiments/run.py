@@ -49,6 +49,10 @@ COMMANDS = {
         "src.experiments.plot_paper_figures",
         "Rebuild paper figures from archived CSVs",
     ),
+    "handcoded-circuit-match": (
+        "src.experiments.handcoded_circuit_match",
+        "Paper 2: process architecture vs hand-coded circuits; matched L+/L- probe",
+    ),
 }
 
 
