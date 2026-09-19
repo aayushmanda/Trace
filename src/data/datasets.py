@@ -18,17 +18,14 @@ def encode_pair(tokenizer, prompt: str, target: str, block_size: int):
     full = prompt_ids + tokenizer.encode(target)
     if len(full) > block_size:
         raise ValueError(f"{len(full)} tokens exceeds block_size={block_size}")
-    width = block_size - 1
-    x = [tokenizer.pad_id] * width
-    y = [tokenizer.pad_id] * width
-    mask = [0.0] * width
     n = len(full) - 1
-    x[:n] = full[:-1]
-    y[:n] = full[1:]
+    x = full[:-1]
+    y = full[1:]
+    mask = [0.0] * n
     for i in range(len(prompt_ids) - 1, n):
         mask[i] = 1.0
-    if not (len(x) == len(y) == len(mask) == width):
-        raise RuntimeError(f"encode_pair ranks {len(x), len(y), len(mask)} != {width}")
+    if not (len(x) == len(y) == len(mask) == n):
+        raise RuntimeError(f"encode_pair ranks {len(x), len(y), len(mask)} != {n}")
     return x, y, mask
 
 
@@ -44,13 +41,20 @@ class ContinuationDataset(Dataset):
         self.x = torch.full((len(instances), width), tokenizer.pad_id, dtype=torch.uint8)
         self.y = torch.full((len(instances), width), tokenizer.pad_id, dtype=torch.uint8)
         self.mask = torch.zeros((len(instances), width), dtype=torch.bool)
+        max_len = 0
         for row, (inst, target) in enumerate(zip(instances, targets)):
             if isinstance(target, Instance):
                 raise TypeError("pass target strings, not Instance")
             x, y, mask = encode_pair(tokenizer, inst.prompt, target, block_size)
-            self.x[row] = torch.tensor(x, dtype=torch.uint8)
-            self.y[row] = torch.tensor(y, dtype=torch.uint8)
-            self.mask[row] = torch.tensor(mask, dtype=torch.bool)
+            n = len(x)
+            if n:
+                self.x[row, :n] = torch.tensor(x, dtype=torch.uint8)
+                self.y[row, :n] = torch.tensor(y, dtype=torch.uint8)
+                self.mask[row, :n] = torch.tensor(mask, dtype=torch.bool)
+            max_len = max(max_len, n)
+        self.x = self.x[:, :max_len]
+        self.y = self.y[:, :max_len]
+        self.mask = self.mask[:, :max_len]
         if self.x.ndim != 2 or self.x.shape != self.y.shape or self.mask.shape != self.x.shape:
             raise RuntimeError(f"dataset tensors must be (N, T), got x={tuple(self.x.shape)}")
 

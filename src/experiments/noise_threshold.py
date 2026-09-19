@@ -32,6 +32,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 from src.data.boolean_circuit_tasks import N_BITS, _apply_gate, _bits, _state_text
 
@@ -299,8 +300,10 @@ def draw(results: dict) -> None:
     recovery, structure = results["recovery"], results["structure"]
     # ---- figure -----------------------------------------------------------
     # Transformer sweep for context; separate corpora and different gate sampling.
-    transformer = {0.30: 0.078, 0.50: 0.180, 0.80: 0.620, 0.85: 0.727,
-                   0.90: 0.819, 0.95: 0.870, 1.00: 0.926}
+    sweep = pd.read_csv(ROOT / "results/paper/boolean_reliability_canonical.csv")
+    transformer = sweep[sweep.condition != "outcome"].groupby("rho")[
+        "answer_accuracy"
+    ].agg(["mean", "std"])
     plt.rcParams.update({"pdf.fonttype": 42, "ps.fonttype": 42, "savefig.dpi": 300,
                          "font.size": 10, "axes.labelsize": 11, "legend.fontsize": 9})
     fig, axes = plt.subplots(1, 2, figsize=(9.4, 3.5))
@@ -311,8 +314,11 @@ def draw(results: dict) -> None:
     sd = [r["answer_sd"] for r in recovery]
     ax.errorbar(xs, ys, yerr=sd, color=PROCESS, marker="o", ms=4, lw=1.8,
                 capsize=2, label="Shared kernel (empirical optimum)")
-    ax.plot(sorted(transformer), [transformer[k] for k in sorted(transformer)],
-            color=OUTCOME, marker="s", ms=4, lw=1.8, label="Trained Transformer")
+    ax.fill_between(transformer.index, transformer["mean"] - transformer["std"],
+                    transformer["mean"] + transformer["std"],
+                    color=OUTCOME, alpha=0.20, linewidth=0)
+    ax.plot(transformer.index, transformer["mean"], color=OUTCOME, marker="s",
+            ms=4, lw=1.8, label="Trained Transformer (5 seeds)")
     ax.axvline(1 / K, color=CHANCE, ls="--", lw=1.2)
     ax.axhline(1 / K, color=CHANCE, ls=":", lw=1.0)
     ax.annotate(r"$\rho_c=1/K$", xy=(1 / K, 0.52), xytext=(0.13, 0.52),
@@ -323,7 +329,7 @@ def draw(results: dict) -> None:
     ax.set_title("(a) Tabular recovery and trained-model accuracy", fontsize=11)
     ax.set_xlim(0, 1.02)
     ax.set_ylim(-0.03, 1.05)
-    ax.legend(loc="center", bbox_to_anchor=(0.60, 0.72), frameon=False)
+    ax.legend(loc="center", bbox_to_anchor=(0.60, 0.83), frameon=False)
 
     ax = axes[1]
     xs = [r["rho"] for r in structure]

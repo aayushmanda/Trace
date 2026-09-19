@@ -30,6 +30,9 @@ training weight; beta=0 recovers Corollary 6 exactly (rho_c=[1+(K-1)a]/K
 for all a); beta=1.0 is an extra, more aggressive answer-weight for
 generality.
 
+The code and archived JSON retain the key `a`; this is the affine-path
+coordinate denoted gamma in the manuscript and figure labels.
+
 Writes results/prop8_frontier/summary.json and
 Paper/figures/prop8_frontier.pdf.
 """
@@ -178,8 +181,8 @@ def draw(results: dict, path: Path) -> None:
         ax.plot(meas_x, meas_y, "o", color=color, ms=4, mfc="white", mew=1.3)
     ax.axhline(1 / K, color="#4a4a4a", ls=":", lw=1.0, label=r"$1/K$")
     ax.axhline(0, color="#999999", lw=0.8)
-    ax.set_xlabel(r"competence $a$")
-    ax.set_ylabel(r"$\rho_c(a,D,\beta{=}1/D)$")
+    ax.set_xlabel(r"competence $\gamma$")
+    ax.set_ylabel(r"$\rho_c(\gamma,D,\beta{=}1/D)$")
     ax.set_title("Reliability-frontier diagnostic: predicted vs. measured")
     ax.legend(frameon=False, fontsize=8, ncol=2)
     fig.tight_layout()

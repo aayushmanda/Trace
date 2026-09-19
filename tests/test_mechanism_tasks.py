@@ -8,9 +8,10 @@ import random
 import unittest
 
 import numpy as np
+import torch
 
-from src.data.dataclass import GLOBAL_TOKENIZER
-from src.data.datasets import RatioDataset, encode_pair
+from src.data.dataclass import GLOBAL_TOKENIZER, Instance
+from src.data.datasets import ContinuationDataset, RatioDataset, encode_pair
 from src.data.hard_word_index_tasks import WORD_INDEX_LENGTHS
 from src.data.registry import TASKS
 from src.data.sample import generate_unique
@@ -175,6 +176,53 @@ class MechanismTaskTests(unittest.TestCase):
         scores = np.linspace(0, 1, 8, endpoint=False)
         RatioDataset(items, task, "mixed_process", rho=0.5, ratio_scores=scores)
         RatioDataset(items, task, "outcome")
+
+    def test_continuation_dataset_crops_to_max_used_length(self):
+        tok = GLOBAL_TOKENIZER
+        block_size = 64
+        short = Instance(prompt="ab", correct_trace="c", wrong_trace="d", gold="1")
+        long = Instance(prompt="ab", correct_trace="cccc", wrong_trace="dddd", gold="12")
+        short_target = " : 1\n"
+        long_target = " cccc : 12\n"
+        used = []
+        for prompt, target in ((short.prompt, short_target), (long.prompt, long_target)):
+            full = tok.encode(prompt) + tok.encode(target)
+            self.assertLess(len(full), block_size)
+            used.append(len(full) - 1)
+        max_used = max(used)
+        self.assertLess(max_used, block_size - 1)
+        self.assertNotEqual(used[0], used[1])
+
+        dataset = ContinuationDataset([short, long], tok, block_size, [short_target, long_target])
+        self.assertEqual(tuple(dataset.x.shape), (2, max_used))
+        self.assertEqual(dataset.y.shape, dataset.x.shape)
+        self.assertEqual(dataset.mask.shape, dataset.x.shape)
+
+        x0, y0, m0 = dataset[0]
+        n_short = used[0]
+        self.assertEqual(x0.shape[0], max_used)
+        self.assertTrue(torch.equal(x0[n_short:], torch.full((max_used - n_short,), tok.pad_id, dtype=torch.uint8)))
+        self.assertTrue(torch.equal(y0[n_short:], torch.full((max_used - n_short,), tok.pad_id, dtype=torch.uint8)))
+        self.assertFalse(m0[n_short:].any())
+        x_s, y_s, m_s = encode_pair(tok, short.prompt, short_target, block_size)
+        self.assertEqual(len(x_s), n_short)
+        self.assertTrue(torch.equal(x0[:n_short], torch.tensor(x_s, dtype=torch.uint8)))
+        self.assertTrue(torch.equal(y0[:n_short], torch.tensor(y_s, dtype=torch.uint8)))
+        self.assertTrue(torch.equal(m0[:n_short], torch.tensor(m_s, dtype=torch.bool)))
+        prompt_len = len(tok.encode(short.prompt))
+        self.assertEqual(int(m0.sum()), n_short - (prompt_len - 1))
+        self.assertTrue(m0[: prompt_len - 1].eq(False).all())
+        self.assertTrue(m0[prompt_len - 1:n_short].all())
+
+        x1, y1, m1 = dataset[1]
+        x_l, y_l, m_l = encode_pair(tok, long.prompt, long_target, block_size)
+        self.assertEqual(len(x_l), max_used)
+        self.assertTrue(torch.equal(x1, torch.tensor(x_l, dtype=torch.uint8)))
+        self.assertTrue(torch.equal(y1, torch.tensor(y_l, dtype=torch.uint8)))
+        self.assertTrue(torch.equal(m1, torch.tensor(m_l, dtype=torch.bool)))
+
+        with self.assertRaises(ValueError):
+            encode_pair(tok, "ab", "c" * block_size, block_size)
 
 
 if __name__ == "__main__":

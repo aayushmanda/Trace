@@ -50,9 +50,20 @@ python -m src supervision --config configs/experiments/e1_five_condition_rerun.y
 
 ---
 
-## Figures 1–2 / Table 3: trace reliability
+## Main-paper figures and trace reliability
 
-`rho` is the probability a training example gets a valid trace; the terminal answer stays correct regardless. Metrics: `answer_accuracy` (rollout), `exact_trace_accuracy` (full trace), `trace_step_accuracy` (local, teacher-forced). Each run writes a CSV and a sibling `*_persist.json`.
+Rebuild all four main figures from existing canonical rows (no training):
+
+```bash
+uv run python -m src.experiments.plot_main_paper
+```
+
+This produces the combined reliability/corruption-structure figure, credit
+schematic, compact gradient-alignment plot, and depth-control plot. Source hashes and moved-table
+locations are tracked by LaTeX label in the artifact manifest.
+
+
+`rho` is the probability a training example gets a valid trace; the terminal answer stays correct regardless. Metrics: `answer_accuracy` (rollout), `exact_trace_accuracy` (full trace), `trace_step_accuracy` (per-step correctness on the free-running trace). Each run writes a CSV and a sibling `*_persist.json`.
 
 ```bash
 # Smoke:
@@ -60,19 +71,23 @@ python -m src reliability --task boolean_circuit_2 --rhos 0.8 --seeds 2001 \
   --checkpoints 2 --train-size 32 --val-size 8 --batch-size 8 \
   --output results/smoke.csv --device cpu
 
-# Paper-scale (GPU hours; one task; persist JSON beside the CSV):
-python -m src reliability \
+# Canonical protocol (GPU hours; use a fresh output path for a rerun):
+TRACE_COMPILE=0 python -m src reliability \
   --task boolean_circuit_8 \
-  --rhos 0.0 0.5 0.8 1.0 \
-  --seeds 2001 2002 2003 \
-  --checkpoints 1000 2000 4000 \
+  --rhos 0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 \
+  --seeds 2001 2002 2003 2004 2005 --checkpoints 8000 \
   --train-size 20000 --val-size 1000 \
-  --batch-size 128 --include-outcome \
-  --output results/reliability_sweeps/boolean_circuit_8.csv \
-  --device cuda:2
+  --train-seed 501 --val-seed 101 --ratio-seed 777 --batch-seed 12345 \
+  --batch-size 128 --eval-batch-size 128 --include-outcome --no-compile \
+  --embedding 128 --heads 4 --layers 2 --dropout 0 \
+  --lr 0.0003 --weight-decay 0 --grad-clip 1 --bf16 \
+  --output results/paper/boolean_reliability_canonical_rerun.csv \
+  --device cuda
 ```
 
-`figures/boolean_reliability.pdf` (built by `python experiments/run.py plot-paper-figures`) reads from `results/reliability_sweeps/boolean_circuit_8_phase_20260823_151153.csv`. Replication must keep `train_seed`, `val_seed`, `ratio_seed`, `batch_seed` fixed to compare against it.
+`Paper/figures/boolean_reliability.pdf` (built by `python experiments/run.py plot-paper-figures`) and the Transformer overlay in `Paper/figures/noise_threshold.pdf` read from `results/paper/boolean_reliability_canonical.csv`. The saved sweep has 60 rows and clean-process accuracy 82.20±6.76%, agreeing closely with the five-condition result 82.00±7.69%. Replication keeps the four data/assignment/minibatch seeds fixed. The runner refuses to overwrite an existing CSV, so the command above uses a separate rerun path. Figure-only rebuild commands and source hashes are in [the artifact manifest](results/paper/ARTIFACT_MANIFEST.md). The earlier 100k sweep is archival only.
+
+The compilation robustness check uses the same command with `TRACE_COMPILE=1`, `--compile` instead of `--no-compile`, and a fresh output path such as `results/paper/boolean_reliability_compile_rerun.csv`. Its archived source is `results/my_reliability_sweep_comp.csv` (clean endpoint 82.86±7.17%); it supports the appendix robustness note while the eager sweep remains canonical.
 
 **Depth × reliability** (does the reliability frontier predicted by Proposition 8 move with composition depth `D`?): rerun the same command for `--task boolean_circuit_{2,4,8}` with `--rhos 0.5 0.7 0.8 0.9 1.0 --seeds 2001 2002 2003 --checkpoints 8000`, output under `results/paper/depth_reliability/boolean_circuit_{D}.csv`.
 

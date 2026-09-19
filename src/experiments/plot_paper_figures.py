@@ -89,12 +89,12 @@ def chance_line(ax, p, label=None):
 
 
 def outcome_line(ax, value, label="Outcome-only"):
-    ax.axhline(value, color=OUTCOME, ls="-.", lw=2.2, label=label)
+    ax.axhline(value, color=BASELINE, ls="-.", lw=1.5, label=label)
 
 
 def plot_boolean_reliability_only():
     style()
-    bc = pd.read_csv(ROOT / "results/reliability_sweeps/boolean_circuit_8_phase_20260823_151153.csv")
+    bc = pd.read_csv(ROOT / "results/paper/boolean_reliability_canonical.csv")
     fig, ax = plt.subplots(figsize=(4.2, 3.6), layout="constrained")
 
     proc = bc[bc.condition != "outcome"].copy()

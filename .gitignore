@@ -24,7 +24,7 @@ training_dynamics.html
 training_dynamics.mp4
 
 # --- the manuscript lives outside the code artifact --------------------------
-# Paper/
+
 
 # --- editor ------------------------------------------------------------------
 .vscode/
@@ -39,3 +39,6 @@ training_dynamics.mp4
 review.py
 PAT_Review_Report.md
 course_poster_sr_scientist
+
+# Include the archived notebook trajectory linked by the paper artifact.
+!docs/assets/training_dynamics.mp4
