@@ -53,6 +53,10 @@ COMMANDS = {
         "src.experiments.handcoded_circuit_match",
         "Paper 2: process architecture vs hand-coded circuits; matched L+/L- probe",
     ),
+    "handcoded-escape-times": (
+        "src.experiments.handcoded_escape_times",
+        "Paper 2: process vs outcome escape times vs init scale ε and depth D",
+    ),
 }
 
 

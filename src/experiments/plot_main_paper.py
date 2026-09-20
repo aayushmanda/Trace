@@ -7,6 +7,8 @@ import pandas as pd
 from src.experiments.plot_paper_figures import style, save, PROCESS, OUTCOME, BASELINE
 
 ROOT = Path(__file__).resolve().parents[2]
+COHERENT = '#b42318'
+K_REGISTER = 17
 
 
 def plot_reliability_structure():
@@ -37,6 +39,31 @@ def plot_reliability_structure():
            ylabel='Answer accuracy', xlim=(.25, .75), ylim=(-.03, 1.02), xticks=[.3, .5, .7])
     ax.legend(loc='lower right', fontsize=8)
     save(fig, 'reliability_structure')
+
+
+def plot_register_corruption_thresholds():
+    """Appendix companion to Fig. 1b / Table 6: same trained-Transformer
+    register-machine rows, widened so both population thresholds
+    (rho_c=1/K for symmetric, rho_c=1/2 for one coherent wrong rule) are
+    visible alongside the three tested reliabilities."""
+    style()
+    fig, ax = plt.subplots(figsize=(5.0, 3.0), layout='constrained')
+    for law, color, marker, label in [('symmetric', PROCESS, 'o', r'Symmetric: $\rho_c=1/K$'),
+                                      ('coherent', COHERENT, '^', r'One coherent wrong rule: $\rho_c=1/2$')]:
+        data = pd.read_csv(ROOT / f'results/paper/matched_corruption/register_machine_16_{law}.csv')
+        data = data[data.step == 8000]
+        stats = data.groupby('rho').answer_accuracy.agg(['mean', 'std'])
+        ax.errorbar(stats.index, stats['mean'], yerr=stats['std'], color=color,
+                    marker=marker, ms=5, lw=1.8, capsize=3, label=label)
+    ax.axvline(1 / K_REGISTER, color=PROCESS, ls='--', lw=1.0)
+    ax.axvline(0.5, color=COHERENT, ls='--', lw=1.0)
+    ax.axhline(1 / K_REGISTER, color=BASELINE, ls=':', lw=1.0, label='Chance')
+    ax.set(title='Register machine: tested reliabilities against both thresholds',
+           xlabel=r'Trace reliability $\rho$', ylabel='Answer accuracy',
+           xlim=(-.02, 0.82), ylim=(-.03, 1.02), xticks=[1 / K_REGISTER, .3, .5, .7])
+    ax.set_xticklabels(['1/17', '.3', '.5', '.7'])
+    ax.legend(loc='upper left', fontsize=8)
+    save(fig, 'register_corruption_thresholds')
 
 
 def plot_gradient_alignment():
@@ -121,6 +148,7 @@ def plot_credit_geometry():
 
 if __name__ == '__main__':
     plot_reliability_structure()
+    plot_register_corruption_thresholds()
     plot_gradient_alignment()
     plot_credit_geometry()
     plot_depth_control()
