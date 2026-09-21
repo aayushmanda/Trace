@@ -15,44 +15,46 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-# command -> (module, one-line help)
+# command -> (module, one-line help). Modules live under src/experiments/<section>/,
+# grouped to match the paper's own sections (reliability, credit_geometry,
+# alignment, identifiability, plotting).
 COMMANDS = {
     "tabular-sampling": (
-        "src.experiments.closure_tabular_sampling",
+        "src.experiments.reliability.closure_tabular_sampling",
         "CPU: App. I 1/K vs 1/2 under uniform vs family gate sampling",
     ),
     "noise-threshold": (
-        "src.experiments.noise_threshold",
+        "src.experiments.reliability.noise_threshold",
         "App. I tabular reliability threshold (Fig. 3, Tables 5–6)",
     ),
     "family-sampling": (
-        "src.experiments.noise_threshold_family_sampling",
+        "src.experiments.reliability.noise_threshold_family_sampling",
         "App. I frontier under family-first gate sampling",
     ),
     "clean-convergence": (
-        "src.experiments.clean_convergence",
+        "src.experiments.reliability.clean_convergence",
         "Cor. 5: GD trajectory converging to T_g under clean process supervision",
     ),
     "credit-suppression": (
-        "src.experiments.credit_suppression",
+        "src.experiments.credit_geometry.credit_suppression",
         "Thm 2 residuals, Thm 4 both halves, Cor. 2 exponent",
     ),
     "prop8-frontier": (
-        "src.experiments.prop8_frontier",
+        "src.experiments.credit_geometry.prop8_frontier",
         "Reliability-frontier diagnostic: measured vs. predicted rho_c(a,D,beta)",
     ),
     "fraction-vs-amount": (
-        "src.experiments.fraction_vs_amount",
+        "src.experiments.reliability.fraction_vs_amount",
         "Fixed-rho, varying-N grid separating fraction from corpus size",
     ),
     "plot-paper-figures": (
-        "src.experiments.plot_paper_figures",
+        "src.experiments.plotting.plot_paper_figures",
         "Rebuild paper figures from archived CSVs",
     ),
 }
 # Paper-2 precursor work (handcoded-circuit-match, handcoded-escape-times) moved
-# to future_work/paper2/ and is no longer part of this CLI; see
-# future_work/README.md for its direct invocation.
+# to future_work/paper2/ and is no longer part of this CLI; run it directly,
+# e.g. `python -m future_work.paper2.handcoded_circuit_match --smoke`.
 
 
 def _parser() -> argparse.ArgumentParser:

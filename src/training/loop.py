@@ -1,10 +1,31 @@
 """Train any nn.Module. GPT uses (x, y, mask); handcoded uses a custom loss_fn."""
+import os
+import sys
+
 import torch
 from torch.nn import functional as F
 from torch.nn.parallel import DataParallel
+from tqdm.auto import tqdm as _tqdm
 
-from src.training.progress import progress
 from src.training.seed import autocast_context
+
+
+def _tqdm_disabled():
+    if os.environ.get("TRACE_TQDM", "1") in {"0", "false", "False"}:
+        return True
+    return any("unittest" in arg or "pytest" in arg for arg in sys.argv)
+
+
+def progress(iterable=None, **kwargs):
+    """One tqdm helper. Quiet in unit tests or when TRACE_TQDM=0."""
+    kwargs.setdefault("disable", _tqdm_disabled())
+    return _tqdm(iterable, **kwargs)
+
+
+def handcoded_lm_loss(model, batch):
+    """Handcoded / semantic-token LM loss. Not the GPT forward pass."""
+    import handcoded as h
+    return h.language_model_loss(model, batch)
 
 
 def gpt_lm_loss(model, batch, device):

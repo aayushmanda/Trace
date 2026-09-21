@@ -3,7 +3,7 @@ from collections import defaultdict
 
 import torch
 
-from src.training.progress import progress
+from src.training.loop import progress
 
 
 def extract_prediction(text: str, mode: str):
