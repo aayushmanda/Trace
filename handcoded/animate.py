@@ -8,7 +8,7 @@ from matplotlib.lines import Line2D
 from matplotlib.ticker import PercentFormatter
 
 from handcoded.eval import circuit_answer_matrix, gold_answer_matrix, make_circuit_prompts
-from handcoded.plotting import apply_style
+from src.plot_style import apply_style
 
 OUTCOME, PROCESS, FIXED, HIGHLIGHT = "#c56b08", "#087eaa", "#7653ad", "#e84393"
 

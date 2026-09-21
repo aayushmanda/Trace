@@ -1,4 +1,11 @@
 """Semantic-token Boolean-circuit executors (tutorial + paper stack)."""
+import sys
+from pathlib import Path
+
+_ROOT = Path(__file__).resolve().parent.parent
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
 from handcoded.config import (
     BATCH_SEED, DATA_SEED, D_FF, D_MODEL, DEPTH, LR, MODEL_SEED, N_BITS, N_HEADS,
     N_STATES, STEPS, TEST_SEED, TEST_SIZE, TRAIN_SIZE, BATCH_SIZE, load_config, make_checkpoints,
@@ -8,7 +15,6 @@ from handcoded.gates import (
 )
 from handcoded.tokenizer import CircuitTokenizer, make_tokenizer
 from handcoded.data import LanguageBatch, encode_dataset, language_model_loss, make_batch_schedule
-from handcoded.generate import generate, strip_after_eos
 from handcoded.models import (
     FixedAttentionHead, FixedOutcomeBlock, HandcodedOutcomeTransformer, HandcodedProcessTransformer,
     LearnedOneLayerTransformer, attach_local_heads, build_random_learned_model,
@@ -16,15 +22,15 @@ from handcoded.models import (
     make_random_trainable_copy,
 )
 from handcoded.eval import (
-    circuit_answer_matrix, evaluate_checkpoint, free_run_metrics, generated_answer,
-    inspect_fixed_circuit, make_circuit_prompts, make_generation_evaluation,
+    circuit_answer_matrix, evaluate_checkpoint, free_run_metrics, generate, generated_answer,
+    inspect_fixed_circuit, make_circuit_prompts, make_generation_evaluation, strip_after_eos,
     gold_answer_matrix,
 )
 from handcoded.train import run_architecture_experiment, run_experiment, train_one_model, train_step
 from handcoded.animate import (
     animate_all_circuits, animate_training_dynamics, export_training_animation, save_training_mp4,
 )
-from handcoded.plotting import apply_style
+from src.plot_style import apply_style
 
 __all__ = [
     "BATCH_SEED", "DATA_SEED", "D_FF", "D_MODEL", "DEPTH", "LR", "MODEL_SEED", "N_BITS", "N_HEADS",

@@ -27,7 +27,7 @@ from handcoded.gates import make_circuits
 from handcoded.models import build_random_trainable_process_architecture
 from handcoded.tokenizer import make_tokenizer
 from handcoded.train import train_step
-from src.experiments.handcoded_trace_gradients import (
+from future_work.paper2.handcoded_trace_gradients import (
     ProcessSlices,
     assert_d4_continuation_slices,
     continuation_slices,
@@ -376,7 +376,7 @@ def run_one(
     def checkpoint_row(step: int) -> dict:
         row = evaluate_escape(model, eval_process, eval_outcome, train_eval, tokenizer, slices, mode)
         if star is not None:
-            from src.experiments.handcoded_circuit_targets import circuit_match_metrics
+            from future_work.paper2.handcoded_circuit_targets import circuit_match_metrics
             row.update(circuit_match_metrics(model, star))
         row.update({
             "step": step, "seed": seed, "depth": depth, "init_std": init_std, "mode": mode,
@@ -520,14 +520,13 @@ def write_notes(path: Path, args: argparse.Namespace, tokenizer, device, slices_
         "## Smoke / paper-scale",
         "",
         "```",
-        "python -m src.experiments.handcoded_escape_times --smoke --device cuda:2 --output results/handcoded_escape_times_smoke",
-        "python experiments/run.py handcoded-escape-times --smoke --device cuda:2 --output results/handcoded_escape_times_smoke",
+        "python -m future_work.paper2.handcoded_escape_times --smoke --device cuda:2 --output results/handcoded_escape_times_smoke",
         "```",
         "",
         "Paper-scale grid suggestion (not run by --smoke):",
         "",
         "```",
-        "python -m src.experiments.handcoded_escape_times \\",
+        "python -m future_work.paper2.handcoded_escape_times \\",
         "  --modes process outcome --depths 2 3 4 \\",
         "  --init-stds 0.005 0.01 0.02 0.04 \\",
         "  --steps 2000 --train-size 20000 --batch-size 64 --device cuda:2 \\",
@@ -545,7 +544,7 @@ def _maybe_star(tokenizer, depth: int, enabled: bool):
     if not enabled:
         return None
     from handcoded.models import HandcodedProcessTransformer
-    from src.experiments.handcoded_circuit_targets import extract_star_circuits, verify_star_targets
+    from future_work.paper2.handcoded_circuit_targets import extract_star_circuits, verify_star_targets
     star_model = HandcodedProcessTransformer(tokenizer, depth).eval()
     star = extract_star_circuits(star_model, tokenizer=tokenizer, depth=depth)
     verify_star_targets(star)

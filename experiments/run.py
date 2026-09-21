@@ -49,15 +49,10 @@ COMMANDS = {
         "src.experiments.plot_paper_figures",
         "Rebuild paper figures from archived CSVs",
     ),
-    "handcoded-circuit-match": (
-        "src.experiments.handcoded_circuit_match",
-        "Paper 2: process architecture vs hand-coded circuits; matched L+/L- probe",
-    ),
-    "handcoded-escape-times": (
-        "src.experiments.handcoded_escape_times",
-        "Paper 2: process vs outcome escape times vs init scale ε and depth D",
-    ),
 }
+# Paper-2 precursor work (handcoded-circuit-match, handcoded-escape-times) moved
+# to future_work/paper2/ and is no longer part of this CLI; see
+# future_work/README.md for its direct invocation.
 
 
 def _parser() -> argparse.ArgumentParser:

@@ -1,4 +1,4 @@
-"""Hyperparameters for the semantic-token tutorial (paper vs smoke YAML)."""
+"""Hyperparameters for the semantic-token tutorial."""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -22,7 +22,7 @@ BATCH_SEED = 2_026
 
 
 def load_config(name="handcoded.yaml"):
-    """Load `configs/<name>` (paper or smoke). Nested maps are not required."""
+    """Load `configs/<name>`. Nested maps are not required."""
     path = Path(name)
     if not path.is_absolute():
         path = ROOT / "configs" / name if not path.exists() else path
