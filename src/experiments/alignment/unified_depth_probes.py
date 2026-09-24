@@ -25,6 +25,17 @@ from handcoded.tokenizer import make_tokenizer
 
 
 @torch.no_grad()
+def operation_residuals(model, batch, depth):
+    """(blocks + 1, examples, depth, width) residuals at the position of operation a_t (token index t)."""
+    hidden = model.token_features[batch.inputs] + model.position_features[: batch.inputs.shape[1]][None]
+    out = [hidden[:, 1:depth + 1]]
+    for block in model.blocks:
+        hidden = block(hidden)
+        out.append(hidden[:, 1:depth + 1])
+    return torch.stack(out)
+
+
+@torch.no_grad()
 def residuals(model, batch, n_states):
     """(blocks + 1, examples, width) residuals at the position that predicts the answer."""
     is_state = (batch.targets >= 0) & (batch.targets < n_states)
@@ -67,6 +78,8 @@ def main():
     parser.add_argument("--train-fraction", type=float, default=0.75)
     parser.add_argument("--model-seed", type=int, default=42)
     parser.add_argument("--probe-data-seed", type=int, default=70000)
+    parser.add_argument("--site", choices=["answer", "operation"], default="answer",
+                        help="answer: position that predicts s_D; operation: position of a_t when probing s_t")
     parser.add_argument("--device", default="cuda:0")
     args = parser.parse_args()
     device = torch.device(args.device)
@@ -91,12 +104,16 @@ def main():
                 trained.load_state_dict(torch.load(path, map_location=device, weights_only=True))
                 for name, model in (("outcome", trained), ("init", init)):
                     model.eval()
-                    stream = residuals(model, batch, tokenizer.n_states)
+                    if args.site == "answer":
+                        stream = residuals(model, batch, tokenizer.n_states)
+                    else:
+                        stream = operation_residuals(model, batch, depth)
                     for block in range(depth + 1):
                         for t in range(1, depth + 1):
                             labels = states[:, t - 1]
                             majority = labels[n_train:].bincount(minlength=tokenizer.n_states).max().item() / (len(labels) - n_train)
-                            accuracy = probe_accuracy(stream[block], labels, n_train, tokenizer.n_states)
+                            features = stream[block] if args.site == "answer" else stream[block][:, t - 1]
+                            accuracy = probe_accuracy(features, labels, n_train, tokenizer.n_states)
                             writer.writerow(dict(depth=depth, seed=seed, model=name, block=block, t=t,
                                                  accuracy=accuracy, majority=majority))
                     handle.flush()

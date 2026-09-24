@@ -101,6 +101,9 @@ def main(args):
                 grad_clip=args.grad_clip, desc=f"{task.name}/{label}/s{seed}",
                 train_model=train_model,
             )
+            if getattr(args, "save_models", None) is not None:
+                args.save_models.mkdir(parents=True, exist_ok=True)
+                torch.save(model.state_dict(), args.save_models / f"{task.name}_{label.replace('=', '')}_s{seed}.pt")
             del model, optimizer, loader
             if device.type == "cuda":
                 torch.cuda.empty_cache()

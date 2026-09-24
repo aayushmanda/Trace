@@ -46,6 +46,40 @@ def local_state_loss(model, batch, colon_id, n_states):
     return losses[mask].mean()
 
 
+def conditional_state_losses(logits, targets, n_states):
+    """Per-token cross-entropy over state tokens only (renormalized), at tokens whose target is a state."""
+    keep = (targets >= 0) & (targets < n_states)
+    log_probs = logits[..., :n_states].log_softmax(-1)
+    return -log_probs.gather(-1, targets.clamp(0, n_states - 1)[..., None])[..., 0], keep
+
+
+def conditional_direction(model, process_probe, tokenizer):
+    """Unit-norm negative gradient of the conditional intermediate-state loss (which state, not whether a state)."""
+    logits = model(process_probe.inputs)
+    losses, keep = conditional_state_losses(logits, process_probe.targets, tokenizer.n_states)
+    positions = torch.arange(process_probe.targets.shape[1], device=process_probe.targets.device)[None, :]
+    colon_positions = (process_probe.targets == tokenizer.colon).int().argmax(dim=1)[:, None]
+    keep = keep & (positions < colon_positions)
+    parameters = tuple(model.parameters())
+    gradients = torch.autograd.grad(losses[keep].mean(), parameters)
+    norm = torch.sqrt(sum((g * g).sum() for g in gradients))
+    return [-g.detach() / norm for g in gradients]
+
+
+def conditional_directional_derivatives(model, batch, vector, n_states):
+    """-D_v of the conditional state loss at every state-target token."""
+    params = dict(model.named_parameters())
+    tangent = {name: direction for name, direction in zip(params, vector)}
+
+    def per_token_loss(current):
+        logits = functional_call(model, current, (batch.inputs,))
+        return conditional_state_losses(logits, batch.targets, n_states)[0]
+
+    _, derivative = jvp(per_token_loss, (params,), (tangent,))
+    keep = (batch.targets >= 0) & (batch.targets < n_states)
+    return -derivative[keep].detach()
+
+
 def task_directions(model, process_probe, tokenizer, count):
     """Orthonormal negative gradients of clean local-state loss on probe shards."""
     if len(process_probe) < count:
@@ -86,6 +120,12 @@ def token_directional_derivatives(model, batch, vector):
     return -derivative[batch.targets != -100].detach()
 
 
+def state_token_mask(batch, n_states):
+    """Among supervised tokens, those whose target is a state (the tokens that carry credit)."""
+    targets = batch.targets[batch.targets != -100]
+    return targets < n_states
+
+
 def own_direction(model, own_probe):
     """Unit-norm negative gradient of the format's own token loss on its probe set."""
     parameters = tuple(model.parameters())
@@ -112,6 +152,7 @@ def a_and_c(contributions):
 
 def diagnostics(model, mode_batch, process_probe, tokenizer, directions, own_probe=None, n_random=0, random_seed=0):
     model.eval()
+    state = state_token_mask(mode_batch, tokenizer.n_states)
     basis = task_directions(model, process_probe, tokenizer, directions)
     with torch.no_grad():
         contributions = torch.stack(
@@ -124,17 +165,32 @@ def diagnostics(model, mode_batch, process_probe, tokenizer, directions, own_pro
         "tokens": len(one), "task_directions": len(basis),
         "A": a, "S": abs(s_signed), "signed_speed": s_signed,
         "C": abs(s_signed) / a if a > 0 else None,
+        "state_tokens": int(state.sum()),
     }
+    row["A_state"], row["C_state"] = a_and_c(one[state])
     if own_probe is not None:
         own = own_direction(model, own_probe)
         with torch.no_grad():
-            row["A_own"], row["C_own"] = a_and_c(token_directional_derivatives(model, mode_batch, own))
+            derivative = token_directional_derivatives(model, mode_batch, own)
+        row["A_own"], row["C_own"] = a_and_c(derivative)
+        row["A_own_state"], row["C_own_state"] = a_and_c(derivative[state])
     if n_random:
         with torch.no_grad():
-            pairs = [a_and_c(token_directional_derivatives(model, mode_batch, v))
+            draws = [token_directional_derivatives(model, mode_batch, v)
                      for v in random_directions(model, n_random, random_seed)]
-        row["A_rand"] = sum(p[0] for p in pairs) / n_random
-        row["C_rand"] = sum(p[1] for p in pairs) / n_random
+        for suffix, keep in (("", slice(None)), ("_state", state)):
+            pairs = [a_and_c(d[keep]) for d in draws]
+            row["A_rand" + suffix] = sum(p[0] for p in pairs) / n_random
+            row["C_rand" + suffix] = sum(p[1] for p in pairs) / n_random
+    conditional = conditional_direction(model, process_probe, tokenizer)
+    with torch.no_grad():
+        row["A_cond"], row["C_cond"] = a_and_c(
+            conditional_directional_derivatives(model, mode_batch, conditional, tokenizer.n_states))
+        if n_random:
+            pairs = [a_and_c(conditional_directional_derivatives(model, mode_batch, v, tokenizer.n_states))
+                     for v in random_directions(model, n_random, random_seed)]
+            row["A_rand_cond"] = sum(p[0] for p in pairs) / n_random
+            row["C_rand_cond"] = sum(p[1] for p in pairs) / n_random
     if len(basis) > 1:
         magnitudes = contributions.norm(dim=1)
         population = contributions.mean(dim=0).norm()
@@ -278,7 +334,9 @@ def main():
     args.output.with_suffix(".json").write_text(json.dumps(metadata, indent=2) + "\n")
     fields = ["depth", "seed", "mode", "step", "parameters", "train_examples", "diagnostic_loss", "answer_accuracy",
               "exact_continuation", "tokens", "task_directions", "A", "S", "signed_speed", "C",
-              "task_subspace_A", "task_subspace_S", "task_subspace_C", "A_own", "C_own", "A_rand", "C_rand"]
+              "task_subspace_A", "task_subspace_S", "task_subspace_C", "A_own", "C_own", "A_rand", "C_rand",
+              "state_tokens", "A_state", "C_state", "A_own_state", "C_own_state", "A_rand_state", "C_rand_state",
+              "A_cond", "C_cond", "A_rand_cond", "C_rand_cond"]
     with args.output.open("w", newline="") as output_file:
         writer = csv.DictWriter(output_file, fieldnames=fields)
         writer.writeheader()

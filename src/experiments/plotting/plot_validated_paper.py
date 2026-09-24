@@ -29,9 +29,9 @@ def main():
     canonical=pd.read_csv(DATA/'canonical_corpora/metrics.csv')
     fig,ax=plt.subplots(figsize=(4.2,2.15))
     tab=canonical[canonical.seed==501].sort_values('rho')
-    ax.plot(tab.rho,100*tab.answer_accuracy,'o-',ms=3,color='#be681e',label='Exact-corpus table')
+    ax.plot(tab.rho,100*tab.answer_accuracy,'o-',ms=3,color='#be681e',label='Fitted table')
     g=old[old.rho.notna()].groupby('rho').answer_accuracy.agg(['mean','std'])
-    ax.errorbar(g.index,100*g['mean'],100*g['std'],fmt='o-',ms=3,capsize=2,color='#1766a4',label='Canonical GPT')
+    ax.errorbar(g.index,100*g['mean'],100*g['std'],fmt='o-',ms=3,capsize=2,color='#1766a4',label='GPT-2L')
     ax.axhline(6.25,color='gray',ls=':',lw=.8)
     ax.set(xlabel='Clean-trace reliability ρ',ylabel='Answer accuracy (%)',ylim=(-2,105))
     ax.legend(loc='upper left');fig.tight_layout(pad=.3);save(fig,'canonical_same_corpus')
@@ -39,7 +39,7 @@ def main():
     fig,axes=plt.subplots(1,3,figsize=(5.55,1.95),sharey=True)
     for ax,rho in zip(axes,[.3,.5,.7]):
         subset=concentration[concentration.rho==rho]
-        for metric,label,color,style in [('final_answer','Transformer','#1766a4','-'),('tabular_answer_accuracy','Same-corpus table','#be681e','--')]:
+        for metric,label,color,style in [('final_answer','Tx-sem','#1766a4','-'),('tabular_answer_accuracy','Fitted table','#be681e','--')]:
             g=subset.groupby('concentration')[metric].agg(['mean','std'])
             ax.errorbar(g.index,100*g['mean'],100*g['std'],fmt='o',linestyle=style,ms=2.5,capsize=2,lw=1,color=color,label=label)
         ax.axhline(6.25,color='gray',ls=':',lw=.7)

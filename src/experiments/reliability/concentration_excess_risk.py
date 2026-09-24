@@ -7,8 +7,10 @@ Two targets are scored:
   contextual  Q(.|x): the pooled row at t = 1; for t >= 2 a correct displayed prefix implies a clean
               trace (corrupted traces are wrong at every step), so Q = T, else Q = R.
 Reports Delta = E KL(target || p_theta), the decoding error against argmax target, the bound 2 Delta/m^2
-(pooled, when m > 0), and eps_ctx of the network: the largest sup-norm deviation of p_theta(.|x) from
-its mean over positions that share (s, a).
+(pooled, when m > 0; per seed), the same bound against Q on step 1, on later steps after a correct prefix
+(margin 1) and after a wrong prefix (margin lambda), the target discrepancy eps_ctx = max(rho, 1 - rho), and
+the network's context sensitivity: the largest sup-norm deviation of p_theta(.|x) from its mean over
+positions that share (s, a). Pooled ties (m = 0) are broken toward the lower state index.
 
 Run from a tree holding the pre-f099952 handcoded package (see ARTIFACT_MANIFEST.md):
   python -m src.experiments.reliability.concentration_excess_risk \
@@ -89,6 +91,18 @@ def main():
                     prefix_clean = prefix_clean and states[i][t] == correct
                     current = states[i][t]
         frame = pd.DataFrame(records)
+        # Theorem 3 on each set of positions with its exact contextual margin (restricting x to a set is allowed).
+        subsets = {"first": (frame.t == 0, margin),
+                   "clean_later": ((frame.t > 0) & frame.prefix_clean, 1.0),
+                   "wrong_later": ((frame.t > 0) & ~frame.prefix_clean, lam)}
+        contextual = {}
+        for name, (keep, subset_margin) in subsets.items():
+            part = frame[keep]
+            delta_s = part.kl_ctx.mean() if len(part) else np.nan
+            contextual.update({f"share_{name}": keep.mean(), f"delta_{name}": delta_s,
+                               f"error_{name}": part.err_ctx.mean() if len(part) else np.nan,
+                               f"margin_{name}": subset_margin,
+                               f"bound_{name}": 2 * delta_s / subset_margin ** 2 if subset_margin > 0 else np.nan})
         vectors, row_ids = np.stack(frame.p.to_numpy()), frame.row.to_numpy()
         eps = max(np.abs(vectors[row_ids == r] - vectors[row_ids == r].mean(0)).max() for r in np.unique(row_ids))
         delta = frame.kl_pooled.mean()
@@ -98,7 +112,7 @@ def main():
                          delta_ctx=frame.kl_ctx.mean(), error_ctx=frame.err_ctx.mean(),
                          error_ctx_clean_later=frame[(frame.t > 0) & frame.prefix_clean].err_ctx.mean(),
                          error_ctx_corrupt_later=frame[(frame.t > 0) & ~frame.prefix_clean].err_ctx.mean(),
-                         eps_ctx_network=float(eps)))
+                         context_sensitivity=float(eps), eps_ctx_target=max(rho, 1 - rho), **contextual))
         print(checkpoint.name, {k: round(v, 4) if isinstance(v, float) else v for k, v in rows[-1].items()}, flush=True)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     pd.DataFrame(rows).to_csv(args.output, index=False)
