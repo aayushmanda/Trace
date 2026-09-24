@@ -55,7 +55,7 @@ python -m src supervision --config configs/experiments/e1_five_condition_rerun.y
 Rebuild all four main figures from existing canonical rows (no training):
 
 ```bash
-uv run python -m src.experiments.plot_main_paper
+uv run python -m src.experiments.plotting.plot_main_paper
 ```
 
 This produces the combined reliability/corruption-structure figure, credit
@@ -85,7 +85,7 @@ TRACE_COMPILE=0 python -m src reliability \
   --device cuda
 ```
 
-`Paper/figures/reliability_structure.pdf` (built by `python -m src.experiments.plot_main_paper`) and the Transformer overlay in `Paper/figures/noise_threshold.pdf` read from `results/paper/boolean_reliability_canonical.csv`. The saved sweep has 60 rows and clean-process accuracy 82.20±6.76%, agreeing closely with the five-condition result 82.00±7.69%. Replication keeps the four data/assignment/minibatch seeds fixed. The runner refuses to overwrite an existing CSV, so the command above uses a separate rerun path. Figure-only rebuild commands and source hashes are in [the artifact manifest](results/paper/ARTIFACT_MANIFEST.md). The earlier 100k sweep is archival only.
+`Paper/figures/reliability_structure.pdf` (built by `python -m src.experiments.plotting.plot_main_paper`) and the Transformer overlay in `Paper/figures/noise_threshold.pdf` read from `results/paper/boolean_reliability_canonical.csv`. The saved sweep has 60 rows and clean-process accuracy 82.20±6.76%, agreeing closely with the five-condition result 82.00±7.69%. Replication keeps the four data/assignment/minibatch seeds fixed. The runner refuses to overwrite an existing CSV, so the command above uses a separate rerun path. Figure-only rebuild commands and source hashes are in [the artifact manifest](results/paper/ARTIFACT_MANIFEST.md). The earlier 100k sweep is archival only.
 
 The compilation robustness check uses the same command with `TRACE_COMPILE=1`, `--compile` instead of `--no-compile`, and a fresh output path such as `results/paper/boolean_reliability_compile_rerun.csv`. Its archived source is `results/my_reliability_sweep_comp.csv` (clean endpoint 82.86±7.17%); it supports the appendix robustness note while the eager sweep remains canonical.
 
@@ -121,7 +121,7 @@ python experiments/run.py clean-convergence       # Corollary 5: GD trajectory c
 python experiments/run.py credit-suppression      # Figure App.C: credit identities, numerically confirmed
 python experiments/run.py prop8-frontier          # Proposition 8: measured vs predicted rho_c(a,D,beta)
 python experiments/run.py fraction-vs-amount      # fixed-rho, varying-N grid
-python experiments/run.py plot-paper-figures      # rebuild figures/{boolean_reliability,architectures}.pdf
+python experiments/run.py plot-paper-figures      # rebuild figures/architectures.pdf
 ```
 
 Full command-to-claim map: [experiments/README.md](experiments/README.md).

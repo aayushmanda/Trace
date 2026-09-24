@@ -2,10 +2,20 @@
 
 How to run the paper stack: **[../RUN.md](../RUN.md)**.
 
-This folder has one CLI. Implementations live in `src/experiments/`. Training
-entry points that already have `python -m src <command>` (`supervision`,
-`reliability`, `lora`) stay there; this CLI is for figure builders and
-closed-form/numerical checks that need no training.
+This folder has one CLI. Implementations live under `src/experiments/`, grouped
+into subfolders that match the paper's own sections:
+
+| Folder | Paper section |
+|---|---|
+| `reliability/` | §2 canonical reliability sweep, App. I thresholds |
+| `credit_geometry/` | §3 credit factorization/suppression, Prop. 8 frontier |
+| `alignment/` | §5.2 gradient-alignment diagnostic |
+| `identifiability/` | App. B identifiability |
+| `plotting/` | figure builders (cross-cutting) |
+
+Training entry points that already have `python -m src <command>`
+(`supervision`, `reliability`, `lora`) stay in `src/eval/`; this CLI is for
+figure builders and closed-form/numerical checks that need no training.
 
 ```bash
 python experiments/run.py --help
@@ -26,7 +36,7 @@ python experiments/run.py plot-paper-figures
 | `python experiments/run.py credit-suppression` | Credit identities (forward/backward decomposition, near-mixing bound, complete-mixing zero), confirmed numerically without training | `results/credit_suppression/` (also writes a `Paper/figures/credit_suppression.pdf` diagnostic plot, not currently cited by the paper) |
 | `python experiments/run.py prop8-frontier` | Proposition 8: measured vs predicted reliability frontier \(\rho_c(a,D,\beta)\) | `results/prop8_frontier/`, `Paper/figures/prop8_frontier.pdf` |
 | `python experiments/run.py fraction-vs-amount` | Fixed-\(\rho\), varying-\(N\) grid separating fraction-correct from corpus size | `results/fraction_vs_amount/`, `Paper/figures/fraction_vs_amount.pdf` |
-| `uv run python -m src.experiments.plot_main_paper` | Nine-page main paper: reliability/corruption intervention, credit schematic, gradient alignment | `Paper/figures/` |
+| `uv run python -m src.experiments.plotting.plot_main_paper` | Nine-page main paper: reliability/corruption intervention, credit schematic, gradient alignment | `Paper/figures/` |
 | `python experiments/run.py plot-paper-figures` | Rebuilds `figures/architectures.pdf` | `Paper/figures/` |
 
 None of the `experiments/run.py` commands train a model; each either evaluates a closed-form expression directly or reads an already-archived CSV.
@@ -36,13 +46,13 @@ than through this CLI (each has a `main()`/`--help`):
 
 | Script | Supports |
 |---|---|
-| `python -m src.experiments.checkpoint_competence_trajectory` | \(\rho_c(a,D,\beta)\) frontier vs. a real trained checkpoint |
-| `python -m src.experiments.credit_transmission_probe` | Theorem 1's forward × backward factorization, trained-network validation |
-| `python -m src.experiments.gradient_alignment` | App. F gradient-alignment diagnostic (Figure: gradient_alignment_compact) |
-| `python -m src.experiments.gradient_alignment_by_group` | Per-parameter-group breakdown of the same diagnostic |
-| `python -m src.experiments.identifiability_certificate` | Computational certificate for the fixed-depth identifiability theorem |
-| `python -m src.experiments.identifiability_probe` | Trained-network test of group-symmetry non-identifiability |
-| `python -m src.experiments.higher_order_credit_check` | Symbolic/autodiff checks for the higher-order credit results |
+| `python -m src.experiments.credit_geometry.checkpoint_competence_trajectory` | \(\rho_c(a,D,\beta)\) frontier vs. a real trained checkpoint |
+| `python -m src.experiments.credit_geometry.credit_transmission_probe` | Theorem 1's forward × backward factorization, trained-network validation |
+| `python -m src.experiments.alignment.gradient_alignment` | App. F gradient-alignment diagnostic (Figure: gradient_alignment_compact) |
+| `python -m src.experiments.alignment.gradient_alignment_by_group` | Per-parameter-group breakdown of the same diagnostic |
+| `python -m src.experiments.identifiability.identifiability_certificate` | Computational certificate for the fixed-depth identifiability theorem |
+| `python -m src.experiments.identifiability.identifiability_probe` | Trained-network test of group-symmetry non-identifiability |
+| `python -m src.experiments.credit_geometry.higher_order_credit_check` | Symbolic/autodiff checks for the higher-order credit results |
 
 Precursor work toward a *different, future* paper (circuit-match and
 trace-gradient probes) lives outside this pipeline entirely, in
