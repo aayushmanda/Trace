@@ -26,7 +26,7 @@ from handcoded.gates import make_circuits
 from handcoded.models import HandcodedProcessTransformer, build_random_trainable_process_architecture
 from handcoded.tokenizer import make_tokenizer
 from handcoded.train import train_step
-from future_work.paper2.handcoded_circuit_targets import (
+from src.experiments.circuit_match.handcoded_circuit_targets import (
     STAR_HEAD_NAMES,
     algebra_audit,
     circuit_match_metrics,
@@ -34,7 +34,7 @@ from future_work.paper2.handcoded_circuit_targets import (
     star_qk_route_entries,
     verify_star_targets,
 )
-from future_work.paper2.handcoded_trace_gradients import (
+from src.experiments.circuit_match.handcoded_trace_gradients import (
     CORRUPTION_SEED,
     assert_d4_continuation_slices,
     check_star_dirs,
@@ -277,8 +277,8 @@ def write_notes(path: Path, star, audit, args, slices=None):
         "## Smoke / run",
         "",
         "```",
-        "python -m future_work.paper2.handcoded_circuit_match --smoke --output results/handcoded_circuit_match",
-        "python -m future_work.paper2.handcoded_circuit_match --smoke --corruption coherent --output results/handcoded_circuit_match_probe_smoke",
+        "python -m src.experiments.circuit_match.handcoded_circuit_match --smoke --output results/handcoded_circuit_match",
+        "python -m src.experiments.circuit_match.handcoded_circuit_match --smoke --corruption coherent --output results/handcoded_circuit_match_probe_smoke",
         "```",
         "",
         f"Default non-smoke: steps={2000}, batch={64}, train_size={4096}. Seeds used in this run: {args.seeds}.",

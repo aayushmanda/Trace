@@ -1,8 +1,8 @@
 """Semantic tokens: one token per 4-bit state and per gate (not character GPT)."""
 import math
 
-from handcoded.config import N_BITS
-from handcoded.gates import make_gate_names
+from handcoded import config
+from handcoded.gates import active_gate_names
 
 
 class CircuitTokenizer:
@@ -37,5 +37,6 @@ class CircuitTokenizer:
         return " ".join(self.tokens[int(index)] for index in ids)
 
 
-def make_tokenizer(n_bits=N_BITS):
-    return CircuitTokenizer(make_gate_names(n_bits), 2 ** n_bits)
+def make_tokenizer(n_bits=None, n_gates=None):
+    n_bits = config.N_BITS if n_bits is None else n_bits
+    return CircuitTokenizer(active_gate_names(n_bits, n_gates), 2 ** n_bits)

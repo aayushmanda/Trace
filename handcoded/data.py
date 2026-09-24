@@ -35,8 +35,6 @@ def encode_dataset(circuits, tokenizer, mode):
         targets.append(target)
     inputs = torch.tensor(inputs)
     targets = torch.tensor(targets)
-    if inputs.ndim != 2 or targets.shape != inputs.shape:
-        raise RuntimeError(f"encode_dataset expected (N, T) pair, got {tuple(inputs.shape)} {tuple(targets.shape)}")
     return LanguageBatch(inputs, targets)
 
 

@@ -13,9 +13,16 @@ from pathlib import Path
 import math
 import random
 
+import sys
+
 import matplotlib
 
-matplotlib.use("Agg")
+# Force a headless backend for plain script runs only. This module is also
+# imported from the tutorial notebook for `encode_process_states`; calling
+# matplotlib.use("Agg") there silently switches the kernel off the inline
+# backend, and every later plt figure stops rendering with no error.
+if "ipykernel" not in sys.modules:
+    matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import torch
 from torch.nn import functional as F
@@ -27,6 +34,8 @@ from src.plot_style import apply_style
 
 GROUPS = ("QK", "OV", "MLP")
 RHO_GRID = (0.0, 0.3, 0.5, 1.0)
+#: step sizes for the finite-step functional probe (see functional_probe).
+FUNCTIONAL_ETAS = (1e-3, 1e-2)
 CORRUPTION_SEED = 4242
 EPS = 1e-12
 STAR_D_MIN_NORM = 1e-8
@@ -267,12 +276,91 @@ def _polarity_metrics(model, batch, slices: ProcessSlices, groups) -> tuple[dict
     return row, grads
 
 
+def _eta_tag(eta: float) -> str:
+    return "eta" + f"{eta:g}".replace(".", "").replace("-", "m")
+
+
+def _flat_params(tensors) -> torch.Tensor:
+    return torch.cat([t.detach().float().reshape(-1) for t in tensors])
+
+
+def _apply_group_delta(tensors, flat_delta: torch.Tensor) -> None:
+    """In-place theta_r += flat_delta, chunked back to each tensor's shape."""
+    offset = 0
+    with torch.no_grad():
+        for tensor in tensors:
+            size = tensor.numel()
+            tensor.add_(flat_delta[offset: offset + size].view_as(tensor).to(tensor.dtype))
+            offset += size
+
+
+def functional_probe(model, groups, star_dirs, g_plus, g_minus, batch_plus,
+                     slices: ProcessSlices, etas=FUNCTIONAL_ETAS) -> dict[str, float]:
+    """What a trace's gradient actually does, as opposed to where it points.
+
+    alpha_r^pm = -<g_r^pm, theta*_r> projects onto the constructed parameter
+    vector itself, so its sign says the update grows the component of theta_r
+    along theta*_r.  It does NOT say the update shortens ||theta_r - theta*_r||,
+    which needs the gap direction, and it says nothing about competence.  This
+    adds both of the quantities that do:
+
+      beta_r^pm  = <-g_r^pm, (theta*_r - theta_r)> / ||theta*_r - theta_r||,
+                   positive iff the step reduces the distance to theta*_r to
+                   first order;
+      proj_r^pm  = <g_r^pm, h_r> / ||h_r||^2 with h_r = grad_r L_state(clean).
+                   A step -eta*g changes the clean state loss by
+                   -eta*<g, h> + o(eta), so POSITIVE proj means the step
+                   improves clean local competence.  Same convention and
+                   normalisation as the Sec. 5.2 alignment diagnostic;
+      dLclean    = L_state(clean; theta - eta g_r^pm) - L_state(clean; theta),
+                   the same effect measured rather than linearized, with the
+                   update restricted to group r.
+
+    Negative dLclean means a step built from that trace improves the model's
+    clean next-state predictions.
+    """
+    row: dict[str, float] = {}
+    with torch.enable_grad():
+        clean_state_grads = _grad_groups(_mean_at(_token_nll(model, batch_plus), slices.state), groups)
+    model.zero_grad(set_to_none=True)
+    with torch.no_grad():
+        base = float(_mean_at(_token_nll(model, batch_plus), slices.state))
+    row["L_state_clean_base"] = base
+
+    for name in GROUPS:
+        tensors = groups[name]
+        theta = _flat_params(tensors).to(g_plus[name].device)
+        star = star_dirs[name].to(device=theta.device, dtype=theta.dtype)
+        gap = star - theta
+        gap_norm = float(gap.norm())
+        h = clean_state_grads[name].to(theta.device)
+        h_sq = float(h @ h)
+        row[f"gap_{name}_norm"] = gap_norm
+        row[f"h_{name}_norm"] = float(h.norm())
+        saved = [t.detach().clone() for t in tensors]
+        for tag, grad in (("plus", g_plus[name]), ("minus", g_minus[name])):
+            row[f"beta_{name}_{tag}"] = float(-(grad @ gap) / gap_norm) if gap_norm > EPS else 0.0
+            row[f"proj_{name}_{tag}"] = float((grad @ h) / h_sq) if h_sq > EPS else 0.0
+            for eta in etas:
+                _apply_group_delta(tensors, -eta * grad)
+                with torch.no_grad():
+                    moved = float(_mean_at(_token_nll(model, batch_plus), slices.state))
+                with torch.no_grad():
+                    for tensor, original in zip(tensors, saved):
+                        tensor.copy_(original)
+                row[f"dLclean_{name}_{tag}_{_eta_tag(eta)}"] = moved - base
+    model.zero_grad(set_to_none=True)
+    return row
+
+
 def matched_loss_and_grads(model, star_dirs, batch_plus, batch_minus, slices: ProcessSlices) -> dict[str, float]:
     """Full continuation CE, token-group CE, and QK/OV/MLP grad geometry on matched pairs.
 
-    Sign of α: α_r^± = -<g_r^±, d_r*>. Positive α means the gradient decreases
-    loss when moving parameters toward the constructed circuit (GD would step
-    toward star along that group).
+    Sign of α: α_r^± = -<g_r^±, θ*_r>, a projection onto the constructed
+    parameter vector itself. Positive α means a step along -g_r^± increases the
+    component of θ_r along θ*_r. It does NOT mean the step shortens
+    ||θ_r - θ*_r|| (that is β, see functional_probe) nor that it improves clean
+    local competence (that is proj/dLclean, also in functional_probe).
     """
     model.eval()
     groups = _group_tensors(model)
@@ -309,6 +397,9 @@ def matched_loss_and_grads(model, star_dirs, batch_plus, batch_minus, slices: Pr
         for rho in RHO_GRID:
             row[f"alpha_{name}_{_rho_tag(rho)}"] = rho * a_plus + (1.0 - rho) * a_minus
 
+    row.update(functional_probe(model, groups, star_dirs, g_plus, g_minus,
+                                batch_plus, slices))
+
     for key, value in row.items():
         if isinstance(value, float) and not math.isfinite(value):
             raise RuntimeError(f"non-finite probe value {key}={value}")
@@ -333,6 +424,11 @@ def grad_match_columns() -> tuple[str, ...]:
             f"alpha_{name}_plus", f"alpha_{name}_minus", f"star_d_{name}_norm",
         ]
         cols += [f"alpha_{name}_{_rho_tag(rho)}" for rho in RHO_GRID]
+        cols += [f"gap_{name}_norm", f"h_{name}_norm"]
+        for tag in ("plus", "minus"):
+            cols += [f"beta_{name}_{tag}", f"proj_{name}_{tag}"]
+            cols += [f"dLclean_{name}_{tag}_{_eta_tag(eta)}" for eta in FUNCTIONAL_ETAS]
+    cols.append("L_state_clean_base")
     return tuple(cols)
 
 

@@ -8,7 +8,7 @@ import numpy as np
 import torch
 
 # Only compile these; fixed / custom-attention executors stay eager.
-_COMPILABLE = {"GPTModel", "LearnedOneLayerTransformer"}
+_COMPILABLE = {"GPTModel", "LearnedOneLayerTransformer", "UnifiedExecutor"}
 
 _explicit_compile = None
 _explicit_bf16 = None

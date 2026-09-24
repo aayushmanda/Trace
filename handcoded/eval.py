@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import numpy as np
 import torch
 
-from handcoded.config import N_BITS
+from handcoded import config
 from handcoded.data import language_model_loss
 from handcoded.gates import phi
 
@@ -78,8 +78,6 @@ def free_run_metrics(model, evaluation, tokenizer, mode):
 
 def make_circuit_prompts(gates, tokenizer, device):
     """Fix the gate sequence; vary the start state over all 16 values."""
-    if not gates or any(gate not in tokenizer.gates for gate in gates):
-        raise ValueError("Choose a nonempty sequence of known gates")
     rows = [
         [state] + [tokenizer.ids[gate] for gate in gates] + [tokenizer.sep]
         for state in range(tokenizer.n_states)
@@ -100,10 +98,9 @@ def circuit_answer_matrix(model, prompts, tokenizer, mode):
     return (probabilities * valid[:, None]).detach().cpu().numpy()
 
 
-def gold_answer_matrix(gates, n_bits=N_BITS):
+def gold_answer_matrix(gates, n_bits=None):
+    n_bits = config.N_BITS if n_bits is None else n_bits
     """Exact permutation: one-hot φ composition for every start state."""
-    if not gates:
-        raise ValueError("Choose a nonempty gate sequence")
     n_states = 2 ** n_bits
     matrix = np.zeros((n_states, n_states), dtype=np.float32)
     for start in range(n_states):
@@ -117,8 +114,6 @@ def gold_answer_matrix(gates, n_bits=N_BITS):
 @torch.no_grad()
 def inspect_fixed_circuit(model, gates, tokenizer, device):
     """Residual-stream state features after each fixed outcome block (not attention weights)."""
-    if len(gates) != len(model.blocks):
-        raise ValueError("Gate sequence must match the fixed model's depth")
     prompts = make_circuit_prompts(gates, tokenizer, device)
     prefix = generate(model, prompts, 1, tokenizer.eos)
     layer_matrices, handles = [], []

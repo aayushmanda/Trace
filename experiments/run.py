@@ -21,40 +21,44 @@ if str(ROOT) not in sys.path:
 COMMANDS = {
     "tabular-sampling": (
         "src.experiments.reliability.closure_tabular_sampling",
-        "CPU: App. I 1/K vs 1/2 under uniform vs family gate sampling",
+        "CPU: App. C.2 1/K vs 1/2 under uniform vs family gate sampling",
     ),
     "noise-threshold": (
         "src.experiments.reliability.noise_threshold",
-        "App. I tabular reliability threshold (Fig. 3, Tables 5–6)",
+        "App. C.2 tabular reliability threshold (Fig. 7, Table 4)",
     ),
     "family-sampling": (
         "src.experiments.reliability.noise_threshold_family_sampling",
-        "App. I frontier under family-first gate sampling",
+        "App. C.2 frontier under family-first gate sampling",
     ),
     "clean-convergence": (
         "src.experiments.reliability.clean_convergence",
-        "Cor. 5: GD trajectory converging to T_g under clean process supervision",
+        "Thm. B.3: GD trajectory converging to T_g under clean process supervision",
     ),
     "credit-suppression": (
         "src.experiments.credit_geometry.credit_suppression",
-        "Thm 2 residuals, Thm 4 both halves, Cor. 2 exponent",
+        "Thm. 2 residuals, Thm. 4 both halves, Thm. 2's depth-bound exponent",
     ),
     "prop8-frontier": (
         "src.experiments.credit_geometry.prop8_frontier",
-        "Reliability-frontier diagnostic: measured vs. predicted rho_c(a,D,beta)",
+        "Fig. 6: measured vs. predicted stalling threshold rho_c(a,D,beta)",
     ),
     "fraction-vs-amount": (
         "src.experiments.reliability.fraction_vs_amount",
-        "Fixed-rho, varying-N grid separating fraction from corpus size",
+        "App. C.2.3 (Fig. 9): fixed-rho, varying-N grid separating fraction from corpus size",
     ),
     "plot-paper-figures": (
         "src.experiments.plotting.plot_paper_figures",
         "Rebuild paper figures from archived CSVs",
     ),
 }
-# Paper-2 precursor work (handcoded-circuit-match, handcoded-escape-times) moved
-# to future_work/paper2/ and is no longer part of this CLI; run it directly,
-# e.g. `python -m future_work.paper2.handcoded_circuit_match --smoke`.
+# handcoded-circuit-match was promoted 2026-09-22 out of future_work/paper2/
+# into src/experiments/circuit_match/ (paper §5.3, App. C); it stays a
+# standalone script, not part of this CLI's registry, like the other
+# main()/--help scripts in the table above: run it directly, e.g.
+# `python -m src.experiments.circuit_match.handcoded_circuit_match --smoke`.
+# handcoded-escape-times is still Paper-2 precursor work and remains in
+# future_work/paper2/, run directly there.
 
 
 def _parser() -> argparse.ArgumentParser:

@@ -52,16 +52,32 @@ python -m src supervision --config configs/experiments/e1_five_condition_rerun.y
 
 ## Main-paper figures and trace reliability
 
-Rebuild all four main figures from existing canonical rows (no training):
+Rebuild the revised paper's three main figures and validation appendix artifacts
+from archived results (no training):
 
 ```bash
-uv run python -m src.experiments.plotting.plot_main_paper
+uv run python -m src.experiments.plotting.plot_validated_paper
+uv run python -m src.experiments.temporal_noise.report
 ```
 
-This produces the combined reliability/corruption-structure figure, credit
-schematic, compact gradient-alignment plot, and depth-control plot. Source hashes and moved-table
-locations are tracked by LaTeX label in the artifact manifest.
+The current main figures show exact-corpus recovery, concentration, and temporal
+corruption. Functional-update figures are supplementary. The two commands also
+rebuild validation appendix figures and tables; neither starts model training.
+Source hashes are recorded in
+`results/review_validation/manuscript_artifact_hashes.json` and
+`results/novelty_extension/artifact_hashes.json`. Temporal protocols, all 30 runs,
+and limitations are documented in [the temporal report](results/novelty_extension/RESULTS.md). The older
+`plot_main_paper` builder remains available for historical and supplementary
+artifacts; its projection figure is no longer a main-paper result.
 
+Build the complete PDF with TeX Live from `Paper/`:
+
+```bash
+latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build_validation main.tex
+```
+
+The validated build has nine main-text pages, followed by references and
+appendices (36 pages total).
 
 `rho` is the probability a training example gets a valid trace; the terminal answer stays correct regardless. Metrics: `answer_accuracy` (rollout), `exact_trace_accuracy` (full trace), `trace_step_accuracy` (per-step correctness on the free-running trace). Each run writes a CSV and a sibling `*_persist.json`.
 

@@ -29,8 +29,6 @@ def _prefix_loss_sample(data, max_examples):
         return None
     if max_examples is None:
         return data
-    if max_examples <= 0:
-        raise ValueError("max_examples must be positive or None")
     return data.select(slice(0, min(max_examples, len(data))))
 
 
@@ -99,7 +97,7 @@ def run_experiment(
     tokenizer, circuit_prompts, modes=("outcome", "process"), test_loss_data=None,
     loss_eval_size=256, progress_leave=True, grad_clip_norm=None,
 ):
-    """Two learned copies of the same one-layer architecture: outcome vs process supervision."""
+    """Two learned copies of the same base architecture: outcome vs process supervision."""
     models, histories = {}, []
     for mode in tqdm(modes, desc="supervision modes", leave=progress_leave):
         model, history = train_one_model(

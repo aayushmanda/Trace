@@ -14,26 +14,20 @@ OUTCOME, PROCESS, FIXED, HIGHLIGHT = "#c56b08", "#087eaa", "#7653ad", "#e84393"
 
 
 def animate_training_dynamics(history, fixed_circuit, fixed_metrics, interval_ms=140,
-                              *, dpi=140, figsize=(18, 14), selected_start=8):
+                              *, dpi=140, figsize=(18, 14), selected_start=None):
     """FuncAnimation from real checkpoints (not interpolated tokens)."""
     apply_style({"legend.fontsize": 13, "legend.title_fontsize": 14})
-    if interval_ms <= 0 or dpi <= 0:
-        raise ValueError("Playback interval and dpi must be positive")
     frames = {mode: history[history["mode"] == mode].sort_values("step").reset_index(drop=True)
               for mode in ("outcome", "process")}
     steps = frames["outcome"]["step"].tolist()
-    if not steps or steps != frames["process"]["step"].tolist():
-        raise ValueError("Both models need matching, nonempty checkpoint steps")
-    if any(b <= a for a, b in zip(steps, steps[1:])):
-        raise ValueError("Checkpoint steps must be unique and increasing")
     size = fixed_circuit["answer_matrix"].shape[0]
-    if not isinstance(selected_start, int) or not 0 <= selected_start < size:
-        raise ValueError("selected_start must be a valid integer state")
-    if len(fixed_circuit["layers"]) != len(fixed_circuit["gates"]) or not fixed_circuit["layers"]:
-        raise ValueError("Each circuit gate needs its captured fixed-layer matrix")
-    for mode in frames:
-        if any(np.asarray(matrix).shape != (size, size) for matrix in frames[mode].circuit_matrix):
-            raise ValueError("All circuit matrices must match the fixed matrix shape")
+    state_width = max(1, int(np.ceil(np.log2(size))))
+    if selected_start is None:
+        selected_start = min(8, size - 1)   # 8 at K=16, else the nearest valid state
+    if not 0 <= selected_start < size:
+        raise ValueError(
+            f"selected_start={selected_start} is not a state: this run has {size} states (0..{size - 1})"
+        )
 
     colors = {"outcome": OUTCOME, "process": PROCESS}
     fig = plt.figure(figsize=figsize, dpi=dpi, facecolor="white")
@@ -132,8 +126,9 @@ def animate_training_dynamics(history, fixed_circuit, fixed_metrics, interval_ms
     layer_bar.ax.tick_params(labelsize=11)
 
     footer = fig.add_subplot(outer[7]); footer.axis("off")
-    path = f"S{selected_start:04b}" + "".join(
-        f"  —{gate}→ S{state:04b}" for gate, state in zip(fixed_circuit["gates"], trajectory))
+    path = f"S{selected_start:0{state_width}b}" + "".join(
+        f"  —{gate}→ S{state:0{state_width}b}"
+        for gate, state in zip(fixed_circuit["gates"], trajectory))
     footer.text(0, 0.95, "Selected input inside the fixed model: " + path, fontsize=15, color="#172b4d")
     live_summary = footer.text(0, 0.45, "", fontsize=14, color="#475569")
     footer.text(0, 0, "Frames are measured training checkpoints. Fixed panels never train.",
@@ -156,6 +151,108 @@ def animate_training_dynamics(history, fixed_circuit, fixed_metrics, interval_ms
         return [progress, live_summary, *lines.values(), *images.values(), *cursors]
 
     animation = FuncAnimation(fig, update_frame, frames=len(steps), init_func=lambda: update_frame(0),
+                              interval=interval_ms, repeat=False, blit=False)
+    plt.close(fig)
+    return animation
+
+
+def animate_architecture_dynamics(history, interval_ms=140, *, dpi=140,
+                                 figsize=(16, 9), architectures=None):
+    """FuncAnimation for the 2x2 run from `run_architecture_experiment`.
+
+    `animate_training_dynamics` filters on `mode` alone, so it silently merges the
+    two architectures when handed a 2x2 history. This one keys on the
+    (architecture, mode) pair: colour is the supervision format, line style is the
+    architecture, and each pair gets its own evolving answer matrix.
+    """
+    apply_style({"legend.fontsize": 12, "legend.title_fontsize": 13})
+    if architectures is None:
+        architectures = list(dict.fromkeys(history["architecture"]))
+    modes = list(dict.fromkeys(history["mode"]))
+    pairs = [(a, m) for a in architectures for m in modes]
+
+    frames = {}
+    for pair in pairs:
+        rows = history[(history["architecture"] == pair[0]) & (history["mode"] == pair[1])]
+        if rows.empty:
+            raise ValueError(f"no rows for architecture={pair[0]!r} mode={pair[1]!r}")
+        frames[pair] = rows.sort_values("step").reset_index(drop=True)
+    steps = frames[pairs[0]]["step"].tolist()
+    for pair, rows in frames.items():
+        if rows["step"].tolist() != steps:
+            raise ValueError(f"{pair} has a different checkpoint grid; cannot share frames")
+
+    colour = {m: (OUTCOME if m == "outcome" else PROCESS) for m in modes}
+    dashes = {a: style for a, style in zip(architectures, ["-", "--", ":", "-."])}
+
+    fig = plt.figure(figsize=figsize, dpi=dpi, facecolor="white")
+    outer = fig.add_gridspec(3, 1, height_ratios=[0.12, 1, 1], hspace=0.42,
+                             left=0.06, right=0.97, top=0.94, bottom=0.07)
+    header = fig.add_subplot(outer[0]); header.axis("off")
+    header.text(0, 0.7, "Supervision x architecture", fontsize=24, weight="bold", color="#172b4d")
+    header.text(0, 0.05, "Colour = where the loss is applied.  Line style = which architecture.",
+                fontsize=14, color="#475569")
+    progress = header.text(1, 0.7, "", ha="right", fontsize=15, color="#172b4d")
+
+    curve_grid = outer[1].subgridspec(1, 2, wspace=0.22)
+    loss_ax = fig.add_subplot(curve_grid[0, 0])
+    acc_ax = fig.add_subplot(curve_grid[0, 1])
+    lines, cursors = {}, []
+    for ax, metric, title, ylabel in (
+        (loss_ax, "train_loss", "Training loss", "cross-entropy"),
+        (acc_ax, "test_answer_accuracy", "Held-out answer accuracy", "accuracy"),
+    ):
+        for pair in pairs:
+            lines[(metric, pair)], = ax.plot(
+                [], [], color=colour[pair[1]], linestyle=dashes[pair[0]], linewidth=2.0,
+                label=f"{pair[0]} / {pair[1]}")
+        ax.set_title(title, loc="left", fontsize=15, weight="bold", pad=10)
+        ax.set_xlabel("Optimization step (linear to 100, then logarithmic)", fontsize=12)
+        ax.set_ylabel(ylabel, fontsize=12)
+        ax.set_xscale("symlog", linthresh=100)
+        ax.set_xlim(0, max(steps) if max(steps) else 1)
+        ax.grid(alpha=0.18)
+        cursors.append(ax.axvline(steps[0], color="#94a3b8", linewidth=1.2, alpha=0.8))
+    finite = history["train_loss"].replace([np.inf, -np.inf], np.nan).dropna()
+    loss_ax.set_yscale("log")
+    if len(finite):
+        loss_ax.set_ylim(max(finite.min() * 0.6, 1e-6), finite.max() * 1.6)
+    acc_ax.set_ylim(-0.03, 1.03)
+    acc_ax.yaxis.set_major_formatter(PercentFormatter(xmax=1))
+    acc_ax.legend(loc="upper left", ncol=1, frameon=True)
+
+    matrix_grid = outer[2].subgridspec(1, len(pairs) + 1,
+                                       width_ratios=[1] * len(pairs) + [0.05], wspace=0.28)
+    images, matrix_axes = {}, {}
+    for index, pair in enumerate(pairs):
+        ax = fig.add_subplot(matrix_grid[0, index])
+        images[pair] = ax.imshow(frames[pair].iloc[0].circuit_matrix, vmin=0, vmax=1,
+                                 cmap="viridis", interpolation="nearest")
+        ax.set_xlabel("answer state", fontsize=11)
+        ax.set_ylabel("start state", fontsize=11)
+        ax.tick_params(labelsize=9)
+        matrix_axes[pair] = ax
+    bar = fig.colorbar(images[pairs[0]], cax=fig.add_subplot(matrix_grid[0, -1]))
+    bar.set_label("answer-token probability", fontsize=11)
+    bar.ax.tick_params(labelsize=9)
+
+    def update_frame(index):
+        progress.set_text(f"Step {steps[index]:,} / {steps[-1]:,}  \u2022  "
+                          f"Frame {index + 1} / {len(steps)}")
+        for (metric, pair), line in lines.items():
+            data = frames[pair].iloc[:index + 1]
+            line.set_data(data.step, data[metric])
+        for pair in pairs:
+            row = frames[pair].iloc[index]
+            images[pair].set_data(row.circuit_matrix)
+            matrix_axes[pair].set_title(
+                f"{pair[0]} / {pair[1]}\n test answer {row.test_answer_accuracy:.1%}", fontsize=12)
+        for cursor in cursors:
+            cursor.set_xdata([steps[index], steps[index]])
+        return [progress, *lines.values(), *images.values(), *cursors]
+
+    animation = FuncAnimation(fig, update_frame, frames=len(steps),
+                              init_func=lambda: update_frame(0),
                               interval=interval_ms, repeat=False, blit=False)
     plt.close(fig)
     return animation
@@ -187,12 +284,6 @@ def animate_all_circuits(circuits, models, tokenizer, device, interval_ms=280,
                          *, dpi=120, figsize=(18, 8)):
     """One frame per circuit: gold φ vs learned outcome vs learned process answer matrices."""
     apply_style({"legend.fontsize": 14, "legend.title_fontsize": 15})
-    if interval_ms <= 0 or dpi <= 0:
-        raise ValueError("Playback interval and dpi must be positive")
-    if not circuits:
-        raise ValueError("Need at least one circuit")
-    if any(name not in models for name in ("outcome", "process")):
-        raise ValueError("models must include 'outcome' and 'process'")
     cache = _circuit_catalog_cache(circuits, models, tokenizer, device)
     size = tokenizer.n_states
     fig = plt.figure(figsize=figsize, dpi=dpi, facecolor="white")
@@ -285,8 +376,6 @@ def export_training_animation(animation, save_path="training_dynamics.html", emb
 
 def save_training_mp4(animation, filename="training_dynamics.mp4", *, fps=7, dpi=180):
     from matplotlib.animation import FFMpegWriter, writers
-    if Path(filename).suffix.lower() != ".mp4":
-        raise ValueError("Use an .mp4 filename")
     ffmpeg_path = plt.rcParams["animation.ffmpeg_path"]
     if not writers.is_available("ffmpeg"):
         try:

@@ -5,6 +5,9 @@ from src.data.boolean_circuit_tasks import (
     BOOLEAN_CIRCUIT_MAX_NEW_TOKENS,
     BOOLEAN_CIRCUIT_SAMPLERS,
     make_boolean_circuit_sampler_coherent,
+    make_boolean_circuit_sampler_mixture,
+    make_boolean_circuit_sampler_subset,
+    canonical_gate_names,
 )
 from src.data.dataclass import Task
 from src.data.hard_word_index_tasks import (
@@ -176,6 +179,32 @@ TASKS.update({
                     "assignment is not identifiable from outcome supervision alone",
         answer_pattern=r"\d+",
     ),
+})
+TASKS.update({
+    f"boolean_circuit_4_conc{int(round(concentration * 100))}": Task(
+        name=f"boolean_circuit_4_conc{int(round(concentration * 100))}",
+        block_size=BOOLEAN_CIRCUIT_BLOCK_SIZE,
+        max_new_tokens=BOOLEAN_CIRCUIT_MAX_NEW_TOKENS[4],
+        sample=make_boolean_circuit_sampler_mixture(4, concentration),
+        chance_acc=1 / 16, ceiling_acc=1.0,
+        description="depth-4 Boolean circuit, corrupted traces interpolate between "
+                    f"uniform and one fixed wrong permutation per gate at lambda={concentration}",
+        answer_pattern=r"[01]{4}",
+    )
+    for concentration in (0.0, 0.5, 1.0)
+})
+_CANONICAL_GATES = canonical_gate_names()
+TASKS.update({
+    f"boolean_circuit_8_m{m}": Task(
+        name=f"boolean_circuit_8_m{m}",
+        block_size=BOOLEAN_CIRCUIT_BLOCK_SIZE,
+        max_new_tokens=BOOLEAN_CIRCUIT_MAX_NEW_TOKENS[8],
+        sample=make_boolean_circuit_sampler_subset(8, _CANONICAL_GATES[:m]),
+        chance_acc=1 / 16, ceiling_acc=1.0,
+        description=f"depth-8 Boolean circuit restricted to {m} alias-free operations",
+        answer_pattern=r"[01]{4}",
+    )
+    for m in (5, 10, 20, 34)
 })
 TASKS.update({
     "boolean_circuit_8_coherent": Task(
