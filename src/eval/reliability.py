@@ -30,6 +30,7 @@ def _persist_payload(args, task, output, rows):
         "ratio_seed": args.ratio_seed,
         "batch_seed": args.batch_seed,
         "include_outcome": bool(args.include_outcome),
+        "answer_loss": getattr(args, "answer_loss", "all"),
         "csv": str(output),
         "n_rows": len(rows),
         "rows": rows,
@@ -64,7 +65,8 @@ def main(args):
         conditions.append(("outcome", None))
     conditions.extend(("mixed_process", rho) for rho in sorted(set(args.rhos)))
     for condition, rho in conditions:
-        dataset = RatioDataset(train_instances, task, condition, rho=rho, ratio_scores=ratio_scores)
+        dataset = RatioDataset(train_instances, task, condition, rho=rho, ratio_scores=ratio_scores,
+                               answer_loss=getattr(args, "answer_loss", "all"))
         for seed in args.seeds:
             set_seed(seed)
             loader = make_loader(dataset, args, device)

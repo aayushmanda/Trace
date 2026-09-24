@@ -81,7 +81,11 @@ class SupervisionDataset(ContinuationDataset):
 
 
 class RatioDataset(ContinuationDataset):
-    def __init__(self, instances, task, condition: str, rho=None, ratio_scores=None):
+    """`answer_loss="clean"` drops the loss on the answer tokens of corrupted traces (trace-only loss)."""
+
+    def __init__(self, instances, task, condition: str, rho=None, ratio_scores=None, answer_loss="all"):
+        if answer_loss not in {"all", "clean"}:
+            raise ValueError(f"unknown answer_loss: {answer_loss}")
         if condition not in {"outcome", "mixed_process"}:
             raise ValueError(f"unknown condition: {condition}")
         if condition == "mixed_process" and (rho is None or ratio_scores is None):
@@ -94,3 +98,8 @@ class RatioDataset(ContinuationDataset):
                 trace = inst.correct_trace if ratio_scores[row] < rho else inst.wrong_trace
                 targets.append(f" {trace}{ANSWER_SEP}{inst.gold}\n")
         super().__init__(instances, task.tokenizer, task.block_size, targets)
+        if condition == "mixed_process" and answer_loss == "clean":
+            for row, inst in enumerate(instances):
+                if ratio_scores[row] >= rho:
+                    end = int(self.mask[row].nonzero().max()) + 1
+                    self.mask[row, end - len(task.tokenizer.encode(f"{inst.gold}\n")):end] = False

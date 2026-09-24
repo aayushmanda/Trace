@@ -101,6 +101,8 @@ def _reliability_ns(rest):
     p.add_argument("--dropout", type=float, default=0.0)
     p.add_argument("--workers", type=int, default=0)
     p.add_argument("--include-outcome", action="store_true")
+    p.add_argument("--answer-loss", choices=["all", "clean"], default="all",
+                   help="clean: no answer-token loss on corrupted traces")
     p.add_argument("--device", default=None)
     p.add_argument("--output", type=Path, default=None)
     add_compile_bf16_flags(p, from_yaml=True)

@@ -227,6 +227,9 @@ def run_one(depth, seed, args, device, writer, output_file):
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             optimizer.step()
+        if args.save_models is not None:
+            args.save_models.mkdir(parents=True, exist_ok=True)
+            torch.save(model.state_dict(), args.save_models / f"D{depth}_s{seed}_{mode}.pt")
     del models, base, datasets, test_data, probe_data, own_probes
     if device.type == "cuda":
         torch.cuda.empty_cache()
@@ -257,6 +260,7 @@ def parse_args():
     parser.add_argument("--device", default="cuda:0" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--output", type=Path, default=Path("results/paper/unified_depth_dynamics.csv"))
     parser.add_argument("--check-jvp", action="store_true")
+    parser.add_argument("--save-models", type=Path, default=None, help="Directory for final state dicts.")
     args = parser.parse_args()
     if min(args.depths) < 1 or args.steps < 1 or min(args.seeds) < 0:
         parser.error("depths and steps must be positive, seeds nonnegative")
