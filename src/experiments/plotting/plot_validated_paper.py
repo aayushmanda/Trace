@@ -44,7 +44,7 @@ def main():
             ax.errorbar(g.index,100*g['mean'],100*g['std'],fmt='o',linestyle=style,ms=2.5,capsize=2,lw=1,color=color,label=label)
         ax.axhline(6.25,color='gray',ls=':',lw=.7)
         ax.set_title(f'ρ = {rho:g}',fontsize=9,pad=3)
-        ax.set_xticks([0,.5,1]);ax.set_xlabel('Concentration λ',labelpad=2)
+        ax.set_xticks([0,.5,1]);ax.set_xlabel('Concentration γ',labelpad=2)
         ax.set_ylim(-2,105)
     axes[0].set_ylabel('Answer accuracy (%)',labelpad=2)
     handles,labels=axes[0].get_legend_handles_labels()

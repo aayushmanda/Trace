@@ -1,10 +1,44 @@
-for N in 20000 100000; do for L in 2 6; do
-    TRACE_COMPILE=0 python -m src reliability --task boolean_circuit_8 \
-    --rhos 0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 \
-    --seeds 2001 2002 2003 --checkpoints 8000 \
-    --train-size $N --val-size 1000 --train-seed 501 --val-seed 101 \
-    --ratio-seed 777 --batch-seed 12345 --batch-size 128 --eval-batch-size 128 \
-    --include-outcome --no-compile --embedding 128 --heads 4 --layers $L \
-    --dropout 0 --lr 0.0003 --weight-decay 0 --grad-clip 1 --bf16 \
-    --output results/paper/boolean_reliability_N${N}_L${L}.csv --device cuda
-done; done
+
+# mkdir -p logs
+
+# for task in count ; do
+#     for n in 16; do
+#         for S in 2; do
+#             python handcoded/lettertrace.py \
+#                 task=$task \
+#                 word_len=$n \
+#                 mod=3 \
+#                 alphabet=10 \
+#                 layout=block \
+#                 steps=20000 \
+#                 seed=$S \
+#                 n_blocks=4
+
+#         done
+#     done
+# done
+
+
+# for n in 2 4 6 8 9 10; do
+#   python handcoded/spectrum.py task=count word_len=$n mod=2 max_exact=10000000 \
+#     out=logs/spec_count_n$n.json
+# done
+
+mkdir -p logs/track
+shopt -s nullglob
+outcome_ckpts=(ckpt/n8/*outcome_step*.pt)
+process_ckpts=(ckpt/n8/*process_step*.pt)
+if ((${#outcome_ckpts[@]} == 0 && ${#process_ckpts[@]} == 0)); then
+  echo "no checkpoints in ckpt/n8/. Train first, e.g.:" >&2
+  echo "  python handcoded/lettertrace.py task=count word_len=8 mod=2 save_every=500 save_dir=ckpt/n8" >&2
+  exit 1
+fi
+for f in "${outcome_ckpts[@]}"; do
+  python handcoded/spectrum.py task=count word_len=8 mod=2 site=answer ckpt=$f \
+    out=logs/track/$(basename $f .pt).json
+done
+for f in "${process_ckpts[@]}"; do
+  python handcoded/spectrum.py task=count word_len=8 mod=2 site=state ckpt=$f \
+    out=logs/track/$(basename $f .pt)_state.json
+done
+python handcoded/spectra_table.py logs/track/*.json
