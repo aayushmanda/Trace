@@ -60,6 +60,10 @@ tag = ""                # checkpoint prefix; empty => <mode>_step<it>.pt
 modes = "process,outcome"   # which losses to train, comma-separated
 eval_every = 0          # 0: eight evaluations per run; else evaluate every this many steps
 clean_only = False      # control: drop the corrupted traces after the rho draw, train on the clean ones
+gap = 0.0               # handcoded routing score gap; 0 => max(16, 3 log(8(n+3))), exact for every n
+perturb = ()            # handcoded robustness: absolute Gaussian noise std on every weight entry
+perturb_draws = 5       # noise draws per std
+handcoded_only = False  # stop after evaluating the handcoded solutions
 device = "cuda" if torch.cuda.is_available() else "cpu"
 for arg in sys.argv[1:]:
     key, value = arg.split("=", 1)
@@ -249,7 +253,8 @@ def forward(p, ids):
 # -----------------------------------------------------------------------------
 # the handcoded solutions, as values of the same tensors
 
-C = 16 * math.sqrt(P)       # routing score: softmax leak per position ~ e^-16
+GAP = gap if gap else max(16.0, 3 * math.log(8 * (n + 3)))
+C = GAP * math.sqrt(P)      # routing score gap GAP: softmax leak per position ~ e^-GAP
 
 
 def at(sl, i=0):
@@ -429,7 +434,17 @@ if task in ("count", "first") and every_k == 1:
     solutions = {m: {k: t.to(device) for k, t in p.items()} for m, p in solutions.items()}
     for mode, p in solutions.items():
         exact, answer, _ = free_run(p, test, mode)
-        print(f"handcoded {mode:8s}  exact {exact:.3f}  answer {answer:.3f}")
+        print(f"handcoded {mode:8s}  gap {GAP:.2f}  exact {exact:.3f}  answer {answer:.3f}")
+        for sigma in perturb:
+            noise_gen = torch.Generator(device="cpu").manual_seed(seed + 30_000)
+            worst = 1.0
+            for _ in range(perturb_draws):
+                noisy = {k: t + sigma * torch.randn(t.shape, generator=noise_gen).to(t.device)
+                         for k, t in p.items()}
+                worst = min(worst, free_run(noisy, test, mode)[0])
+            print(f"handcoded {mode:8s}  noise std {sigma:g}  worst exact over {perturb_draws} draws {worst:.3f}")
+if handcoded_only:
+    sys.exit(0)
 
 for mode in train_modes:
     p = {k: t.clone().to(device).requires_grad_() for k, t in theta_0.items()}

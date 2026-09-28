@@ -641,7 +641,9 @@ def parse_args(argv=None):
     p.add_argument("--task", default=cfg.get("task", "boolean_circuit_8"))
     p.add_argument("--rhos", nargs="+", type=float, default=list(cfg.get("rhos", [0.0, 0.2, 0.4, 0.5, 0.6, 0.8, 1.0])))
     p.add_argument("--seeds", nargs="+", type=int, default=list(cfg.get("seeds", [2001, 2002, 2003])))
+    p.add_argument("--include-outcome", action=argparse.BooleanOptionalAction, default=bool(cfg.get("include_outcome", True)))
     p.add_argument("--include-answer-first", action=argparse.BooleanOptionalAction, default=bool(cfg.get("include_answer_first", True)))
+    p.add_argument("--include-process", action=argparse.BooleanOptionalAction, default=bool(cfg.get("include_process", True)))
     p.add_argument("--train-size", type=int, default=int(cfg.get("train_size", 12000)))
     p.add_argument("--val-size", type=int, default=int(cfg.get("val_size", 300)))
     p.add_argument("--local-eval-size", type=int, default=int(cfg.get("local_eval_size", 300)))
@@ -724,10 +726,15 @@ def run(args):
         f"  wrong trace   = {train_instances[0].wrong_trace}\n  gold          = {train_instances[0].gold}"
     )
 
-    conditions = [("outcome", None)]
+    conditions = []
+    if getattr(args, "include_outcome", True):
+        conditions.append(("outcome", None))
     if args.include_answer_first:
         conditions.append(("answer_first", None))
-    conditions += [("process", r) for r in sorted(set(args.rhos))]
+    if getattr(args, "include_process", True):
+        conditions += [("process", r) for r in sorted(set(args.rhos))]
+    if not conditions:
+        raise SystemExit("nothing to train: enable at least one of outcome / answer-first / process")
     for condition, rho in conditions:
         ds = CompletionDataset(train_instances, tok, condition, rho, assignment_order, args.max_length)
         if condition == "process":

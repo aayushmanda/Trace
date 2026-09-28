@@ -72,7 +72,7 @@ def draw():
             color=ORANGE, lw=1.7, solid_capstyle="butt")
     ax.text(n / 2, -1.22, r"$\mathrm{answer{:}\ all\ }n\mathrm{\ transitions}$",
             ha="center", color=ORANGE, fontsize=9)
-    ax.text(n / 2, -1.68, r"$\mathrm{credit\ to\ order\ }r\ \propto\ \sqrt{A_r W_r}$",
+    ax.text(n / 2, -1.68, r"$\mathrm{credit\ to\ order\ }r\ \leq\ \sqrt{A_r W_r}$",
             ha="center", color=INK, fontsize=8.5)
     ax.text(n / 2, -1.98, r"$\mathrm{reversible{:}\ \leq\,}\lambda^{n-r}$",
             ha="center", color=MUTED, fontsize=7.5)
@@ -95,9 +95,9 @@ def draw():
     bx.set_yscale("log")
     bx.set_xticks(list(NS))
     bx.set_xlabel("steps  $n$")
-    bx.set_ylabel(r"signal at $\theta_0$")
+    bx.set_ylabel("gradient norm at initialization")
     bx.tick_params(labelsize=7)
-    bx.set_xlim(1.4, 10.7)
+    bx.set_xlim(1.4, 12.3)
     bx.text(10.2, cot[-1, 0], "step", va="center", ha="left", fontsize=8, color=BLUE)
     bx.text(10.2, out[-1, 0], "answer", va="center", ha="left", fontsize=8, color=ORANGE)
     bx.text(5.0, out[0, 0] * (0.5 ** 2.85), r"$\lambda^{n}$", fontsize=8.5, color="0.35")
