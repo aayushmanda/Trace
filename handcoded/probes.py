@@ -14,6 +14,7 @@ _COMMANDS = (
     'dependence',
     'flip',
     'context',
+    'causal',
 )
 
 if __name__ == "__main__":
@@ -706,7 +707,7 @@ if __name__ == "__main__":
         print(json.dumps(rec, indent=2))
         if out:
             Path(out).write_text(json.dumps(rec, indent=2))
-    elif _cmd == 'context':
+    elif _cmd in ('context', 'causal'):
         #!/usr/bin/env python3
         """
         This script tests the paper's "context breaks blindness" claim on the count-mod-K task.

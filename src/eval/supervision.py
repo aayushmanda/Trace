@@ -10,7 +10,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from src.data.datasets import SupervisionDataset
+from src.data.datasets import TARGET_BUILDERS, SupervisionDataset
 from src.data.registry import TASKS
 from src.data.sample import generate_unique
 from src.eval.generate import evaluate

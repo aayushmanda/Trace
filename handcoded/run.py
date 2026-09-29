@@ -1,4 +1,4 @@
-"""GPU job queues. Never uses GPU 1, except the old pending list.
+"""GPU job queues. GPUs 0, 2, and 3. The pending list still names GPU 1; do not run it.
 
     python handcoded/run.py spotlight
     python handcoded/run.py fig2
