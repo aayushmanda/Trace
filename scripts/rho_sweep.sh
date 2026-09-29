@@ -1,3 +1,7 @@
+#!/usr/bin/env bash
+# Reliability sweep for counting. Run from anywhere.
+cd "$(dirname "$0")/.."
+
 mkdir -p logs/rho_sweep
 
 for corrupt in scatter; do
