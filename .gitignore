@@ -19,6 +19,10 @@ checkpoints/
 *.safetensors
 /logs/
 /future_work
+# Root training log. GitHub rejects blobs over 100 MB; this file exceeded that.
+/run.log
+# LaTeX auxiliary logs.
+/Paper/*.log
 
 
 # --- large media (regenerate with experiments/make_training_dynamics.py) -----
@@ -44,3 +48,4 @@ course_poster_sr_scientist
 
 # Include the archived notebook trajectory linked by the paper artifact.
 !docs/assets/training_dynamics.mp4
+
