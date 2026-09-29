@@ -1,4 +1,8 @@
-"""Trace-reliability sweeps (GPT stack)."""
+"""Trace-reliability sweeps.
+
+    python -m src reliability --task boolean_circuit_8 --rhos 0.8 --seeds 2001
+"""
+import argparse
 import json
 from datetime import datetime
 from pathlib import Path
@@ -13,7 +17,38 @@ from src.eval.generate import evaluate_with_trace
 from src.training.io import append_csv
 from src.training.loop import train_with_checkpoints
 from src.training.optim import build_gpt, make_loader, make_optimizer
-from src.training.seed import maybe_high_precision, prepare_train_model, set_seed
+from src.training.seed import add_compile_bf16_flags, maybe_high_precision, prepare_train_model, set_seed
+
+
+def parse_args(argv=None):
+    p = argparse.ArgumentParser(prog="python -m src reliability")
+    p.add_argument("--task", default="boolean_circuit_8")
+    p.add_argument("--rhos", nargs="+", type=float, default=[0.8])
+    p.add_argument("--seeds", nargs="+", type=int, default=[2001])
+    p.add_argument("--checkpoints", nargs="+", type=int, default=[1000])
+    p.add_argument("--train-size", type=int, default=20000)
+    p.add_argument("--val-size", type=int, default=500)
+    p.add_argument("--train-seed", type=int, default=501)
+    p.add_argument("--val-seed", type=int, default=101)
+    p.add_argument("--ratio-seed", type=int, default=777)
+    p.add_argument("--batch-seed", type=int, default=12345)
+    p.add_argument("--batch-size", type=int, default=128)
+    p.add_argument("--eval-batch-size", type=int, default=128)
+    p.add_argument("--lr", type=float, default=3e-4)
+    p.add_argument("--weight-decay", type=float, default=0.0)
+    p.add_argument("--grad-clip", type=float, default=1.0)
+    p.add_argument("--embedding", type=int, default=128)
+    p.add_argument("--heads", type=int, default=4)
+    p.add_argument("--layers", type=int, default=2)
+    p.add_argument("--dropout", type=float, default=0.0)
+    p.add_argument("--workers", type=int, default=0)
+    p.add_argument("--include-outcome", action="store_true")
+    p.add_argument("--answer-loss", choices=["all", "clean"], default="all")
+    p.add_argument("--save-models", type=Path, default=None)
+    p.add_argument("--device", default=None)
+    p.add_argument("--output", type=Path, default=None)
+    add_compile_bf16_flags(p, from_yaml=True)
+    return p.parse_args(argv)
 
 
 def _persist_payload(args, task, output, rows):
@@ -38,7 +73,8 @@ def _persist_payload(args, task, output, rows):
     }
 
 
-def main(args):
+def main(argv=None):
+    args = parse_args(argv)
     if any(not 0.0 <= rho <= 1.0 for rho in args.rhos):
         raise SystemExit("every rho must lie in [0, 1]")
     checkpoints = sorted(set(args.checkpoints))

@@ -1,1 +1,1 @@
-"""Letter-task and Boolean-gate helpers. Reliability only needs gates."""
+"""Letter counting lives in lettertrace.py. Spectra live in spectrum.py."""

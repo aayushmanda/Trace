@@ -1,4 +1,4 @@
-"""Train any nn.Module. GPT uses (x, y, mask); handcoded uses a custom loss_fn."""
+"""GPT training loop. A batch is (x, y, mask). Eval stays on the eager model."""
 import os
 import sys
 
@@ -20,12 +20,6 @@ def progress(iterable=None, **kwargs):
     """One tqdm helper. Quiet in unit tests or when TRACE_TQDM=0."""
     kwargs.setdefault("disable", _tqdm_disabled())
     return _tqdm(iterable, **kwargs)
-
-
-def handcoded_lm_loss(model, batch):
-    """Handcoded / semantic-token LM loss. Not the GPT forward pass."""
-    import handcoded as h
-    return h.language_model_loss(model, batch)
 
 
 def gpt_lm_loss(model, batch, device):
@@ -114,34 +108,3 @@ def train_with_checkpoints(model, loader, optimizer, device, checkpoints, on_che
         if loss is not None:
             bar.set_postfix(loss=f"{float(loss.detach()):.4f}")
     return model
-
-
-def train_indexed(model, batch_fn, optimizer, device, n_steps, grad_clip=1.0,
-                  start=0, checkpoints=(), on_checkpoint=None, desc=None):
-    """Handcoded-style loop: batch_fn(step) -> scalar loss (already on device).
-
-    Does not assume GPT (x, y, mask). Used by architecture_controls.
-    step is the completed update count after optimizer.step (1..n_steps).
-    If start==0 and 0 is in checkpoints, on_checkpoint runs before any update.
-    """
-    ckpts = set(checkpoints or ())
-    loss = None
-    if on_checkpoint and start == 0 and 0 in ckpts:
-        on_checkpoint(0, model, None)
-        model.train()
-    bar = progress(range(start + 1, n_steps + 1), desc=desc or "train", leave=False)
-    for step in bar:
-        optimizer.zero_grad(set_to_none=True)
-        with _maybe_autocast(device):
-            loss = batch_fn(step - 1)
-        if not torch.isfinite(loss):
-            raise FloatingPointError(f"non-finite loss at step {step}")
-        loss.backward()
-        clip = grad_clip if grad_clip else float("inf")
-        torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
-        optimizer.step()
-        bar.set_postfix(loss=f"{float(loss.detach()):.4f}")
-        if on_checkpoint and step in ckpts:
-            on_checkpoint(step, model, loss)
-            model.train()
-    return float(loss.detach()) if loss is not None else None

@@ -1,3 +1,4 @@
+"""Small causal Transformer. Next-token loss on the supervised positions only."""
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
