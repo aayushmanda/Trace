@@ -10,7 +10,7 @@ HELP = """
   python -m src supervision --config configs/experiments/e1_five_condition.yaml
   python -m src reliability --task boolean_circuit_8 --rhos 0.8 --seeds 2001
   python -m src lora --config configs/experiments/lora_transfer.yaml
-  python -m src.experiments.alignment.gradient_alignment --help
+  python -m src align --help
 """
 
 
@@ -22,15 +22,19 @@ def main(argv=None):
         print(HELP)
         return 0
     if cmd == "supervision":
-        from src.eval.supervision import main as run
+        from src.runs import supervision_main as run
         run(rest)
         return 0
     if cmd == "reliability":
-        from src.eval.reliability import main as run
+        from src.runs import reliability_main as run
         run(rest)
         return 0
     if cmd == "lora":
-        from src.eval.lora import main as run
+        from src.lora import main as run
+        run(rest)
+        return 0
+    if cmd == "align":
+        from src.runs import align_main as run
         run(rest)
         return 0
     raise SystemExit(f"unknown command {cmd!r}. {HELP}")

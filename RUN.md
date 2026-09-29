@@ -27,7 +27,7 @@ Compile is off by default in every shipped config (`compile: false`). Do not tur
 
 ## Two stacks
 
-**GPT** — character-token Transformer (`src.models.gpt.GPTModel`). Boolean circuits, the register machine, and the state machine. This is the stack behind the Boolean and register tables. Tiny synthetic-token model; not a HuggingFace LM.
+**GPT** — character-token Transformer (`src.gpt.GPTModel`). Boolean circuits, the register machine, and the state machine. This is the stack behind the Boolean and register tables. Tiny synthetic-token model; not a HuggingFace LM.
 
 **Pretrained LoRA** — rank-8 Peft on `AutoModelForCausalLM` (`python -m src lora`). Same Boolean-circuit serialization as GPT, but a real HF tokenizer. Default backbone is SmolLM2-135M; this is the only place a HuggingFace model id is swappable.
 
@@ -103,7 +103,7 @@ Trains outcome / answer-first / process-`rho` completions on a rank-8 LoRA adapt
 ## Gradient alignment
 
 ```bash
-python -m src.experiments.alignment.gradient_alignment --help
+python -m src align --help
 ```
 
 Cosine between the Boolean-8 local transition gradient and the process and outcome gradients.
@@ -113,6 +113,14 @@ Cosine between the Boolean-8 local transition gradient and the process and outco
 ## Counting notebook
 
 Open `handcoded/lettertrace_train.ipynb` with the `.venv` kernel from `uv sync`. It trains process and outcome from one initialization and writes `handcoded/animations/lettertrace_train.gif`. Pin a free GPU in the first cell. Do not use GPU 1.
+
+Counting from the command line, and the spectrum of a saved checkpoint:
+
+```bash
+uv run python handcoded/lettertrace.py task=count word_len=8 mod=2 save_every=500 save_dir=ckpt/n8
+uv run python handcoded/spectrum.py task=count word_len=8 mod=2 site=answer ckpt=ckpt/n8/<name>.pt out=logs/<name>.json
+uv run python handcoded/figures.py spectra logs/*.json
+```
 
 ---
 
