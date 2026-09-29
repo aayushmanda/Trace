@@ -1,4 +1,4 @@
-"""Paper figure builders and closure checks. Public CLI: python experiments/run.py."""
+"""Checks that still feed the paper. The Boolean-8 gradient table is alignment/gradient_alignment.py."""
 from __future__ import annotations
 
 import sys

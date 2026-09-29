@@ -27,13 +27,13 @@ Compile is off by default in every shipped config (`compile: false`). Do not tur
 
 ## Two stacks
 
-**GPT** — character-token Transformer (`src.models.gpt.GPTModel`). Boolean circuits as character strings. This is the stack behind Table 1, Figures 1–2/Table 3, and the Proposition 8 frontier check. Tiny synthetic-token model; not a HuggingFace LM.
+**GPT** — character-token Transformer (`src.models.gpt.GPTModel`). Boolean circuits, the register machine, and the state machine. This is the stack behind the Boolean and register tables. Tiny synthetic-token model; not a HuggingFace LM.
 
 **Pretrained LoRA** — rank-8 Peft on `AutoModelForCausalLM` (`python -m src lora`). Same Boolean-circuit serialization as GPT, but a real HF tokenizer. Default backbone is SmolLM2-135M; this is the only place a HuggingFace model id is swappable.
 
 **Handcoded** — the counting Transformer in `handcoded/lettertrace.py`. One architecture, process loss and outcome loss, plus the two programs written into the weights by hand. Spectra, figures, and probes live in the same folder.
 
-Entry point for training commands: `python -m src <command>`. Figure builders and closed-form/numerical checks (no training): `python experiments/run.py <command>` (see [experiments/README.md](experiments/README.md)).
+Entry point for the GPT and LoRA runs: `python -m src <command>`.
 
 ---
 
@@ -51,34 +51,9 @@ python -m src supervision --config configs/experiments/e1_five_condition_rerun.y
 
 ---
 
-## Main-paper figures and trace reliability
+## Boolean reliability
 
-Rebuild the revised paper's three main figures and validation appendix artifacts
-from archived results (no training):
-
-```bash
-uv run python -m src.experiments.plotting.plot_validated_paper
-uv run python -m src.experiments.temporal_noise.report
-```
-
-The current main figures show exact-corpus recovery, concentration, and temporal
-corruption. Functional-update figures are supplementary. The two commands also
-rebuild validation appendix figures and tables; neither starts model training.
-Source hashes are recorded in
-`results/review_validation/manuscript_artifact_hashes.json` and
-`results/novelty_extension/artifact_hashes.json`. Temporal protocols, all 30 runs,
-and limitations are documented in [the temporal report](results/novelty_extension/RESULTS.md). The older
-`plot_main_paper` builder remains available for historical and supplementary
-artifacts; its projection figure is no longer a main-paper result.
-
-Build the complete PDF with TeX Live from `Paper/`:
-
-```bash
-latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build_validation main.tex
-```
-
-The validated build has nine main-text pages, followed by references and
-appendices (36 pages total).
+Counting figures come from `handcoded/lettertrace.py`. The Boolean-8 sweep is the character-token model.
 
 `rho` is the probability a training example gets a valid trace; the terminal answer stays correct regardless. Metrics: `answer_accuracy` (rollout), `exact_trace_accuracy` (full trace), `trace_step_accuracy` (per-step correctness on the free-running trace). Each run writes a CSV and a sibling `*_persist.json`.
 
@@ -102,7 +77,7 @@ TRACE_COMPILE=0 python -m src reliability \
   --device cuda
 ```
 
-`Paper/figures/reliability_structure.pdf` (built by `python -m src.experiments.plotting.plot_main_paper`) and the Transformer overlay in `Paper/figures/noise_threshold.pdf` read from `results/paper/boolean_reliability_canonical.csv`. The saved sweep has 60 rows and clean-process accuracy 82.20±6.76%, agreeing closely with the five-condition result 82.00±7.69%. Replication keeps the four data/assignment/minibatch seeds fixed. The runner refuses to overwrite an existing CSV, so the command above uses a separate rerun path. Figure-only rebuild commands and source hashes are in [the artifact manifest](results/paper/ARTIFACT_MANIFEST.md). The earlier 100k sweep is archival only.
+The saved Boolean-8 sweep is `results/paper/boolean_reliability_canonical.csv`: 60 rows, clean-process accuracy 82.20±6.76%, close to the five-condition result 82.00±7.69%. Replication keeps the four data/assignment/minibatch seeds fixed. The runner refuses to overwrite an existing CSV, so the command above uses a separate rerun path. The earlier 100k sweep is archival only.
 
 The compilation robustness check uses the same command with `TRACE_COMPILE=1`, `--compile` instead of `--no-compile`, and a fresh output path such as `results/paper/boolean_reliability_compile_rerun.csv`. Its archived source is `results/my_reliability_sweep_comp.csv` (clean endpoint 82.86±7.17%); it supports the appendix robustness note while the eager sweep remains canonical.
 
@@ -125,23 +100,13 @@ Trains outcome / answer-first / process-`rho` completions on a rank-8 LoRA adapt
 
 ---
 
-## Everything else: `python experiments/run.py <command>`
-
-No training; these rebuild figures or check closed-form/numerical claims directly.
+## Gradient alignment
 
 ```bash
-python experiments/run.py --help
-python experiments/run.py noise-threshold        # Figure 3 / Tables 5-6 — App. I reliability threshold
-python experiments/run.py family-sampling         # App. I frontier under family-first gate sampling
-python experiments/run.py tabular-sampling        # App. I: 1/K vs 1/2 under uniform vs family gate sampling
-python experiments/run.py clean-convergence       # Corollary 5: GD trajectory converging to T_g
-python experiments/run.py credit-suppression      # Figure App.C: credit identities, numerically confirmed
-python experiments/run.py prop8-frontier          # Proposition 8: measured vs predicted rho_c(a,D,beta)
-python experiments/run.py fraction-vs-amount      # fixed-rho, varying-N grid
-python experiments/run.py plot-paper-figures      # rebuild figures/architectures.pdf
+python -m src.experiments.alignment.gradient_alignment --help
 ```
 
-Full command-to-claim map: [experiments/README.md](experiments/README.md).
+Cosine between the Boolean-8 local transition gradient and the process and outcome gradients.
 
 ---
 
@@ -159,8 +124,4 @@ Open `handcoded/lettertrace_train.ipynb` with the `.venv` kernel from `uv sync`.
 | Reliability sweeps (Figures 1-2 / Table 3) | `results/reliability_sweeps/` |
 | Depth × reliability | `results/paper/depth_reliability/` |
 | LoRA adaptation study | `results/paper/smollm/` |
-| App. I noise threshold / family sampling / tabular sampling | `results/noise_threshold/`, `results/fraction_vs_amount/` |
-| Credit-identity numerics | `results/credit_suppression/` |
-| Clean-convergence numerics | `results/clean_convergence/` |
-| Proposition 8 frontier | `results/prop8_frontier/` |
-| `Paper/` | The manuscript; not tracked by this repo's git history |
+| `Paper/` | The manuscript |

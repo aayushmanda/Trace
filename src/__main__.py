@@ -23,10 +23,7 @@ def main(argv=None):
   python -m src supervision --tasks boolean_circuit_4 --seeds 2001 --steps 100 --train-size 1000
   python -m src reliability --task boolean_circuit_8 --rhos 0.8 --seeds 2001       # Figures 1-2, Table 3
   python -m src lora --help                                                       # LoRA adaptation study
-
-Everything else (noise-threshold, credit-suppression, clean-convergence,
-prop8-frontier, fraction-vs-amount, figure builders) is
-`python experiments/run.py <command>`; see experiments/README.md.
+  python -m src.experiments.alignment.gradient_alignment --help                  # Boolean-8 gradient table
 """)
         return 0
     if args.command == "supervision":
