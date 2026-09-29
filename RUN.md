@@ -4,20 +4,21 @@ Audience: research engineer reproducing the paper's results. From the repo root.
 
 ## Environment
 
-Python 3.12+. Either:
+Python 3.12+. From the repo root:
 
 ```bash
-conda activate aayus
-# or
 uv sync
+uv run python handcoded/lettertrace.py task=count word_len=6 mod=2 steps=8000
 ```
+
+`uv sync` writes `.venv` from `uv.lock`. Later commands in this file are `uv run python ...`, or the same command after `source .venv/bin/activate`.
 
 This box: 4× A100 80GB, shared with other users. Prefer **GPU 2 or 3** when 0/1 are occupied. Do not kill other jobs.
 
 ```bash
 export CUDA_VISIBLE_DEVICES=2   # then --device cuda:0
 # or
-python -m src <command> --device cuda:2
+uv run python -m src <command> --device cuda:2
 ```
 
 Compile is off by default in every shipped config (`compile: false`). Do not turn it on for these runs.
@@ -30,7 +31,7 @@ Compile is off by default in every shipped config (`compile: false`). Do not tur
 
 **Pretrained LoRA** — rank-8 Peft on `AutoModelForCausalLM` (`python -m src lora`). Same Boolean-circuit serialization as GPT, but a real HF tokenizer. Default backbone is SmolLM2-135M; this is the only place a HuggingFace model id is swappable.
 
-**Handcoded** — semantic-token executors (`handcoded/` package): one token per 4-bit state / gate, hand-constructed attention + ReLU weights. Used only by the tutorial notebook (`handcoded/handcoded_executors.ipynb`) and to numerically sanity-check the realizability construction in `Paper/appendix_architectures.tex` (Appendix A). Not the source of any current table or figure.
+**Handcoded** — the counting Transformer in `handcoded/lettertrace.py`. One architecture, process loss and outcome loss, plus the two programs written into the weights by hand. Spectra, figures, and probes live in the same folder.
 
 Entry point for training commands: `python -m src <command>`. Figure builders and closed-form/numerical checks (no training): `python experiments/run.py <command>` (see [experiments/README.md](experiments/README.md)).
 
@@ -144,16 +145,9 @@ Full command-to-claim map: [experiments/README.md](experiments/README.md).
 
 ---
 
-## Handcoded tutorial notebook
+## Counting notebook
 
-Package: `handcoded/` (`gates`, `tokenizer`, `models`, `data`, `generate`, `train`, `eval`, `animate`). Hyperparameters: `configs/handcoded.yaml`.
-
-```bash
-conda activate aayus   # or: uv sync && source .venv/bin/activate
-jupyter notebook handcoded/handcoded_executors.ipynb
-```
-
-Device: the first cell prefers `cuda:2` if ≥3 GPUs exist, else `cuda`, else CPU.
+Open `handcoded/lettertrace_train.ipynb` with the `.venv` kernel from `uv sync`. It trains process and outcome from one initialization and writes `handcoded/animations/lettertrace_train.gif`. Pin a free GPU in the first cell. Do not use GPU 1.
 
 ---
 

@@ -5,6 +5,7 @@ __pycache__/
 .ipynb_checkpoints/
 .pytest_cache/
 .ruff_cache/
+/ckpt
 
 # --- docs -------------------------------------------------------
 docs/*.md
@@ -38,7 +39,7 @@ training_dynamics.mp4
 
 # --- scratch -----------------------------------------------------------------
 /archive
-/scratch
+/results
 
 
 
