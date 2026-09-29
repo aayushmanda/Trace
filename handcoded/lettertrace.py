@@ -15,6 +15,10 @@ free-running generation on held-out words.
     python handcoded/lettertrace.py modes=outcome steps=32000 save_every=1000 save_dir=ckpt/n8_long
     python handcoded/lettertrace.py save_every=500 save_dir=ckpt/n8
 
+Import configure, make_corpus, init_theta, handcoded_params, train_mode, and
+generate from this file. handcoded/lettertrace_train.ipynb trains both losses
+from one initialization and replays them against the two handcoded programs.
+
 Rows (both formats share the prompt  s0 q w_1 .. w_n SEP):
     outcome:  s0 q w_1 .. w_n SEP  : s_n EOS
     process:  s0 q w_1 .. w_n SEP  s_1 .. s_n : s_n EOS
@@ -32,75 +36,89 @@ import sys
 
 import torch
 from torch.nn import functional as F
+from tqdm.auto import tqdm
 
 # -----------------------------------------------------------------------------
-# config: every name below can be overridden as key=value on the command line
+# config: every name below can be overridden as key=value on the command line,
+# or by configure(**overrides) before calling the training functions.
 
-task = "count"          # count, first, shell, first_cup, lights, lights_parity
-alphabet = 4            # A letters; P(w_t == q) = 1/A
-word_len = 12           # n, the horizon
-mod = 2                 # m, count task only
-rho = 1.0               # fraction of clean process traces, count task only
-corrupt = "scatter"     # scatter | shift | slip (one wrong step, then local-correct)
-slip_at = 0             # slip: 0 = random position, else 1..n
-layout = "block"        # process rows: "block" (same prompt as outcome) or "stream"
-n_blocks = 2
-every_k = 1             # process: supervise s_k, s_{2k}, ... (n must be divisible by k)
-opt = "adamw"           # "adamw" or "sgd"
-train_size = 20_000
-test_size = 1_000
-steps = 8_000
-batch_size = 256
-lr = 1e-3
-init_std = 0.02
-seed = 42
-save_every = 0          # 0 = no checkpoints; else write every this many steps
-save_dir = "ckpt"
-tag = ""                # checkpoint prefix; empty => <mode>_step<it>.pt
-modes = "process,outcome"   # which losses to train, comma-separated
-eval_every = 0          # 0: eight evaluations per run; else evaluate every this many steps
-clean_only = False      # control: drop the corrupted traces after the rho draw, train on the clean ones
-gap = 0.0               # handcoded routing score gap; 0 => max(16, 3 log(8(n+3))), exact for every n
-perturb = ()            # handcoded robustness: absolute Gaussian noise std on every weight entry
-perturb_draws = 5       # noise draws per std
-handcoded_only = False  # stop after evaluating the handcoded solutions
-device = "cuda" if torch.cuda.is_available() else "cpu"
-for arg in sys.argv[1:]:
-    key, value = arg.split("=", 1)
-    assert key in globals(), f"unknown setting {key}"
-    globals()[key] = value if key in ("device", "task", "corrupt", "layout", "save_dir", "tag", "modes", "opt") else ast.literal_eval(value)
 TASKS = ("count", "first", "shell", "first_cup", "lights", "lights_parity")
-assert task in TASKS and corrupt in ("scatter", "shift", "slip") and n_blocks >= 2
-assert layout in ("stream", "block") and opt in ("adamw", "sgd")
-if task == "shell" or task == "first_cup":
-    alphabet, mod = 10, 5
-elif task == "lights":
-    alphabet, mod = 4, 16
-elif task == "lights_parity":
-    alphabet, mod = 4, 2
-train_modes = tuple(m.strip() for m in modes.split(",") if m.strip())
-assert train_modes and set(train_modes) <= {"process", "outcome"}, f"modes must be process and/or outcome (got {modes!r})"
-assert task == "count" or rho == 1.0, "corruption is defined for the count task"
-assert every_k >= 1 and word_len % every_k == 0, "every_k must divide word_len"
-assert every_k == 1 or layout == "block", "every-k is defined for the block layout"
-random.seed(seed)
-torch.manual_seed(seed)
-
-# -----------------------------------------------------------------------------
-# the task
-
-n, A = word_len, alphabet
 SHELL_PAIRS = [(i, j) for i in range(5) for j in range(i + 1, 5)]
-if task == "first":
-    V = n + 1
-elif task in ("count", "shell", "first_cup", "lights", "lights_parity"):
-    V = mod
-else:
-    V = mod
-SEP, COLON, EOS = A + V, A + V + 1, A + V + 2
-VOCAB = A + V + 3
-N_TRACE = n // every_k
-P = 2 * n + 6                               # longest row: prompt n+3, process continuation n+3
+H = 3
+_STRING_KEYS = ("device", "task", "corrupt", "layout", "save_dir", "tag", "modes", "opt")
+DEFAULTS = dict(
+    task="count",          # count, first, shell, first_cup, lights, lights_parity
+    alphabet=4,            # A letters; P(w_t == q) = 1/A
+    word_len=12,           # n, the horizon
+    mod=2,                 # m, count task only
+    rho=1.0,               # fraction of clean process traces, count task only
+    corrupt="scatter",     # scatter | shift | slip (one wrong step, then local-correct)
+    slip_at=0,             # slip: 0 = random position, else 1..n
+    layout="block",        # process rows: "block" (same prompt as outcome) or "stream"
+    n_blocks=2,
+    every_k=1,             # process: supervise s_k, s_{2k}, ... (n must be divisible by k)
+    opt="adamw",           # "adamw" or "sgd"
+    train_size=20_000,
+    test_size=1_000,
+    steps=8_000,
+    batch_size=256,
+    lr=1e-3,
+    init_std=0.02,
+    seed=42,
+    save_every=0,          # 0 = no checkpoints; else write every this many steps
+    save_dir="ckpt",
+    tag="",                # checkpoint prefix; empty => <mode>_step<it>.pt
+    modes="process,outcome",   # which losses to train, comma-separated
+    eval_every=0,          # 0: eight evaluations per run; else evaluate every this many steps
+    clean_only=False,      # control: drop the corrupted traces after the rho draw, train on the clean ones
+    gap=0.0,               # handcoded routing score gap; 0 => max(16, 3 log(8(n+3))), exact for every n
+    perturb=(),            # handcoded robustness: absolute Gaussian noise std on every weight entry
+    perturb_draws=5,       # noise draws per std
+    handcoded_only=False,  # stop after evaluating the handcoded solutions
+    device="cuda" if torch.cuda.is_available() else "cpu",
+)
+
+
+def configure(**overrides):
+    """Set the module globals the training functions read, then rebuild derived sizes."""
+    unknown = set(overrides) - set(DEFAULTS)
+    if unknown:
+        raise KeyError(f"unknown setting {sorted(unknown)}")
+    g = globals()
+    for key, value in DEFAULTS.items():
+        g[key] = overrides[key] if key in overrides else value
+    assert task in TASKS and corrupt in ("scatter", "shift", "slip") and n_blocks >= 2
+    assert layout in ("stream", "block") and opt in ("adamw", "sgd")
+    if task == "shell" or task == "first_cup":
+        g["alphabet"], g["mod"] = 10, 5
+    elif task == "lights":
+        g["alphabet"], g["mod"] = 4, 16
+    elif task == "lights_parity":
+        g["alphabet"], g["mod"] = 4, 2
+    g["train_modes"] = tuple(m.strip() for m in modes.split(",") if m.strip())
+    assert train_modes and set(train_modes) <= {"process", "outcome"}, (
+        f"modes must be process and/or outcome (got {modes!r})")
+    assert task == "count" or rho == 1.0, "corruption is defined for the count task"
+    assert every_k >= 1 and word_len % every_k == 0, "every_k must divide word_len"
+    assert every_k == 1 or layout == "block", "every-k is defined for the block layout"
+    random.seed(seed)
+    torch.manual_seed(seed)
+
+    g["n"], g["A"] = word_len, alphabet
+    g["V"] = n + 1 if task == "first" else mod
+    g["SEP"], g["COLON"], g["EOS"] = A + V, A + V + 1, A + V + 2
+    g["VOCAB"] = A + V + 3
+    g["N_TRACE"] = n // every_k
+    g["P"] = 2 * n + 6                               # longest row: prompt n+3, process continuation n+3
+    g["STREAM"] = layout == "stream"
+    g["F_WIDTH"] = max(A, 3 * V * (n + 1), 2 * n + 1)
+    start = 0
+    for name, size in dict(TL=A, TV=V, POS=P, QRY=A, MATCH=1, PREV=V, MT=1, CNT=1, S0=V, OUT=V).items():
+        g[name] = slice(start, start + size)
+        start += size
+    g["W"] = start
+    g["GAP"] = gap if gap else max(16.0, 3 * math.log(8 * (n + 3)))
+    g["C"] = GAP * math.sqrt(P)                      # routing score gap GAP: softmax leak per position ~ e^-GAP
 
 
 def step(s, t, letter, q):
@@ -174,9 +192,6 @@ def shown_traces(examples, rng):
     return [states if u < rho else bad for (_, _, _, states), u, bad in zip(examples, uniforms, wrong)]
 
 
-STREAM = layout == "stream"
-
-
 def prompt(ex):
     s0, q, word, _ = ex
     return [A + s0, q, *word, SEP]
@@ -217,15 +232,6 @@ def encode(rows, mode):
 # the architecture: L residual blocks, H softmax heads, one ReLU MLP, no LayerNorm.
 # Residual slots: tok letter | tok value | pos | query | match | prev | mt | cnt | s0 | out
 
-H = 3
-F_WIDTH = max(A, 3 * V * (n + 1), 2 * n + 1)
-_sizes = dict(TL=A, TV=V, POS=P, QRY=A, MATCH=1, PREV=V, MT=1, CNT=1, S0=V, OUT=V)
-_start = 0
-for _name, _size in _sizes.items():
-    globals()[_name] = slice(_start, _start + _size)
-    _start += _size
-W = _start
-
 
 def zero_params():
     p = {"wte": torch.zeros(VOCAB, W), "wpe": torch.zeros(P, W), "readout": torch.zeros(VOCAB, W)}
@@ -252,9 +258,6 @@ def forward(p, ids):
 
 # -----------------------------------------------------------------------------
 # the handcoded solutions, as values of the same tensors
-
-GAP = gap if gap else max(16.0, 3 * math.log(8 * (n + 3)))
-C = GAP * math.sqrt(P)      # routing score gap GAP: softmax leak per position ~ e^-GAP
 
 
 def at(sl, i=0):
@@ -369,8 +372,8 @@ def outcome_solution():
 
 
 @torch.no_grad()
-def free_run(p, examples, mode):
-    """Greedy generation; in the stream layout the letters are fed in, the model writes values."""
+def generate(p, examples, mode):
+    """Greedy continuation and the gold continuation. Stream layout feeds the letters in."""
     def process_values(e):
         vals = [A + v for v in e[3]]
         return vals[every_k - 1::every_k] if every_k > 1 else vals
@@ -391,6 +394,13 @@ def free_run(p, examples, mode):
         for _ in range(len(gold[0])):
             ids = torch.cat([ids, forward(p, ids)[:, -1].argmax(-1, keepdim=True)], dim=1)
         rows = ids[:, n + 3 :].tolist()
+    return rows, gold
+
+
+@torch.no_grad()
+def free_run(p, examples, mode):
+    """Greedy generation; in the stream layout the letters are fed in, the model writes values."""
+    rows, gold = generate(p, examples, mode)
     exact = sum(r == g for r, g in zip(rows, gold)) / len(gold)
     answer = sum(COLON in r and r.index(COLON) + 1 < len(r) and r[r.index(COLON) + 1] == g[-2]
                  for r, g in zip(rows, gold)) / len(gold)
@@ -399,54 +409,59 @@ def free_run(p, examples, mode):
                 if mode == "process" else float("nan"))
     return exact, answer, steps_ok
 
-# -----------------------------------------------------------------------------
-# data with held-out words, then one random theta_0 trained under each loss
 
-rng_train = random.Random(seed)
-rng_corrupt = random.Random(seed + 10_000)
-rng_test = random.Random(seed + 20_000)
-train = [make_example(rng_train) for _ in range(train_size)]
-shown = shown_traces(train, rng_corrupt)
-seen, test, tries = {tuple(prompt(e)) for e in train}, [], 0
-while len(test) < test_size:
-    e, tries = make_example(rng_test), tries + 1
-    assert tries < 100 * test_size, "prompt space too small for held-out test words"
-    if tuple(prompt(e)) not in seen:
-        test.append(e)
-clean = sum(s == e[3] for e, s in zip(train, shown))
-print(f"corpus  train={len(train)}  clean={clean}/{len(train)} ({clean / len(train):.3f})  "
-      f"test={len(test)}  (streams: train seed, corrupt seed+10000, test seed+20000)")
-if clean_only:   # the clean subset of this exact corpus (corrupted traces are wrong at every step)
-    keep = [i for i, (e, sh) in enumerate(zip(train, shown)) if sh == e[3]]
-    train, shown = [train[i] for i in keep], [shown[i] for i in keep]
-    print(f"clean_only: training on the {len(train)} clean traces of the rho={rho} corpus")
+def make_corpus():
+    """Train words, the traces supervision sees, and held-out test words."""
+    rng_train = random.Random(seed)
+    rng_corrupt = random.Random(seed + 10_000)
+    rng_test = random.Random(seed + 20_000)
+    train = [make_example(rng_train) for _ in range(train_size)]
+    shown = shown_traces(train, rng_corrupt)
+    seen, test, tries = {tuple(prompt(e)) for e in train}, [], 0
+    while len(test) < test_size:
+        e, tries = make_example(rng_test), tries + 1
+        assert tries < 100 * test_size, "prompt space too small for held-out test words"
+        if tuple(prompt(e)) not in seen:
+            test.append(e)
+    clean = sum(s == e[3] for e, s in zip(train, shown))
+    print(f"corpus  train={len(train)}  clean={clean}/{len(train)} ({clean / len(train):.3f})  "
+          f"test={len(test)}  (streams: train seed, corrupt seed+10000, test seed+20000)")
+    if clean_only:   # the clean subset of this exact corpus (corrupted traces are wrong at every step)
+        keep = [i for i, (e, sh) in enumerate(zip(train, shown)) if sh == e[3]]
+        train, shown = [train[i] for i in keep], [shown[i] for i in keep]
+        print(f"clean_only: training on the {len(train)} clean traces of the rho={rho} corpus")
+    return train, shown, test
 
-theta_0 = {k: torch.randn_like(t) * init_std for k, t in zero_params().items()}
 
-print(f"task={task} layout={layout} A={A} n={n}" + (f" m={mod} rho={rho} corrupt={corrupt}" if task == "count" else "")
-      + (f" every_k={every_k}" if every_k > 1 else "")
-      + f"  L={n_blocks} opt={opt} batch={batch_size} heads={H} d_ff={F_WIDTH} width={W}"
-      + f"  params={sum(t.numel() for t in theta_0.values()):,}")
-if task == "count" and mod == 2:
-    print(f"answer bias given everything but the count: (1-2/A)^n = {(1 - 2 / A) ** n:.2e}")
-if task in ("count", "first") and every_k == 1:
-    solutions = {"process": process_solution(), "outcome": outcome_solution()}
-    solutions = {m: {k: t.to(device) for k, t in p.items()} for m, p in solutions.items()}
-    for mode, p in solutions.items():
-        exact, answer, _ = free_run(p, test, mode)
-        print(f"handcoded {mode:8s}  gap {GAP:.2f}  exact {exact:.3f}  answer {answer:.3f}")
-        for sigma in perturb:
-            noise_gen = torch.Generator(device="cpu").manual_seed(seed + 30_000)
-            worst = 1.0
-            for _ in range(perturb_draws):
-                noisy = {k: t + sigma * torch.randn(t.shape, generator=noise_gen).to(t.device)
-                         for k, t in p.items()}
-                worst = min(worst, free_run(noisy, test, mode)[0])
-            print(f"handcoded {mode:8s}  noise std {sigma:g}  worst exact over {perturb_draws} draws {worst:.3f}")
-if handcoded_only:
-    sys.exit(0)
+def init_theta():
+    """One random initialization in the shared architecture. Both losses clone it."""
+    return {k: torch.randn_like(t) * init_std for k, t in zero_params().items()}
 
-for mode in train_modes:
+
+def handcoded_params():
+    """The two exact programs, on `device`. Count and first-occurrence only, every_k = 1."""
+    assert task in ("count", "first") and every_k == 1
+    sols = {"process": process_solution(), "outcome": outcome_solution()}
+    return {m: {k: t.to(device) for k, t in p.items()} for m, p in sols.items()}
+
+
+@torch.no_grad()
+def mean_loss(params, mode, examples, shown=None):
+    """Mean token cross-entropy of a fixed parameter dict. Handcoded programs are flat lines."""
+    if shown is None:
+        shown = [e[3] for e in examples]
+    inputs, targets = encode([row(e, mode, s) for e, s in zip(examples, shown)], mode)
+    total, count = 0.0, 0
+    for i in range(0, inputs.shape[0], batch_size):
+        logit = forward(params, inputs[i:i + batch_size])
+        tgt = targets[i:i + batch_size]
+        total += F.cross_entropy(logit.flatten(0, 1), tgt.flatten(), ignore_index=-100, reduction="sum").item()
+        count += int((tgt != -100).sum())
+    return total / max(count, 1)
+
+
+def train_mode(mode, theta_0, train, shown, test, keep_state=False):
+    """Train one clone of theta_0. Returns (params, history). History has a loss every step."""
     p = {k: t.clone().to(device).requires_grad_() for k, t in theta_0.items()}
     if opt == "sgd":
         optimizer = torch.optim.SGD(p.values(), lr=lr, momentum=0.0)
@@ -454,7 +469,10 @@ for mode in train_modes:
         optimizer = torch.optim.AdamW(p.values(), lr=lr, weight_decay=0.0)
     inputs, targets = encode([row(e, mode, s) for e, s in zip(train, shown)], mode)
     batches = torch.Generator().manual_seed(seed)
-    for it in range(1, steps + 1):
+    history = []
+    tick = eval_every if eval_every else max(1, steps // 8)
+    bar = tqdm(range(1, steps + 1), desc=mode, dynamic_ncols=True)
+    for it in bar:
         index = torch.randint(len(train), (batch_size,), generator=batches).to(device)
         logits = forward(p, inputs[index])
         loss = F.cross_entropy(logits.flatten(0, 1), targets[index].flatten(), ignore_index=-100)
@@ -462,11 +480,19 @@ for mode in train_modes:
         loss.backward()
         torch.nn.utils.clip_grad_norm_(p.values(), 1.0)
         optimizer.step()
-        tick = eval_every if eval_every else max(1, steps // 8)
+        rec = dict(step=it, loss=loss.item())
+        postfix = {"loss": f"{loss.item():.3f}"}
         if it % tick == 0 or it == steps:
             exact, answer, steps_ok = free_run(p, test, mode)
-            print(f"{mode:8s} step {it:5d}  loss {loss.item():.4f}  test exact {exact:.3f}  "
-                  f"answer {answer:.3f}" + (f"  step acc {steps_ok:.3f}" if mode == "process" else ""))
+            rec.update(exact=exact, answer=answer, steps_ok=steps_ok)
+            postfix["exact"] = f"{exact:.3f}"
+            line = (f"{mode:8s} step {it:5d}  loss {loss.item():.4f}  test exact {exact:.3f}  "
+                    f"answer {answer:.3f}" + (f"  step acc {steps_ok:.3f}" if mode == "process" else ""))
+            tqdm.write(line)
+            if keep_state:
+                rec["params"] = {k: t.detach().cpu().clone() for k, t in p.items()}
+        bar.set_postfix(postfix, refresh=False)
+        history.append(rec)
         if save_every and (it % save_every == 0 or it == steps):
             name = f"{tag}_{mode}_step{it}.pt" if tag else f"{mode}_step{it}.pt"
             path = os.path.join(save_dir, name)
@@ -478,4 +504,44 @@ for mode in train_modes:
                 "params": {k: t.detach().cpu() for k, t in p.items()},
                 "mode": mode, "step": it,
             }, path)
-            print(f"wrote {path}")
+            tqdm.write(f"wrote {path}")
+    return p, history
+
+
+def main():
+    over = {}
+    for arg in sys.argv[1:]:
+        key, value = arg.split("=", 1)
+        assert key in DEFAULTS, f"unknown setting {key}"
+        over[key] = value if key in _STRING_KEYS else ast.literal_eval(value)
+    configure(**over)
+    train, shown, test = make_corpus()
+    theta_0 = init_theta()
+    print(f"task={task} layout={layout} A={A} n={n}" + (f" m={mod} rho={rho} corrupt={corrupt}" if task == "count" else "")
+          + (f" every_k={every_k}" if every_k > 1 else "")
+          + f"  L={n_blocks} opt={opt} batch={batch_size} heads={H} d_ff={F_WIDTH} width={W}"
+          + f"  params={sum(t.numel() for t in theta_0.values()):,}")
+    if task == "count" and mod == 2:
+        print(f"answer bias given everything but the count: (1-2/A)^n = {(1 - 2 / A) ** n:.2e}")
+    if task in ("count", "first") and every_k == 1:
+        for mode, p in handcoded_params().items():
+            exact, answer, _ = free_run(p, test, mode)
+            print(f"handcoded {mode:8s}  gap {GAP:.2f}  exact {exact:.3f}  answer {answer:.3f}")
+            for sigma in perturb:
+                noise_gen = torch.Generator(device="cpu").manual_seed(seed + 30_000)
+                worst = 1.0
+                for _ in range(perturb_draws):
+                    noisy = {k: t + sigma * torch.randn(t.shape, generator=noise_gen).to(t.device)
+                             for k, t in p.items()}
+                    worst = min(worst, free_run(noisy, test, mode)[0])
+                print(f"handcoded {mode:8s}  noise std {sigma:g}  worst exact over {perturb_draws} draws {worst:.3f}")
+    if handcoded_only:
+        return
+    for mode in train_modes:
+        train_mode(mode, theta_0, train, shown, test)
+
+
+configure()
+
+if __name__ == "__main__":
+    main()

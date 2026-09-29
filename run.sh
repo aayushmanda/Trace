@@ -41,4 +41,4 @@ for f in "${process_ckpts[@]}"; do
   python handcoded/spectrum.py task=count word_len=8 mod=2 site=state ckpt=$f \
     out=logs/track/$(basename $f .pt)_state.json
 done
-python handcoded/spectra_table.py logs/track/*.json
+python handcoded/figures.py spectra logs/track/*.json
