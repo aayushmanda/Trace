@@ -734,9 +734,7 @@ if __name__ == "__main__":
 
         Example
         -------
-            pip install nnsight
-
-            python context_intervention_nnsight.py \
+            uv run --with nnsight python handcoded/probes.py context \
                 --ckpt ckpt/rho05_shift/process_step8000.pt \
                 --corrupt shift \
                 --examples 2048 \

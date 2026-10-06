@@ -1,11 +1,14 @@
 """GPU job queues. GPUs 0, 2, and 3. The pending list still names GPU 1; do not run it.
 
+    python handcoded/run.py qwen
+    python handcoded/run.py shuffled_pilot [--bbh]
     python handcoded/run.py spotlight
     python handcoded/run.py fig2
 """
 import sys
 
 _COMMANDS = (
+    'qwen',
     'spotlight',
     'fig2',
     'slip',
@@ -17,7 +20,50 @@ _COMMANDS = (
     'finish',
     'tclean',
     'oom',
+    'shuffled_pilot',
 )
+
+
+def run_queue(jobs, log, gpus):
+    """Run jobs (dicts with name, out, cmd) on the given GPU slots. Skips jobs whose `out` exists."""
+    import os
+    import subprocess
+    import threading
+    import time
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    lock, queue, failed = threading.Lock(), list(jobs), []
+
+    def run_one(gpu, item):
+        if item["out"].exists() and item["out"].stat().st_size > 0:
+            print(f"[skip] {item['name']}", flush=True)
+            return 0
+        env = dict(os.environ, CUDA_VISIBLE_DEVICES=str(gpu), PYTHONUNBUFFERED="1", TRACE_TQDM="0")
+        t0 = time.time()
+        print(f"[start gpu{gpu}] {item['name']}", flush=True)
+        with (log / f"{item['name']}.log").open("w") as fh:
+            code = subprocess.run(item["cmd"], cwd=root, env=env, stdout=fh, stderr=subprocess.STDOUT).returncode
+        print(f"[done  gpu{gpu}] {item['name']}  exit={code}  {(time.time() - t0) / 60:.1f} min", flush=True)
+        return code
+
+    def worker(gpu):
+        while True:
+            with lock:
+                if not queue:
+                    return
+                item = queue.pop(0)
+            if run_one(gpu, item):
+                with lock:
+                    failed.append(item["name"])
+
+    print(f"{len(jobs)} jobs on GPUs {gpus}", flush=True)
+    threads = [threading.Thread(target=worker, args=(g,)) for g in gpus]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    print(f"failed: {failed or 'none'}", flush=True)
 
 if __name__ == "__main__":
     if len(sys.argv) < 2 or sys.argv[1] not in _COMMANDS:
@@ -26,7 +72,83 @@ if __name__ == "__main__":
         raise SystemExit(2)
     _cmd = sys.argv[1]
     sys.argv = [_cmd] + sys.argv[2:]
-    if _cmd == 'spotlight':
+    if _cmd == 'qwen':
+        """The SmolLM2 LoRA protocol on a second pretrained model (Qwen2.5-0.5B).
+
+        Main grid, coherent-rule grid, and the 8x outcome budget, one job per cell.
+        GPUs 0/2/3 only (never 1). Two workers per GPU. Finished cells are skipped.
+        """
+        from pathlib import Path
+
+        ROOT = Path(__file__).resolve().parents[1]
+        MODEL, NAME = "Qwen/Qwen2.5-0.5B", "qwen05"
+        OUT, LOG = ROOT / "results/paper" / NAME, ROOT / "logs" / NAME
+        LOG.mkdir(parents=True, exist_ok=True)
+        PY = sys.executable
+        GPUS = [0, 0, 2, 2, 3, 3]
+        RHOS, SEEDS = (0.0, 0.2, 0.4, 0.5, 0.6, 0.8, 1.0), (2001, 2002, 2003)
+        ONLY = {
+            "outcome": ["--no-include-answer-first", "--no-include-process"],
+            "answer_first": ["--no-include-outcome", "--no-include-process"],
+            "process": ["--no-include-outcome", "--no-include-answer-first"],
+        }
+
+        def lora(group, cell, condition, seed, task="boolean_circuit_8", rho=1.0, steps=800, val=300):
+            out = OUT / group / f"{cell}.csv"
+            return dict(name=f"{group}_{cell}", out=out, cmd=[
+                PY, "-m", "src", "lora", "--model", MODEL, "--task", task,
+                "--rhos", str(rho), "--seeds", str(seed), *ONLY[condition],
+                "--train-size", "12000", "--val-size", str(val), "--local-eval-size", str(val),
+                "--steps", str(steps), "--batch-size", "16", "--lora-rank", "8", "--lr", "3e-4", "--local-batch-size", "32",
+                "--output", str(out), "--run-dir", str(OUT / "artifacts" / group / cell), "--overwrite",
+            ])
+
+        JOBS = [lora("outcome_6400", f"s{s}", "outcome", s, steps=6400) for s in SEEDS]
+        for s in SEEDS:
+            JOBS += [lora("main", f"outcome_s{s}", "outcome", s), lora("main", f"answer_first_s{s}", "answer_first", s)]
+            JOBS += [lora("main", f"r{r}_s{s}", "process", s, rho=r) for r in RHOS]
+            JOBS += [lora("coherent", f"r{r}_s{s}", "process", s, task="boolean_circuit_8_coherent", rho=r, val=1000)
+                     for r in RHOS]
+        run_queue(JOBS, LOG, GPUS)
+
+    elif _cmd == 'shuffled_pilot':
+        """Pilot of tracking shuffled objects on Qwen2.5-0.5B, one seed.
+
+        Outcome vs step across (K, n), symmetric vs systematic noise at rho = 0.5, and k = 2.
+        """
+        from pathlib import Path
+
+        ROOT = Path(__file__).resolve().parents[1]
+        OUT, LOG = ROOT / "results/shuffled/pilot", ROOT / "logs/shuffled_pilot"
+        LOG.mkdir(parents=True, exist_ok=True)
+
+        def cell(name, K, n, condition, out_dir=OUT, **kw):
+            out = out_dir / f"{name}.json"
+            extra = [x for k, v in kw.items() for x in (f"--{k.replace('_', '-')}", str(v))]
+            return dict(name=name, out=out, cmd=[sys.executable, "-m", "src", "shuffled", "train", "--K", str(K),
+                                                 "--n", str(n), "--condition", condition, *extra, "--out", str(out)])
+
+        JOBS = []
+        for K, n in [(3, 10), (5, 3), (5, 6), (5, 10), (7, 6), (7, 10)]:
+            JOBS += [cell(f"K{K}_n{n}_outcome", K, n, "outcome"), cell(f"K{K}_n{n}_step", K, n, "process")]
+        JOBS += [cell(f"K5_n6_rho0.5_{noise}", 5, 6, "process", rho=0.5, noise=noise)
+                 for noise in ("symmetric", "systematic")]
+        JOBS += [cell("K5_n6_every2", 5, 6, "process", every_k=2)]
+        if "--bbh" in sys.argv:     # train on generated BIG-Bench Hard items, test on the real 250 per K
+            BBH, LOG = ROOT / "results/shuffled/bbh", ROOT / "logs/shuffled_bbh"
+            LOG.mkdir(parents=True, exist_ok=True)
+            JOBS = [cell(f"bbh_K{K}_{c}", K, K, c, BBH, format="bbh") for K in (3, 5, 7) for c in ("outcome", "process")]
+            JOBS += [cell(f"bbh_K{K}_outcome_s{s}", K, K, "outcome", BBH, format="bbh", seed=s)
+                     for K in (3, 5, 7) for s in (2002, 2003)]
+            JOBS += [cell(f"bbh_K5_rho0.5_{noise}", 5, 5, "process", BBH, format="bbh", rho=0.5, noise=noise)
+                     for noise in ("symmetric", "systematic")]
+            JOBS += [cell(f"bbh_K{K}_process_s{s}", K, K, "process", BBH, format="bbh", seed=s)
+                     for K in (3, 5, 7) for s in (2002, 2003)]
+            JOBS += [cell(f"bbh_K5_rho0.5_{noise}_s{s}", 5, 5, "process", BBH, format="bbh", rho=0.5, noise=noise, seed=s)
+                     for noise in ("symmetric", "systematic") for s in (2002, 2003)]
+        run_queue(JOBS, LOG, [0, 0, 2, 2, 3, 3])
+
+    elif _cmd == 'spotlight':
         #!/usr/bin/env python3
         """Lambda sweep and W_r intervention. GPUs 0/2/3, never 1. Two jobs per GPU."""
         import os

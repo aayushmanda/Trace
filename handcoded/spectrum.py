@@ -251,7 +251,7 @@ if _job == "answers":
     _sys.argv = [_sys.argv[0]] + _kept
     """Answer spectra of the validation tasks (Table 1 lambda and the validation-spectra appendix).
 
-        python handcoded/answer_spectrum.py
+        python handcoded/spectrum.py job=answers
 
     Exact answer spectrum A_r = sum_{|S|=r} E||a_S||^2 for a reversible task with
     uniform s0, by dynamic programming over second moments (Lemma B.2):

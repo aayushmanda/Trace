@@ -88,7 +88,7 @@ def configure(**overrides):
     for key, value in DEFAULTS.items():
         g[key] = overrides[key] if key in overrides else value
     assert task in TASKS and corrupt in ("scatter", "shift", "slip") and n_blocks >= 2
-    assert layout in ("stream", "block") and opt in ("adamw", "sgd")
+    assert layout in ("stream", "block") and opt in ("adamw", "sgd", "adam")
     if task == "shell" or task == "first_cup":
         g["alphabet"], g["mod"] = 10, 5
     elif task == "lights":
@@ -465,6 +465,8 @@ def train_mode(mode, theta_0, train, shown, test, keep_state=False):
     p = {k: t.clone().to(device).requires_grad_() for k, t in theta_0.items()}
     if opt == "sgd":
         optimizer = torch.optim.SGD(p.values(), lr=lr, momentum=0.0)
+    elif opt == "adam":
+        optimizer = torch.optim.Adam(p.values(), lr=lr, weight_decay=0.0)
     else:
         optimizer = torch.optim.AdamW(p.values(), lr=lr, weight_decay=0.0)
     inputs, targets = encode([row(e, mode, s) for e, s in zip(train, shown)], mode)

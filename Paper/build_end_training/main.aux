@@ -1,0 +1,495 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\def\@LN@column{1}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1}\protected@file@percent }
+\newlabel{sec:intro}{{1}{1}{Introduction}{section.1}{}}
+\newlabel{sec:intro@cref}{{[section][1][]1}{[1][1][]1}{}{}{}}
+\@writefile{toc}{\contentsline {paragraph}{Results.}{1}{section*.3}\protected@file@percent }
+\citation{shalevshwartz2017failures}
+\def\@LN@column{1}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces \textbf  {The answer touches $n$ transitions, a step target only one.} (a)~A degree-$r$ feature of the answer is damped by $\lambda ^{n-r}$, and a step target shortens the horizon to $1$. (b)~Measured on a two-block Transformer at initialization, the answer gradient decays at the predicted rate $\lambda =0.5$ per letter and the step gradient does not (\cref  {tab:spectrum}).}}{2}{figure.caption.2}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig:credit}{{1}{2}{\textbf {The answer touches $n$ transitions, a step target only one.} (a)~A degree-$r$ feature of the answer is damped by $\mixrate ^{n-r}$, and a step target shortens the horizon to $1$. (b)~Measured on a two-block Transformer at initialization, the answer gradient decays at the predicted rate $\mixrate =0.5$ per letter and the step gradient does not (\cref {tab:spectrum})}{figure.caption.2}{}}
+\newlabel{fig:credit@cref}{{[figure][1][]1}{[1][1][]2}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces \textbf  {The running example.} Count the letter \texttt  a in \texttt  {banana} modulo $3$, starting from $1$. Both formats receive the same prompt; step supervision also generates the running values.}}{2}{table.caption.5}\protected@file@percent }
+\newlabel{tab:rows}{{1}{2}{\textbf {The running example.} Count the letter \texttt a in \texttt {banana} modulo $3$, starting from $1$. Both formats receive the same prompt; step supervision also generates the running values}{table.caption.5}{}}
+\newlabel{tab:rows@cref}{{[table][1][]1}{[1][2][]2}{}{}{}}
+\@writefile{toc}{\contentsline {paragraph}{Scope.}{2}{section*.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2}Setup}{2}{section.2}\protected@file@percent }
+\newlabel{sec:setting}{{2}{2}{Setup}{section.2}{}}
+\newlabel{sec:setting@cref}{{[section][2][]2}{[1][2][]2}{}{}{}}
+\newlabel{def:task}{{1}{2}{State-tracking task}{definition.1}{}}
+\newlabel{def:task@cref}{{[definition][1][]1}{[1][2][]2}{}{}{}}
+\newlabel{eq:tracking}{{1}{2}{State-tracking task}{equation.1}{}}
+\newlabel{eq:tracking@cref}{{[equation][1][]1}{[1][2][]2}{}{}{}}
+\citation{efron1981jackknife}
+\citation{akyurek2023icl,ramesh2023capable}
+\def\@LN@column{1}
+\newlabel{def:lambda}{{2}{3}{Contraction coefficient}{definition.2}{}}
+\newlabel{def:lambda@cref}{{[definition][2][]2}{[1][2][]3}{}{}{}}
+\newlabel{def:losses}{{3}{3}{Outcome and step losses}{definition.3}{}}
+\newlabel{def:losses@cref}{{[definition][3][]3}{[1][3][]3}{}{}{}}
+\newlabel{def:degree}{{4}{3}{Degree}{definition.4}{}}
+\newlabel{def:degree@cref}{{[definition][4][]4}{[1][3][]3}{}{}{}}
+\newlabel{ass:arch}{{1}{3}{Architecture}{assumption.1}{}}
+\newlabel{ass:arch@cref}{{[assumption][1][]1}{[1][3][]3}{}{}{}}
+\newlabel{ass:init}{{2}{3}{Initialization}{assumption.2}{}}
+\newlabel{ass:init@cref}{{[assumption][2][]2}{[1][3][]3}{}{}{}}
+\newlabel{ass:task}{{3}{3}{Task}{assumption.3}{}}
+\newlabel{ass:task@cref}{{[assumption][3][]3}{[1][3][]3}{}{}{}}
+\newlabel{ass:gd}{{4}{3}{Training}{assumption.4}{}}
+\newlabel{ass:gd@cref}{{[assumption][4][]4}{[1][3][]3}{}{}{}}
+\@writefile{toc}{\contentsline {paragraph}{Target spectrum.}{3}{section*.6}\protected@file@percent }
+\newlabel{eq:horizon}{{2}{3}{Target spectrum}{equation.2}{}}
+\newlabel{eq:horizon@cref}{{[equation][2][]2}{[1][3][]3}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {3}Both solutions exist}{3}{section.3}\protected@file@percent }
+\newlabel{sec:executors}{{3}{3}{Both solutions exist}{section.3}{}}
+\newlabel{sec:executors@cref}{{[section][3][]3}{[1][3][]3}{}{}{}}
+\newlabel{prop:represent}{{1}{3}{Both solutions exist}{proposition.1}{}}
+\newlabel{prop:represent@cref}{{[proposition][1][]1}{[1][3][]3}{}{}{}}
+\@writefile{toc}{\contentsline {paragraph}{Construction.}{3}{section*.7}\protected@file@percent }
+\citation{shalevshwartz2017failures,abbe2025parities}
+\def\@LN@column{1}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces \textbf  {The two executors differ only in their second block.} (a)~The step executor routes the displayed state and the current bit to a lookup with $2K$ units. (b)~The outcome executor averages all $n$ bits, multiplies the average by $n$, and looks up $(s_0,m)$ with $3K(n+1)$ units.}}{4}{figure.caption.8}\protected@file@percent }
+\newlabel{fig:executors}{{2}{4}{\textbf {The two executors differ only in their second block.} (a)~The step executor routes the displayed state and the current bit to a lookup with $2K$ units. (b)~The outcome executor averages all $n$ bits, multiplies the average by $n$, and looks up $(s_0,m)$ with $3K(n+1)$ units}{figure.caption.8}{}}
+\newlabel{fig:executors@cref}{{[figure][2][]2}{[1][3][]4}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4}How training starts: a credit gap}{4}{section.4}\protected@file@percent }
+\newlabel{sec:gap}{{4}{4}{How training starts: a credit gap}{section.4}{}}
+\newlabel{sec:gap@cref}{{[section][4][]4}{[1][3][]4}{}{}{}}
+\@writefile{toc}{\contentsline {paragraph}{Model spectrum at initialization.}{4}{section*.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Credit matches degree}{4}{subsection.4.1}\protected@file@percent }
+\newlabel{sec:credit}{{4.1}{4}{Credit matches degree}{subsection.4.1}{}}
+\newlabel{sec:credit@cref}{{[subsection][1][4]4.1}{[1][4][]4}{}{}{}}
+\newlabel{def:credit}{{5}{4}{Credit}{definition.5}{}}
+\newlabel{def:credit@cref}{{[definition][5][]5}{[1][4][]4}{}{}{}}
+\newlabel{eq:grad-split}{{3}{4}{Credit matches degree}{equation.3}{}}
+\newlabel{eq:grad-split@cref}{{[equation][3][]3}{[1][4][]4}{}{}{}}
+\newlabel{eq:spectra}{{4}{4}{Credit matches degree}{equation.4}{}}
+\newlabel{eq:spectra@cref}{{[equation][4][]4}{[1][4][]4}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Why outcome optimization stalls}{4}{subsection.4.2}\protected@file@percent }
+\newlabel{sec:spectrum}{{4.2}{4}{Why outcome optimization stalls}{subsection.4.2}{}}
+\newlabel{sec:spectrum@cref}{{[subsection][2][4]4.2}{[1][4][]4}{}{}{}}
+\newlabel{sec:main}{{4.2}{4}{Outcome credit and the plateau}{section*.11}{}}
+\newlabel{sec:main@cref}{{[subsection][2][4]4.2}{[1][4][]4}{}{}{}}
+\@writefile{toc}{\contentsline {paragraph}{Outcome credit and the plateau.}{4}{section*.11}\protected@file@percent }
+\newlabel{thm:main}{{1}{4}{Outcome interaction credit}{theorem.1}{}}
+\newlabel{thm:main@cref}{{[theorem][1][]1}{[1][4][]4}{}{}{}}
+\def\@LN@column{1}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces \textbf  {The answer and a fresh network barely overlap.} Counting, $K=2$, $n=8$. (a)~The target spectrum $A_r$ puts its mass at high degree. (b)~The Jacobian spectrum $J_r$ of the two-block Transformer at initialization is $99.6\%$ degree~$0$. (c)~The bound $\sqrt  {A_rJ_r}$ on the degree-$r$ credit.}}{5}{figure.caption.10}\protected@file@percent }
+\newlabel{fig:overlap}{{3}{5}{\textbf {The answer and a fresh network barely overlap.} Counting, $K=2$, $n=8$. (a)~The target spectrum $A_r$ puts its mass at high degree. (b)~The Jacobian spectrum $J_r$ of the two-block Transformer at initialization is $99.6\%$ degree~$0$. (c)~The bound $\sqrt {A_rJ_r}$ on the degree-$r$ credit}{figure.caption.10}{}}
+\newlabel{fig:overlap@cref}{{[figure][3][]3}{[1][4][]5}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Why step optimization is different}{5}{subsection.4.3}\protected@file@percent }
+\newlabel{sec:steps}{{4.3}{5}{Why step optimization is different}{subsection.4.3}{}}
+\newlabel{sec:steps@cref}{{[subsection][3][4]4.3}{[1][5][]5}{}{}{}}
+\newlabel{thm:separation}{{2}{5}{Step credit}{theorem.2}{}}
+\newlabel{thm:separation@cref}{{[theorem][2][]2}{[1][5][]5}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Which solution is reached}{5}{section.5}\protected@file@percent }
+\newlabel{sec:end}{{5}{5}{Which solution is reached}{section.5}{}}
+\newlabel{sec:end@cref}{{[section][5][]5}{[1][5][]5}{}{}{}}
+\newlabel{sec:lookup}{{5}{5}{Which solution is reached}{section.5}{}}
+\newlabel{sec:lookup@cref}{{[section][5][]5}{[1][5][]5}{}{}{}}
+\newlabel{def:basin}{{6}{5}{Supervised loss and basin}{definition.6}{}}
+\newlabel{def:basin@cref}{{[definition][6][]6}{[1][5][]5}{}{}{}}
+\citation{nocedal2006numerical}
+\def\@LN@column{1}
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces \textbf  {Rule credit has polynomial horizon cost; outcome interaction credit has exponential cost.} Norm of each part of the gradient at initialization, with the scale of its theorem bound. Counting, $K=2$, $\lambda =\frac  12$, $\sigma =0.02$, exact over all words (\cref  {app:exp-regime}).}}{6}{table.caption.14}\protected@file@percent }
+\newlabel{tab:matched}{{2}{6}{\textbf {Rule credit has polynomial horizon cost; outcome interaction credit has exponential cost.} Norm of each part of the gradient at initialization, with the scale of its theorem bound. Counting, $K=2$, $\mixrate =\frac 12$, $\initscale =0.02$, exact over all words (\cref {app:exp-regime})}{table.caption.14}{}}
+\newlabel{tab:matched@cref}{{[table][2][]2}{[1][6][]6}{}{}{}}
+\newlabel{thm:outcome-end}{{3}{6}{Outcome training does not converge}{theorem.3}{}}
+\newlabel{thm:outcome-end@cref}{{[theorem][3][]3}{[1][6][]6}{}{}{}}
+\newlabel{ass:armijo}{{5}{6}{Backtracking step sizes}{assumption.5}{}}
+\newlabel{ass:armijo@cref}{{[assumption][5][]5}{[1][6][]6}{}{}{}}
+\newlabel{eq:descent}{{{Armijo}}{6}{Backtracking step sizes}{AMS.12}{}}
+\newlabel{eq:descent@cref}{{[equation][2147483647][]{Armijo}}{[1][6][]6}{}{}{}}
+\newlabel{thm:basin}{{4}{6}{Step training converges in the basin}{theorem.4}{}}
+\newlabel{thm:basin@cref}{{[theorem][4][]4}{[1][6][]6}{}{}{}}
+\newlabel{cor:exact}{{1}{6}{Exact generation}{corollary.1}{}}
+\newlabel{cor:exact@cref}{{[corollary][1][]1}{[1][6][]6}{}{}{}}
+\@writefile{toc}{\contentsline {paragraph}{Certifying the middle.}{6}{section*.13}\protected@file@percent }
+\def\@LN@column{1}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces \textbf  {Outcome exit time grows at least as fast as $\lambda ^{-n}$; step exit time stays constant.} Runs satisfy the assumptions of \cref  {thm:outcome-end}, with a zero initial readout. Counting, $K=2$, $\lambda =0.5$, $\sigma =0.002$ and $0.02$, exact full-batch loss, no ReLU unit switching. (a)~Training time to leave the ball. (b)~Loss decrease per unit time, in units of $\sigma ^2$. Faint lines: two more draws of $\tilde  \theta $.}}{7}{figure.caption.15}\protected@file@percent }
+\newlabel{fig:regime}{{4}{7}{\textbf {Outcome exit time grows at least as fast as $\mixrate ^{-n}$; step exit time stays constant.} Runs satisfy the assumptions of \cref {thm:outcome-end}, with a zero initial readout. Counting, $K=2$, $\mixrate =0.5$, $\initscale =0.002$ and $0.02$, exact full-batch loss, no ReLU unit switching. (a)~Training time to leave the ball. (b)~Loss decrease per unit time, in units of $\initscale ^2$. Faint lines: two more draws of $\tilde \theta $}{figure.caption.15}{}}
+\newlabel{fig:regime@cref}{{[figure][4][]4}{[1][6][]7}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces \textbf  {Answers alone fail where the answer has no low-degree part; steps succeed.} Accuracy (\%) on held-out prompts, ranges over seeds; the BIG-Bench Hard rows test on the $750$ real items. First occurrence keeps a degree-$1$ part at every $n$, and outcome learns it. For count mod $2$ at $n=16$, step accuracy is after $16$k updates and outcome after $32$k, twice the step budget. Protocols and per-seed results are in \cref  {app:experiments}.}}{7}{table.caption.16}\protected@file@percent }
+\newlabel{tab:main}{{3}{7}{\textbf {Answers alone fail where the answer has no low-degree part; steps succeed.} Accuracy (\%) on held-out prompts, ranges over seeds; the BIG-Bench Hard rows test on the $750$ real items. First occurrence keeps a degree-$1$ part at every $n$, and outcome learns it. For count mod $2$ at $n=16$, step accuracy is after $16$k updates and outcome after $32$k, twice the step budget. Protocols and per-seed results are in \cref {app:experiments}}{table.caption.16}{}}
+\newlabel{tab:main@cref}{{[table][3][]3}{[1][7][]7}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {6}Experiments test the mechanism}{7}{section.6}\protected@file@percent }
+\newlabel{sec:validation}{{6}{7}{Experiments test the mechanism}{section.6}{}}
+\newlabel{sec:validation@cref}{{[section][6][]6}{[1][7][]7}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Spectra and gradients at initialization}{7}{subsection.6.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Predictions 1 and 2: degree mismatch.}{7}{section*.17}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Prediction 3: gradient decay.}{7}{section*.18}\protected@file@percent }
+\citation{suzgun2022challenging}
+\citation{nye2021scratchpads,uesato2022solving,wei2022cot,lightman2023verify}
+\citation{wies2023subtask}
+\citation{prystawski2023think,abbe2024globality}
+\citation{feng2023towards,merrill2024expressive}
+\citation{jia2025verify}
+\citation{hanneke2026samplecomplexityautoregressivereasoning}
+\citation{shalevshwartz2017failures}
+\citation{abbe2021staircase,abbe2022mergedstaircase,abbe2023sgd}
+\citation{wen2024sparse,liu2023automata}
+\citation{panigrahi2025progressive}
+\citation{abbe2025parities}
+\citation{kim2024parity}
+\citation{wang2025compositional}
+\citation{sanford2024transformers}
+\citation{li2025noise}
+\citation{makkuva2025attention,makkuva2024local}
+\def\@LN@column{1}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Training}{8}{subsection.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Prediction 4: plateau and escape.}{8}{section*.19}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.3}Transfer to a pretrained model}{8}{subsection.6.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Prediction 5: real object tracking.}{8}{section*.21}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7}Related work}{8}{section.7}\protected@file@percent }
+\newlabel{sec:related}{{7}{8}{Related work}{section.7}{}}
+\newlabel{sec:related@cref}{{[section][7][]7}{[1][8][]8}{}{}{}}
+\@writefile{toc}{\contentsline {paragraph}{Intermediate supervision.}{8}{section*.22}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Composed targets and gradient signal.}{8}{section*.23}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Hardness for a single target.}{8}{section*.24}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Chain of thought for parity.}{8}{section*.25}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces \textbf  {The outcome plateau stays low-degree.} Counting, $K=2$, $n=8$: share of the outcome model's Jacobian energy above degree $1$ during training, and answer accuracy.}}{8}{table.caption.20}\protected@file@percent }
+\newlabel{tab:main-evidence}{{4}{8}{\textbf {The outcome plateau stays low-degree.} Counting, $K=2$, $n=8$: share of the outcome model's Jacobian energy above degree $1$ during training, and answer accuracy}{table.caption.20}{}}
+\newlabel{tab:main-evidence@cref}{{[table][4][]4}{[1][8][]8}{}{}{}}
+\citation{abbe2023sgd}
+\def\@LN@column{1}
+\@writefile{toc}{\contentsline {paragraph}{Permutation learning.}{9}{section*.26}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {8}Discussion}{9}{section.8}\protected@file@percent }
+\newlabel{sec:discussion}{{8}{9}{Discussion}{section.8}{}}
+\newlabel{sec:discussion@cref}{{[section][8][]8}{[1][9][]9}{}{}{}}
+\@writefile{toc}{\contentsline {paragraph}{When do steps help?}{9}{section*.27}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Initialization scale.}{9}{section*.28}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Parity.}{9}{section*.29}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Limitations.}{9}{section*.30}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Conclusion.}{9}{section*.31}\protected@file@percent }
+\bibstyle{plainnat}
+\bibdata{main}
+\bibcite{abbe2021staircase}{{1}{2021}{{Abbe et~al.}}{{Abbe, Boix-Adsera, Brennan, Bresler, and Nagaraj}}}
+\bibcite{abbe2022mergedstaircase}{{2}{2022}{{Abbe et~al.}}{{Abbe, Boix-Adsera, and Misiakiewicz}}}
+\bibcite{abbe2023sgd}{{3}{2023}{{Abbe et~al.}}{{Abbe, Boix-Adsera, and Misiakiewicz}}}
+\bibcite{abbe2024globality}{{4}{2024}{{Abbe et~al.}}{{Abbe, Bengio, Lotfi, Sandon, and Saremi}}}
+\bibcite{abbe2025parities}{{5}{2025}{{Abbe et~al.}}{{Abbe, Cornacchia, Ha{\k {z}}{\l }a, and Kougang-Yombi}}}
+\bibcite{akyurek2023icl}{{6}{2023}{{Aky{\"u}rek et~al.}}{{Aky{\"u}rek, Schuurmans, Andreas, Ma, and Zhou}}}
+\bibcite{carbery2001distributional}{{7}{2001}{{Carbery and Wright}}{{}}}
+\bibcite{efron1981jackknife}{{8}{1981}{{Efron and Stein}}{{}}}
+\bibcite{feng2023towards}{{9}{2023}{{Feng et~al.}}{{Feng, Zhang, Gu, Ye, He, and Wang}}}
+\bibcite{hanneke2026samplecomplexityautoregressivereasoning}{{10}{2026}{{Hanneke et~al.}}{{Hanneke, Mehalel, and Moran}}}
+\bibcite{jia2025verify}{{11}{2025}{{Jia et~al.}}{{Jia, Rakhlin, and Xie}}}
+\bibcite{kim2024parity}{{12}{2025}{{Kim and Suzuki}}{{}}}
+\bibcite{levin2017markov}{{13}{2017}{{Levin and Peres}}{{}}}
+\bibcite{li2025noise}{{14}{2025}{{Li and Mossel}}{{}}}
+\bibcite{lightman2023verify}{{15}{2023}{{Lightman et~al.}}{{Lightman, Kosaraju, Burda, Edwards, Baker, Lee, Leike, Schulman, Sutskever, and Cobbe}}}
+\bibcite{liu2023automata}{{16}{2023}{{Liu et~al.}}{{Liu, Ash, Goel, Krishnamurthy, and Zhang}}}
+\bibcite{makkuva2024local}{{17}{2024}{{Makkuva et~al.}}{{Makkuva, Bondaschi, Ekbote, Girish, Nagle, Kim, and Gastpar}}}
+\bibcite{makkuva2025attention}{{18}{2025}{{Makkuva et~al.}}{{Makkuva, Bondaschi, Girish, Nagle, Jaggi, Kim, and Gastpar}}}
+\bibcite{merrill2024expressive}{{19}{2024}{{Merrill and Sabharwal}}{{}}}
+\def\@LN@column{1}
+\bibcite{nocedal2006numerical}{{20}{2006}{{Nocedal and Wright}}{{}}}
+\bibcite{nye2021scratchpads}{{21}{2021}{{Nye et~al.}}{{Nye, Andreassen, Gur-Ari, Michalewski, Austin, Bieber, Dohan, Lewkowycz, Bosma, Luan, Sutton, and Odena}}}
+\bibcite{odonnell2014analysis}{{22}{2014}{{O'Donnell}}{{}}}
+\bibcite{panigrahi2025progressive}{{23}{2025}{{Panigrahi et~al.}}{{Panigrahi, Liu, Malladi, Risteski, and Goel}}}
+\bibcite{paszke2019pytorch}{{24}{2019}{{Paszke et~al.}}{{Paszke, Gross, Massa, Lerer, Bradbury, Chanan, Killeen, Lin, Gimelshein, Antiga, Desmaison, K{\"o}pf, Yang, DeVito, Raison, Tejani, Chilamkurthy, Steiner, Fang, Bai, and Chintala}}}
+\bibcite{prystawski2023think}{{25}{2023}{{Prystawski et~al.}}{{Prystawski, Li, and Goodman}}}
+\bibcite{ramesh2023capable}{{26}{2023}{{Ramesh et~al.}}{{Ramesh, Khona, Dick, Tanaka, and Lubana}}}
+\bibcite{sanford2024transformers}{{27}{2024}{{Sanford et~al.}}{{Sanford, Hsu, and Telgarsky}}}
+\bibcite{shalevshwartz2017failures}{{28}{2017}{{Shalev-Shwartz et~al.}}{{Shalev-Shwartz, Shamir, and Shammah}}}
+\bibcite{suzgun2022challenging}{{29}{2022}{{Suzgun et~al.}}{{Suzgun, Scales, Sch{\"a}rli, Gehrmann, Tay, Chung, Chowdhery, Le, Chi, Zhou, et~al.}}}
+\bibcite{uesato2022solving}{{30}{2022}{{Uesato et~al.}}{{Uesato, Kushman, Kumar, Song, Siegel, Wang, Creswell, Irving, and Higgins}}}
+\bibcite{wang2025compositional}{{31}{2025}{{Wang et~al.}}{{Wang, Nichani, Bietti, Damian, Hsu, Lee, and Wu}}}
+\bibcite{wei2022cot}{{32}{2022}{{Wei et~al.}}{{Wei, Wang, Schuurmans, Bosma, Ichter, Xia, Chi, Le, and Zhou}}}
+\bibcite{wen2024sparse}{{33}{2024}{{Wen et~al.}}{{Wen, Zhang, Lin, and Zhang}}}
+\bibcite{wies2023subtask}{{34}{2023}{{Wies et~al.}}{{Wies, Levine, and Shashua}}}
+\def\@LN@column{1}
+\def\@LN@column{1}
+\@writefile{toc}{\contentsline {section}{Roadmap}{12}{section*.33}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {A}Exact two-block executors}{12}{appendix.A}\protected@file@percent }
+\newlabel{app:architectures}{{A}{12}{Exact two-block executors}{appendix.A}{}}
+\newlabel{app:architectures@cref}{{[section][1][]A}{[1][12][]12}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {A.1}Program overview}{12}{subsection.A.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {A.2}Architecture, layout and primitives}{12}{subsection.A.2}\protected@file@percent }
+\newlabel{app:construction}{{A.2}{12}{Architecture, layout and primitives}{subsection.A.2}{}}
+\newlabel{app:construction@cref}{{[subsection][2][1]A.2}{[1][12][]12}{}{}{}}
+\newlabel{app:model}{{A.2}{12}{Architecture, layout and primitives}{subsection.A.2}{}}
+\newlabel{app:model@cref}{{[subsection][2][1]A.2}{[1][12][]12}{}{}{}}
+\def\@LN@column{1}
+\newlabel{eq:route}{{5}{13}{Architecture, layout and primitives}{equation.5}{}}
+\newlabel{eq:route@cref}{{[equation][5][]5}{[1][13][]13}{}{}{}}
+\newlabel{eq:lookup}{{6}{13}{Architecture, layout and primitives}{equation.6}{}}
+\newlabel{eq:lookup@cref}{{[equation][6][]6}{[1][13][]13}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {A.3}Both programs are exact}{13}{subsection.A.3}\protected@file@percent }
+\newlabel{app:exact}{{A.3}{13}{Both programs are exact}{subsection.A.3}{}}
+\newlabel{app:exact@cref}{{[subsection][3][1]A.3}{[1][13][]13}{}{}{}}
+\def\@LN@column{1}
+\@writefile{toc}{\contentsline {subsection}{\numberline {A.4}Explicit parameters}{14}{subsection.A.4}\protected@file@percent }
+\newlabel{app:params}{{A.4}{14}{Explicit parameters}{subsection.A.4}{}}
+\newlabel{app:params@cref}{{[subsection][4][1]A.4}{[1][14][]14}{}{}{}}
+\citation{levin2017markov}
+\def\@LN@column{1}
+\@writefile{toc}{\contentsline {section}{\numberline {B}Proofs of the theorems}{15}{appendix.B}\protected@file@percent }
+\newlabel{app:damping-proof}{{B}{15}{Proofs of the theorems}{appendix.B}{}}
+\newlabel{app:damping-proof@cref}{{[section][2][]B}{[1][14][]15}{}{}{}}
+\newlabel{app:mainproofs}{{B}{15}{Proofs of the theorems}{appendix.B}{}}
+\newlabel{app:mainproofs@cref}{{[section][2][]B}{[1][14][]15}{}{}{}}
+\@writefile{toc}{\contentsline {paragraph}{Proof map.}{15}{section*.34}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.1}Common assumptions and degree calculus}{15}{subsection.B.1}\protected@file@percent }
+\newlabel{app:assumptions}{{B.1}{15}{Common assumptions and degree calculus}{subsection.B.1}{}}
+\newlabel{app:assumptions@cref}{{[subsection][1][2]B.1}{[1][15][]15}{}{}{}}
+\@writefile{toc}{\contentsline {paragraph}{Contraction.}{15}{section*.35}\protected@file@percent }
+\newlabel{eq:lambda}{{7}{15}{Contraction}{equation.7}{}}
+\newlabel{eq:lambda@cref}{{[equation][7][]7}{[1][15][]15}{}{}{}}
+\newlabel{rem:two-block-bias}{{B.1}{15}{The bias condition}{remark.B.1}{}}
+\newlabel{rem:two-block-bias@cref}{{[remark][1][2]B.1}{[1][15][]15}{}{}{}}
+\citation{efron1981jackknife,odonnell2014analysis}
+\def\@LN@column{1}
+\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces \textbf  {Notation.} Symbols used in one proof only are defined there. Named subscripts are roman; indices are italic.}}{16}{table.5}\protected@file@percent }
+\newlabel{tab:notation}{{5}{16}{\textbf {Notation.} Symbols used in one proof only are defined there. Named subscripts are roman; indices are italic}{table.5}{}}
+\newlabel{tab:notation@cref}{{[table][5][]5}{[1][16][]16}{}{}{}}
+\newlabel{app:tools}{{B.1}{16}{Degree calculus}{section*.36}{}}
+\newlabel{app:tools@cref}{{[subsection][1][2]B.1}{[1][16][]16}{}{}{}}
+\@writefile{toc}{\contentsline {paragraph}{Degree calculus.}{16}{section*.36}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Efron--Stein decomposition \citep  {efron1981jackknife,odonnell2014analysis}.}{16}{section*.37}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Credit matches degree.}{16}{section*.38}\protected@file@percent }
+\newlabel{eq:matching}{{8}{16}{Credit matches degree}{equation.8}{}}
+\newlabel{eq:matching@cref}{{[equation][8][]8}{[1][16][]16}{}{}{}}
+\newlabel{lem:gradient-split}{{B.1}{16}{Gradient split at any parameter value}{lemma.B.1}{}}
+\newlabel{lem:gradient-split@cref}{{[lemma][1][2]B.1}{[1][16][]16}{}{}{}}
+\citation{carbery2001distributional}
+\def\@LN@column{1}
+\@writefile{toc}{\contentsline {paragraph}{Carbery--Wright inequality \citep  {carbery2001distributional}.}{17}{section*.39}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.2}Target spectrum: unseen-move contraction}{17}{subsection.B.2}\protected@file@percent }
+\newlabel{app:target-spectrum}{{B.2}{17}{Target spectrum: unseen-move contraction}{subsection.B.2}{}}
+\newlabel{app:target-spectrum@cref}{{[subsection][2][2]B.2}{[1][17][]17}{}{}{}}
+\newlabel{lem:target-contraction}{{B.2}{17}{Contraction of the target components}{lemma.B.2}{}}
+\newlabel{lem:target-contraction@cref}{{[lemma][2][2]B.2}{[1][17][]17}{}{}{}}
+\newlabel{eq:product-rep}{{9}{17}{Target spectrum: unseen-move contraction}{equation.9}{}}
+\newlabel{eq:product-rep@cref}{{[equation][9][]9}{[1][17][]17}{}{}{}}
+\newlabel{rem:tight}{{B.2}{17}{Counting, and tightness of the exponent}{remark.B.2}{}}
+\newlabel{rem:tight@cref}{{[remark][2][2]B.2}{[1][17][]17}{}{}{}}
+\newlabel{cor:counting}{{B.2}{17}{Counting, and tightness of the exponent}{remark.B.2}{}}
+\newlabel{cor:counting@cref}{{[remark][2][2]B.2}{[1][17][]17}{}{}{}}
+\newlabel{rem:control}{{B.3}{17}{Control: first occurrence}{remark.B.3}{}}
+\newlabel{rem:control@cref}{{[remark][3][2]B.3}{[1][17][]17}{}{}{}}
+\newlabel{cor:controls}{{B.3}{17}{Control: first occurrence}{remark.B.3}{}}
+\newlabel{cor:controls@cref}{{[remark][3][2]B.3}{[1][17][]17}{}{}{}}
+\def\@LN@column{1}
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.3}Model spectrum: score count, size and support}{18}{subsection.B.3}\protected@file@percent }
+\newlabel{app:model-spectrum}{{B.3}{18}{Model spectrum: score count, size and support}{subsection.B.3}{}}
+\newlabel{app:model-spectrum@cref}{{[subsection][3][2]B.3}{[1][18][]18}{}{}{}}
+\@writefile{toc}{\contentsline {paragraph}{The score expansion.}{18}{section*.40}\protected@file@percent }
+\newlabel{eq:score-split}{{10}{18}{The score expansion}{equation.10}{}}
+\newlabel{eq:score-split@cref}{{[equation][10][]10}{[1][18][]18}{}{}{}}
+\newlabel{prop:score-degree}{{B.1}{18}{Score count and degree}{proposition.B.1}{}}
+\newlabel{prop:score-degree@cref}{{[proposition][1][2]B.1}{[1][18][]18}{}{}{}}
+\newlabel{eq:P1}{{{P1}}{18}{Score count and degree}{AMS.41}{}}
+\newlabel{eq:P1@cref}{{[equation][2147483647][]{P1}}{[1][18][]18}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.4}Spectral overlap: outcome starvation and plateau}{18}{subsection.B.4}\protected@file@percent }
+\newlabel{app:thm1}{{B.4}{18}{Spectral overlap: outcome starvation and plateau}{subsection.B.4}{}}
+\newlabel{app:thm1@cref}{{[subsection][4][2]B.4}{[1][18][]18}{}{}{}}
+\@writefile{toc}{\contentsline {paragraph}{Spectral overlap.}{18}{section*.42}\protected@file@percent }
+\newlabel{eq:score-credit}{{11}{18}{Spectral overlap}{equation.11}{}}
+\newlabel{eq:score-credit@cref}{{[equation][11][]11}{[1][18][]18}{}{}{}}
+\newlabel{lem:score-sum}{{B.3}{18}{Credit summation}{lemma.B.3}{}}
+\newlabel{lem:score-sum@cref}{{[lemma][3][2]B.3}{[1][18][]18}{}{}{}}
+\newlabel{eq:thm1-full}{{12}{18}{Credit summation}{equation.12}{}}
+\newlabel{eq:thm1-full@cref}{{[equation][12][]12}{[1][18][]18}{}{}{}}
+\def\@LN@column{1}
+\newlabel{prop:plateau}{{B.2}{19}{Plateau with a nonzero readout}{proposition.B.2}{}}
+\newlabel{prop:plateau@cref}{{[proposition][2][2]B.2}{[1][19][]19}{}{}{}}
+\newlabel{eq:outcome-grad}{{13}{19}{Spectral overlap}{equation.13}{}}
+\newlabel{eq:outcome-grad@cref}{{[equation][13][]13}{[1][19][]19}{}{}{}}
+\newlabel{rem:direction}{{B.4}{19}{Credit along a direction}{remark.B.4}{}}
+\newlabel{rem:direction@cref}{{[remark][4][2]B.4}{[1][19][]19}{}{}{}}
+\newlabel{rem:cap}{{B.5}{19}{Where the cap $\initscale ^{-2}$ comes from}{remark.B.5}{}}
+\newlabel{rem:cap@cref}{{[remark][5][2]B.5}{[1][19][]19}{}{}{}}
+\def\@LN@column{1}
+\newlabel{rem:lambda-zero}{{B.6}{20}{The case $\mixrate =0$}{remark.B.6}{}}
+\newlabel{rem:lambda-zero@cref}{{[remark][6][2]B.6}{[1][19][]20}{}{}{}}
+\newlabel{rem:end-parity}{{B.6}{20}{The case $\mixrate =0$}{remark.B.6}{}}
+\newlabel{rem:end-parity@cref}{{[remark][6][2]B.6}{[1][20][]20}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.5}Local targets: step rule credit}{20}{subsection.B.5}\protected@file@percent }
+\newlabel{app:thm2}{{B.5}{20}{Local targets: step rule credit}{subsection.B.5}{}}
+\newlabel{app:thm2@cref}{{[subsection][5][2]B.5}{[1][20][]20}{}{}{}}
+\newlabel{app:separation}{{B.5}{20}{Local targets: step rule credit}{subsection.B.5}{}}
+\newlabel{app:separation@cref}{{[subsection][5][2]B.5}{[1][20][]20}{}{}{}}
+\newlabel{app:rule}{{B.5}{20}{Local targets: step rule credit}{subsection.B.5}{}}
+\newlabel{app:rule@cref}{{[subsection][5][2]B.5}{[1][20][]20}{}{}{}}
+\@writefile{toc}{\contentsline {paragraph}{Notation.}{20}{section*.43}\protected@file@percent }
+\newlabel{lem:dilution-average}{{B.4}{20}{Average positional dilution}{lemma.B.4}{}}
+\newlabel{lem:dilution-average@cref}{{[lemma][4][2]B.4}{[1][20][]20}{}{}{}}
+\newlabel{eq:dilution-avg}{{14}{20}{Average positional dilution}{equation.14}{}}
+\newlabel{eq:dilution-avg@cref}{{[equation][14][]14}{[1][20][]20}{}{}{}}
+\newlabel{lem:rule-sites}{{B.5}{20}{Only the letter and a state earn rule credit}{lemma.B.5}{}}
+\newlabel{lem:rule-sites@cref}{{[lemma][5][2]B.5}{[1][20][]20}{}{}{}}
+\def\@LN@column{1}
+\newlabel{lem:leading}{{B.6}{21}{Leading rule coefficient}{lemma.B.6}{}}
+\newlabel{lem:leading@cref}{{[lemma][6][2]B.6}{[1][21][]21}{}{}{}}
+\def\@LN@column{1}
+\def\@LN@column{1}
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.6}End of training: basins and the outcome plateau}{23}{subsection.B.6}\protected@file@percent }
+\newlabel{app:end}{{B.6}{23}{End of training: basins and the outcome plateau}{subsection.B.6}{}}
+\newlabel{app:end@cref}{{[subsection][6][2]B.6}{[1][23][]23}{}{}{}}
+\@writefile{toc}{\contentsline {paragraph}{Setting.}{23}{section*.44}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Small loss forces correct predictions.}{23}{section*.45}\protected@file@percent }
+\newlabel{lem:end-barrier}{{B.7}{23}{Correctness barrier}{lemma.B.7}{}}
+\newlabel{lem:end-barrier@cref}{{[lemma][7][2]B.7}{[1][23][]23}{}{}{}}
+\newlabel{lem:end-readout}{{B.8}{23}{The readout direction decreases the loss}{lemma.B.8}{}}
+\newlabel{lem:end-readout@cref}{{[lemma][8][2]B.8}{[1][23][]23}{}{}{}}
+\def\@LN@column{1}
+\@writefile{toc}{\contentsline {paragraph}{Convergence in the basin.}{24}{section*.46}\protected@file@percent }
+\newlabel{eq:end-vgrowth}{{15}{24}{Convergence in the basin}{equation.15}{}}
+\newlabel{eq:end-vgrowth@cref}{{[equation][15][]15}{[1][24][]24}{}{}{}}
+\newlabel{lem:end-nonempty}{{B.9}{24}{The basin contains the executor}{lemma.B.9}{}}
+\newlabel{lem:end-nonempty@cref}{{[lemma][9][2]B.9}{[1][24][]24}{}{}{}}
+\@writefile{toc}{\contentsline {paragraph}{Enlarged ball.}{24}{section*.47}\protected@file@percent }
+\newlabel{lem:end-smooth}{{B.10}{24}{Smoothness near initialization}{lemma.B.10}{}}
+\newlabel{lem:end-smooth@cref}{{[lemma][10][2]B.10}{[1][24][]24}{}{}{}}
+\def\@LN@column{1}
+\@writefile{toc}{\contentsline {paragraph}{The outcome plateau without a cap.}{25}{section*.48}\protected@file@percent }
+\newlabel{eq:lo-identity}{{16}{25}{The outcome plateau without a cap}{equation.16}{}}
+\newlabel{eq:lo-identity@cref}{{[equation][16][]16}{[1][25][]25}{}{}{}}
+\newlabel{eq:lo-floor}{{17}{25}{The outcome plateau without a cap}{equation.17}{}}
+\newlabel{eq:lo-floor@cref}{{[equation][17][]17}{[1][25][]25}{}{}{}}
+\def\@LN@column{1}
+\newlabel{rem:zero-readout}{{B.7}{26}{A zero readout leaves \cref {thm:separation} unchanged}{remark.B.7}{}}
+\newlabel{rem:zero-readout@cref}{{[remark][7][2]B.7}{[1][26][]26}{}{}{}}
+\newlabel{rem:flow}{{B.8}{26}{Gradient flow}{remark.B.8}{}}
+\newlabel{rem:flow@cref}{{[remark][8][2]B.8}{[1][26][]26}{}{}{}}
+\newlabel{rem:end-width}{{B.9}{26}{Width: an open point}{remark.B.9}{}}
+\newlabel{rem:end-width@cref}{{[remark][9][2]B.9}{[1][26][]26}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.7}Technical verification of the score-count bounds}{26}{subsection.B.7}\protected@file@percent }
+\newlabel{app:network}{{B.7}{26}{Technical verification of the score-count bounds}{subsection.B.7}{}}
+\newlabel{app:network@cref}{{[subsection][7][2]B.7}{[1][26][]26}{}{}{}}
+\newlabel{app:two-block}{{B.7}{26}{Technical verification of the score-count bounds}{subsection.B.7}{}}
+\newlabel{app:two-block@cref}{{[subsection][7][2]B.7}{[1][26][]26}{}{}{}}
+\newlabel{app:envelope}{{B.7}{26}{Technical verification of the score-count bounds}{subsection.B.7}{}}
+\newlabel{app:envelope@cref}{{[subsection][7][2]B.7}{[1][26][]26}{}{}{}}
+\@writefile{toc}{\contentsline {paragraph}{Setting.}{26}{section*.49}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Affine MLPs.}{26}{section*.50}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Normalized derivatives.}{26}{section*.51}\protected@file@percent }
+\def\@LN@column{1}
+\newlabel{lem:softmax-all}{{B.11}{27}{Uniform softmax derivative bound}{lemma.B.11}{}}
+\newlabel{lem:softmax-all@cref}{{[lemma][11][2]B.11}{[1][26][]27}{}{}{}}
+\newlabel{eq:softmax-avg}{{18}{27}{Uniform softmax derivative bound}{equation.18}{}}
+\newlabel{eq:softmax-avg@cref}{{[equation][18][]18}{[1][26][]27}{}{}{}}
+\newlabel{lem:classes}{{B.12}{27}{Normalized product and composition bounds}{lemma.B.12}{}}
+\newlabel{lem:classes@cref}{{[lemma][12][2]B.12}{[1][27][]27}{}{}{}}
+\@writefile{toc}{\contentsline {paragraph}{Absolute coefficient sums.}{27}{section*.52}\protected@file@percent }
+\newlabel{lem:size}{{B.13}{27}{Score-count size bound}{lemma.B.13}{}}
+\newlabel{lem:size@cref}{{[lemma][13][2]B.13}{[1][27][]27}{}{}{}}
+\def\@LN@column{1}
+\def\@LN@column{1}
+\newlabel{lem:support}{{B.14}{29}{Score-count support bound}{lemma.B.14}{}}
+\newlabel{lem:support@cref}{{[lemma][14][2]B.14}{[1][29][]29}{}{}{}}
+\def\@LN@column{1}
+\@writefile{toc}{\contentsline {paragraph}{Proof of \cref  {prop:score-degree}.}{30}{section*.53}\protected@file@percent }
+\newlabel{lem:dilution}{{B.15}{30}{Position-selection penalty}{lemma.B.15}{}}
+\newlabel{lem:dilution@cref}{{[lemma][15][2]B.15}{[1][30][]30}{}{}{}}
+\newlabel{eq:dilution}{{19}{30}{Position-selection penalty}{equation.19}{}}
+\newlabel{eq:dilution@cref}{{[equation][19][]19}{[1][30][]30}{}{}{}}
+\def\@LN@column{1}
+\@writefile{toc}{\contentsline {section}{\numberline {C}Numerical verification of the theory}{31}{appendix.C}\protected@file@percent }
+\newlabel{app:verify}{{C}{31}{Numerical verification of the theory}{appendix.C}{}}
+\newlabel{app:verify@cref}{{[section][3][]C}{[1][30][]31}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces \textbf  {Credit and plateau bounds are checked against exact computations.} All rows use the two-block Transformer of (A1) at width $16$, counting with $K=2$ unless stated; exponents in $\sigma $ are fitted on $[0.005,0.05]$.}}{31}{table.caption.54}\protected@file@percent }
+\newlabel{tab:verify}{{6}{31}{\textbf {Credit and plateau bounds are checked against exact computations.} All rows use the two-block Transformer of (A1) at width $16$, counting with $K=2$ unless stated; exponents in $\initscale $ are fitted on $[0.005,0.05]$}{table.caption.54}{}}
+\newlabel{tab:verify@cref}{{[table][6][]6}{[1][31][]31}{}{}{}}
+\@writefile{toc}{\contentsline {paragraph}{Row 2.}{31}{section*.55}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Rows 4 and 5.}{31}{section*.56}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {7}{\ignorespaces \textbf  {Row 7: the rule credit is $\Theta (\sigma ^6/n)$ for a fixed query.} $|\Sigma |=4$ uniform letters, $p=\frac  14$, $\lambda =\frac  12$, $\sigma =0.02$, exponent in $\sigma $ $6.00$ throughout.}}{31}{table.caption.57}\protected@file@percent }
+\newlabel{tab:verify-query}{{7}{31}{\textbf {Row 7: the rule credit is $\Theta (\initscale ^6/n)$ for a fixed query.} $|\Sigma |=4$ uniform letters, $p=\frac 14$, $\mixrate =\frac 12$, $\initscale =0.02$, exponent in $\initscale $ $6.00$ throughout}{table.caption.57}{}}
+\newlabel{tab:verify-query@cref}{{[table][7][]7}{[1][31][]31}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {D}Experiments}{31}{appendix.D}\protected@file@percent }
+\newlabel{app:experiments}{{D}{31}{Experiments}{appendix.D}{}}
+\newlabel{app:experiments@cref}{{[section][4][]D}{[1][31][]31}{}{}{}}
+\newlabel{app:experimental-details}{{D}{31}{Experiments}{appendix.D}{}}
+\newlabel{app:experimental-details@cref}{{[section][4][]D}{[1][31][]31}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {D.1}Protocol}{31}{subsection.D.1}\protected@file@percent }
+\newlabel{app:letter-protocol}{{D.1}{31}{Protocol}{subsection.D.1}{}}
+\newlabel{app:letter-protocol@cref}{{[subsection][1][4]D.1}{[1][31][]31}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {D.2}Experiments inside the theorems' regime}{31}{subsection.D.2}\protected@file@percent }
+\newlabel{app:exp-regime}{{D.2}{31}{Experiments inside the theorems' regime}{subsection.D.2}{}}
+\newlabel{app:exp-regime@cref}{{[subsection][2][4]D.2}{[1][31][]31}{}{}{}}
+\newlabel{app:regime}{{D.2}{31}{Experiments inside the theorems' regime}{subsection.D.2}{}}
+\newlabel{app:regime@cref}{{[subsection][2][4]D.2}{[1][31][]31}{}{}{}}
+\def\@LN@column{1}
+\@writefile{toc}{\contentsline {paragraph}{The outcome loss takes time of order $\lambda ^{-n}$ to leave the ball.}{32}{section*.58}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{The exit time depends on $\lambda $ and $n$ through $\sigma ^2+\lambda ^n$.}{32}{section*.59}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Curvature.}{32}{section*.60}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{The rule credit is of order $\sigma ^6/n$ and has no factor $\lambda $.}{32}{section*.61}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{The rule credit exceeds the outcome interaction credit by a margin that grows exponentially.}{32}{section*.62}\protected@file@percent }
+\def\@LN@column{1}
+\@writefile{toc}{\contentsline {subsection}{\numberline {D.3}Predictions 1--3: spectra and gradients at initialization}{33}{subsection.D.3}\protected@file@percent }
+\newlabel{app:exp-spectra}{{D.3}{33}{Predictions 1--3: spectra and gradients at initialization}{subsection.D.3}{}}
+\newlabel{app:exp-spectra@cref}{{[subsection][3][4]D.3}{[1][32][]33}{}{}{}}
+\newlabel{app:spectrum}{{D.3}{33}{Predictions 1--3: spectra and gradients at initialization}{subsection.D.3}{}}
+\newlabel{app:spectrum@cref}{{[subsection][3][4]D.3}{[1][32][]33}{}{}{}}
+\newlabel{app:validation-spectra}{{D.3}{33}{Predictions 1--3: spectra and gradients at initialization}{subsection.D.3}{}}
+\newlabel{app:validation-spectra@cref}{{[subsection][3][4]D.3}{[1][32][]33}{}{}{}}
+\@writefile{toc}{\contentsline {paragraph}{Answer spectra.}{33}{section*.63}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {8}{\ignorespaces \textbf  {The tasks of the paper.} Share of the answer's variance by degree. First occurrence is not a permutation task and keeps a degree-$1$ part at every $n$ (\cref  {rem:control}).}}{33}{table.caption.64}\protected@file@percent }
+\newlabel{tab:family}{{8}{33}{\textbf {The tasks of the paper.} Share of the answer's variance by degree. First occurrence is not a permutation task and keeps a degree-$1$ part at every $n$ (\cref {rem:control})}{table.caption.64}{}}
+\newlabel{tab:family@cref}{{[table][8][]8}{[1][33][]33}{}{}{}}
+\newlabel{tab:validation-spectra}{{8}{33}{\textbf {The tasks of the paper.} Share of the answer's variance by degree. First occurrence is not a permutation task and keeps a degree-$1$ part at every $n$ (\cref {rem:control})}{table.caption.64}{}}
+\newlabel{tab:validation-spectra@cref}{{[table][8][]8}{[1][33][]33}{}{}{}}
+\@writefile{toc}{\contentsline {paragraph}{Jacobian spectra.}{33}{section*.65}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{A pretrained model.}{33}{section*.66}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {9}{\ignorespaces \textbf  {A pretrained model's gradient is also low-degree.} Each context fixes the scene, items, start and query, and its three swaps range over all $6^3$ values. We take the full Jacobian of the three option-letter logits with respect to the $2.4$M parameters of the LoRA up-projection and split it exactly by degree. Mean over three LoRA initializations, ten contexts each. The measured $\|\partial \Phi _{\mathrm  {out}}/\partial \theta \|$ is $2$--$6\%$ of the bound of \cref  {lem:gradient-split}.}}{33}{table.caption.67}\protected@file@percent }
+\newlabel{tab:bbh-spectrum}{{9}{33}{\textbf {A pretrained model's gradient is also low-degree.} Each context fixes the scene, items, start and query, and its three swaps range over all $6^3$ values. We take the full Jacobian of the three option-letter logits with respect to the $2.4$M parameters of the LoRA up-projection and split it exactly by degree. Mean over three LoRA initializations, ten contexts each. The measured $\|\pd \outcredit \theta \|$ is $2$--$6\%$ of the bound of \cref {lem:gradient-split}}{table.caption.67}{}}
+\newlabel{tab:bbh-spectrum@cref}{{[table][9][]9}{[1][33][]33}{}{}{}}
+\@writefile{toc}{\contentsline {paragraph}{Prediction 3: the answer gradient decays at the predicted rate.}{33}{section*.68}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {D.4}Prediction 4: outcome training plateaus}{33}{subsection.D.4}\protected@file@percent }
+\newlabel{app:exp-plateau}{{D.4}{33}{Prediction 4: outcome training plateaus}{subsection.D.4}{}}
+\newlabel{app:exp-plateau@cref}{{[subsection][4][4]D.4}{[1][33][]33}{}{}{}}
+\newlabel{app:basin}{{D.4}{33}{Prediction 4: outcome training plateaus}{subsection.D.4}{}}
+\newlabel{app:basin@cref}{{[subsection][4][4]D.4}{[1][33][]33}{}{}{}}
+\newlabel{app:tracking}{{D.4}{33}{Prediction 4: outcome training plateaus}{subsection.D.4}{}}
+\newlabel{app:tracking@cref}{{[subsection][4][4]D.4}{[1][33][]33}{}{}{}}
+\@writefile{toc}{\contentsline {paragraph}{Outcome training stays at chance across horizons.}{33}{section*.70}\protected@file@percent }
+\def\@LN@column{1}
+\@writefile{lot}{\contentsline {table}{\numberline {10}{\ignorespaces \textbf  {The answer signal decays at the predicted rate, but the step signal does not.} Two-block Transformer at initialization, counting with $K=2$ over four letters ($\lambda =0.5$), seed $42$. Almost all of the outcome gradient does not depend on the answer: the answer-dependent part is $5\times 10^{-3}$ ($n=2$) to $2\times 10^{-5}$ ($n=10$) of the full gradient.}}{34}{table.caption.69}\protected@file@percent }
+\newlabel{tab:spectrum}{{10}{34}{\textbf {The answer signal decays at the predicted rate, but the step signal does not.} Two-block Transformer at initialization, counting with $K=2$ over four letters ($\mixrate =0.5$), seed $42$. Almost all of the outcome gradient does not depend on the answer: the answer-dependent part is $5\times 10^{-3}$ ($n=2$) to $2\times 10^{-5}$ ($n=10$) of the full gradient}{table.caption.69}{}}
+\newlabel{tab:spectrum@cref}{{[table][10][]10}{[1][33][]34}{}{}{}}
+\newlabel{tab:spectrum-full}{{10}{34}{\textbf {The answer signal decays at the predicted rate, but the step signal does not.} Two-block Transformer at initialization, counting with $K=2$ over four letters ($\mixrate =0.5$), seed $42$. Almost all of the outcome gradient does not depend on the answer: the answer-dependent part is $5\times 10^{-3}$ ($n=2$) to $2\times 10^{-5}$ ($n=10$) of the full gradient}{table.caption.69}{}}
+\newlabel{tab:spectrum-full@cref}{{[table][10][]10}{[1][33][]34}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {11}{\ignorespaces \textbf  {Modulo-$2$ outcome runs remain unsolved at the tested horizons.} Exact-continuation accuracy (\%) on held-out words, seeds $42$--$44$. ``Solved'': runs reaching $\ge 90\%$ by the stated budget. Both handcoded executors are exact on held-out words at every horizon.}}{34}{table.caption.71}\protected@file@percent }
+\newlabel{tab:gap}{{11}{34}{\textbf {Modulo-$2$ outcome runs remain unsolved at the tested horizons.} Exact-continuation accuracy (\%) on held-out words, seeds $42$--$44$. ``Solved'': runs reaching $\ge 90\%$ by the stated budget. Both handcoded executors are exact on held-out words at every horizon}{table.caption.71}{}}
+\newlabel{tab:gap@cref}{{[table][11][]11}{[1][33][]34}{}{}{}}
+\@writefile{toc}{\contentsline {paragraph}{Across $120$ runs, outcome solves none.}{34}{section*.72}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{A larger initialization helps step training but not outcome training.}{34}{section*.73}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Depth does not change the split.}{34}{section*.74}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{On the plateau the Jacobian stays low-degree.}{34}{section*.75}\protected@file@percent }
+\def\@LN@column{1}
+\@writefile{lot}{\contentsline {table}{\numberline {12}{\ignorespaces \textbf  {On the plateau the outcome model has almost no energy above degree $1$.} Counting, $K=2$, $n=8$, seed $42$.}}{35}{table.caption.76}\protected@file@percent }
+\newlabel{tab:plateau-h1}{{12}{35}{\textbf {On the plateau the outcome model has almost no energy above degree $1$.} Counting, $K=2$, $n=8$, seed $42$}{table.caption.76}{}}
+\newlabel{tab:plateau-h1@cref}{{[table][12][]12}{[1][34][]35}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {D.5}Other tasks and pretrained models}{35}{subsection.D.5}\protected@file@percent }
+\newlabel{app:exp-other}{{D.5}{35}{Other tasks and pretrained models}{subsection.D.5}{}}
+\newlabel{app:exp-other@cref}{{[subsection][5][4]D.5}{[1][35][]35}{}{}{}}
+\newlabel{app:circuits}{{D.5}{35}{Other tasks and pretrained models}{subsection.D.5}{}}
+\newlabel{app:circuits@cref}{{[subsection][5][4]D.5}{[1][35][]35}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {13}{\ignorespaces \textbf  {Pretrained models repeat the split.} Answer accuracy (\%), mean$_{\pm \mathrm  {SD}}$ over seeds. Chance is $6.25\%$ for Boolean-8 and $5.88\%$ for the register machine.}}{35}{table.caption.77}\protected@file@percent }
+\newlabel{tab:lora}{{13}{35}{\textbf {Pretrained models repeat the split.} Answer accuracy (\%), mean$_{\pm \mathrm {SD}}$ over seeds. Chance is $6.25\%$ for Boolean-8 and $5.88\%$ for the register machine}{table.caption.77}{}}
+\newlabel{tab:lora@cref}{{[table][13][]13}{[1][35][]35}{}{}{}}
+\newlabel{tab:further}{{13}{35}{\textbf {Pretrained models repeat the split.} Answer accuracy (\%), mean$_{\pm \mathrm {SD}}$ over seeds. Chance is $6.25\%$ for Boolean-8 and $5.88\%$ for the register machine}{table.caption.77}{}}
+\newlabel{tab:further@cref}{{[table][13][]13}{[1][35][]35}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {D.6}BIG-Bench Hard object tracking}{35}{subsection.D.6}\protected@file@percent }
+\newlabel{app:bbh}{{D.6}{35}{BIG-Bench Hard object tracking}{subsection.D.6}{}}
+\newlabel{app:bbh@cref}{{[subsection][6][4]D.6}{[1][35][]35}{}{}{}}
+\@writefile{toc}{\contentsline {paragraph}{Data.}{35}{section*.78}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Traces.}{35}{section*.79}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Low-degree share.}{35}{section*.80}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {14}{\ignorespaces \textbf  {BIG-Bench Hard object tracking on real items.} Qwen2.5-0.5B, rank-8 LoRA. Runs share training data and order; only initialization changes. At three objects, outcome runs select the most common option, ``(B)''. Its base rate is $35.2\%$ on real items and $28.7\%$ on generated test items. The failed five-object step run also scores $45\%$ on generated items.}}{35}{table.caption.81}\protected@file@percent }
+\newlabel{tab:bbh}{{14}{35}{\textbf {BIG-Bench Hard object tracking on real items.} Qwen2.5-0.5B, rank-8 LoRA. Runs share training data and order; only initialization changes. At three objects, outcome runs select the most common option, ``(B)''. Its base rate is $35.2\%$ on real items and $28.7\%$ on generated test items. The failed five-object step run also scores $45\%$ on generated items}{table.caption.81}{}}
+\newlabel{tab:bbh@cref}{{[table][14][]14}{[1][35][]35}{}{}{}}
+\citation{suzgun2022challenging}
+\citation{paszke2019pytorch}
+\def\@LN@column{1}
+\@writefile{lot}{\contentsline {table}{\numberline {15}{\ignorespaces \textbf  {At a fixed number of swaps the low-degree share orders outcome learning.} Pilot on a plain template, same model and budget, accuracy (\%) on held-out generated items, one seed (three for three objects). Outcome learns where the share is at least $6.5\%$ and stays near chance, or the majority rate ($35.7\%$ at three objects), where it is at most $0.5\%$.}}{36}{table.caption.82}\protected@file@percent }
+\newlabel{tab:bbh-pilot}{{15}{36}{\textbf {At a fixed number of swaps the low-degree share orders outcome learning.} Pilot on a plain template, same model and budget, accuracy (\%) on held-out generated items, one seed (three for three objects). Outcome learns where the share is at least $6.5\%$ and stays near chance, or the majority rate ($35.7\%$ at three objects), where it is at most $0.5\%$}{table.caption.82}{}}
+\newlabel{tab:bbh-pilot@cref}{{[table][15][]15}{[1][35][]36}{}{}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {E}Reproducibility}{36}{appendix.E}\protected@file@percent }
+\newlabel{app:reproducibility}{{E}{36}{Reproducibility}{appendix.E}{}}
+\newlabel{app:reproducibility@cref}{{[section][5][]E}{[1][36][]36}{}{}{}}
+\gdef \@abspage@last{36}

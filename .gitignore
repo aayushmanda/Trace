@@ -41,7 +41,7 @@ training_dynamics.mp4
 /archive
 /results
 
-/Paper
+
 
 # Include the archived notebook trajectory linked by the paper artifact.
 !docs/assets/training_dynamics.mp4

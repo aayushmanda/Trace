@@ -124,6 +124,27 @@ uv run python handcoded/figures.py spectra logs/*.json
 
 ---
 
+## Exact letter spectra (plateau bound and every-2 tables)
+
+Exact Efron–Stein split of the logit Jacobian over all 4^8 words, from random-direction JVPs (no fit). `site=answer` gives W_r, H_1/W and the plateau-bound terms for an outcome checkpoint; `site=every_k` gives the window-degree shares for an every-k run.
+
+```bash
+uv run python handcoded/exact_spectrum.py site=answer dirs=16 ckpt=ckpt/n8_block_s42/s42_outcome_step1000.pt
+uv run python handcoded/lettertrace.py task=count word_len=8 mod=2 every_k=2 modes=process steps=8000 seed=42 save_every=500 eval_every=500 save_dir=ckpt/n8_block_k2 tag=s42
+uv run python handcoded/exact_spectrum.py site=every_k dirs=4 ckpt=ckpt/n8_block_k2/s42_process_step5000.pt
+uv run python handcoded/exact_spectrum.py site=answer dirs=16 init_std=0.1 init_seed=42   # step 0, no ckpt: initialization-scale sweep
+```
+
+Exact degree split of the Qwen2.5-0.5B LoRA Jacobian at initialization on BIG-Bench Hard three-object tracking (full Jacobian on the 6^3 move grid, no estimator; about 10 min per seed on one A100):
+
+```bash
+for s in 2001 2002 2003; do
+  uv run python handcoded/bbh_lora_spectrum.py contexts=10 seed=$s out=results/paper/bbh_lora_spectrum/s$s.json
+done
+```
+
+---
+
 ## Outputs
 
 | What | Path |

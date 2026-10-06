@@ -28,7 +28,7 @@ if __name__ == "__main__":
     if _cmd == 'credit':
         """Figure 2: where the credit is. Left schematic; right, measured init signals.
 
-            python handcoded/credit_figure.py
+            python handcoded/figures.py credit
         """
         import json
         from pathlib import Path
@@ -100,9 +100,9 @@ if __name__ == "__main__":
                     color=ORANGE, lw=1.7, solid_capstyle="butt")
             ax.text(n / 2, -1.22, r"$\mathrm{answer{:}\ all\ }n\mathrm{\ transitions}$",
                     ha="center", color=ORANGE, fontsize=9)
-            ax.text(n / 2, -1.68, r"$\mathrm{credit\ to\ order\ }r\ \leq\ \sqrt{A_r W_r}$",
+            ax.text(n / 2, -1.68, r"$\mathrm{credit\ to\ degree\ }r\ \leq\ \sqrt{A_r J_r}$",
                     ha="center", color=INK, fontsize=8.5)
-            ax.text(n / 2, -1.98, r"$\mathrm{reversible{:}\ \leq\,}\lambda^{n-r}$",
+            ax.text(n / 2, -1.98, r"$\mathrm{permutation\ task{:}\ \leq\,}\lambda^{n-r}$",
                     ha="center", color=MUTED, fontsize=7.5)
             ax.text(-0.65, 1.78, "(a)", fontsize=10, color=INK, fontweight="bold")
 
@@ -145,7 +145,7 @@ if __name__ == "__main__":
     elif _cmd == 'overlap':
         """Main-text Figure: A_r vs W_r vs sqrt(A_r W_r) for counting at init.
 
-            python handcoded/overlap_figure.py
+            python handcoded/figures.py overlap
         """
         import json
         from pathlib import Path
@@ -161,11 +161,13 @@ if __name__ == "__main__":
 
         # A_r: exact, from the closed form (stored in the init-grad artifact).
         A = np.array(REC["A_r"], dtype=float)
-        # W_r: Table 12 / app:spectrum, n=8 seed 42. D(rho) is linear, so the
-        # letter-dependent energy is attributed to order 1.
-        W = np.zeros_like(A)
-        W[0] = 0.143
-        W[1] = 4.6e-4
+        # W_r: measured at theta_0 (seed 42, n=8) by handcoded/exact_spectrum.py
+        # (exact letter split, 16 random parameter directions); see RUN.md.
+        _line = next(l for l in (ROOT / "results/paper/exact_spectra/sigma_sweep/s42_sg0.02.txt")
+                     .read_text().splitlines() if l.startswith("W_r / W"))
+        _share = np.array([float(v) for v in _line.split(":")[1].split("(")[0].split()])
+        _total = float(_line.split("W = ")[1].rstrip(") "))
+        W = _share * _total
         overlap = np.sqrt(A * W)
 
         BLUE, ORANGE, INK, MUTED = "#0a7fad", "#c8680a", "#1a1a1a", "#6a6a6a"
@@ -186,9 +188,9 @@ if __name__ == "__main__":
             fig.subplots_adjust(left=0.07, right=0.99, top=0.82, bottom=0.22, wspace=0.38)
 
             specs = [
-                (axes[0], A, False, ORANGE, r"$A_r$", r"(a)  task spectrum"),
-                (axes[1], W, True, BLUE, r"$W_r$", r"(b)  model at init."),
-                (axes[2], overlap, True, INK, r"$\sqrt{A_r W_r}$", r"(c)  overlap"),
+                (axes[0], A, False, ORANGE, r"$A_r$", r"(a)  target spectrum"),
+                (axes[1], W, True, BLUE, r"$J_r$", r"(b)  model spectrum"),
+                (axes[2], overlap, True, INK, r"$\sqrt{A_r J_r}$", r"(c)  credit bound"),
             ]
             for ax, vals, logy, color, ylab, title in specs:
                 ax.set_facecolor("#f3f3f8")
@@ -199,7 +201,7 @@ if __name__ == "__main__":
                 ax.bar(RS, np.maximum(vals, 1e-18 if logy else 0.0),
                        color=color, width=0.72, lw=0)
                 ax.set_xticks(RS)
-                ax.set_xlabel("order  $r$")
+                ax.set_xlabel("degree  $r$")
                 ax.set_ylabel(ylab)
                 ax.set_title(title, loc="left", fontsize=9, color=INK, pad=4)
                 ax.tick_params(labelsize=7)
@@ -223,7 +225,7 @@ if __name__ == "__main__":
 
         Data are the per-seed entries of the appendix reliability table (seeds 42-44).
 
-            python handcoded/reliability_figure.py
+            python handcoded/figures.py reliability
         """
         from pathlib import Path
 
@@ -455,7 +457,7 @@ if __name__ == "__main__":
         """
         Tabulate spectrum.py JSON files, e.g. one per checkpoint, in step order.
 
-            python handcoded/spectra_table.py logs/spec_track/*.json
+            python handcoded/figures.py spectra logs/spec_track/*.json
         """
         import json
         import re

@@ -11,6 +11,7 @@ HELP = """
   python -m src reliability --task boolean_circuit_8 --rhos 0.8 --seeds 2001
   python -m src lora --config configs/experiments/lora_transfer.yaml
   python -m src align --help
+  python -m src shuffled spectrum --K 3 5 7 --n 3 5 10
 """
 
 
@@ -31,6 +32,10 @@ def main(argv=None):
         return 0
     if cmd == "lora":
         from src.lora import main as run
+        run(rest)
+        return 0
+    if cmd == "shuffled":
+        from src.shuffled import main as run
         run(rest)
         return 0
     if cmd == "align":
