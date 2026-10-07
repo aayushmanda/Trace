@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.9.20)  6 OCT 2026 21:37
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.9.20)  7 OCT 2026 17:24
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -572,51 +572,52 @@ Package cleveref Info: no abbreviation of names on input line 7852.
 \c@lemma=\count347
 \c@proposition=\count348
 \c@corollary=\count349
-\c@definition=\count350
-\c@assumption=\count351
-\c@remark=\count352
+\c@conjecture=\count350
+\c@definition=\count351
+\c@assumption=\count352
+\c@remark=\count353
 (./notation.tex)
 \fitbox=\box63
-Package hyperref Info: Option `colorlinks' set `true' on input line 144.
+Package hyperref Info: Option `colorlinks' set `true' on input line 146.
 
 (/usr/local/texlive/2026/texmf-dist/tex/latex/l3kernel/l3backend-pdftex.def
 File: l3backend-pdftex.def 2026-08-10 L3 backend support: PDF output (pdfTeX)
-\l__color_backend_stack_int=\count353
+\l__color_backend_stack_int=\count354
 )
 (build_end_training/main.aux)
 \openout1 = `main.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 146.
-LaTeX Font Info:    ... okay on input line 146.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 146.
-LaTeX Font Info:    ... okay on input line 146.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 146.
-LaTeX Font Info:    ... okay on input line 146.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 146.
-LaTeX Font Info:    ... okay on input line 146.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 146.
-LaTeX Font Info:    ... okay on input line 146.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 146.
-LaTeX Font Info:    ... okay on input line 146.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 146.
-LaTeX Font Info:    ... okay on input line 146.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 146.
-LaTeX Font Info:    ... okay on input line 146.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 146.
-LaTeX Font Info:    ... okay on input line 146.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 148.
+LaTeX Font Info:    ... okay on input line 148.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 148.
+LaTeX Font Info:    ... okay on input line 148.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 148.
+LaTeX Font Info:    ... okay on input line 148.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 148.
+LaTeX Font Info:    ... okay on input line 148.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 148.
+LaTeX Font Info:    ... okay on input line 148.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 148.
+LaTeX Font Info:    ... okay on input line 148.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 148.
+LaTeX Font Info:    ... okay on input line 148.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 148.
+LaTeX Font Info:    ... okay on input line 148.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 148.
+LaTeX Font Info:    ... okay on input line 148.
 
 (/usr/local/texlive/2026/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count354
+\scratchcounter=\count355
 \scratchdimen=\dimen270
 \scratchbox=\box64
-\nofMPsegments=\count355
-\nofMParguments=\count356
+\nofMPsegments=\count356
+\nofMParguments=\count357
 \everyMPshowfont=\toks42
-\MPscratchCnt=\count357
+\MPscratchCnt=\count358
 \MPscratchDim=\dimen271
-\MPnumerator=\count358
-\makeMPintoPDFobject=\count359
+\MPnumerator=\count359
+\makeMPintoPDFobject=\count360
 \everyMPtoPDFconversion=\toks43
 ) (/usr/local/texlive/2026/texmf-dist/tex/latex/epstopdf-pkg/epstopdf-base.sty
 Package: epstopdf-base 2020-01-24 v2.11 Base part for package epstopdf
@@ -701,18 +702,18 @@ e
 * \@reversemarginfalse
 * (1in=72.27pt=25.4mm, 1cm=28.453pt)
 
-Package hyperref Info: Link coloring ON on input line 146.
+Package hyperref Info: Link coloring ON on input line 148.
 (build_end_training/main.out) (build_end_training/main.out)
 \@outlinefile=\write3
 \openout3 = `main.out'.
 
-LaTeX Info: Redefining \microtypecontext on input line 146.
-Package microtype Info: Applying patch `item' on input line 146.
-Package microtype Info: Applying patch `toc' on input line 146.
-Package microtype Info: Applying patch `eqnum' on input line 146.
-Package microtype Info: Applying patch `footnote' on input line 146.
-Package microtype Info: Applying patch `verbatim' on input line 146.
-LaTeX Info: Redefining \microtypesetup on input line 146.
+LaTeX Info: Redefining \microtypecontext on input line 148.
+Package microtype Info: Applying patch `item' on input line 148.
+Package microtype Info: Applying patch `toc' on input line 148.
+Package microtype Info: Applying patch `eqnum' on input line 148.
+Package microtype Info: Applying patch `footnote' on input line 148.
+Package microtype Info: Applying patch `verbatim' on input line 148.
+LaTeX Info: Redefining \microtypesetup on input line 148.
 Package microtype Info: Generating PDF output.
 Package microtype Info: Character protrusion enabled (level 2).
 Package microtype Info: Using default protrusion set `alltext'.
@@ -738,8 +739,7 @@ Package microtype Info: Loading generic protrusion settings for font family
 File: mt-cmr.cfg 2013/05/19 v2.2 microtype config. file: Computer Modern Roman 
 (RS)
 )
-LaTeX Font Info:    Trying to load font information for U+msa on input line 10.
-
+LaTeX Font Info:    Trying to load font information for U+msa on input line 4.
 
 (/usr/local/texlive/2026/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
@@ -747,8 +747,7 @@ File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 (/usr/local/texlive/2026/texmf-dist/tex/latex/microtype/mt-msa.cfg
 File: mt-msa.cfg 2006/02/04 v1.1 microtype config. file: AMS symbols (a) (RS)
 )
-LaTeX Font Info:    Trying to load font information for U+msb on input line 10.
-
+LaTeX Font Info:    Trying to load font information for U+msb on input line 4.
 
 (/usr/local/texlive/2026/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
@@ -766,13 +765,13 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             `phv' (encoding: T1).
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
-<figures/credit_locality.pdf, id=156, 513.11702pt x 195.129pt>
-File: figures/credit_locality.pdf Graphic file (type pdf)
-<use figures/credit_locality.pdf>
-Package pdftex.def Info: figures/credit_locality.pdf  used on input line 44.
-(pdftex.def)             Requested size: 397.48499pt x 151.16087pt.
+<figures/main_overview.pdf, id=176, 397.485pt x 177.0615pt>
+File: figures/main_overview.pdf Graphic file (type pdf)
+<use figures/main_overview.pdf>
+Package pdftex.def Info: figures/main_overview.pdf  used on input line 40.
+(pdftex.def)             Requested size: 397.48499pt x 177.06644pt.
 LaTeX Font Info:    Trying to load font information for TS1+ptm on input line 5
-5.
+3.
 
 (/usr/local/texlive/2026/texmf-dist/tex/latex/psnfss/ts1ptm.fd
 File: ts1ptm.fd 2001/06/04 font definitions for TS1/ptm.
@@ -781,93 +780,118 @@ File: ts1ptm.fd 2001/06/04 font definitions for TS1/ptm.
 
 {/usr/local/texlive/2026/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{/usr/loc
 al/texlive/2026/texmf-dist/fonts/enc/dvips/base/8r.enc}{/usr/local/texlive/2026
-/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc}] [2 <./figures/credit_loc
-ality.pdf>]
-<figures/executors.pdf, id=297, 476.98201pt x 140.9265pt>
+/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc}]
+Underfull \hbox (badness 1072) in paragraph at lines 86--89
+[]\T1/ptm/b/n/10 (+20) Definition 2 \T1/ptm/m/n/10 (+20) (Con-trac-tion co-ef-f
+i-cient)\T1/ptm/b/n/10 (+20) . []\T1/ptm/m/n/10 (+20) Let $[] \OT1/cmr/m/n/10 =
+ \U/msb/m/n/10 E[]\OML/cmm/b/it/10 T[] \OT1/cmr/m/n/10 = (1 \OMS/cmsy/m/n/10 ^^
+@ \OML/cmm/m/it/10 p\OT1/cmr/m/n/10 )\OML/cmm/b/it/10 I \OT1/cmr/m/n/10 + \OML/
+cmm/m/it/10 p\OML/cmm/b/it/10 T[]$ \T1/ptm/m/n/10 (+20) and $\OML/cmm/m/it/10 ^
+^U \OT1/cmr/m/n/10 =
+ []
+
+[2 <./figures/main_overview.pdf>] [3] [4] [5]
+<figures/main_theory_measurement.pdf, id=378, 397.485pt x 177.0615pt>
+File: figures/main_theory_measurement.pdf Graphic file (type pdf)
+<use figures/main_theory_measurement.pdf>
+Package pdftex.def Info: figures/main_theory_measurement.pdf  used on input lin
+e 452.
+(pdftex.def)             Requested size: 397.48499pt x 177.06644pt.
+ [6] [7 <./figures/main_theory_measurement.pdf>]
+<figures/lambda_grid.pdf, id=476, 238.49101pt x 137.313pt>
+File: figures/lambda_grid.pdf Graphic file (type pdf)
+<use figures/lambda_grid.pdf>
+Package pdftex.def Info: figures/lambda_grid.pdf  used on input line 531.
+(pdftex.def)             Requested size: 246.43874pt x 141.89072pt.
+ [8 <./figures/lambda_grid.pdf>]) [9]
+(build_end_training/main.bbl [10
+
+] [11]) [12] (./appendix.tex
+<figures/executors.pdf, id=676, 397.485pt x 177.0615pt>
 File: figures/executors.pdf Graphic file (type pdf)
 <use figures/executors.pdf>
-Package pdftex.def Info: figures/executors.pdf  used on input line 208.
-(pdftex.def)             Requested size: 397.48499pt x 117.43988pt.
-
-[3]
-<figures/overlap_spectra.pdf, id=328, 513.11702pt x 155.38051pt>
-File: figures/overlap_spectra.pdf Graphic file (type pdf)
-<use figures/overlap_spectra.pdf>
-Package pdftex.def Info: figures/overlap_spectra.pdf  used on input line 276.
-(pdftex.def)             Requested size: 397.48499pt x 120.36884pt.
- [4 <./figures/executors.pdf>] [5 <./figures/overlap_spectra.pdf>]
-<figures/regime_both.pdf, id=448, 390.25798pt x 130.086pt>
-File: figures/regime_both.pdf Graphic file (type pdf)
-<use figures/regime_both.pdf>
-Package pdftex.def Info: figures/regime_both.pdf  used on input line 442.
-(pdftex.def)             Requested size: 397.48499pt x 132.49538pt.
- [6]
-[7 <./figures/regime_both.pdf>] [8]) [9] (build_end_training/main.bbl [10
-
-])
-[11] (./appendix.tex
+Package pdftex.def Info: figures/executors.pdf  used on input line 41.
+(pdftex.def)             Requested size: 397.48499pt x 177.06644pt.
 Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             `cmss' (encoding: OT1).
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
- [12
+ [13
 
-]
-pdfTeX warning (ext4): destination with the same identifier (name{equation.5}) 
+ <./figures/executors.pdf>]
+pdfTeX warning (ext4): destination with the same identifier (name{equation.6}) 
 has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.110 \begin{equation}
+l.121 \begin{equation}
                       
-pdfTeX warning (ext4): destination with the same identifier (name{equation.5}) 
+pdfTeX warning (ext4): destination with the same identifier (name{equation.6}) 
 has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.110 \begin{equation}
+l.121 \begin{equation}
                       
-pdfTeX warning (ext4): destination with the same identifier (name{equation.5}) 
+pdfTeX warning (ext4): destination with the same identifier (name{equation.6}) 
 has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.110 \begin{equation}
+l.121 \begin{equation}
                       
-pdfTeX warning (ext4): destination with the same identifier (name{equation.5}) 
+pdfTeX warning (ext4): destination with the same identifier (name{equation.6}) 
 has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.110 \begin{equation}
-                       [13] [14] (./notation-table.tex
+l.121 \begin{equation}
+                       [14] [15] (./notation-table.tex
 
 Package caption Warning: The option `hypcap=true' will be ignored for this
 (caption)                particular \caption on input line 39.
 See the caption package documentation for explanation.
 
-[15]) [16] [17] [18] [19] [20] [21] [22]
-Underfull \hbox (badness 1496) in paragraph at lines 946--947
-[]\T1/ptm/b/n/10 (+20) Lemma B.8 \T1/ptm/m/n/10 (+20) (The read-out di-rec-tion
- de-creases the loss)\T1/ptm/b/n/10 (+20) . []\T1/ptm/m/it/10 (+20) If $\OML/cm
-m/m/it/10 L\OT1/cmr/m/n/10 (\OML/cmm/m/it/10 ^^R\OT1/cmr/m/n/10 ) \OML/cmm/m/it
-/10 < ^^Y[]=\OT1/cmr/m/n/10 4$ \T1/ptm/m/it/10 (+20) and $\OML/cmm/m/it/10 ^^M 
-\OT1/cmr/m/n/10 =
- []
+[16]) [17] [18] [19] [20] [21] [22] [23] [24] [25] [26] [27] [28] [29] [30]
+[31]
+<figures/overlap_spectra.pdf, id=1058, 397.485pt x 169.8345pt>
+File: figures/overlap_spectra.pdf Graphic file (type pdf)
+<use figures/overlap_spectra.pdf>
+Package pdftex.def Info: figures/overlap_spectra.pdf  used on input line 1606.
+(pdftex.def)             Requested size: 397.48499pt x 169.83925pt.
+ [32] [33 <./figures/overlap_spectra.pdf>] [34]
 
-[23] [24] [25] [26] [27] [28] [29] [30] [31] [32] [33] [34] [35]) [36]
-(build_end_training/main.aux)
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 1794.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 1794.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 1794.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `\lambda' on input line 1794.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 1794.
+
+[35] [36]) [37] (build_end_training/main.aux)
  ***********
 LaTeX2e <2026-06-01>
 L3 programming layer <2026-08-10>
  ***********
 Package rerunfilecheck Info: File `main.out' has not changed.
-(rerunfilecheck)             Checksum: 6A623908AEB6524D7AB37C9F3FA94A39;7382.
+(rerunfilecheck)             Checksum: 08508DC2608DF5D4E1DEEA30AFC38E27;8883.
  ) 
 Here is how much of TeX's memory you used:
- 20333 strings out of 467099
- 335616 string characters out of 5408265
- 831703 words of memory out of 5000000
- 48712 multiletter control sequences out of 15000+600000
- 713179 words of font info for 360 fonts, out of 8000000 for 9000
+ 20369 strings out of 467099
+ 336977 string characters out of 5408265
+ 831708 words of memory out of 5000000
+ 48753 multiletter control sequences out of 15000+600000
+ 697333 words of font info for 344 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 72i,14n,79p,1001b,627s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 72i,14n,79p,1001b,813s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb
 ></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx7.pfb><
 /usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx9.pfb></u
@@ -885,27 +909,25 @@ usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></us
 r/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr5.pfb></usr/l
 ocal/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/loca
 l/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/local/t
-exlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/local/texl
-ive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb></usr/local/texlive
-/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmss10.pfb></usr/local/texlive/
-2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmss8.pfb></usr/local/texlive/20
-26/texmf-dist/fonts/type1/public/amsfonts/cm/cmss9.pfb></usr/local/texlive/2026
-/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2026/
-texmf-dist/fonts/type1/public/amsfonts/cm/cmsy5.pfb></usr/local/texlive/2026/te
-xmf-dist/fonts/type1/public/amsfonts/cm/cmsy6.pfb></usr/local/texlive/2026/texm
-f-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/local/texlive/2026/texmf-
-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></usr/local/texlive/2026/texmf-di
-st/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/local/texlive/2026/texm
-f-dist/fonts/type1/public/cm-super/sftt0900.pfb></usr/local/texlive/2026/texmf-
-dist/fonts/type1/public/cm-super/sftt1000.pfb></usr/local/texlive/2026/texmf-di
-st/fonts/type1/urw/helvetic/uhvr8a.pfb></usr/local/texlive/2026/texmf-dist/font
-s/type1/urw/times/utmb8a.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/ur
-w/times/utmr8a.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/urw/times/ut
-mri8a.pfb>
-Output written on build_end_training/main.pdf (36 pages, 768691 bytes).
+exlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb></usr/local/texl
+ive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmss10.pfb></usr/local/texli
+ve/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmss8.pfb></usr/local/texlive
+/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmss9.pfb></usr/local/texlive/2
+026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/20
+26/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy5.pfb></usr/local/texlive/2026
+/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy6.pfb></usr/local/texlive/2026/t
+exmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/local/texlive/2026/tex
+mf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></usr/local/texlive/2026/texmf
+-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/local/texlive/2026/t
+exmf-dist/fonts/type1/public/cm-super/sftt1000.pfb></usr/local/texlive/2026/tex
+mf-dist/fonts/type1/urw/helvetic/uhvr8a.pfb></usr/local/texlive/2026/texmf-dist
+/fonts/type1/urw/times/utmb8a.pfb></usr/local/texlive/2026/texmf-dist/fonts/typ
+e1/urw/times/utmr8a.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/urw/tim
+es/utmri8a.pfb>
+Output written on build_end_training/main.pdf (37 pages, 757369 bytes).
 PDF statistics:
- 1298 PDF objects out of 1440 (max. 8388607)
- 1065 compressed objects within 11 object streams
- 270 named destinations out of 1000 (max. 500000)
- 76093 words of extra memory for PDF output out of 89155 (max. 10000000)
+ 1350 PDF objects out of 1440 (max. 8388607)
+ 1143 compressed objects within 12 object streams
+ 280 named destinations out of 1000 (max. 500000)
+ 67946 words of extra memory for PDF output out of 74296 (max. 10000000)
 

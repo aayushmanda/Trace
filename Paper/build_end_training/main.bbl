@@ -1,4 +1,4 @@
-\begin{thebibliography}{34}
+\begin{thebibliography}{39}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
@@ -78,6 +78,12 @@ Steve Hanneke, Idan Mehalel, and Shay Moran.
 \newblock Sample complexity of autoregressive reasoning: Chain-of-thought vs.
   end-to-end, 2026.
 \newblock URL \url{https://arxiv.org/abs/2604.12013}.
+
+\bibitem[Hoeffding(1948)]{hoeffding1948class}
+Wassily Hoeffding.
+\newblock A class of statistics with asymptotically normal distribution.
+\newblock \emph{Annals of Mathematical Statistics}, 19\penalty0 (3):\penalty0
+  293--325, 1948.
 
 \bibitem[Jia et~al.(2025)Jia, Rakhlin, and Xie]{jia2025verify}
 Zeyu Jia, Alexander Rakhlin, and Tengyang Xie.
@@ -174,12 +180,24 @@ Adam Paszke, Sam Gross, Francisco Massa, Adam Lerer, James Bradbury, Gregory
 \newblock In \emph{Advances in Neural Information Processing Systems},
   volume~32, 2019.
 
+\bibitem[Polyanskiy and Wu(2025)]{polyanskiy2025information}
+Yury Polyanskiy and Yihong Wu.
+\newblock \emph{Information Theory: From Coding to Learning}.
+\newblock Cambridge University Press, 2025.
+
 \bibitem[Prystawski et~al.(2023)Prystawski, Li, and
   Goodman]{prystawski2023think}
 Ben Prystawski, Michael~Y. Li, and Noah~D Goodman.
 \newblock Why think step-by-step? reasoning emerges from the locality of
   experience.
 \newblock \emph{arXiv preprint arXiv:2304.03843}, 2023.
+
+\bibitem[Raginsky(2016)]{raginsky2016strong}
+Maxim Raginsky.
+\newblock Strong data processing inequalities and {$\Phi$}-{S}obolev
+  inequalities for discrete channels.
+\newblock \emph{IEEE Transactions on Information Theory}, 62\penalty0
+  (6):\penalty0 3355--3389, 2016.
 
 \bibitem[Ramesh et~al.(2023)Ramesh, Khona, Dick, Tanaka, and
   Lubana]{ramesh2023capable}
@@ -220,6 +238,12 @@ Jonathan Uesato, Nate Kushman, Ramana Kumar, Francis Song, Noah Siegel, Lisa
   2022.
 \newblock URL \url{https://arxiv.org/abs/2211.14275}.
 
+\bibitem[Vershynin(2018)]{vershynin2018high}
+Roman Vershynin.
+\newblock \emph{High-Dimensional Probability: An Introduction with Applications
+  in Data Science}.
+\newblock Cambridge University Press, 2018.
+
 \bibitem[Wang et~al.(2025)Wang, Nichani, Bietti, Damian, Hsu, Lee, and
   Wu]{wang2025compositional}
 Zixuan Wang, Eshaan Nichani, Alberto Bietti, Alex Damian, Daniel Hsu, Jason~D.
@@ -251,5 +275,11 @@ Noam Wies, Yoav Levine, and Amnon Shashua.
 \newblock In \emph{The Eleventh International Conference on Learning
   Representations}, 2023.
 \newblock URL \url{https://arxiv.org/abs/2204.02892}.
+
+\bibitem[Witsenhausen(1975)]{witsenhausen1975sequences}
+Hans~S. Witsenhausen.
+\newblock On sequences of pairs of dependent random variables.
+\newblock \emph{SIAM Journal on Applied Mathematics}, 28\penalty0 (1):\penalty0
+  100--113, 1975.
 
 \end{thebibliography}
