@@ -65,7 +65,7 @@ position bias held at its zero initialization.
 \begin{remark}[Norms and the relative bias]
 \label{rem:norms}
 Parameters carry the Euclidean norm of the vectorized parameters (Frobenius on
-each block). In \cref{thm:main,thm:separation,thm:outcome-end} and \cref{prop:rule-lower} the relative bias is fixed at zero,
+each block). In \cref{thm:main,thm:separation,thm:outcome-end} the relative bias is fixed at zero,
 which is what $\beta=0$ in $\initball$ and \cref{ass:gd} encode; the proofs of \cref{app:mainproofs} treat the zero-score
 attention as uniform and do not cover a trained bias. Only \cref{thm:routing}, \cref{tab:reach} and \cref{conj:reach}
 train it. The in-regime runs of \cref{app:exp-regime} have no relative bias.
@@ -1094,71 +1094,13 @@ The remainder uses \cref{prop:network}(ii), with constants independent of $k_0$.
 \end{proof}
 
 
-\begin{proposition}[Rule credit at a random initialization]
-\label{prop:rule-lower}
-Consider counting with a fixed query of match probability $p<1/2$, full-prefix attention, fixed MLP biases as in
-\cref{ass:init}, and all weight and embedding entries of $\tilde\theta$ independent and centred uniform with variance $1/\text{fan-in}$
-(embeddings: $1/d_{\mathrm{res}}$). For every $\failprob\in(0,1)$ there is $a_\failprob>0$, depending only on
-$\failprob,p,K$, such that for every $n\ge2$ and every choice of widths with $d_{\mathrm{res}}\ge\max(K,3)$ there is a deterministic
-$\initscale_\failprob=\initscale_\failprob(n,\text{widths})>0$ for which, with probability at least $1-\failprob$ over $\tilde\theta$,
-$\|\nabla\rulecredit(\initscale\tilde\theta)\|\ge a_\failprob\initscale^6/(n\,d_{\mathrm{res}}^3\sqrt{d_{\mathrm h}})$ simultaneously for all $0<\initscale\le\initscale_\failprob$.
-\end{proposition}
-
-The proof uses one anti-concentration fact.
-
-\paragraph{Carbery--Wright inequality \citep{carbery2001distributional}.} A polynomial $f$ of degree $d$ in random variables with a
-log-concave joint law satisfies, for every $t>0$,
-\[
- \Pr\Bigl[|f|\le t\,\bigl(\E[f^2]\bigr)^{1/2}\Bigr]\le C_{\mathrm{CW}}\,d\,t^{1/d},
-\]
-with $C_{\mathrm{CW}}$ an absolute constant. Independent centred uniform entries have a log-concave joint law.
-
-\begin{proof}[Proof of \cref{prop:rule-lower}]
-Fix $\failprob,p,K$, then $n$ and the widths. By \cref{lem:leading}(i),
-\[
- \|\nabla\rulecredit(\initscale\tilde\theta)\|\ge|F_n(\initscale)|\ge\initscale^6|P_n(\tilde\theta)|-|\varrho_n(\initscale)|,
-\]
-so it suffices to show that $|P_n(\tilde\theta)|$ is of order $1/n$ with high probability and that the remainder is smaller.
-
-\emph{One monomial survives in the second moment.} By \cref{lem:leading}(ii), $P_n$ contains the monomial
-$\prod_{y\in\mathcal E}y$ with coefficient $a_{\mathcal E}\ge a_{\mathrm{match}}/n$. Write $P_n=a_{\mathcal E}\prod_{y\in\mathcal E}y+R$. Since
-$P_n$ is homogeneous of degree $6$ and the entries are independent, centred and symmetric, every other monomial of $P_n$ contains
-some entry to an odd power against $\prod_{y\in\mathcal E}y$, so $\E[R\prod_{y\in\mathcal E}y]=0$. The six entries of $\mathcal E$ have
-variance $1/d_{\mathrm{res}}$, hence, with $a_{\mathrm w}:=a_{\mathrm{match}}/d_{\mathrm{res}}^3$,
-\[
- \E[P_n(\tilde\theta)^2]\ge a_{\mathcal E}^2\prod_{y\in\mathcal E}\E[y^2]=\frac{a_{\mathcal E}^2}{d_{\mathrm{res}}^6}\ge\frac{a_{\mathrm w}^2}{n^2}.
-\]
-
-\emph{Anti-concentration.} Carbery--Wright with $d=6$ and $t_{\mathrm{CW}}=\bigl(\failprob/(12C_{\mathrm{CW}})\bigr)^6$ gives
-\[
- \Pr\Bigl[|P_n(\tilde\theta)|\ge\frac{t_{\mathrm{CW}}\,a_{\mathrm w}}{n}\Bigr]\ge1-\frac\failprob2 .
-\]
-
-\emph{The initialization event.} For these fixed dimensions, choose deterministic $a_0,\varsigma>0$ such that the matrix
-and embedding blocks satisfy (A2) with probability at least $1-\frac\failprob2$; such bounds exist because the norms are finite and
-the value-token embedding block has full row rank almost surely when $d_{\mathrm{res}}\ge K$ (\cref{rem:end-width} gives
-quantitative bounds). On this event the constants $C,C'$ of \cref{lem:leading}(i) are fixed. The condition $d_{\mathrm{res}}\ge3$
-leaves room for the three coordinates used in $\mathcal E$.
-
-\emph{The remainder is smaller.} Let
-\[
- \initscale_\failprob=\min\Bigl\{\initscale_0,\ \frac{t_{\mathrm{CW}}\,a_{\mathrm w}\,\initscale_0}{4C'},\ \Bigl(\frac{t_{\mathrm{CW}}\,a_{\mathrm w}}{4C}\Bigr)^{1/4}\Bigr\},
-\]
-which is chosen before the draw. For every $\initscale\le\initscale_\failprob$, \cref{lem:leading}(i) gives
-\[
- |\varrho_n(\initscale)|\le\frac{C'}{\initscale_0}\frac{\initscale^7}{n}+\frac{C\initscale^{10}}{n}\le\frac{t_{\mathrm{CW}}\,a_{\mathrm w}}{2}\,\frac{\initscale^6}{n}.
-\]
-On the intersection of the two events above, which has probability at least $1-\failprob$, simultaneously for all
-$\initscale\le\initscale_\failprob$,
-\[
- \|\nabla\rulecredit(\initscale\tilde\theta)\|\ge\frac{t_{\mathrm{CW}}\,a_{\mathrm w}}{2}\,\frac{\initscale^6}{n}
- =a_\failprob\,\frac{\initscale^6}{n\,d_{\mathrm{res}}^3\sqrt{d_{\mathrm h}}},
- \qquad
- a_\failprob=\frac{t_{\mathrm{CW}}\,p(1-p)\min\left(1-2p,\frac14\right)}{6K},
-\]
-and $a_\failprob$ does not depend on the widths. The event is for fixed $n$ and widths; the factor $d_{\mathrm{res}}^{-3}$ comes from
-keeping a single monomial and is conservative.
-\end{proof}
+\begin{remark}[Generic initialization]
+\label{rem:generic-rule}
+For $p<\frac12$, \cref{lem:leading}(ii) shows that $P_n$ is a nonzero polynomial. Its zero set has Lebesgue measure zero, so
+$P_n(\tilde\theta)\ne0$ almost surely when the attention and embedding entries of $\tilde\theta$ are drawn from any absolutely
+continuous law, and by \cref{lem:leading}(i) the rule credit then has a nonzero gradient of order $\initscale^6$ for all small
+enough $\initscale$. We do not need a quantitative lower bound at random initialization.
+\end{remark}
 
 %-----------------------------------------------------------------------------
 \subsection{Initialization and width}
@@ -1183,9 +1125,7 @@ $d_{\mathrm{res}}\ge C(K+\log(1/\failprob))$.
 $w=\max\{|\Sigma|,3K(n+1),2n+1\}$, so every aspect ratio is bounded in terms of $K$ and $|\Sigma|$. With the
 initialization above, \cref{thm:main,thm:outcome-end} and \cref{thm:separation}(i)--(ii) therefore hold
 in the architecture of \cref{prop:represent} with $n$-independent constants, for $\initscale\le c\min(\mixrate,n^{-1/2})$.
-Thus the exponential outcome plateau holds in an architecture that contains $\thout$. In \cref{prop:rule-lower} the lower bound becomes
-$a_\failprob\initscale^6/(n\,d_{\mathrm{res}}^3\sqrt{d_{\mathrm h}})$, of order $\initscale^6n^{-9/2}$, so step rule credit exceeds the
-outcome interaction bound by $\mixrate^{-(n-3)}/\mathrm{poly}(n)$. The executor width grows with $n$ because one
+Thus the exponential outcome plateau holds in an architecture that contains $\thout$. The executor width grows with $n$ because one
 ReLU layer computes the count from an average; this is a property of our construction, not a lower bound.
 \end{remark}
 

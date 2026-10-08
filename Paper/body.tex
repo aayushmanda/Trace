@@ -183,15 +183,16 @@ Under \cref{ass:arch,ass:init,ass:task} with a uniform start, for all $n\ge2$ an
 \begin{enumerate}[label=(\roman*),leftmargin=*,itemsep=0pt,topsep=2pt]
 \item if $\initscale\le c\mixrate$, then $\|\nabla\Lstep(\theta)\|\ge c\,\initscale\mixrate$ while
 $\|\nabla\Lout(\theta)\|\le C\initscale(\initscale^2+\mixrate^n)$;
-\item if $\initscale\le c$ and attention uses the full causal prefix, then $\|\nabla\rulecredit(\theta)\|\le C\initscale^6/n$, and if
-moreover $p<\frac12$, for a fan-in random initialization this is attained up to polynomial factors in the widths with high
-probability (\cref{prop:rule-lower}).
+\item if $\initscale\le c$ and attention uses the full causal prefix, then $\|\nabla\rulecredit(\theta)\|\le C\initscale^6/n$; if
+moreover $p<\frac12$, the degree-$6$ term is nonzero, with an explicit count$\times$letter monomial of coefficient of order $1/n$
+(\cref{lem:leading}).
 \end{enumerate}
 \end{theorem}
 
 Part~(i) comes from fitting the count-only prior through the readout, which does not solve the task. The credit that
-matters is part~(ii): small, of order $\initscale^6/n$, but without the factor $\mixrate^n$, so it exceeds the outcome
-interaction credit by $\mixrate^{-(n-3)}$ up to polynomial factors; exact measurements are in \cref{app:regime}.
+matters is part~(ii): small, of order $\initscale^6/n$, but without the factor $\mixrate^n$ that the outcome interaction credit
+carries, and its leading term is genuinely present rather than an artifact of the upper bound; exact measurements are in
+\cref{app:regime}.
 
 % ===================================================================
 \section{Which solution training reaches}
@@ -418,8 +419,7 @@ pays $1-\mixrate^2$ once.
 flow and a fixed ReLU pattern, so the MLPs are linearized; the AdamW experiments leave this regime
 (\cref{rem:two-block-bias}). \Cref{thm:routing} covers counting modulo~$2$ from a small structured initialization with a
 staged block-coordinate gradient flow that trains one parameter block at a time, while the matching outcome plateau holds
-$\beta$ fixed. A random initialization already contains a seed of order $\initscale^6/\mathrm{poly}(n)$ along the
-count$\times$letter pathway (\cref{thm:separation}(ii)); whether simultaneous gradient flow amplifies it into the routing in
-polynomial time is open (\cref{conj:reach}), though restricted joint gradient descent does so in our experiments. Outcome
+$\beta$ fixed. The perturbative expansion identifies a nonzero degree-$6$ count$\times$letter pathway (\cref{lem:leading}), but
+whether simultaneous gradient flow amplifies such a pathway into the routing in polynomial time is open (\cref{conj:reach}), though restricted joint gradient descent does so in our experiments. Outcome
 training solves counting modulo~$3$ at $n=8$ in two of three seeds, and five-object BIG-Bench Hard reverses the
 ordering that $\mixrate^n$ predicts against seven objects, so $\mixrate^n$ is a guide rather than an exact predictor there.
