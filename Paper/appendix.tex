@@ -419,7 +419,7 @@ The constants are independent of $n$, the widths and $k$.
 normalized $\xi$-derivatives, and $F'_k=\partial_vF_k$ for their derivatives along a unit parameter direction $v$. All suprema below
 are over inputs, positions and $\xi\in[0,1]$.
 
-\proofstep{Step 1: affine blocks and amplitudes (part (i)).}
+\proofstep{Affine blocks and amplitudes (part (i)).}
 The bias condition gives $|b_m|\ge\initscale/2$, while $|(W_{\mathrm{in}}h)_m|\le C\initscale^2$, so one diagonal activation matrix
 $D$ applies to every input and every $\xi$. Each block is therefore affine,
 \[
@@ -439,7 +439,7 @@ $\omega_{i\cdot}=\softmax(\xi\psi_{i\cdot})$. Operator norms give
 Attention rows have $\ell_1$ norm $1$, so induction over the two blocks gives (i), including its tangent bound. Sums over hidden
 coordinates stay inside operator products, and sums over positions are averages.
 
-\proofstep{Step 2: softmax calculus.}
+\proofstep{Softmax calculus.}
 With $\langle f\rangle_\omega=\sum_j\omega_jf_j$,
 \[
  \partial\omega[v]_j=\omega_j\bigl(v_j-\langle v\rangle_\omega\bigr),
@@ -461,10 +461,10 @@ composition sum over the $\binom{k-1}{j-1}$ compositions $k_1+\cdots+k_j=k$ with
 \]
 The same identities bound the absolute sums at zero scores.
 
-\proofstep{Step 3: the derivative recursion (part (ii), values).}
+\proofstep{The derivative recursion (part (ii), values).}
 For block $\ell$, let $H_{\ell,k}$, $\Psi_{\ell,k}$ and $Z_k$ bound the normalized $\xi$-derivatives of $h_i^\ell$, $\psi^\ell_{ij}$ and $\bm z_i$;
 let $\Xi_{\ell,k}$ bound those of $\xi\psi^\ell$, $U_{\ell,k}$ those of an attention row in $\ell_1$ norm, and $B_{\ell,k}$ those of a head
-output. Steps 1 and 2 give, with $U_{\ell,0}=1$, $H_{0,k}=0$ for $k\ge1$, and $a_r\ge1$ in the compositions,
+output. The affine block form and the softmax calculus give, with $U_{\ell,0}=1$, $H_{0,k}=0$ for $k\ge1$, and $a_r\ge1$ in the compositions,
 \begin{align*}
  \Psi_{\ell,k}&\le C\initscale^2\sum_{a+b=k}H_{\ell-1,a}H_{\ell-1,b},
  &\Xi_{\ell,k}&\le\Psi_{\ell,k}+\Psi_{\ell,k-1},\\
@@ -488,7 +488,7 @@ and therefore
  Z_k\le C\initscale^3(C_0\initscale^4)^k .
 \]
 
-\proofstep{Step 4: tangents, remainders and absolute sums (part (ii), completed).}
+\proofstep{Tangents, remainders and absolute sums (part (ii), completed).}
 Differentiate once along $v$ before taking each supremum. In a product, one factor is replaced by its tangent; in a softmax, one
 $\Xi$ is replaced or a term $\partial^{j+1}\omega[\partial_v\Xi_{\ell,0},\ldots]$ appears. With base bounds $H'_{0,0}=O(1)$ and
 $\Psi'_{\ell,0}=O(\initscale^3)$, and the extra factor $j+1\le2^k$ absorbed into $C_0^k$,
@@ -504,7 +504,7 @@ satisfies $\|m^{-1}\sum_j\prod_rF_r(j)\|_{\mathrm{abs}}\le\prod_r\max_j\|F_r(j)\
 parameter and input occurrences, so differentiating its norm bound costs at most $C(k+1)/\initscale$; absorbing $k+1\le2^k$ gives the
 absolute-sum claims.
 
-\proofstep{Step 5: support and one-score terms (part (iii)).}
+\proofstep{Support and one-score terms (part (iii)).}
 At zero scores,
 \[
  h_j^1=M_1\Bigl(x_j+\frac1{m_j}\sum_{l\le j}W_V^1x_l\Bigr)+\bm o_1,
@@ -523,11 +523,11 @@ derivatives add none. The one-score correction is
 after the readout its terms contain $V$, $W_V$, $W_Q$, $W_K$ and three residual inputs, so they have size $O(\initscale^7)$ and
 tangent $O(\initscale^6)$.
 
-\proofstep{Step 6: position selection (part (iv)).}
+\proofstep{Position selection (part (iv)).}
 In block $1$, the relative absolute weight of terms containing $x_l$ at position $j$ is $0$ for $j<l$, $1$ for $j=l$ and
 $C\initscale/m_j$ for $j>l$. In block $2$, taking the $x_l$ contribution from the query costs $C\initscale/m_i$, from key $l$ costs
 $1/m_i$, from later keys costs $\tfrac{C\initscale}{m_i}\sum_{l<j\le i}\tfrac1{m_j}$, and the residual path costs $C/m_i$. An order-$k$ term
-has $O(k+1)$ such choices; multiplying the bounds of Step 4 by these weights and absorbing $k+1$ into $C_0^k$ gives (iv), for
+has $O(k+1)$ such choices; multiplying the absolute-sum and tangent bounds above by these weights and absorbing $k+1$ into $C_0^k$ gives (iv), for
 coefficients and tangents.
 \end{proof}
 
@@ -1091,7 +1091,7 @@ Fix $\failprob,p,K$, then $n$ and the widths. By \cref{lem:leading}(i),
 \]
 so it suffices to show that $|P_n(\tilde\theta)|$ is of order $1/n$ with high probability and that the remainder is smaller.
 
-\emph{Step 1: one monomial survives in the second moment.} By \cref{lem:leading}(ii), $P_n$ contains the monomial
+\emph{One monomial survives in the second moment.} By \cref{lem:leading}(ii), $P_n$ contains the monomial
 $\prod_{y\in\mathcal E}y$ with coefficient $a_{\mathcal E}\ge a_{\mathrm{match}}/n$. Write $P_n=a_{\mathcal E}\prod_{y\in\mathcal E}y+R$. Since
 $P_n$ is homogeneous of degree $6$ and the entries are independent, centred and symmetric, every other monomial of $P_n$ contains
 some entry to an odd power against $\prod_{y\in\mathcal E}y$, so $\E[R\prod_{y\in\mathcal E}y]=0$. The six entries of $\mathcal E$ have
@@ -1100,18 +1100,18 @@ variance $1/d_{\mathrm{res}}$, hence, with $a_{\mathrm w}:=a_{\mathrm{match}}/d_
  \E[P_n(\tilde\theta)^2]\ge a_{\mathcal E}^2\prod_{y\in\mathcal E}\E[y^2]=\frac{a_{\mathcal E}^2}{d_{\mathrm{res}}^6}\ge\frac{a_{\mathrm w}^2}{n^2}.
 \]
 
-\emph{Step 2: anti-concentration.} Carbery--Wright with $d=6$ and $t_{\mathrm{CW}}=\bigl(\failprob/(12C_{\mathrm{CW}})\bigr)^6$ gives
+\emph{Anti-concentration.} Carbery--Wright with $d=6$ and $t_{\mathrm{CW}}=\bigl(\failprob/(12C_{\mathrm{CW}})\bigr)^6$ gives
 \[
  \Pr\Bigl[|P_n(\tilde\theta)|\ge\frac{t_{\mathrm{CW}}\,a_{\mathrm w}}{n}\Bigr]\ge1-\frac\failprob2 .
 \]
 
-\emph{Step 3: the initialization event.} For these fixed dimensions, choose deterministic $a_0,\varsigma>0$ such that the matrix
+\emph{The initialization event.} For these fixed dimensions, choose deterministic $a_0,\varsigma>0$ such that the matrix
 and embedding blocks satisfy (A2) with probability at least $1-\frac\failprob2$; such bounds exist because the norms are finite and
 the value-token embedding block has full row rank almost surely when $d_{\mathrm{res}}\ge K$ (\cref{rem:end-width} gives
 quantitative bounds). On this event the constants $C,C'$ of \cref{lem:leading}(i) are fixed. The condition $d_{\mathrm{res}}\ge3$
 leaves room for the three coordinates used in $\mathcal E$.
 
-\emph{Step 4: the remainder is smaller.} Let
+\emph{The remainder is smaller.} Let
 \[
  \initscale_\failprob=\min\Bigl\{\initscale_0,\ \frac{t_{\mathrm{CW}}\,a_{\mathrm w}\,\initscale_0}{4C'},\ \Bigl(\frac{t_{\mathrm{CW}}\,a_{\mathrm w}}{4C}\Bigr)^{1/4}\Bigr\},
 \]
@@ -1119,7 +1119,7 @@ which is chosen before the draw. For every $\initscale\le\initscale_\failprob$, 
 \[
  |\varrho_n(\initscale)|\le\frac{C'}{\initscale_0}\frac{\initscale^7}{n}+\frac{C\initscale^{10}}{n}\le\frac{t_{\mathrm{CW}}\,a_{\mathrm w}}{2}\,\frac{\initscale^6}{n}.
 \]
-On the intersection of the events of Steps 2 and 3, which has probability at least $1-\failprob$, simultaneously for all
+On the intersection of the two events above, which has probability at least $1-\failprob$, simultaneously for all
 $\initscale\le\initscale_\failprob$,
 \[
  \|\nabla\rulecredit(\initscale\tilde\theta)\|\ge\frac{t_{\mathrm{CW}}\,a_{\mathrm w}}{2}\,\frac{\initscale^6}{n}
