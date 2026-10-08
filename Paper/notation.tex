@@ -1,15 +1,11 @@
 % !TEX root = main.tex
 % Shared mathematical notation. Change a symbol here, not in the section files.
-% @notation rows generate notation-table.tex; proof-local symbols stay local.
+% Auxiliary symbols are defined where used; there is no separate notation dictionary.
 \newcommand{\Lout}{L_{\mathrm{out}}}
 \newcommand{\Lstep}{L_{\mathrm{step}}}
 \newcommand{\cred}{\Phi}
 \newcommand{\outcredit}{\cred_{\mathrm{out}}}
 \newcommand{\rulecredit}{\cred_{\mathrm{rule}}}
-\newcommand{\rulecred}{\operatorname{Cred}_{\mathrm{rule}}}
-\newcommand{\basin}{\mathcal U}
-\newcommand{\items}{\mathcal I}
-\newcommand{\pimin}{\pi_{\min}}
 \newcommand{\thout}{\theta^\star_{\mathrm{out}}}
 \newcommand{\thstep}{\theta^\star_{\mathrm{step}}}
 \newcommand{\initscale}{\sigma}
@@ -17,43 +13,14 @@
 \newcommand{\failprob}{\delta}
 \newcommand{\stepsize}{\eta}
 \newcommand{\mixrate}{\lambda}
+\newcommand{\initball}{\mathcal B_{\initscale}}
+\newcommand{\traintime}{\tau}
+\newcommand{\basin}{\mathcal U}
+\newcommand{\items}{\mathcal I}
+\newcommand{\pimin}{\pi_{\min}}
 \newcommand{\margin}{\gamma}
 \newcommand{\execmargin}{\margin_\star}
-\newcommand{\initball}{\mathcal B_{\initscale}}
 \newcommand{\entryidx}{j_0}
-\newcommand{\traintime}{\tau}
+\newcommand{\Ktokens}{K_{\mathrm{tokens}}}
 \newcommand{\attconst}{C_{\mathrm{att}}}
 \newcommand{\Jz}{\partial\bm z_\theta/\partial\theta}
-\newcommand{\Jtotal}{J_{\mathrm{tot}}}
-\newcommand{\Jhigh}{J_{\ge2}}
-\newcommand{\Ktokens}{K_{\mathrm{tokens}}}
-\newcommand{\blocks}{N_{\mathrm{blocks}}}
-% @notation: $n,K,\Sigma$ || horizon, number of states, alphabet
-% @notation: $t,j,i,r,k$ || sequence index, update, item/position, degree, score count
-% @notation: $\theta,\tilde\theta,\initscale$ || parameters, initialization direction, initialization scale; \cref{ass:init}
-% @notation: $\ballradius,\initball$ || relative ball radius and initialization ball; \cref{ass:init}
-% @notation: $\failprob,\stepsize$ || failure probability and step size
-% @notation: $s_t,x_t,b_t,q$ || state, move, match bit, query; \cref{sec:setting}
-% @notation: $p,\omega$ || match probability and prompt/context
-% @notation: $\mixrate$ || contraction per unseen move; \cref{def:lambda}
-% @notation: $S,(f)_r$ || move-support set and degree-$r$ component; \cref{def:degree}
-% @notation: $\Lout,\Lstep,\Lstep^{\ge2}$ || outcome and state losses; \cref{def:losses}
-% @notation: $\Lstep^{\mathrm{full}}$ || loss on every generated step-format token; \cref{cor:exact}
-% @notation: $\cred_g,\outcredit,\rulecredit$ || credit functionals; \cref{def:credit,sec:steps}
-% @notation: $\rulecred,g_t$ || rule-credit norm and rule signal; \cref{sec:steps}
-% @notation: $A_r,J_r$ || target and Jacobian spectra; \cref{eq:spectra}
-% @notation: $\Jtotal,\Jhigh$ || total energy $\Jtotal=\sum_r J_r$ and higher-degree energy $\Jhigh=\sum_{r\ge2}J_r$
-% @notation: $J^{[k]}$ || Jacobian coefficient with $k$ scores; \cref{prop:score-degree}
-% @notation: $V,h,\bm z,\bm u$ || readout, feature, logits, uniform token distribution
-% @notation: $\items,\pi_i,\pi_\omega,\pimin$ || supervised items, item/prompt weights, smallest item weight; \cref{def:basin}
-% @notation: $\basin(L),\entryidx$ || loss basin and basin-entry update; \cref{def:basin,thm:basin}
-% @notation: $\margin_i,\margin_{\entryidx},\execmargin$ || item, entry-time, and executor logit margins
-% @notation: $\traintime_j,\traintime(\ballradius)$ || accumulated training time and ball-exit time
-% @notation: $\thstep,\thout$ || exact counting executors; \cref{prop:represent}
-% @notation: $\bm T_x,\overline{\bm T}$ || move permutation and its mean; \cref{eq:lambda}
-% @notation: $\xi,\zeta,\mu_j$ || score scale, Fourier root of unity, Fourier eigenvalue
-% @notation: $m_i,l_t,\kappa_{l,i}$ || visible-position count, current-letter position, positional dilution
-% @notation: $D,M_\ell,\bm o_\ell$ || fixed ReLU pattern, affine block map, bias offset; \cref{app:network}
-% @notation: $\partial_v,\partial^k$ || directional and higher differentials; \cref{app:network}
-% @notation: $\attconst,c,C$ || constants depending only on $a_0$, $\varsigma$, $K$ and the numbers of blocks and heads
-% @notation: $\Ktokens,\blocks$ || number of output tokens and Transformer blocks

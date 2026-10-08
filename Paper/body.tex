@@ -1,612 +1,416 @@
 % !TEX root = main.tex
-% Target, model, credit and optimization; conditional readout convergence.
+% Main text: abstract through conclusion. Formal assumptions, full statements and proofs are in the appendix.
 \begin{abstract}
-Counting a query letter modulo $K$ is easy to learn from running counts and hard to learn from the final count
-alone, although one Transformer can execute either format exactly. We explain this gap through gradient credit
-resolved by interaction degree: an interaction among $r$ letters receives credit only from the degree-$r$ part of
-the model's Jacobian. Every unseen letter contracts the answer's interactions by $\mixrate=|1-p+p\,e^{2\pi\mathrm i/K}|$,
-so a long answer offers little signal to a fresh Transformer, whose Jacobian is almost entirely low-degree, while
-a step target depends on the displayed count and one letter. For a two-block Transformer that holds exact
-executors for both formats, we prove that outcome interaction credit is at most $C\initscale^6\mixrate^{n-3}$, that
-step credit for the counting rule has no factor $\mixrate^n$, that outcome training from a zero readout stays near
-chance, outside the basin of the outcome executor, for time $\Omega(\mixrate^{-n})$, and that step training
-converges to an exact executor once it enters an explicit basin. In a one-block reduction, step training enters
-that basin from small initialization in all but one of $280$ runs, in time growing about linearly in $n$; we state
-this as a conjecture. Trained models confirm each prediction, and outcome accuracy across horizons and alphabets is
-governed by $\mixrate^n$. The same split appears beyond counting, including LoRA-tuned Qwen2.5-0.5B on BIG-Bench
-Hard object tracking.
+Counting how often a letter occurs, modulo a small number, is easy to learn from the running counts and hard to learn
+from the final count alone, although one Transformer can execute either format exactly. We explain this gap through
+gradient credit resolved by interaction degree: an interaction among several letters receives credit only from the
+matching part of the model's Jacobian. Every letter the target hides shrinks the answer's interactions by a contraction
+factor $\mixrate<1$, so a long answer offers little signal to a freshly initialized Transformer, whose Jacobian is almost
+entirely low-degree, while a running count depends only on the displayed count and one letter. For a two-block
+Transformer that holds exact executors for both formats, we prove that outcome training from a zero readout stays near
+chance for a time exponential in the number of letters. In the same architecture and from a structured small
+initialization, where outcome training also stalls, a staged step-training schedule learns which letter to read and, after a
+burn-in polynomial in the number of letters, predicts every running count after the first correctly. In experiments,
+outcome training learns the low-degree prior that $\mixrate^n$ sets and almost nothing beyond it, and step supervision
+also helps on other state-tracking tasks and with LoRA-tuned Qwen2.5-0.5B on BIG-Bench Hard object tracking, though not
+at every size.
 \end{abstract}
 
+% ===================================================================
 \section{Introduction}
 \label{sec:intro}
 
-Consider counting a query letter modulo $3$ (\cref{fig:overview}). We can train on the final
-count alone, or on the running counts as well. We call these \emph{outcome} and \emph{step}
-supervision. With matched initialization, data and training budget, outcome training stays
-at chance while step training solves the task (\cref{tab:main}). The same two-block
-architecture can execute either format exactly (\cref{prop:represent}). Why does training
-find one solution more readily?
+Training a model on intermediate steps, rather than on final answers alone, often makes reasoning tasks learnable
+\citep{nye2021scratchpads,wei2022cot,lightman2023verify}. Why it helps is less clear: in many cases the same network can
+represent the answer-only solution, so the difference lies in optimization, not capacity.
 
-The answer is a mismatch between the target and the features available at initialization. For a two-letter word,
-the answer splits into a constant, a piece for each letter, and a piece that depends on both; a feature of the first
-letter receives credit only from the first-letter piece, which shrinks geometrically as the word grows. Most of a long
-answer lies in interactions among many letters, of high \emph{degree}, to which a fresh Transformer is nearly blind.
-A step target depends on the displayed count and one letter, and avoids the long unseen horizon (\cref{fig:overview}).
+We study this question on the simplest task where it arises sharply: counting a query letter modulo $K$. The model
+either predicts the final count alone (\emph{outcome supervision}) or every running count as well (\emph{step
+supervision}, \cref{fig:overview}a). With the same architecture, initialization, data and budget, outcome training stays
+at chance while step training solves the task (\cref{fig:overview}b), even though one two-block Transformer holds an
+exact executor for each format (\cref{prop:represent}).
 
-
+Our explanation is a mismatch between where the target's signal lies and what a freshly initialized network can feel.
+Decompose the answer by the number of letters each part depends on jointly, its interaction degree. Every letter the
+answer hides contracts its low-degree parts by a factor $\mixrate<1$, so a long answer lives almost entirely at high
+degree. A Transformer near initialization has a Jacobian concentrated at degrees $0$ and $1$ (\cref{fig:overview}c), and
+the gradient pairs only matching degrees. A running count, by contrast, depends on the displayed count and one letter,
+so its signal sits at degree two with no horizon penalty.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/main_overview.pdf}
-\caption{\textbf{Both formats have exact solutions, but step training learns while outcome training stays at chance.}
-(a)~Counting \texttt a in \texttt{banana}, modulo $3$. The same architecture holds an exact executor for each format.
-(b)~Zero-readout counting, $n=16$, $K=2$: median exact continuation accuracy over ten paired seeds; shading spans
-all seeds. At $8$k updates, eight step seeds reach $90\%$ exact accuracy; no outcome seed does.
-Dashed: exact executors; dotted: chance answer accuracy.
-(c)~A separate measurement with the standard nonzero readout at $n=8$, $K=2$, $\initscale=0.02$: normalized target and Jacobian energy
-barely overlap by degree. The Jacobian has $99.6\%$ of its energy at degree $0$; full spectra are in \cref{fig:overlap}.}
+\caption{\textbf{Same architecture and task, different training behavior.}
+(a)~Two supervision formats for counting \texttt a in \texttt{banana}, modulo $3$; both admit exact executors.
+(b)~Counting with $n=16$, $K=2$ and zero readout: median exact continuation accuracy and interquartile band over ten paired seeds, $8$k updates.
+(c)~A separate $n=8$, $K=2$, $\initscale=0.02$ measurement with nonzero readout: target and Jacobian energy occupy different degrees (\cref{fig:overlap}).}
 \label{fig:overview}
 \end{figure}
 
-\paragraph{Results.} Let $n$ be the number of letters, $\initscale$ the initialization scale and $\mixrate<1$ the
-contraction per unseen letter. In one two-block Transformer (\cref{ass:arch}) we prove:
+\paragraph{Contributions.}
 \begin{itemize}[leftmargin=*,itemsep=2pt,topsep=3pt]
-\item \textbf{Both solutions exist}: exact executors for both formats (\cref{prop:represent}).
-\item \textbf{Credit gap at the start}: outcome interaction credit is at most $C\initscale^6\mixrate^{n-3}$, while step rule
-credit carries no factor $\mixrate^n$ (\cref{thm:main,thm:separation}).
-\item \textbf{Outcome training fails}: from a zero readout it stays near chance, outside the basin of the outcome executor,
-for time $\Omega(\mixrate^{-n})$ (\cref{thm:outcome-end}).
-\item \textbf{Step training converges once in its basin}, and greedy decoding is then exact (\cref{thm:basin,cor:exact}).
+\item \textbf{Credit is resolved by degree} (\cref{sec:credit}). The gradient of any loss pairs each degree of the
+target with the same degree of the Jacobian. For counting, outcome interaction credit is at most
+$C\initscale^6\mixrate^{n-3}$, while step credit for the counting rule is of order $\initscale^6/n$: small, but without the
+factor $\mixrate^n$ (\cref{thm:main,thm:separation}).
+\item \textbf{Outcome training fails} (\cref{thm:outcome-end}). From a zero readout it stays near chance, outside the
+certified region of the outcome executor, for training time $\Omega(\mixrate^{-n})$, in a Transformer wide enough to hold
+that executor, and also in the architecture and initialization of \cref{thm:routing} (\cref{cor:routing-outcome}).
+\item \textbf{Step training succeeds} (\cref{thm:routing}). From a structured small initialization and with a staged
+schedule, step training learns which letter to read and predicts every running count after the first with positive
+margin at every time after a burn-in polynomial in $n$ and $1/\initscale$, where $1/\initscale$ may itself be polynomial
+in $n$ and the width.
+\item \textbf{Experiments} (\cref{sec:experiments}) test each step: the bounds inside their assumptions, the plateau
+and its exponential exit time, outcome accuracy within a few points of the low-degree prior $(1+\mixrate^n)/2$ across $20$
+length--alphabet settings, and step supervision helping on other state-tracking tasks and a pretrained model, with an
+exception at five-object BIG-Bench Hard.
 \end{itemize}
-The missing link, basin entry for step training, we measure: in a one-block reduction, step training reaches an
-exact solution in $279$ of $280$ runs, in time about linear in $n$ (\cref{sec:reach}); we state it as a conjecture.
 
-\paragraph{Scope.} We study counting with a fixed query letter. The contraction argument applies to any task whose
-moves permute the states (\cref{rem:permutation}); other tasks appear in the experiments as evidence that the mechanism
-extends. Unlike parity learnability, we ask why one supervision format succeeds and the other fails for one fixed
-target in one model (\cref{sec:related}).
+Unlike work on the learnability of parity, we ask why one supervision format succeeds and the other fails for one fixed
+target in one model; \cref{sec:related} discusses the relation in detail.
 
+% ===================================================================
 \section{Setup}
+\label{sec:setup}
 \label{sec:setting}
 
 \begin{definition}[Counting modulo $K$]
 \label{def:task}
-A prompt has a start count $s_0$, uniform on $\mathbb Z_K$, and letters $w_1,\ldots,w_n$ drawn i.i.d.\ from an alphabet in which
-a fixed query letter has probability $p\in(0,1)$. With match bits $x_t=\mathbf 1[w_t=\text{query}]$,
+A prompt has a start count $s_0$, uniform on $\mathbb Z_K$, and letters $w_1,\ldots,w_n$ drawn i.i.d.\ from an alphabet
+in which a fixed query letter $q$ has probability $p\in(0,1)$. With $b_t=\mathbf 1[w_t=q]$,
 \begin{equation}
- s_t=s_{t-1}+x_t\bmod K,\qquad t=1,\ldots,n,
+ s_t=s_{t-1}+b_t\pmod K,\qquad t=1,\ldots,n,
  \label{eq:tracking}
 \end{equation}
-and the answer is $y=s_n$. Each move permutes the counts: $\bm e_{s_t}^\top=\bm e_{s_{t-1}}^\top\bm T_{x_t}$ with
-$\bm T_0=\bm I$ and $\bm T_1$ the cyclic shift.
+and the answer is $y=s_n$.
 \end{definition}
+
+Each letter permutes the counts: $\bm e_{s_t}^\top=\bm e_{s_{t-1}}^\top T_{b_t}$, with $T_0=I$ and $T_1$ the cyclic shift.
 
 \begin{definition}[Contraction coefficient]
 \label{def:lambda}
-Let $\overline{\bm T}=\E_x\bm T_x=(1-p)\bm I+p\bm T_1$ and $\mixrate=\max_{\bm v\perp\one,\|\bm v\|=1}\|\bm v^\top\overline{\bm T}\|$.
-In the Fourier basis of $\mathbb Z_K$, $\overline{\bm T}$ is diagonal with eigenvalues $1-p+p\,\omega^j$, $\omega=e^{2\pi\mathrm i/K}$, so
-$\mixrate=|1-p+p\,\omega|$.
-\end{definition}
-$\overline{\bm T}$ is doubly stochastic and $\mixrate$ is its largest singular value on $\one^\perp$: averaging over one unseen
-letter contracts every centred count direction by $\mixrate$. Conversely, $\bm\Delta_x:=\bm T_x-\overline{\bm T}$ satisfies
+Let $\bar T=\E\,T_b=(1-p)I+pT_1$ and
 \begin{equation}
- \E\bigl[\bm\Delta_x^\top\bm\Delta_x\bigr]=\bm I-\overline{\bm T}^\top\overline{\bm T},
- \qquad\text{with smallest eigenvalue $1-\mixrate^2$ on $\one^\perp$}.
- \label{eq:move-variance}
+ \mixrate=\max_{v\perp\one,\ \|v\|=1}\|v^\top\bar T\|=\bigl|1-p+p\,e^{2\pi\mathrm i/K}\bigr|.
+ \label{eq:lambda}
 \end{equation}
-The random move that erases long-range information thus creates local variation: hidden moves attenuate the
-outcome signal as powers of $\mixrate$, while a displayed previous state leaves variation of order $1-\mixrate^2$.
-For uniform states, $\mixrate$ is the maximal correlation of consecutive states and $\mixrate^2$ the $\chi^2$
-contraction coefficient of one unseen move \citep{witsenhausen1975sequences,raginsky2016strong}.
-For four uniform letters ($p=\frac14$), $\mixrate=0.5$ at $K=2$ and $0.66$ at $K=3$.
-
-\begin{definition}[Outcome and step losses]
-\label{def:losses}
-Let $\bm z_t(\theta)\in\R^K$ be the state logits at the position that predicts $s_t$, and $\bm z_\theta$
-those at the answer position. The \emph{outcome loss} is $\Lout(\theta)=\E[-\log\softmax(\bm z_\theta)_y]$.
-The \emph{step loss} is the teacher-forced loss
-$\Lstep(\theta)=\frac1n\sum_{t=1}^n\E[-\log\softmax(\bm z_t(\theta))_{s_t}]$; $\Lstep^{\ge2}$ averages
-over $t=2,\ldots,n$ only.
 \end{definition}
 
-Fix the start count, so the moves are independent. Every square-integrable function
-$f$ of the moves has a unique Efron--Stein decomposition $f=\sum_{S\subseteq[n]}f_S$, where $f_S$
-depends only on $x_S$ and has mean zero in each $x_t$, $t\in S$ \citep{efron1981jackknife}.
+Averaging over one unseen letter contracts every centred count direction by $\mixrate$; in information-theoretic terms,
+$\mixrate$ is the maximal correlation of consecutive counts and $\mixrate^2$ the $\chi^2$ contraction coefficient of one
+unseen letter \citep{witsenhausen1975sequences,raginsky2016strong}. The complementary quantity $1-\mixrate^2$ is the
+variance a displayed count leaves to the next letter (\cref{eq:local-variation}). For four uniform letters,
+$\mixrate=0.5$ at $K=2$ and $0.66$ at $K=3$.
 
-\begin{definition}[Degree]
-\label{def:degree}
-The component $f_S$ has \emph{degree} $|S|$, and $(f)_r=\sum_{|S|=r}f_S$. Vector- and
-matrix-valued functions are decomposed entrywise.
-\end{definition}
-For centred moves, $x_1+x_2$ has degree $1$ and $x_1x_2$ has degree $2$. Degree counts input
-moves, not powers of parameters.
+\paragraph{Formats.} Both formats see the same prompt. The \emph{outcome loss} $\Lout$ is the cross-entropy of the final
+count; the \emph{step loss} $\Lstep$ is the teacher-forced cross-entropy of the running counts, and $\Lstep^{\ge2}$
+averages over $t\ge2$ (\cref{def:losses}).
 
-\begin{assumption}[Architecture]
-\label{ass:arch}
-A causal Transformer with two blocks of softmax heads and ReLU MLPs, learned token and position
-embeddings, a learned relative position bias $b_{i-j}$ added to every attention score and initialized at zero, no
-LayerNorm, any widths (residual $d_{\mathrm{res}}$, head $d_{\mathrm h}$, MLP $w$) and a linear readout $V$;
-every logit vector is $\bm z=Vh$ with $h$ independent of $V$.
-\end{assumption}
-
-\begin{assumption}[Initialization]
-\label{ass:init}
-$\theta_0=\initscale\tilde\theta$ with $\initscale\le\initscale_0:=c\min(1,1/\beta)$, where every weight matrix and embedding block of $\tilde\theta$ has operator norm
-at most $a_0$, every MLP bias satisfies $|\tilde b_m|\ge1$, each MLP bias vector has norm at most $\beta$, and the
-value-token embeddings have smallest singular value at least $\varsigma>0$. We work on
-$\initball=\{\theta:\|\theta-\theta_0\|\le\ballradius\initscale\}$ with $\ballradius=\min(1/8,\varsigma/4)$.
-\end{assumption}
-
-\begin{assumption}[Task]
-\label{ass:task}
-The task is counting modulo $K$ (\cref{def:task}), so $\mixrate<1$.
-\end{assumption}
-
-\begin{assumption}[Training]
-\label{ass:gd}
-Full-batch gradient descent $\theta_{j+1}=\theta_j-\stepsize\nabla L(\theta_j)$ on $\Lout$ or $\Lstep$.
-\end{assumption}
-
-On $\initball$, no ReLU unit changes sign (\cref{app:network}). Constants $c,C>0$ depend only on $a_0$, $\varsigma$, $K$
-and the numbers of blocks and heads, never on the widths, $n$, $\initscale$ or $\stepsize$. Fan-in-scaled initialization
-gives $a_0=O(1)$, $\varsigma\ge\frac12$, $\beta\le2\sqrt w$ w.h.p.\ at every width, so at the executor width the theorems
-hold for $\initscale\le c\min(\mixrate,n^{-1/2})$ (\cref{rem:end-width}).
-
-\paragraph{Target spectrum.} Every unseen letter contracts the centred count. For every set $S$ of letters,
-\begin{equation}
- \mathbb E\bigl\|(y-\bm u)_S\bigr\|^2\le\Bigl(1-\frac1K\Bigr)\mixrate^{2(n-|S|)},
- \label{eq:horizon}
-\end{equation}
-and counting attains the exponent (\cref{rem:tight}): a component on $r$ letters averages over the other $n-r$, and
-each contributes one factor $\mixrate$.
-
-\section{Both solutions exist}
-\label{sec:executors}
-
-For counting, the same architecture can solve both formats.
+\paragraph{Model.} A causal Transformer with two blocks of softmax heads and ReLU MLPs, a relative position bias
+initialized at zero (held there in \cref{thm:main,thm:separation,thm:outcome-end} and learned in \cref{sec:reach}), no LayerNorm, arbitrary widths and a linear readout (\cref{ass:arch}). Initialization is
+$\theta_0=\initscale\tilde\theta$ with operator-norm conditions that fan-in initialization satisfies at every width, with
+constants that are $n$-independent at the executor width, and a bias condition $|\tilde b_m|\ge1$ that default
+initializations do not satisfy (\cref{ass:init,rem:end-width}). The bias condition fixes the sign of every ReLU on the ball
+$\initball$ of radius proportional to $\initscale$ around $\theta_0$, in the Euclidean parameter norm, where we work. There
+each MLP acts as a fixed linear map, so \cref{thm:main,thm:separation,thm:outcome-end} concern softmax attention with
+linearized MLPs; the AdamW experiments drop the bias condition (\cref{rem:two-block-bias}). Constants $c,C$ depend on
+neither the widths, $n$, $\initscale$ nor the step size.
 
 \begin{proposition}[Both solutions exist]
 \label{prop:represent}
-For every $K$, alphabet size and $n$, there is one architecture as in \cref{ass:arch}, with widths
-growing linearly in $n$, and parameters $\thstep$ and $\thout$ at which greedy
-decoding produces the correct step continuation and the correct outcome continuation, respectively,
-on every counting prompt. Both have a positive logit margin on every supervised position and are
-exact on an open neighbourhood.
+For every $K$, alphabet size and $n$, one architecture as in \cref{ass:arch}, with widths linear in $n$, has parameters
+$\thstep$ and $\thout$ at which greedy decoding produces the correct step and outcome continuations on every prompt, with
+a positive logit margin.
 \end{proposition}
 
-\paragraph{Construction.} Block~1 copies the query to each letter and computes its match bit
-$b_t=\mathbf 1[w_t=q]$. In the step executor, Block~2 reads $s_{t-1}$ and $b_t$, then looks up
-$(s_{t-1}+b_t)\bmod K$. In the outcome executor, it averages the bits, rescales by $n$, and
-looks up $(s_0+\sum_t b_t)\bmod K$ (\cref{fig:executors}).
-Unused heads and MLP units are zero, so both use the same architecture.
-Finite routing scores keep attention leakage below the readout margin.
-The positive margin and continuity give the open neighbourhood at each fixed $n$.
-\Cref{app:architectures} gives the parameters and proof.
-This follows the approach of explicit Transformer constructions
-\citep{akyurek2023icl,ramesh2023capable}.
+Block~1 computes each letter's match bit; in the step executor Block~2 adds it to the displayed count, and in the
+outcome executor it averages the match bits and looks up the final count (\cref{app:architectures}).
 
-
-
-
-\section{How training starts: a credit gap}
+% ===================================================================
+\section{Credit by interaction degree}
+\label{sec:credit}
 \label{sec:gap}
 
-\paragraph{Model spectrum at initialization.}
-At small initialization, attention is nearly uniform and the MLPs are affine on $\initball$.
-Uniform attention makes the network additive across positions, with degree at most $1$.
-A term with $k\ge1$ attention scores reaches at most $2k+1$ input moves and has Jacobian of size
-$C\initscale^2(\attconst\initscale^4)^k$: the first score permits interactions at cost $\initscale^6$, and each
-further score costs $\initscale^4$ (\cref{prop:score-degree}).
-
-\subsection{Credit matches degree}
-\label{sec:credit}
+Fix the start count, so the letters are independent. Every square-integrable function $f$ of the letters has a unique
+Hoeffding--Efron--Stein (functional ANOVA) decomposition $f=\sum_{S\subseteq[n]}f_S$, where $f_S$ depends only on the letters in $S$ and has mean zero
+in each of them \citep{efron1981jackknife}; its \emph{degree} is $|S|$, and $(f)_r=\sum_{|S|=r}f_S$ (\cref{def:degree}).
 
 \begin{definition}[Credit]
 \label{def:credit}
-For a target signal $g$, a random vector in $\R^K$, let $\cred_g(\theta)=\E\langle\bm z_\theta,g\rangle$.
-The \emph{credit} for $g$ is $\|\nabla_\theta\cred_g(\theta)\|$, and the \emph{credit at degrees} $R$ is
-$\bigl\|\sum_{r\in R}\E[(\Jz)_r^\top(g)_r]\bigr\|$.
+For a target signal $g$, a random vector in $\R^K$, let $\cred_g(\theta)=\E\langle\bm z_\theta,g\rangle$. The
+\emph{credit} for $g$ is $\|\nabla_\theta\cred_g\|$, and the credit at degree $r$ is
+$\bigl\|\E[(\Jz)_r^\top(g)_r]\bigr\|$.
 \end{definition}
-For the outcome signal $g_{\mathrm{out}}=y-\bm u$, credit is the target-dependent part of the gradient of
-$\Lout$ \citep{shalevshwartz2017failures,abbe2025parities}; write $\outcredit=\cred_{g_{\mathrm{out}}}$.
-The \emph{interaction credit} is the credit at degrees $r\ge2$.
 
-Represent the answer $y$ as a one-hot vector.
-Let $\bm z_\theta$ be the logits, $\hat y=\softmax(\bm z_\theta)$ and $\bm u=\one/K$.
-For one prompt, $-\pd{\ell}{\theta}=(\Jz)^\top(y-\hat y)$.
-Interactions on different sets of moves are orthogonal.
-At uniform prediction, this gives
-
+For the outcome signal $g=y-\bm u$ (one-hot answer minus uniform), credit is the answer-dependent part of the gradient of
+$\Lout$ \citep{shalevshwartz2017failures,abbe2025parities}. Because components on different sets of letters are
+orthogonal,
 \begin{equation}
  -\dpd{\Lout}{\theta}
- =\sum_{r=0}^n
- \mathbb E\biggl[
- \Bigl(\dpd{\bm z_\theta}{\theta}\Bigr)_r^{\!\top}
- (y-\bm u)_r
- \biggr].
- \label{eq:grad-split}
+ =\sum_{r=0}^n\E\Bigl[\Bigl(\dpd{\bm z_\theta}{\theta}\Bigr)_r^{\!\top}(y-\bm u)_r\Bigr]
+ \quad\text{at uniform prediction, and}\quad
+ \text{credit at degree } r\le\sqrt{A_rJ_r},
+ \label{eq:credit-degree}
 \end{equation}
-Only matching degrees contribute.
-Away from uniform prediction, the same identity holds for the answer-dependent gradient
-(\cref{lem:gradient-split}). Define the target and Jacobian spectra by
+where $A_r$ and $J_r$ are the target's and the Jacobian's mass at degree $r$ (\cref{eq:grad-split,eq:spectra},
+\cref{lem:gradient-split}). Credit is small wherever either has little mass.
 
-\begin{equation}
- A_r:=\mathbb E\bigl\|(y-\bm u)_r\bigr\|^2,
- \qquad
- J_r(\theta):=\mathbb E\bigl\|(\Jz)_r\bigr\|_F^2.
- \label{eq:spectra}
-\end{equation}
-Cauchy--Schwarz gives
-\[
- \boxed{\text{degree-$r$ credit}\le\sqrt{A_rJ_r}}.
-\]
-Credit is small wherever either spectrum has little mass.
+\paragraph{The target sits at high degree.} Every unseen letter contracts the centred count by $\mixrate$, so for every
+set $S$ of letters, $\E\|(y-\bm u)_S\|^2\le(1-\frac1K)\mixrate^{2(n-|S|)}$, with equality in the exponent for counting
+(\cref{lem:target-contraction}).
 
-\subsection{Why outcome optimization stalls}
-\label{sec:spectrum}
-
-
-
-\paragraph{Outcome credit and the plateau.}
-\label{sec:main}
+\paragraph{The network sits at low degree.} Near initialization attention is nearly uniform and the MLPs are affine, so
+the network is additive across positions. A term with $k\ge1$ attention scores reaches at most $2k+1$ letters and costs
+$\initscale^{2+4k}$ in the Jacobian (\cref{prop:score-degree}).
 
 \begin{theorem}[Outcome interaction credit]
 \label{thm:main}
-Suppose \cref{ass:arch,ass:init,ass:task} hold, and fix the start state and the query. For all
-$n\ge2$, all $\initscale$ with $\initscale^2\le c\mixrate$, and all $\theta\in\initball$, the interaction credit for
-$y-\bm u$ is at most $C\initscale^6\mixrate^{n-3}$.
+Under \cref{ass:arch,ass:init,ass:task}, with the start count fixed, for all $n\ge2$, $\initscale^2\le c\mixrate$ and
+$\theta\in\initball$, the outcome credit at degrees $r\ge2$ is at most $C\initscale^6\mixrate^{n-3}$.
 \end{theorem}
 
-Each attention score costs $\initscale^4$ and reaches at most two more moves, while each unseen move costs
-$\mixrate$; summing over scores gives the bound (\cref{eq:score-credit,lem:score-sum}). It holds along every unit direction, including
-toward an exact executor. From a zero readout the plateau has no $\initscale^{-2}$ cap
-(\cref{thm:outcome-end}), and the measured exit time grows at least as fast as $\mixrate^{-n}$ (\cref{fig:theory-measurement}).
+The step target separates into a part the displayed count predicts and a part only the current letter carries:
+$\bm e_{s_t}-\bm u=(\bar T^\top\bm e_{s_{t-1}}-\bm u)+(\bm e_{s_t}-\bar T^\top\bm e_{s_{t-1}})$. The second, the
+\emph{rule signal}, has covariance
+\begin{equation}
+ \operatorname{Cov}\bigl(\bm e_{s_t}-\bar T^\top\bm e_{s_{t-1}}\bigr)
+ =\tfrac1K\bigl(I-\bar T^\top\bar T\bigr)\succeq\tfrac{1-\mixrate^2}{K}
+ \quad\text{on }\one^\perp,
+ \label{eq:local-variation}
+\end{equation}
+so outcome targets pay $\mixrate^{n-r}$ while step targets pay $1-\mixrate^2$ once. Let $\rulecredit$ be the credit
+functional with the rule signal as target.
 
-\subsection{Why step optimization is different}
-\label{sec:steps}
-
-Teacher forcing supplies the previous state.
-The next target has a one-move horizon.
-Its gradient can still learn only the average move rather than the rule.
-We separate these two signals:
-
-\[
- \bm e_{s_t}-\bm u
- =\underbrace{\overline{\bm T}^\top\bm e_{s_{t-1}}-\bm u}_{\text{prior}}
- +\underbrace{\bm e_{s_t}-\overline{\bm T}^\top\bm e_{s_{t-1}}}_{\text{rule}}.
-\]
-The \emph{rule signal} $g_{{\mathrm{rule}},t}=\bm e_{s_t}-\overline{\bm T}^\top\bm e_{s_{t-1}}$ is the part of the
-next state not predicted by the previous one. Let $\rulecredit=\E_t\E\langle\bm z_t,g_{{\mathrm{rule}},t}\rangle$,
-with $t$ uniform on $\{2,\ldots,n\}$; $\|\nabla\rulecredit\|$ is the credit of \cref{def:credit} with
-the local rule as signal. Since $g_{{\mathrm{rule}},t}=\bm\Delta_{x_t}^\top\bm e_{s_{t-1}}$, under a uniform start
-$\operatorname{Cov}(g_{{\mathrm{rule}},t})=(\bm I-\overline{\bm T}^\top\overline{\bm T})/K\succeq(1-\mixrate^2)/K$ on $\one^\perp$ by \cref{eq:move-variance}:
-outcome targets pay $\mixrate^{n-r}$, step targets $1-\mixrate^2$, with no factor $\mixrate^n$.
-
-\begin{samepage}
 \begin{theorem}[Step credit]
 \label{thm:separation}
-Suppose \cref{ass:arch,ass:init,ass:task} hold and the start state is uniform.
+Under \cref{ass:arch,ass:init,ass:task} with a uniform start, for all $n\ge2$ and $\theta\in\initball$:
 \begin{enumerate}[label=(\roman*),leftmargin=*,itemsep=0pt,topsep=2pt]
-\item For all $n\ge2$, $\initscale\le c\mixrate$ and $\theta\in\initball$,
-$\|\nabla \Lstep^{\ge2}(\theta)\|\ge c\,\initscale\mixrate$ and $\|\nabla \Lout(\theta)\|\le C\initscale(\initscale^2+\mixrate^n)$.
-\item For all $n\ge2$, $\initscale\le c$ and $\theta\in\initball$, $\|\nabla\rulecredit(\theta)\|\le C\initscale^6/n$.
-\item Consider counting with a fixed query of match probability $p<1/2$, fixed MLP biases as in
-\cref{ass:init}, and all other entries of $\tilde\theta$ independent and uniform with variance $1/\text{fan-in}$
-(embeddings: $1/d_{\mathrm{res}}$). For every
-$\failprob\in(0,1)$ there exist $a_\failprob,\initscale_\failprob>0$ such that for every $n\ge2$, with probability at
-least $1-\failprob$ over $\tilde\theta$, $\|\nabla\rulecredit(\initscale\tilde\theta)\|\ge a_\failprob\initscale^6/(n\,d_{\mathrm{res}}^3\sqrt{d_{\mathrm h}})$ for all $\initscale\in(0,\initscale_\failprob]$.
-Here $a_\failprob$ does not depend on the widths.
+\item if $\initscale\le c\mixrate$, then $\|\nabla\Lstep^{\ge2}(\theta)\|\ge c\,\initscale\mixrate$ while
+$\|\nabla\Lout(\theta)\|\le C\initscale(\initscale^2+\mixrate^n)$;
+\item if $\initscale\le c$ and attention uses the full causal prefix, then $\|\nabla\rulecredit(\theta)\|\le C\initscale^6/n$, and if
+moreover $p<\frac12$, for a fan-in random initialization this is attained up to polynomial factors in the widths with high
+probability (\cref{prop:rule-lower}).
 \end{enumerate}
 \end{theorem}
-\end{samepage}
 
-Part (i) comes from the displayed count and teaches the average move. The rule also needs the current letter: it
-pays $\initscale^6$ for a score correction and $1/n$ to select that letter, but no horizon factor. So step rule credit
-exceeds the outcome interaction bound by order $\mixrate^{-(n-3)}/\mathrm{poly}(n)$ w.h.p.; at $\initscale=0.02$ the measured
-ratio grows from $64$--$119$ at $n=4$ to $9{,}410$--$21{,}300$ at $n=14$ (\cref{tab:matched}).
+Part~(i) compares whole gradients, and its lower bound $c\initscale\mixrate$ comes from fitting the count-only prior through
+the readout, which a readout alone can do and which does not solve the task. The credit that matters is part~(ii): it is
+small, of order $\initscale^6/n$ (about $10^{-9}$ at $\initscale=0.02$, \cref{tab:matched}), but carries no factor $\mixrate^n$,
+so it exceeds the outcome interaction credit of \cref{thm:main} by $\mixrate^{-(n-3)}$ up to polynomial factors. At
+$\initscale=0.02$ the measured ratio, with the start count fixed as in \cref{thm:main}, grows from $2.4$ at $n=4$ to $69$ at
+$n=12$; with a uniform start it grows from $64$--$119$ at $n=4$ to $9{,}410$--$21{,}300$ at $n=14$ (\cref{app:regime}).
+\Cref{thm:main} needs only $\initscale^2\le c\mixrate$, which makes the attention series converge; \cref{thm:separation}(i) and
+\cref{thm:outcome-end} need $\initscale\le c\mixrate$, so that the degree-$0$ and $1$ terms, of size $\initscale^2\mixrate^{n-1}$,
+stay below $\initscale\mixrate^n$.
 
-\section{Outcome training fails; step training reaches its solution}
+% ===================================================================
+\section{Which solution training reaches}
+\label{sec:reach}
 \label{sec:end}
-\label{sec:lookup}
 
-Both executors of \cref{prop:represent}, with rescaled readouts, lie in the open basin of their own
-loss (\cref{lem:end-nonempty}(iii)).
-The formats differ in whether training reaches one.
-
-\begin{definition}[Supervised loss and basin]
-\label{def:basin}
-A \emph{supervised loss} is $L(\theta)=\sum_{i\in\items}\pi_i\ell_i(\theta)$ over a finite set $\items$ of
-items, each a prompt with a supervised position, where $\pi_i>0$, $\sum_i\pi_i=1$ and $\ell_i$ is the
-cross-entropy of the gold token. Let $\pimin=\min_i\pi_i$. The \emph{basin} of $L$ is
-$\basin(L)=\{\theta:L(\theta)<\pimin/4\}$.
-\end{definition}
-For $\Lstep$ the items are the pairs $(P,t)$ of a prompt and a state position, with
-$\pi_{(P,t)}=\pi_P/n$, where $\pi_P$ is the probability of prompt $P$; for $\Lout$ there is one item per prompt.
+Both executors of \cref{prop:represent}, with rescaled readouts, lie in a certified region of their own loss, a sublevel
+set from which gradient descent with backtracking step sizes converges (\cref{lem:basin}). The formats differ in whether training reaches one.
 
 \begin{theorem}[Outcome training does not converge]
 \label{thm:outcome-end}
-Suppose \cref{ass:arch,ass:init,ass:task,ass:gd} hold and the readout of $\tilde\theta$ is zero. There is
-$\stepsize_0>0$ such that for all $n\ge2$, $\initscale\le c\mixrate$, $\stepsize\le\stepsize_0$ and $j\le c\mixrate^{-n}/\stepsize$, gradient
-descent on $\Lout$ satisfies $\theta_j\in\initball$ and
+Under \cref{ass:arch,ass:init,ass:task,ass:gd} with a zero initial readout, there is $\stepsize_0>0$ such that for all
+$n\ge2$, $\initscale\le c\mixrate$, $\stepsize\le\stepsize_0$ and every $j\le c\mixrate^{-n}/\stepsize$, gradient descent
+on $\Lout$ satisfies $\theta_j\in\initball$,
 \[
- \Lout(\theta_j)\ge\log K-C\initscale^2\mixrate^n,
- \qquad
+ \Lout(\theta_j)\ge\log K-C\initscale^2\mixrate^n
+ \quad\text{and}\quad
  \E\softmax(\bm z_{\theta_j})_y\le\frac1K+C\initscale\mixrate^{n/2}.
 \]
 \end{theorem}
 
-The time bound does not depend on $\initscale$; measured times at $\initscale=0.02$ and $0.002$ coincide by $n=14$
-(\cref{app:exp-regime}). The same bound holds for gradient flow (\cref{rem:flow}). For $\initscale$ below a constant, $\Lout(\theta_j)\ge\log2-\frac14>\pimin/4$,
-so $\theta_j\notin\basin(\Lout)$. A zero readout leaves \cref{thm:separation}
-unchanged (\cref{rem:zero-readout}); for $\mixrate=0$ the time is of order $\initscale^{-(2n-1)}$ (\cref{rem:end-parity}).
-The proof uses only the gradient norm, the descent lemma and the loss floor on $\initball$, so the theorem holds verbatim
-for gradient descent on any subset of the parameters, including the one used next.
+The proof is an energy argument: under the descent lemma, the distance travelled satisfies
+$\|\theta_j-\theta_0\|^2\le2j\stepsize\,(\Lout(\theta_0)-\Lout(\theta_j))$, and on $\initball$ the outcome loss cannot fall
+by more than $C\initscale^2\mixrate^n$, so leaving the ball takes time of order $\mixrate^{-n}$. The argument uses only the
+gradient norm, the descent lemma and this loss floor, so it holds for gradient descent on any subset of the parameters
+that excludes the relative bias, and for gradient flow; the time bound does not depend on $\initscale$, and for $\mixrate=0$ it becomes
+$\initscale^{-(2n-1)}$ (\cref{rem:flow,rem:end-parity}).
 
-\subsection{Step training reaches its basin: measurements and a conjecture}
-\label{sec:reach}
+\paragraph{Step training reaches its solution.} A running count needs one routing decision: read the displayed count and
+the current letter. We give one block-2 head (the gate head) a segment mask, under which each count position attends to
+itself and to all $n$ letters, and a relative bias $\beta=0$; which letter to read is encoded only in $\beta$ and must be
+learned.
 
-Train only the attention scores, the relative bias and the readout on $\Lstep$, with every other parameter frozen at
-$\theta_0$. Outcome training under the same procedure obeys \cref{thm:outcome-end}, so the two formats are compared in one
-model and one procedure.
-
-\begin{conjecture}[Step training reaches its basin]
-\label{conj:reach}
-Under \cref{ass:arch,ass:init,ass:task}, gradient descent on $\Lstep$ restricted to the scores, the relative bias and the
-readout enters $\basin(\Lstep)$ from $\theta_0$ within time $\mathrm{poly}(n,1/\initscale)$.
-\end{conjecture}
-
-We test this in a one-block reduction: one attention layer with trained bilinear scores, relative bias and readout on
-the token and the attention output, and frozen embeddings and value map (\cref{app:reach}). In every setting, step
-training escapes the count-only prior and every held-out prompt becomes correct with a growing margin, in $279$ of $280$
-runs over $n\le32$, $K\in\{2,3\}$, $\initscale\in[0.005,0.05]$ and five seeds (\cref{tab:reach}). The readout first learns the
-count-only prior; a degree-$2$ saddle between the count-dependent score of the query letter and the readout of the
-attended letters then escapes at a rate proportional to $1/n$; finally the relative bias concentrates attention on the
-current letter and the gate saturates (\cref{app:reach}). With embeddings and values at scale $\initscale$ the saddle is slowed
-by about $\initscale^4$, and the time still grows mildly with $n$. A proof along these phases would close the gap.
-
-\begin{table}[t]
-\centering\small
-\fitwidth{\begin{tabular}{@{}lcccccc@{}}
-\toprule
-updates until every held-out prompt is correct & $n=6$ & $8$ & $12$ & $16$ & $24$ & $32$\\
-\midrule
-$K=2$, one-hot embeddings, $\initscale=0.02$ & $850$ & $1{,}150$ & $1{,}850$ & $2{,}100$ & $3{,}450$ & $4{,}000$\\
-$K=3$, one-hot embeddings, $\initscale=0.02$ & $1{,}500$ & $1{,}800$ & $2{,}350$ & $3{,}150$ & $3{,}950$ & $5{,}800$\\
-$K=2$, embeddings and values at scale $\initscale=0.3$ & $12$--$13.5$k & $16.5$--$18.5$k & $16.5$--$24$k & $23$--$25.5$k & -- & --\\
-\bottomrule
-\end{tabular}}
-\caption{\textbf{Step training reaches an exact solution in time growing about linearly in $n$.} One-block reduction,
-counting with $p=\frac14$, full-batch gradient descent from small initialization. Rows 1--2: medians over five seeds,
-step size $0.5$; over all $\initscale\in\{0.005,0.01,0.02,0.05\}$ the fitted exponent of $n$ is $0.88$ ($K=2$) and $0.82$ ($K=3$).
-Row 3: two seeds, step size $2$.}
-\label{tab:reach}
-\end{table}
-
-\subsection{Convergence in the basin}
-\label{sec:basin}
-
-\begin{assumption}[Backtracking step sizes]
-\label{ass:armijo}
-From $\theta_j$, the step size is $\stepsize_j=\bar\stepsize\,b^{u_{\mathrm{bt}}}$ for the smallest
-$u_{\mathrm{bt}}\ge0$ such that
-\begin{equation}
- L(\theta_j-\stepsize_j\nabla L(\theta_j))\le L(\theta_j)-\tfrac{\stepsize_j}2\|\nabla L(\theta_j)\|^2,
- \tag{Armijo}\label{eq:descent}
-\end{equation}
-with fixed $\bar\stepsize>0$ and $b\in(0,1)$, and $L$ is continuously differentiable near each iterate.
-\end{assumption}
-This is the Armijo rule \citep{nocedal2006numerical}; with finitely many prompts, $L$ is smooth wherever
-no ReLU pre-activation is exactly zero.
-
-\begin{theorem}[Step training converges in the basin]
-\label{thm:basin}
-Let $L$ be a supervised loss with logits as in \cref{ass:arch}, and let $\theta_{j+1}=\theta_j-\stepsize_j\nabla L(\theta_j)$
-with step sizes as in \cref{ass:armijo} for $j\ge \entryidx$. Suppose $\theta_{\entryidx}\in\basin(L)$, and let $L_{\entryidx}=L(\theta_{\entryidx})$,
-$\margin_{\entryidx}=\log(\pimin/(2L_{\entryidx}))$ and $\traintime_j=\sum_{i=\entryidx}^{j-1}\stepsize_i$. Then for every $j\ge \entryidx$:
-\begin{enumerate}[label=(\roman*),leftmargin=*,itemsep=0pt,topsep=2pt]
-\item $\theta_j\in\basin(L)$, and on every item the gold token has the strictly largest logit;
-\item $L(\theta_j)\le L_{\entryidx}\big/\bigl(1+\frac{\margin_{\entryidx}^2}{32}\log(1+2L_{\entryidx}\traintime_j/\|V_{\entryidx}\|_F^2)\bigr)$.
-\end{enumerate}
+\begin{theorem}[Step training learns its routing]
+\label{thm:routing}
+Consider counting modulo~$2$ over two letters with a fixed query of probability $p\in(0,1)$, the two-block Transformer of
+\cref{ass:arch} with the segment-masked gate head, and the structured small initialization of \cref{app:routing}. Train in
+four stages: gradient flow on the count readout; one gradient step on the gate readout; one gradient step on $\beta$;
+gradient flow on the readout. There is $\initscale_\star>0$ with $1/\initscale_\star\le C_p(\sqrt w+(\log2n)^{1/4})$, where
+$w$ is the MLP width and $C_p$ depends only on $p$, such that for $0<\initscale\le\initscale_\star$ and the step sizes of
+\cref{app:routing}, with time measured by a clock that adds the two gradient-flow durations and the two step sizes:
+(i)~there is $T\le\mathrm{poly}(n,d_{\mathrm h},\initscale^{-1},(p(1-p))^{-1})$ such that every prediction of
+$\Lstep^{\ge2}$ has positive margin on every prompt at every time $t\ge T$; and
+(ii)~$\Lstep^{\ge2}\to0$.
 \end{theorem}
-The rate in (ii) is a worst case that assumes nothing about how the features move.
 
-\begin{corollary}[Exact generation]
-\label{cor:exact}
-Let $\Lstep^{\mathrm{full}}$ supervise every generated token of the step format: the states, the
-formatting tokens and the final answer. Under the hypotheses of \cref{thm:basin} for
-$\Lstep^{\mathrm{full}}$, greedy decoding generates the exact step continuation on every supported
-prompt at every update $j\ge \entryidx$. If moreover $\traintime_j\to\infty$, then $L(\theta_j)\to0$.
-\end{corollary}
+The proof rests on one identity. At the count-only prior $f_A$, for every bounded feature $\Psi$ of the displayed count,
+the current letter and the other letters, with $y_t,c_t,m_t\in\{\pm1\}$ the signs of the target, the displayed count and
+the current match,
+\begin{equation}
+ \E\bigl[-y_t\operatorname{sigmoid}(-y_tf_A)\,\Psi\bigr]=-\tfrac{1-\mixrate^2}{2}\,\widehat\Psi,
+ \label{eq:identity}
+\end{equation}
+where $\widehat\Psi$ is $\Psi$'s coefficient on $c_tm_t$, the product of the displayed count and the current letter
+(\cref{lem:R-identity}). Everything the prior explains cancels, and what remains is paid once, with factor
+$1-\mixrate^2$. Applied to the bias gradient at $\beta=0$, it shows that one step raises the current letter and the
+count's own position by the same amount to leading order and lowers every other letter, removing the attention on other
+letters while the gate stays balanced; the readout then faces a convex problem, and a second convexity argument keeps
+every margin positive after the burn-in. The one-point analysis follows \citet{kim2024parity} and the one-large-step
+analyses of feature learning \citep{ba2022onestep,damian2022representations}; here the computation is learned rather than
+built into the nonlinearity.
 
-\paragraph{Certifying the middle.} \Cref{thm:basin} makes basin entry checkable run by run. On the
-$20{,}000$ training prompts at $n=16$, AdamW-trained step models enter $\basin(\Lstep)$ and stay certified under
-Armijo descent, while outcome models remain about $10^4$ times above the threshold and at chance on held-out
-prompts (\cref{app:exp-certificate}). We do not prove that step training from $\theta_0$ enters the basin in general.
+\paragraph{The same model under outcome supervision.} In the architecture and from the initialization of
+\cref{thm:routing}, outcome gradient descent on any parameters other than $\beta$ stays near chance for time
+$\Omega(\mixrate^{-n})$ (\cref{cor:routing-outcome}); with only $\beta$ and the readout trained, as in the schedule, the
+outcome logits cannot depend on the prompt at all, because the gate head has no query at the answer position. The two
+guarantees therefore fix the model and the initialization but not the procedure: the step schedule trains $\beta$ with
+two large steps, and a plateau for outcome training that also trains $\beta$ is not proved. Taking
+$\initscale=\min(\initscale_\star,c\mixrate)$, which is $1/\mathrm{poly}(n,w)$, step training reaches positive margins in time
+$\mathrm{poly}(n,d_{\mathrm h},w)$ while outcome training needs time $c\mixrate^{-n}$. The polynomial has high degree, with
+Stage~D alone of order $d_{\mathrm h}\initscale^{-12}$, so at a fixed scale such as $\initscale=0.02$ the guarantees separate
+only for $n$ in the high tens (\cref{rem:routing-scope}); measured step exit times are constant in $n$
+(\cref{fig:theory-measurement}a). With the routing fixed instead of learned, only the last stage is needed and the time is
+$O_p(d_{\mathrm h}\initscale^{-12})$ (\cref{prop:fixed-routing}).
 
-\begin{table}[t]
-\centering\small
-\fitwidth{\begin{tabular}{@{}lcccc@{}}
-\toprule
-part of the gradient at $\theta_0$ & bound scale & $n=4$ & $n=8$ & $n=12$\\
-\midrule
-\multicolumn{5}{@{}l}{\emph{Absorbed by single-position features}}\\
-step: prior & $\initscale\mixrate$ & $3.3\mathrm{e}{-2}$ & $3.3\mathrm{e}{-2}$ & $3.3\mathrm{e}{-2}$\\
-outcome: degrees $0$ and $1$ & $\initscale\mixrate^n$ & $1.6\mathrm{e}{-4}$ & $6.7\mathrm{e}{-6}$ & $3.2\mathrm{e}{-7}$\\
-\midrule
-\multicolumn{5}{@{}l}{\emph{Requires interactions}}\\
-step: rule credit $\|\nabla\rulecredit\|$ & $\initscale^6/n$ & $3.3\mathrm{e}{-9}$ & $1.8\mathrm{e}{-9}$ & $1.1\mathrm{e}{-9}$\\
-outcome: degrees $\ge2$, start state fixed & $\initscale^6\mixrate^{n-3}$ & $1.4\mathrm{e}{-9}$ & $1.9\mathrm{e}{-10}$ & $1.6\mathrm{e}{-11}$\\
-outcome: degrees $\ge2$, uniform start & $\initscale^6\mixrate^{n-3}$ & $2.8\mathrm{e}{-11}$ & $2.6\mathrm{e}{-12}$ & $1.7\mathrm{e}{-13}$\\
-\bottomrule
-\end{tabular}}
-\caption{\textbf{Rule credit has polynomial horizon cost; outcome interaction credit has exponential cost.} Norm of each
-part of the gradient at initialization, with the scale of its theorem bound (constants omitted). Counting, $K=2$, $\mixrate=\frac12$,
-$\initscale=0.02$, exact over all words (\cref{app:exp-regime}).}
-\label{tab:matched}
-\end{table}
+% ===================================================================
+\section{Experiments}
+\label{sec:experiments}
+\label{sec:validation}
 
-
+We first test the bounds inside their assumptions, then AdamW training of the two-block Transformer, then other tasks.
+The AdamW runs use learned absolute positions without the relative bias; protocols are in \cref{app:experiments}.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/main_theory_measurement.pdf}
-\caption{\textbf{Outcome escape slows with the horizon, and its training accuracy tracks the remaining answer bias.}
-(a)~Zero-readout counting, $K=2$, $\mixrate=0.5$, $\initscale=0.002$: accumulated training time to leave the
-initialization ball. Lines show medians over three draws; dots show each draw. The dashed guide scales as
-$\mixrate^{-n}$ and is anchored at $n=4$; it is not a fitted time bound.
-(b)~All $60$ runs in the $20$ horizon--contraction cells: $n\in\{6,8,10,12,16\}$, four alphabets, three seeds,
-$8$k updates. Outcome accuracy approaches chance as $\mixrate^n$ falls; step results remain seed-dependent.
-The dashed curve is the state-only prior accuracy $(1+\mixrate^n)/2$; the dotted line is chance.}
+\caption{\textbf{Outcome escape is slow; outcome training learns the low-degree prior and little else.}
+(a)~Zero-readout counting, $K=2$, $\mixrate=0.5$, $\initscale=0.002$: median exit time and interquartile band over three draws; the dashed $\mixrate^{-n}$ guide is anchored at $n=4$. The step exit reflects fitting the count-only prior, not learning the rule.
+(b)~Outcome exact accuracy after $8$k AdamW updates in $20$ horizon--alphabet cells: means and seed ranges over three seeds; the green curve is the state-only prior $(1+\mixrate^n)/2$, and gray is chance.
+(c)~The same accuracies minus the prior. Correlations use cell means.}
 \label{fig:theory-measurement}
-\end{figure}
-
-\newpage
-\section{Experiments test the mechanism}
-\label{sec:validation}
-
-We test counting first: the bounds inside their assumptions (\cref{app:exp-regime}), then AdamW training of the
-two-block Transformer. These runs use learned absolute positions without the relative bias of \cref{ass:arch}.
-\Cref{sec:beyond} then asks whether the mechanism extends beyond counting; \cref{app:experiments} gives the protocols.
-
-\begin{table}[t]
-\centering\small
-\fitwidth{\begin{tabular}{@{}llccccc@{}}
-\toprule
-Task & Model & $n$ & $\mixrate$ & outcome & step & chance\\
-\midrule
-count mod $2$ & two-block & $16$ & $0.50$ & $49.8$ ($0/10$) & $93.1$ ($8/10$) & $50$\\
-count mod $3$ & two-block & $16$ & $0.66$ & $30$--$50$ & $100$ & $33$\\
-first occurrence (control) & two-block & $8$--$24$ & -- & $71$--$100$ & $80$--$99$ & --\\
-Boolean-8 & GPT-2L & $8$ & $0.82$ & $7.7$ & $82$ & $6.25$\\
-register machine & GPT-2L & $16$ & $0.95$ & $6.3$ & $99.9$ & $5.9$\\
-Boolean-8 & Qwen2.5-0.5B LoRA & $8$ & $0.82$ & $11.1$ & $98.3$ & $6.25$\\
-\midrule
-BBH, $3$ objects & Qwen2.5-0.5B LoRA & $3$ & $0$ & $35.2$ & $98.4$--$100$ & $33$\\
-BBH, $5$ objects & Qwen2.5-0.5B LoRA & $5$ & $0.50$ & $80.0$--$94.4$ & $46$--$100$ & $20$\\
-BBH, $7$ objects & Qwen2.5-0.5B LoRA & $7$ & $0.67$ & $15.2$--$24.4$ & $96.4$--$100$ & $14$\\
-\bottomrule
-\end{tabular}}
-\caption{\textbf{Answers alone fail where the answer has no low-degree part; steps succeed.}
-Accuracy (\%) on held-out prompts, ranges over seeds; the BIG-Bench Hard rows test on the $750$ real
-items. First occurrence keeps a degree-$1$ part at every $n$, and outcome learns it. Counting modulo~$2$: zero readout,
-$8{,}000$ updates for both formats, mean over ten paired seeds (solved seeds in parentheses). Counting modulo~$3$:
-$32$k updates, seeds $42$--$44$. Protocols are in \cref{app:experiments}.}
-\label{tab:main}
-\end{table}
-
-\subsection{Spectra and gradients at initialization}
-
-\paragraph{Predictions 1 and 2: degree mismatch.}
-At initialization, the two-block Transformer's Jacobian puts $99.6\%$ of its mass at
-degree $0$ (\cref{fig:overview}). The targets put most of their mass at high degree.
-
-\paragraph{Prediction 3: gradient decay.}
-Exact sums over prompts give answer-dependent gradient decay of $0.48$--$0.51$ per letter ($\mixrate=0.5$), while the
-step gradient grows $2.4$-fold from $n=2$ to $10$ (\cref{tab:spectrum}).
-
-\subsection{Training}
-
-\paragraph{Zero-readout check.}
-In \cref{fig:overview} the initial readout is zero and both formats share data, initialization and minibatches
-(seeds $42$--$51$): at $n=16$, $K=2$ and $8$k updates, mean exact accuracy is $93.1\%$ for steps and $49.8\%$ for outcomes.
-
-\begin{samepage}
-\paragraph{Prediction 4: plateau and escape.}
-Across $120$ counting runs at $n=6$--$16$, outcome training solves none and step training
-solves $60$ (\cref{app:exp-plateau}).
-Step learning is slow and seed-dependent, as rule credit of order $\initscale^6$ predicts; at $\initscale=0.1$ every
-tested step seed solves. During the outcome plateau, at most $2\times10^{-6}$ of the Jacobian energy lies above
-degree $1$ in the run shown in \cref{tab:main-evidence}.
-\par
-\end{samepage}
-
-\paragraph{Prediction 5: outcome accuracy follows $\mixrate^n$.}
-Varying the alphabet size sets $\mixrate=1-2/A$ for counting modulo $2$. Over $20$ settings of
-$n\in\{6,\ldots,16\}$ and $\mixrate\in\{0.5,\ldots,0.9\}$, outcome accuracy after $8{,}000$ updates
-has Spearman correlation $0.91$ with $\mixrate^n$ and $-0.19$ with $n$ alone (\cref{fig:lambda-grid}).
-It is at chance once $\mixrate^n\le0.04$, and settings with equal $\mixrate^n$ score alike.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.62\linewidth]{figures/lambda_grid.pdf}
-\caption{\textbf{Outcome accuracy is set by $\mixrate^n$, not by $n$.} Counting modulo $2$, held-out exact
-accuracy after $8{,}000$ AdamW updates; mean and range over three seeds per $(n,\mixrate)$ (\cref{app:exp-lambda}).}
 \label{fig:lambda-grid}
 \end{figure}
 
+\paragraph{Inside the theorems' assumptions.} With full-batch gradient descent in float64 and no ReLU unit switching, the
+outcome exit time from the initialization ball grows at least as fast as $\mixrate^{-n}$ while the step exit time stays
+constant (\cref{fig:theory-measurement}a), because the step loss can leave the ball by fitting the count-only prior; halving the update length changes the exit time by less than $1\%$. At
+initialization, $99.6\%$ of the Jacobian's energy is at degree~$0$ (\cref{fig:overview}c), and the answer-dependent
+gradient decays by $0.48$--$0.51$ per letter at $\mixrate=0.5$ (\cref{tab:spectrum}).
 
+\paragraph{Training.} With a zero readout and paired seeds, at $n=16$, $K=2$ and $8$k updates, step training reaches
+$93.1\%$ exact accuracy ($8$ of $10$ seeds above $90\%$) and outcome training $49.8\%$ (none). Across $120$ counting runs at
+$n=6$--$16$ with the default readout, outcome training solves none and step training $60$ within $8$k updates. Step
+training at $\initscale=0.02$ is slow rather than stuck, as its $\initscale^6$ rule credit suggests: every step run of
+\cref{tab:gap}(a) is solved by $16$k updates, and at $\initscale=0.1$, where $\initscale^6$ is $1.6\times10^4$ times larger, every
+step seed solves within $8$k. From initialization through $6$k outcome updates, at most $2.4\times10^{-6}$ of the Jacobian's
+energy lies above degree~$1$ (\cref{app:exp-plateau}). Outcome failure is not universal at moderate $\mixrate^n$: for counting
+modulo~$3$ at $n=8$ ($\mixrate^n\approx0.036$), outcome training solves two of three seeds within $32$k updates.
 
-\subsection{Beyond counting}
-\label{sec:beyond}
+\paragraph{Outcome training learns the low-degree prior.} Varying the alphabet sets $\mixrate=1-2/A$. Over $20$ settings
+of $n\in\{6,\ldots,16\}$ and $\mixrate\in\{0.5,\ldots,0.9\}$, outcome accuracy has Spearman correlation $0.91$ with
+$\mixrate^n$ and $-0.36$ with $n$ alone. Most of this correlation is the state-only prior $(1+\mixrate^n)/2$, which predicting
+from the start count achieves: cell means lie between $2$ points below and $7$ points above it (median $+0.2$), and the excess
+has Spearman correlation only $0.15$ with $\mixrate^n$ (\cref{fig:theory-measurement}b,c). Outcome training thus learns the
+degree-$0$ and $1$ part that the theory says it can reach, and at most a few points beyond it.
 
-The theorems cover counting; the following results are evidence that the mechanism extends, not theorem instances.
-\Cref{tab:main} gives held-out accuracy for Boolean-8 and a reversible register machine, whose answers put $98.9\%$ and
-$99.9\%$ of their variance at degrees $\ge2$, and for first occurrence, a control that keeps a degree-$1$ part at every
-$n$: outcome training fails where the low-degree part is gone and learns the control.
+\paragraph{Learning the routing jointly.} Training the scores, the relative bias and the readout jointly from a fan-in
+random initialization ($\initscale=0.3$), every held-out count prediction becomes correct in $16$ of $17$ runs; the
+remaining run reaches $99.95\%$ (\cref{tab:reach}). The median solve time grows from $44$k updates at $n=6$ to $237$k at
+$n=16$, where a factor $\mixrate^{-n}$ would grow $1{,}024$-fold. AdamW-trained step models at $n=16$ ($K=3$) also enter
+the certified region of their training-set loss (\cref{lem:basin}), while outcome models stay about $10^4$ times
+above its threshold (\cref{app:certificate}).
 
-\paragraph{Prediction 6: real object tracking.}
-We train rank-8 LoRA on generated BIG-Bench Hard tracking\_shuffled\_objects items
-\citep{suzgun2022challenging}. We test on all $750$ real benchmark items.
-At three objects, $\mixrate=0$ and the answer is pure top degree.
-Outcome training stays at the majority-option rate; step training reaches $98$--$100\%$.
-The five- and seven-object results are less uniform (\cref{tab:main}).
-\Cref{sec:discussion} discusses what the low-degree signal can predict.
+\begin{table}[t]
+\centering\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+& $n=6$ & $n=8$ & $n=12$ & $n=16$\\
+\midrule
+solved runs & $5/5$ & $5/5$ & $4/5$ & $2/2$\\
+updates to solve, median (range) & $44$k ($41$--$78$k) & $61$k ($46$--$99$k) & $77$k ($42$--$103$k) & $237$k ($208$--$266$k)\\
+\bottomrule
+\end{tabular}
+\caption{\textbf{Joint step training of the routing solves the task in most runs.} Two-block Transformer
+of \cref{ass:arch}, counting modulo $2$ with $p=\frac14$, training only the scores, the relative bias and the readout by
+full-batch gradient descent (step size $2$) from $\initscale=0.3$; a run is solved when every held-out count prediction is correct.}
+\label{tab:reach}
+\end{table}
 
+\paragraph{Beyond counting.} These results are evidence that the mechanism extends, not instances of the theorems.
+Boolean-8 and a reversible register machine put $98.9\%$ and $99.9\%$ of their answer variance at degrees $\ge2$; outcome
+training fails on both while step training succeeds, and a first-occurrence control, which keeps a degree-$1$ part at
+every $n$, is learned from answers alone (\cref{fig:transfer}, \cref{tab:main}). With rank-8 LoRA on Qwen2.5-0.5B and the
+$750$ real BIG-Bench Hard object-tracking items \citep{suzgun2022challenging}, outcome training stays at the
+majority-option rate at three objects ($\mixrate=0$, the answer is pure top degree) and reaches $15$--$24\%$ at seven, while
+step training reaches $96$--$100\%$ at both. At five objects the pattern breaks: outcome training reaches $80$--$94\%$, and one
+of three step runs fails ($46\%$). Five objects have a smaller low-degree share ($1.56\%$) than seven ($3.34\%$), so $\mixrate^n$
+does not order these sizes; we do not have an explanation.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/main_transfer.pdf}
+\caption{\textbf{Step supervision also helps beyond counting.}
+Held-out answer accuracy for (a)~GPT-2L, (b)~Qwen2.5-0.5B LoRA, and (c)~Qwen2.5-0.5B LoRA on the official $250$ BIG-Bench Hard items at each object count.
+Points show medians, thick intervals the interquartile range, and thin intervals the full seed range; GPT-2L Boolean-8 uses five seeds, other groups three.
+Dashed segments show chance; exact values and protocols are in \cref{tab:main,app:experiments}.}
+\label{fig:transfer}
+\end{figure}
+
+% ===================================================================
 \section{Related work}
 \label{sec:related}
 
-\paragraph{Intermediate supervision.}
-Scratchpads and process supervision
-\citep{nye2021scratchpads,uesato2022solving,wei2022cot,lightman2023verify}
-have been studied through task decomposition \citep{wies2023subtask}, locality
-\citep{prystawski2023think,abbe2024globality} and expressivity
-\citep{feng2023towards,merrill2024expressive}.
-Outcome supervision need not be statistically harder \citep{jia2025verify}.
-Chain supervision can have better sample complexity
-\citep{hanneke2026samplecomplexityautoregressivereasoning}.
-We study how a fixed network distributes gradient credit at initialization.
+\paragraph{Intermediate supervision.} Scratchpads and process supervision
+\citep{nye2021scratchpads,uesato2022solving,wei2022cot,lightman2023verify} have been analysed through task decomposition
+\citep{wies2023subtask}, locality \citep{prystawski2023think,abbe2024globality} and expressivity
+\citep{feng2023towards,merrill2024expressive,malach2023autoregressive}; outcome supervision need not be statistically
+harder \citep{jia2025verify}, and chain supervision can improve sample complexity
+\citep{hanneke2026samplecomplexityautoregressivereasoning,wen2024sparse}; \citet{wen2024sparse} trace the gain to sparse
+dependence between tokens, which the running count makes local. We study how a fixed network distributes gradient credit.
 
-\paragraph{Composed targets and gradient signal.}
-\citet{shalevshwartz2017failures} show exponentially weak target-dependent gradients across families of composed
-targets; we decompose the credit of one fixed target and a concrete Transformer by degree. Staircase and leap analyses
-\citep{abbe2021staircase,abbe2022mergedstaircase,abbe2023sgd} study when SGD learns high-degree targets; for counting
-at $\mixrate>0$ all degrees are present, and their size, not their absence, limits credit. Step targets help with
-parity and group tracking \citep{wen2024sparse,liu2023automata}, and intermediate teacher checkpoints supply
-low-degree signal for sparse parity \citep{panigrahi2025progressive}; we analyze optimization rather than sample complexity.
+\paragraph{Gradient signal for hard targets.} \citet{shalevshwartz2017failures} show exponentially weak target-dependent
+gradients over families of composed targets; we resolve the credit of one fixed target and a concrete Transformer by
+degree. Staircase and leap analyses \citep{abbe2021staircase,abbe2022mergedstaircase,abbe2023sgd} characterize when SGD
+learns high-degree targets; for counting at $\mixrate>0$ every degree is present, and its size, not its absence, limits
+credit. \citet{abbe2025parities} prove that noisy gradient descent on a two-layer network stays at chance on high-degree
+parities under Gaussian initialization, for the correlation loss; \cref{thm:outcome-end} concerns a Transformer under
+cross-entropy, with time $\mixrate^{-n}$ from the contraction of the target. \citet{panigrahi2025progressive} show that
+intermediate teacher checkpoints supply low-degree signal for sparse parity; we analyse optimization rather than sample
+complexity. \citet{li2025noise} use an Efron--Stein decomposition of the target; we decompose both the target and the model
+Jacobian in the same ANOVA basis, so gradient credit is controlled by their degreewise overlap. Closest in spirit,
+\citet{hahn2024sensitive} show that Transformers are biased toward low-sensitivity functions, through a sharpness argument on
+the loss landscape; our degree spectra resolve sensitivity into the per-degree overlap that gradient credit sees, and add a
+time bound. Spectral analyses of simplicity bias \citep{yang2019spectral} find kernel eigenvalues on the Boolean cube that
+decay with degree, consistent with the low-degree Jacobian we measure.
 
-\paragraph{Hardness for a single target.}
-\citet{abbe2025parities} prove that noisy gradient descent on a two-layer network stays at
-chance on high-degree parities for $\exp(o(d))$ steps under Gaussian initialization, while
-Rademacher initialization learns them; their argument is limited to the correlation loss.
-\Cref{thm:outcome-end} concerns one fixed target for a Transformer under cross-entropy and exact
-gradient descent. Its time $\mixrate^{-n}$ comes from the contraction of the target, resolved degree by degree.
+\paragraph{Chain of thought for parity and permutations.} \citet{kim2024parity} prove that a one-layer Transformer with
+position-only attention and a fixed nonlinearity learns parity in one teacher-forced step, and that gradient methods fail
+without intermediate supervision for a parity drawn from a class. We ask why one format succeeds and the other fails for
+one fixed target in a model holding both solutions, with the computation learned. \citet{wang2025compositional} give a
+statistical-query lower bound and a curriculum result for compositions of hidden permutations; our displayed states
+permit constant-depth executors. Counting modulo $K$ is a cyclic-group automaton, for which \citet{liu2023automata} construct
+shallow shortcut Transformers; our outcome executor is such a shortcut, and the question is whether training finds it.
 
-\paragraph{Chain of thought for parity.}
-\citet{kim2024parity} prove that a one-layer Transformer with position-only attention and a fixed
-nonlinearity learns $k$-parity in one teacher-forced gradient step, and that gradient methods
-without intermediate supervision fail for a parity drawn at random from a class. Their signal is
-the degree-$2$ local interaction that our rule credit measures. Our question differs: why one supervision format
-succeeds and the other fails for one fixed target, in a model that contains both solutions. Our negative result
-concerns that fixed target; our positive result is convergence once the loss is small, with basin entry measured
-and conjectured (\cref{conj:reach}).
-
-\paragraph{Permutation learning.}
-\citet{wang2025compositional} give a statistical-query lower bound and a curriculum result for compositions of hidden
-permutations \citep{sanford2024transformers}; our target is fixed and displayed states permit constant-depth executors.
-\citet{li2025noise} decompose the target using Efron--Stein; we also decompose the Jacobian. In single-layer
-Transformers on Markov data the unigram solution can be stationary \citep{makkuva2025attention,makkuva2024local}.
-
-\section{Discussion}
+% ===================================================================
+\section{Conclusion and limitations}
+\label{sec:conclusion}
 \label{sec:discussion}
 
-\paragraph{When do steps help?} Outcome accuracy follows $\mixrate^n$ across horizons and alphabets (\cref{fig:lambda-grid}) and
-sits at chance once $\mixrate^n\le0.04$; five-object BIG-Bench Hard, with a $1.56\%$ low-degree share, is the exception we
-observe. At $\mixrate=0$ (match probability $\frac12$, $K=2$) the answer sits entirely at degree $n$ (\cref{rem:lambda-zero}).
+In one Transformer architecture that holds exact counting solutions for both formats, outcome training provably stays
+near chance for time exponential in the number of letters, while a staged step schedule from a structured initialization
+provably learns its routing and drives $\Lstep^{\ge2}$ to zero, with positive margins after polynomial optimization time. The reason is where the credit lies: every hidden letter costs the answer a factor $\mixrate$, while a running count
+pays $1-\mixrate^2$ once.
 
 \paragraph{Limitations.} \Cref{thm:main,thm:separation,thm:outcome-end} assume small initialization, full-batch gradient
-descent and a fixed ReLU pattern; the AdamW runs leave this regime (\cref{rem:two-block-bias}). Basin entry is a conjecture
-supported by simulations of a one-block reduction (\cref{sec:reach}). Other tasks are tested only empirically.
-
-\paragraph{Conclusion.} In one architecture with exact counting solutions for both formats, outcome training provably
-stays near chance for time exponential in $n$, because the final count starves a fresh Transformer of credit; step
-training provably converges once its loss is small and, in simulation, gets there in time about linear in $n$.
+descent and a fixed ReLU pattern, so the MLPs are linearized; the AdamW experiments leave this regime
+(\cref{rem:two-block-bias}). \Cref{thm:routing} covers counting modulo~$2$ from a structured initialization with a staged
+schedule that trains $\beta$, while the matching outcome plateau holds $\beta$ fixed; its polynomial has high degree in
+$1/\initscale$, so the separation it certifies is asymptotic in $n$. Whether joint gradient descent learns the routing
+from a random initialization in polynomial time is open (\cref{conj:reach}), although it does in our experiments. Outcome
+training solves counting modulo~$3$ at $n=8$ in two of three seeds. Beyond counting, five-object BIG-Bench Hard reverses the
+ordering that $\mixrate^n$ predicts against seven objects, so $\mixrate^n$ is a guide rather than an exact predictor there.

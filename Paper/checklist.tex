@@ -8,7 +8,7 @@
 \item {\bf Claims}
     \item[] Question: Do the main claims made in the abstract and introduction accurately reflect the paper's contributions and scope?
     \item[] Answer: \answerYes{}
-    \item[] Justification: The abstract and the Contributions, Findings and Regime paragraphs of \cref{sec:intro} state the results and their regime: the matching identity for any differentiable model (\cref{thm:damping}), the exact spectrum on permutation tasks (\cref{cor:lambda}), the conditional plateau bound (\cref{thm:plateau-general}), its proof for one attention layer at small initialization under gradient flow (\cref{prop:small-init}), and the corruption identity for local predictors (\cref{thm:robust-grad}). The scope box in \cref{sec:related} separates proved, constructed and measured claims.
+    \item[] Justification: The abstract and the Contributions paragraph of \cref{sec:intro} state each result with its regime: degree-matched credit and the outcome interaction bound (\cref{thm:main}), the step rule credit (\cref{thm:separation}), the outcome plateau (\cref{thm:outcome-end}, \cref{cor:routing-outcome}), and the staged step result (\cref{thm:routing}) with its structured initialization and schedule. \Cref{sec:reach} and \cref{rem:routing-scope} state that the two guarantees fix the model and initialization but not the procedure, and that the polynomial bound separates from the exponential one only asymptotically in $n$. The experimental claims, including exceptions (counting modulo~$3$ at $n=8$, five-object BIG-Bench Hard), are stated in \cref{sec:experiments}.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the abstract and introduction do not include the claims made in the paper.
@@ -20,7 +20,7 @@
 \item {\bf Limitations}
     \item[] Question: Does the paper discuss the limitations of the work performed by the authors?
     \item[] Answer: \answerYes{}
-    \item[] Justification: The scope box and the Limitations paragraph in \cref{sec:related} state that the theory is quantitative at initialization and qualitative during training, that \cref{prop:small-init} covers one attention layer under gradient flow and not AdamW, that the plateau condition for the two-block network is measured, that training data are synthetic, and that the real BIG-Bench Hard items share the training format.
+    \item[] Justification: The Limitations paragraph of \cref{sec:conclusion} states that \cref{thm:main,thm:separation,thm:outcome-end} assume small initialization, full-batch gradient descent and a fixed ReLU pattern (linearized MLPs) that the AdamW runs leave; that \cref{thm:routing} uses a structured initialization and a staged schedule that trains the relative bias while the matching outcome plateau holds it fixed; that the separation is asymptotic; that joint training is a conjecture (\cref{conj:reach}); and that some experiments, including five-object BIG-Bench Hard, do not follow the $\mixrate^n$ ordering.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper has no limitation while the answer \answerNo{} means that the paper has limitations, but those are not discussed in the paper. 
@@ -36,7 +36,7 @@
 \item {\bf Theory assumptions and proofs}
     \item[] Question: For each theoretical result, does the paper provide the full set of assumptions and a complete (and correct) proof?
     \item[] Answer: \answerYes{}
-    \item[] Justification: Every lemma, theorem, proposition and corollary states its assumptions (fixed start state and query, permutation moves, local predictor, small initialization, gradient flow). Full proofs are in \cref{app:architectures,app:damping-proof,app:noise-proofs}, each main-text result has a proof idea, and standard results (Efron--Stein, Jensen, Cauchy--Schwarz, Gr\"onwall) are named where used.
+    \item[] Justification: \Cref{app:formal} states every assumption (\cref{ass:arch,ass:init,ass:task,ass:gd,ass:armijo}); each theorem names the assumptions it uses. Full proofs are in \cref{app:architectures,app:mainproofs,app:routing}, and \cref{app:verify} checks each proved bound against an exact computation.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not include theoretical results. 
@@ -50,7 +50,7 @@
     \item {\bf Experimental result reproducibility}
     \item[] Question: Does the paper fully disclose all the information needed to reproduce the main experimental results of the paper to the extent that it affects the main claims and/or conclusions of the paper (regardless of whether the code and data are provided or not)?
     \item[] Answer: \answerYes{}
-    \item[] Justification: \Cref{sec:setting} and \cref{app:experimental-details} specify tasks, corruption, architectures, optimizer, updates, batch size and seeds, and \cref{app:reproducibility} maps each claim to its code and gives the commands for the main experiments.
+    \item[] Justification: \Cref{sec:setting} and \cref{app:experiments} specify tasks, architectures, initialization, optimizer, updates, batch size and seeds, and \cref{app:reproducibility} gives the scripts and commands for each experiment.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not include experiments.
@@ -70,7 +70,7 @@
 \item {\bf Open access to data and code}
     \item[] Question: Does the paper provide open access to the data and code, with sufficient instructions to faithfully reproduce the main experimental results, as described in supplemental material?
     \item[] Answer: \answerYes{}
-    \item[] Justification: Anonymized code, configurations and result archives are provided. Training data are synthetic and regenerated by the code. The BIG-Bench Hard test items are included unchanged (\cref{app:reproducibility}).
+    \item[] Justification: Anonymized code, configurations and result archives are provided (\cref{app:reproducibility}). Training data are synthetic and regenerated by the code. The BIG-Bench Hard test items are included unchanged.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that paper does not include experiments requiring code.
@@ -87,7 +87,7 @@
 \item {\bf Experimental setting/details}
     \item[] Question: Does the paper specify all the training and test details (e.g., data splits, hyperparameters, how they were chosen, type of optimizer) necessary to understand the results?
     \item[] Answer: \answerYes{}
-    \item[] Justification: Training and evaluation details (train and held-out sizes, optimizer, learning rate, updates, batch size, seeds, tokenization) are in \cref{sec:setting} and \cref{app:experimental-details}.
+    \item[] Justification: Training and evaluation details (train and held-out sizes, optimizer, learning rate, updates, batch size, seeds, tokenization) are in \cref{app:experiments}.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not include experiments.
@@ -98,7 +98,7 @@
 \item {\bf Experiment statistical significance}
     \item[] Question: Does the paper report error bars suitably and correctly defined or other appropriate information about the statistical significance of the experiments?
     \item[] Answer: \answerYes{}
-    \item[] Justification: Tables give per-seed values or the mean and one sample standard deviation over seeds, with the number of seeds in each caption (three for most cells, five or ten for selected cells). Seeds vary the initialization only, so the spread does not include data variability, as \cref{app:experimental-details} states. We report no significance tests.
+    \item[] Justification: Figures show seed ranges or interquartile bands, and tables give per-seed values, ranges or the mean and one sample standard deviation over seeds, with the number of seeds in each caption. Seeds vary the initialization only, so the spread does not include data variability, as \cref{app:experiments} states. We report no significance tests.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not include experiments.
@@ -165,7 +165,7 @@
 \item {\bf Licenses for existing assets}
     \item[] Question: Are the creators or original owners of assets (e.g., code, data, models), used in the paper, properly credited and are the license and terms of use explicitly mentioned and properly respected?
     \item[] Answer: \answerYes{}
-    \item[] Justification: \Cref{app:reproducibility} names the versions and licenses of PyTorch, Transformers, PEFT, SmolLM2-135M, Qwen2.5-0.5B and BIG-Bench Hard, each cited where used.
+    \item[] Justification: \Cref{app:reproducibility} names the versions and licenses of PyTorch, Transformers, PEFT, SmolLM2-135M, Qwen2.5-0.5B and BIG-Bench Hard, each cited.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not use existing assets.
@@ -217,7 +217,7 @@
     \item[] Question: Does the paper describe the usage of LLMs if it is an important, original, or non-standard component of the core methods in this research? Note that if the LLM is used only for writing, editing, or formatting purposes and does \emph{not} impact the core methodology, scientific rigor, or originality of the research, declaration is not required.
     %this research? 
     \item[] Answer: \answerNA{}
-    \item[] Justification: LLMs are not part of the core methods. SmolLM2-135M and Qwen2.5-0.5B appear only as subjects of fine-tuning experiments (\cref{sec:validation}). Any LLM assistance was limited to writing, editing and code support.
+    \item[] Justification: LLMs are not part of the core methods. SmolLM2-135M and Qwen2.5-0.5B appear only as subjects of fine-tuning experiments (\cref{sec:experiments}). Any LLM assistance was limited to writing, editing and code support.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the core method development in this research does not involve LLMs as any important, original, or non-standard components.

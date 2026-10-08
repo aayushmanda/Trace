@@ -1,39 +1,117 @@
 % !TEX root = main.tex
-% Appendix. A: executors. B: theorem arguments followed by technical verification.
-% C: numerical verification of the theory. D: experiments by prediction. E: reproducibility.
-\providecommand{\Zk}{\mathbb Z_K}
+% Appendix. A: formal setup. B: executors. C: credit and plateau proofs. D: numerical checks. E: experiments.
+% F: restricted joint training. G: staged step learning. H: reproducibility.
 \providecommand{\reg}[1]{\ensuremath{\mathsf{#1}}}
-\providecommand{\op}[1]{\textsc{#1}}
 
-\section*{Roadmap}
-\addcontentsline{toc}{section}{Roadmap}
+\section{Formal setup}
+\label{app:formal}
 
-The table maps results to assumptions, proofs and numerical checks.
-\Cref{app:experiments} gives the training protocols and results.
-\Cref{app:reproducibility} lists the code and compute.
+This section states the definitions and assumptions that the main text summarizes.
 
-\begin{center}\small
-\fitwidth{\begin{tabular}{@{}llll@{}}
-\toprule
-Result & Assumptions & Proof & Numerical check\\
-\midrule
-\Cref{eq:grad-split}: credit matches degree & independent moves & \cref{app:tools} & exact gradients, \cref{app:exp-spectra}\\
-\Cref{eq:horizon}: every unseen move costs $\mixrate$ & (A3) & \cref{lem:target-contraction} & \cref{tab:verify}, row 1\\
-\Cref{prop:represent}: both executors in two blocks & (A1) & \cref{app:exact} & \cref{tab:verify}, row 8\\
-\Cref{thm:main}: outcome interaction credit & (A1)--(A3), $0<\mixrate<1$ & \cref{app:thm1} & \cref{tab:verify}, rows 2--3\\
-\Cref{thm:separation}: horizon-free gradient and rule credit & (A1)--(A3), uniform start & \cref{app:thm2} & \cref{tab:verify}, rows 4--7; \cref{app:exp-regime}\\
-\Cref{thm:outcome-end}: outcome never reaches the basin & (A1)--(A3), $\initscale\le c\mixrate$, $\tilde V=0$ & \cref{app:end} & --\\
-\Cref{thm:basin}, \cref{cor:exact}: convergence in the basin & Armijo steps, \cref{ass:armijo} & \cref{app:end} & --\\
-\Cref{conj:reach}: step training reaches its basin & (A1)--(A3), restricted training & open & \cref{app:reach}, \cref{tab:reach}\\
-\bottomrule
-\end{tabular}}
-\end{center}
+\begin{definition}[Outcome and step losses]
+\label{def:losses}
+Let $\bm z_t(\theta)\in\R^K$ be the state logits at the position that predicts $s_t$, and $\bm z_\theta$
+those at the answer position. The \emph{outcome loss} is $\Lout(\theta)=\E[-\log\softmax(\bm z_\theta)_y]$.
+The \emph{step loss} is the teacher-forced loss
+$\Lstep(\theta)=\frac1n\sum_{t=1}^n\E[-\log\softmax(\bm z_t(\theta))_{s_t}]$; $\Lstep^{\ge2}$ averages
+over $t=2,\ldots,n$ only.
+\end{definition}
 
-%=============================================================================
+\begin{definition}[Degree]
+\label{def:degree}
+Fix the start count. The Hoeffding--Efron--Stein (ANOVA) component $f_S$ of a square-integrable function $f$ of the letters has
+\emph{degree} $|S|$, and $(f)_r=\sum_{|S|=r}f_S$. Vector- and matrix-valued functions are decomposed entrywise.
+\end{definition}
+For centred match bits, a sum has degree $1$ and a product of two distinct bits has degree $2$.
+Degree counts input letters, not powers of parameters.
+
+\begin{assumption}[Architecture]
+\label{ass:arch}
+A causal Transformer with two blocks of softmax heads and ReLU MLPs, learned token and position
+embeddings, a learned relative position bias $b_{i-j}$ added to every attention score and initialized at zero, no
+LayerNorm, any widths (residual $d_{\mathrm{res}}$, head $d_{\mathrm h}$, MLP $w$) and a linear readout $V$;
+every logit vector is $\bm z=Vh$ with $h$ independent of $V$. A head may have a fixed, input-independent causal submask;
+ordinary attention uses the full prefix.
+\end{assumption}
+
+\begin{assumption}[Initialization]
+\label{ass:init}
+$\theta_0=\initscale\tilde\theta$ with $\initscale\le\initscale_0:=c\min(1,1/\beta)$, where every weight matrix and embedding block of $\tilde\theta$ has operator norm
+at most $a_0$, every MLP bias satisfies $|\tilde b_m|\ge1$, each MLP bias vector has norm at most $\beta$, and the
+value-token embeddings have smallest singular value at least $\varsigma>0$. We work on
+$\initball=\{\theta:\|\theta-\theta_0\|\le\ballradius\initscale,\ b=0\}$ with $\ballradius=\min(1/8,\varsigma/4)$, where $b$ is the
+relative position bias.
+\end{assumption}
+
+\begin{assumption}[Task]
+\label{ass:task}
+The task is counting modulo $K$ (\cref{def:task}), so $\mixrate<1$.
+\end{assumption}
+
+\begin{assumption}[Training]
+\label{ass:gd}
+Full-batch gradient descent $\theta_{j+1}=\theta_j-\stepsize\nabla L(\theta_j)$ on $\Lout$ or $\Lstep$, with the relative
+position bias held at its zero initialization.
+\end{assumption}
+
+\paragraph{Norms and the relative bias.} The parameter space is normed by the Euclidean norm of the vectorized parameters,
+equivalently the Frobenius norm on each matrix block; unit directions, gradient norms and Hessian quadratic forms refer to
+this norm. In \cref{thm:main,thm:separation,thm:outcome-end} and \cref{prop:rule-lower} the relative bias is fixed at zero,
+which is what $b=0$ in $\initball$ and \cref{ass:gd} encode; the proofs of \cref{app:mainproofs} treat the zero-score
+attention as uniform and do not cover a trained bias. Only \cref{thm:routing}, \cref{tab:reach} and \cref{conj:reach}
+train it. The in-regime runs of \cref{app:exp-regime} have no relative bias.
+
+On $\initball$, no ReLU unit changes sign (\cref{app:network}). Constants $c,C>0$ depend only on $a_0$, $\varsigma$, $K$
+and the numbers of blocks and heads, never on the widths, $n$, $\initscale$ or $\stepsize$. Fan-in-scaled initialization
+satisfies \cref{ass:init} w.h.p.\ at every width, with $a_0$ bounded in terms of the largest block aspect ratio,
+$\varsigma\ge\frac12$ and $\beta\le2\sqrt w$, provided the MLP biases are drawn with $|\tilde b_m|\in[1,2]$, which default
+initializations (zero or small biases) do not do; at the executor width the aspect ratios are bounded, so the theorems
+hold there with $n$-independent constants for $\initscale\le c\min(\mixrate,n^{-1/2})$ (\cref{rem:end-width}).
+
+\paragraph{Contraction.} By \cref{eq:lambda}, $\mixrate^2=1-2p(1-p)(1-\cos\frac{2\pi}K)<1$. Let $\zeta=e^{2\pi\mathrm i/K}$
+in this paragraph. For each nonconstant count mode $j=1,\ldots,K-1$, averaging over one unseen letter multiplies
+$\zeta^{js_t}$ by $1-p+p\zeta^j$, whose magnitude is at most $\mixrate$, so $h$ unseen letters attenuate every centred
+count mode by at most $\mixrate^h$. Conversely, the innovation of one displayed transition satisfies
+\begin{equation}
+ \E\left|\zeta^{j s_t}-(1-p+p\zeta^j)\zeta^{j s_{t-1}}\right|^2
+ =1-|1-p+p\zeta^j|^2\ge1-\mixrate^2,
+ \label{eq:move-variance}
+\end{equation}
+which is \cref{eq:local-variation} in Fourier coordinates. For $K=2$, $\mixrate=|1-2p|$ and $1-\mixrate^2=4p(1-p)$.
+
+\paragraph{Target and Jacobian spectra.} For every set $S$ of letters,
+\begin{equation}
+ \E\bigl\|(y-\bm u)_S\bigr\|^2\le\Bigl(1-\frac1K\Bigr)\mixrate^{2(n-|S|)},
+ \label{eq:horizon}
+\end{equation}
+and counting attains the exponent (\cref{lem:target-contraction,rem:tight}). At uniform prediction,
+\begin{equation}
+ -\dpd{\Lout}{\theta}
+ =\sum_{r=0}^n
+ \E\biggl[
+ \Bigl(\dpd{\bm z_\theta}{\theta}\Bigr)_r^{\!\top}
+ (y-\bm u)_r
+ \biggr],
+ \qquad
+ A_r:=\E\bigl\|(y-\bm u)_r\bigr\|^2,
+ \quad
+ J_r(\theta):=\E\bigl\|(\Jz)_r\bigr\|_F^2,
+ \label{eq:grad-split}
+\end{equation}
+\begin{equation}
+ \text{and the credit at degree } r \text{ is at most } \sqrt{A_rJ_r}.
+ \label{eq:spectra}
+\end{equation}
+The \emph{interaction credit} is the credit at degrees $r\ge2$; write $\outcredit=\cred_{y-\bm u}$. With the state-only
+predictor $q_s=(1-p)\bm e_s+p\bm e_{s+1}=\bar T^\top\bm e_s$, the rule signal is
+$g_t=\bm e_{s_t}-q_{s_{t-1}}=(b_t-p)(\bm e_{s_{t-1}+1}-\bm e_{s_{t-1}})$, and
+$\rulecredit=\E_t\E\langle\bm z_t,g_t\rangle$ with $t$ uniform on $\{2,\ldots,n\}$.
+
 \section{Exact two-block executors}
 \label{app:architectures}
 
-We prove \cref{prop:represent} and list the nonzero parameters.
+We prove \cref{prop:represent}; literal tensor entries are implemented and checked in
+\path{handcoded/construction_from_appendix.py}.
 
 
 \begin{figure}[t]
@@ -130,13 +208,13 @@ With $W_V=E_{\reg a\leftarrow\reg b}$, the head writes the average of register $
 into $\reg a$, up to a small leak. One source is a route and several are an average. A fallback
 $f>i$ gives uniform attention at a position that predicts nothing supervised.
 
-\textbf{Lookup.} Use one unit per input pair.
-For one-hot inputs, let $\mathrm{pre}_{s'x'}=[s=s']+[x=x']-3/2$.
+\textbf{Lookup.} Use one unit per count--bit pair.
+For a displayed count $s$ and bit $b$, with $b\in\{0,1\}$, let $\mathrm{pre}_{s'b'}=[s=s']+[b=b']-3/2$.
 Only the matching pair has positive pre-activation, equal to $1/2$.
-Output weights $2\bm e_{F(s',x')}$ give
+Output weights $2\bm e_{s'+b'}$ give
 
 \begin{equation}
- \textstyle\sum_{s',x'}2\,\bm e_{F(s',x')}\relu(\mathrm{pre}_{s'x'})=\bm e_{F(s,x)}.
+ \textstyle\sum_{s',b'}2\,\bm e_{s'+b'}\relu(\mathrm{pre}_{s'b'})=\bm e_{s+b}.
  \label{eq:lookup}
 \end{equation}
 
@@ -146,7 +224,7 @@ Output weights $2\bm e_{F(s',x')}$ give
 
 \begin{proof}[Proof of \cref{prop:represent}]
 \proofstep{Ideal routing.}
-The parameters in \cref{app:params} give
+The routes and lookups above give
 \begin{align*}
  \reg{match}_{1+t}
  &=2\sum_{a\in\Sigma}\relu([w_t=a]+[q=a]-3/2)=b_t,\\
@@ -170,7 +248,11 @@ For the outcome program,
  \reg{out}_{n+3}&=\sum_{j,a}\bm e_{j+a}[s_0=j][m=a]\\
  &=\bm e_{s_0+m}=\bm e_{s_n}.
 \end{align*}
-All state indices are modulo $K$; the readout in \cref{app:params} supplies formatting and the final answer.
+All state indices are modulo $K$. To gate the outcome equality test by $s_0=j$, add
+$(n+2)([s_0=j]-1)$ to each of its three pre-activations; this disables all other start states.
+A third step head copies the final displayed count to the answer position. A readout of weight $20$ on the
+output register supplies value logits; weight $20$ on the appropriate position coordinates supplies ``:'' and EOS.
+All unused maps are zero.
 
 \proofstep{Finite-score error.}
 With $d=2n+6$ and $\beta_n=\max\{16,3\log(8(n+3))\}$,
@@ -210,120 +292,19 @@ Every greedy prediction remains correct. Induction over the continuation proves 
 \end{proof}
 
 
-\subsection{Explicit parameters}
-\label{app:params}
-
-All unspecified entries are zero. A head is given by its source sets $\mathrm{src}(i)$, fallback $f$ and value map
-(\cref{eq:route}); an MLP unit by its input weights, bias and output weights. The reconstruction script
-(\cref{app:reproducibility}) rebuilds these tensors and checks them against the implementation entry by entry.
-
-\begin{center}\small
-\fitwidth{\begin{tabular}{@{}ll@{}}
-\toprule
-Part & Nonzero entries\\
-\midrule
-Embeddings & $(W_{\mathrm{te}})_{a,\reg{tl}[a]}=(W_{\mathrm{te}})_{|\Sigma|+v,\reg{tv}[v]}=(W_{\mathrm{pe}})_{i,\reg{pos}[i]}=1$\\
-Block 1, head 1 & $\mathrm{src}(1+t)=\{1\}$, $f=0$, $W_V=E_{\reg{qry}\leftarrow\reg{tl}}$\\
-Block 1, MLP ($|\Sigma|$ units $a$) & $(W_{\mathrm{in}})_{a,\reg{tl}[a]}=(W_{\mathrm{in}})_{a,\reg{qry}[a]}=1$, $b_a=-\frac32$, $(W_{\mathrm{out}})_{\reg{match},a}=2$\\
-\midrule
-Step, head 1 & $\mathrm{src}(n+2)=\{0\}$, $\mathrm{src}(n+1+t)=\{n+1+t\}$ ($t\ge2$), $f=1$, $W_V=E_{\reg{prev}\leftarrow\reg{tv}}$\\
-Step, head 2 & $\mathrm{src}(n+1+t)=\{1+t\}$, $f=0$, $W_V=E_{\reg{mt}\leftarrow\reg{match}}$\\
-Step, head 3 & $\mathrm{src}(2n+3)=\{2n+2\}$, $f=1$, $W_V=E_{\reg{out}\leftarrow\reg{tv}}$\\
-Step, MLP ($2K$ units $u=2j+\iota$) & $(W_{\mathrm{in}})_{u,\reg{prev}[j]}=1$, $(W_{\mathrm{in}})_{u,\reg{mt}}=2\iota-1$, $b_u=-\frac12-\iota$, $(W_{\mathrm{out}})_{\reg{out}[j+\iota],u}=2$\\
-\midrule
-Outcome, head 1 & $\mathrm{src}(n+3)=\{2,\ldots,n+1\}$, $f=0$, $W_V=n\,E_{\reg{cnt}\leftarrow\reg{match}}$\\
-Outcome, head 2 & $\mathrm{src}(n+3)=\{0\}$, $f=1$, $W_V=E_{\reg{s0}\leftarrow\reg{tv}}$\\
-Outcome, MLP ($3K(n+1)$ units) & $(W_{\mathrm{in}})_{u,\reg{cnt}}=1$, $(W_{\mathrm{in}})_{u,\reg{s0}[j]}=n+2$, $b_u=\chi-a-(n+2)$, $(W_{\mathrm{out}})_{\reg{out}[j+a],u}=w_\chi$\\
-\midrule
-Readout & $V_{|\Sigma|+v,\reg{out}[v]}=V_{\text{``:''},\reg{pos}[i_:]}=V_{\mathrm{EOS},\reg{pos}[i_E]}=20$\\
-\bottomrule
-\end{tabular}}
-\end{center}
-Outcome units are $u=3((n+1)j+a)+u_{\mathrm{hinge}}$ for $j\in[K]$, $a\in\{0,\ldots,n\}$ and
-$(u_{\mathrm{hinge}},\chi,w_\chi)\in\{(0,1,1),(1,0,-2),(2,-1,1)\}$; the gate $n+2$ disables the equality test
-$[m=a]=\relu(m-a+1)-2\relu(m-a)+\relu(m-a-1)$ unless $s_0=j$, so the table grows with $n$. State indices are modulo $K$,
-and $(i_:,i_E)=(2n+2,2n+4)$ for the step program and $(n+2,n+4)$ for the outcome program.
-
-%=============================================================================
 \section{Proofs of the theorems}
 \label{app:damping-proof}
 \label{app:mainproofs}
 
-\paragraph{Proof map.}
-The outcome theorem pairs the target bound in \cref{lem:target-contraction} with the
-Jacobian bound in \cref{prop:score-degree}, then sums the credit.
-The step theorem reuses the model bound.
-Its local signal instead requires the current move and a state, with a position-selection
-cost of order $1/n$.
-\Cref{app:end} proves the end-of-training results.
-\Cref{app:network} verifies the Transformer bounds after these theorem arguments.
-
-\subsection{Common assumptions and degree calculus}
+\subsection{Degree orthogonality and credit matching}
 \label{app:assumptions}
 
-(A1)--(A4) restate \cref{ass:arch,ass:init,ass:task,ass:gd} with the details the proofs use.
-
-\begin{enumerate}[label=(A\arabic*),leftmargin=*,itemsep=1pt,topsep=2pt]
-\item \emph{Architecture.} Use the two-block causal Transformer of \cref{app:model}.
-Each block has three softmax heads and a ReLU MLP.
-Token and position embeddings are learned. There is no LayerNorm.
-A linear readout produces $K$ value logits $\bm z_\theta$. A relative position bias $b_{i-j}$, initialized at zero, is added to
-every score (\cref{rem:relbias}).
-The widths (residual $d_{\mathrm{res}}$, head $d_{\mathrm h}$, MLP $w$) are arbitrary. Constants do not depend on them;
-see (A2) and \cref{rem:end-width}.
-
-\item \emph{Initialization.} Let $\theta_0=\initscale\tilde\theta$ with fixed $\tilde\theta$ and $\initscale\le\initscale_0$.
-Every weight matrix and embedding block of $\tilde\theta$ has operator norm at most $a_0$.
-Every MLP bias of $\tilde\theta$ has absolute value at least $1$, and each MLP bias vector has Euclidean norm at most $\beta$
-(so $\beta\ge\sqrt w$).
-Its value-token embeddings have smallest singular value at least $\varsigma>0$.
-Constants $c,C,\attconst$ depend only on $a_0$, $\varsigma$, $K$ and the numbers of blocks and heads, never on the widths,
-$n$, $\initscale$ or $\stepsize$. The threshold is $\initscale_0=c\min(1,1/\beta)$; this is the only place the widths enter.
-The bounds below hold on every ball of radius $\ballradius'\initscale$ around $\theta_0$ with
-$\ballradius'\le\min(1/4,\varsigma/2)$. We fix $\ballradius=\min(1/8,\varsigma/4)$ and
-$\initball=\{\theta:\|\theta-\theta_0\|\le\ballradius\initscale\}$, so the ball of radius $2\ballradius\initscale$ is covered too.
-
-\item \emph{Task.} A permutation task with $y=s_n$ and contraction $\mixrate$, with moves that are
-independent and identically distributed given the query.
-\item[(A3$'$)] \emph{Uniform start.} The start state is uniform.
-\item \emph{Training.} Full-batch gradient descent $\theta_{j+1}=\theta_j-\stepsize\,\pd{L}{\theta}(\theta_j)$ with any step size $\stepsize$;
-$j\stepsize$ is the training time after $j$ updates. $\Lout$ is the cross-entropy of the
-answer. For teacher-forced state-token losses $\ell_t$,
-\[
- \Lstep=\frac1n\sum_{t=1}^n\E\ell_t,\qquad
- \Lstep^{\ge2}=\frac1{n-1}\sum_{t=2}^n\E\ell_t.
-\]
-The step-credit theorem and its quantitative checks use $\Lstep^{\ge2}$.
-Formatting tokens and the final answer position are excluded from both state losses.
-\item \emph{Programs.} $\thstep$ and $\thout$ are the exact step and outcome executors of
-\cref{prop:represent}.
-\end{enumerate}
-
-\paragraph{Contraction.} Write $\bm T_x$ for the permutation matrix of move $x$, so that
-$\bm e_{s_t}^\top=\bm e_{s_{t-1}}^\top\bm T_{x_t}$. With the query fixed,
-\begin{equation}
- \overline{\bm T}:=\mathbb E_x\bm T_x,
- \qquad
- \mixrate:=\max_{\bm v\perp\one,\ \|\bm v\|=1}\|\bm v^\top\overline{\bm T}\|,
- \label{eq:lambda}
-\end{equation}
-maximized over queries if the move law depends on the query. Since $\|\bm v^\top\overline{\bm T}\|\le\mathbb E_x\|\bm v^\top\bm T_x\|=\|\bm v\|$,
-always $\mixrate\le1$. With finitely many moves, $\mixrate<1$ if and only if, for every query, the products
-$\bm T_x\bm T_{x'}^{-1}$ generate a group acting transitively on the states \citep{levin2017markov}.
-
-
-
-\begin{remark}[The relative position bias]
-\label{rem:relbias}
-On $\initball$ the bias satisfies $|b|\le\ballradius\initscale$. It does not depend on the input, so it adds no sites. We keep it
-unscaled in the score expansion \cref{eq:score-split}: at $\xi=0$ attention is $\softmax(b)$ instead of uniform, still
-input-independent, so the zero-score network stays affine in the inputs. \Cref{lem:softmax-all} holds at any base point, and
-the coefficient sums of \cref{lem:size} hold for any convex attention weights. A bias direction raises the order of a
-softmax derivative by one with a factor $\|\bm v\|$ and removes no factor $\initscale$, so its tangents obey the bounds of
-\cref{lem:size,lem:support}. Since $\softmax(b)_j\le e^{2\ballradius\initscale}/m_i$, \cref{lem:dilution,lem:dilution-average} hold with
-constants multiplied by $e^{1/4}$. At $\theta_0$ the bias is zero, so \cref{lem:leading} is unchanged. Hence
-\cref{thm:main,thm:separation,thm:outcome-end} hold with the bias, with modified constants.
-\end{remark}
+Write (A1)--(A4) for \cref{ass:arch,ass:init,ass:task,ass:gd}, and (A3$'$) for a uniform start.
+All initialization bounds below hold on the larger ball of radius $2\ballradius\initscale$: its relative radius is
+at most $\min(1/4,\varsigma/2)$. Constants depend only on $a_0,\varsigma,K$ and the numbers of blocks and heads.
+The only width-dependent smallness threshold is $\initscale_0=c\min(1,1/\beta)$.
+The state-credit loss is $\Lstep^{\ge2}$; formatting and final-answer positions are excluded.
+Unless stated otherwise, a fixed query and start count are understood.
 
 \begin{remark}[The bias condition]
 \label{rem:two-block-bias}
@@ -333,17 +314,16 @@ $19$ of the $54$ units per block switch with the letters. This is why those runs
 regime of the theorems, and why \cref{app:exp-regime} repeats the key measurements inside it.
 \end{remark}
 
-\input{notation-table}
 
 \paragraph{Degree calculus.}
 \label{app:tools}
 
-We use the standard Hoeffding--Efron--Stein (ANOVA) decomposition of $L^2$ functions of independent moves
+We use the standard Hoeffding--Efron--Stein (ANOVA) decomposition of $L^2$ functions of independent letters
 \citep{hoeffding1948class,efron1981jackknife,odonnell2014analysis}: $f=\sum_Sf_S$ with
-$f_S=\sum_{U\subseteq S}(-1)^{|S\setminus U|}\E[f\mid x_U]$, orthogonal components, $f_S$ centred in each move of $S$,
-and $f_S=0$ unless $S\subseteq U$ when $f$ depends only on $x_U$.
+$f_S=\sum_{U\subseteq S}(-1)^{|S\setminus U|}\E[f\mid w_U]$, orthogonal components, $f_S$ centred in each letter of $S$,
+and $f_S=0$ unless $S\subseteq U$ when $f$ depends only on $w_U$.
 
-\paragraph{Credit matches degree.} For a matrix-valued $f$ and a vector-valued $g$ of the moves, by
+\paragraph{Credit matches degree.} For a matrix-valued $f$ and a vector-valued $g$ of the letters, by
 orthogonality and Cauchy--Schwarz,
 \begin{gather}
  \mathbb E\bigl[f^\top g\bigr]=\sum_S\mathbb E\bigl[f_S^\top g_S\bigr]=\sum_{r=0}^n\mathbb E\bigl[f_r^\top g_r\bigr],
@@ -352,11 +332,11 @@ orthogonality and Cauchy--Schwarz,
  \label{eq:matching}
 \end{gather}
 At $\hat y=\bm u$ the outcome gradient is $-\pd{\Lout}\theta=\mathbb E[(\Jz)^\top(y-\bm u)]$, so \cref{eq:matching} with $f=\Jz$
-and $g=y-\bm u$ is \cref{eq:grad-split}. No permutation property is used.
+and $g=y-\bm u$ is \cref{eq:grad-split}. This identity uses only independence of the letters.
 
 \begin{lemma}[Gradient split at any parameter value]
 \label{lem:gradient-split}
-For every differentiable model under the independent-move law, with
+For every differentiable model under the independent-letter law, with
 $\outcredit(\theta)=\mathbb E\langle\bm z_\theta,y-\bm u\rangle$,
 \[
  \dpd{\Lout}{\theta}
@@ -364,7 +344,7 @@ $\outcredit(\theta)=\mathbb E\langle\bm z_\theta,y-\bm u\rangle$,
  -\underbrace{\dpd\outcredit\theta}_{\text{answer-dependent}},
 \]
 \[
- \Bigl\|\dpd\outcredit\theta\Bigr\|\le\sqrt{(A_0+A_1)(J_0+J_1)}+\sqrt{(1-\tfrac1K)\,\Jhigh}.
+ \Bigl\|\dpd\outcredit\theta\Bigr\|\le\sqrt{(A_0+A_1)(J_0+J_1)}+\sqrt{(1-\tfrac1K)\,{\sum_{r\ge2}J_r}}.
 \]
 \end{lemma}
 
@@ -374,80 +354,56 @@ Apply \cref{eq:matching} to the degree groups $\{0,1\}$ and $\{\ge2\}$, using
 $\sum_r A_r=\mathbb E\|y-\bm u\|^2=1-1/K$ for the second group.
 \end{proof}
 
-\paragraph{Carbery--Wright inequality \citep{carbery2001distributional}.} A polynomial $f$ of degree $d$
-under a log-concave law satisfies $\Pr[|f|\le t_{\mathrm{CW}}(\mathbb Ef^2)^{1/2}]\le C_{\mathrm{CW}}\,d\,t_{\mathrm{CW}}^{1/d}$, with $C_{\mathrm{CW}}$ absolute.
-
-\subsection{Target spectrum: unseen-move contraction}
+\subsection{Target spectrum: the exact counting formula}
 \label{app:target-spectrum}
 
-Every move outside a component's support is averaged out.
-The next lemma charges one factor $\mixrate$ for each such move.
+All Fourier symbols in this subsection are local: let $\zeta=e^{2\pi\mathrm i/K}$ and
+$\rho_j=1-p+p\zeta^j$ for $j=1,\ldots,K-1$. Then $|\rho_j|\le\mixrate$.
 
-\begin{lemma}[Contraction of the target components]
+\begin{lemma}[Exact target spectrum and contraction]
 \label{lem:target-contraction}
-Assume (A3), and fix the start state and the query. For every $S\subseteq[n]$,
-the target has the product representation \cref{eq:product-rep} and satisfies
+Assume (A3), and fix the start count. For every $S\subseteq[n]$,
 \[
- \mathbb E\|(y-\bm u)_S\|^2\le(1-\tfrac1K)\mixrate^{2(n-|S|)},
- \qquad A_r\le\tbinom nr(1-\tfrac1K)\mixrate^{2(n-r)}.
+ \E\|(y-\bm u)_S\|^2
+ =\frac1K\sum_{j=1}^{K-1}|\rho_j|^{2(n-|S|)}(1-|\rho_j|^2)^{|S|}
+ \le(1-\tfrac1K)\mixrate^{2(n-|S|)},
 \]
+\[
+ A_r=\binom nr\frac1K\sum_{j=1}^{K-1}|\rho_j|^{2(n-r)}(1-|\rho_j|^2)^r
+ \le\binom nr(1-\tfrac1K)\mixrate^{2(n-r)}.
+\]
+At an endpoint, a factor with exponent zero is $1$, including $0^0$.
 \end{lemma}
 
-
 \begin{proof}
-Expand each move into its mean and fluctuation:
-\[
- y^\top=\bm e_{s_0}^\top\prod_{t=1}^n
- [\overline{\bm T}+(\bm T_{x_t}-\overline{\bm T})],\qquad
- \bm P_t^{(S)}=
- \begin{cases}\bm T_{x_t}-\overline{\bm T},&t\in S,\\
- \overline{\bm T},&t\notin S.\end{cases}
-\]
-Each $S$-term is centred in every $x_t$, $t\in S$, and depends only on $x_S$. Hence
+Counting gives $\zeta^{j s_n}=\zeta^{j s_0}\prod_{t=1}^n\zeta^{j b_t}$.
+Expand each factor into its mean $\rho_j$ and centred fluctuation. The term supported on $S$ is
 \begin{equation}
- (y-\bm u)_S^\top=(\bm e_{s_0}-\bm u)^\top\prod_{t=1}^n\bm P_t^{(S)}.
+ (\zeta^{j s_n})_S
+ =\zeta^{j s_0}\rho_j^{n-|S|}\prod_{t\in S}(\zeta^{j b_t}-\rho_j).
  \label{eq:product-rep}
 \end{equation}
-Set $\bm v_0=\bm e_{s_0}-\bm u$, so $\|\bm v_0\|^2=1-\frac1K$, and $\bm v_t^\top=\bm v_{t-1}^\top\bm P_t^{(S)}$; every factor preserves $\one^\perp$.
-For $t\notin S$, $\|\bm v_t\|\le\mixrate\|\bm v_{t-1}\|$ by \cref{def:lambda}. For $t\in S$, $x_t$ is independent of $\bm v_{t-1}$, and
-\cref{eq:move-variance} in the form $\E[\bm\Delta_x\bm\Delta_x^\top]=\bm I-\overline{\bm T}\,\overline{\bm T}^\top$ gives
-$\E_{x_t}\|\bm v_t\|^2=\|\bm v_{t-1}\|^2-\|\bm v_{t-1}^\top\overline{\bm T}\|^2\le\|\bm v_{t-1}\|^2$. Hence
-$\E\|(y-\bm u)_S\|^2\le(1-\frac1K)\mixrate^{2(n-|S|)}$, and summing over $|S|=r$ gives the bound on $A_r$.
+It is centred in each bit in $S$, so it is exactly the Efron--Stein component.
+Independence and $\E|\zeta^{j b_t}-\rho_j|^2=1-|\rho_j|^2$ give its squared norm.
+Parseval over the $K-1$ nonconstant count modes gives the first identity. Its bound follows from
+$|\rho_j|\le\mixrate$ and $1-|\rho_j|^2\le1$. Summing over the $\binom nr$ sets gives the degree spectrum.
 \end{proof}
 
-\begin{remark}[Other permutation tasks]
-\label{rem:permutation}
-\Cref{lem:target-contraction} and every result built on it use only that each move permutes the states and that the moves
-are i.i.d.\ given the query, with $\mixrate$ defined by \cref{eq:lambda}. They therefore hold for any such task, including
-non-commuting moves; counting is the case $\overline{\bm T}=(1-p)\bm I+p\bm T_1$.
-\end{remark}
-
-The step $t\notin S$ is the $L^2$ ($\chi^2$) contraction of a Markov operator \citep{raginsky2016strong,polyanskiy2025information}; the
-KL contraction constant can differ, and we claim no mutual-information bound.
-
-\begin{remark}[Counting, and tightness of the exponent]
+\begin{remark}[Tightness of the exponent]
 \label{rem:tight}
 \label{cor:counting}
-For counting with query frequency $p$, $\overline{\bm T}=(1-p)\bm I+p\bm P_{\mathrm{cyc}}$ is diagonal in the Fourier basis
-$(\bm f_j)_a=\zeta^{ja}/\sqrt K$, $\zeta=e^{2\pi\mathrm i/K}$, with eigenvalues $\mu_j=1-p+p\zeta^j$, so
-\[
- \mixrate=\max_{j\ne0}|\mu_j|=\sqrt{1-2p(1-p)\bigl(1-\cos\tfrac{2\pi}K\bigr)},
- \qquad
- A_r=\tbinom nr\tfrac1K\textstyle\sum_{j\ne0}|\mu_j|^{2(n-r)}(1-|\mu_j|^2)^r .
-\]
-The exponent $n-r$ cannot be improved: with $X_t=\zeta^{b_t}$ and $\nu=\E X_t$, the normalized feature
-$\zeta^{s_0}\prod_{t\in S}(X_t-\nu)$, rotated by $(\nu/|\nu|)^{n-r}$, gives a model $z_a=\theta\operatorname{Re}(\zeta^{-a}\psi_S)$ with
-$|\partial\Lout/\partial\theta|_{\theta=0}=\mixrate^{n-r}(1-\mixrate^2)^{r/2}$. The bound $\sqrt{A_rJ_r}$ is attained by $\bm z_\theta=\theta(y-\bm u)_r$.
-For $K=2$, $A_r/\sum_{r'}A_{r'}$ is the $\mathrm{Binomial}(n,1-\mixrate^2)$ law: each move independently contributes its mean
-(weight $\mixrate^2$) or its fluctuation (weight $1-\mixrate^2$), the product structure of noise stability in Boolean Fourier
-analysis \citep{odonnell2014analysis}, with unseen moves acting as noise of correlation $\mixrate$.
+For a fixed degree $r$, the $j=1$ term in the exact spectrum is
+$\binom nr\mixrate^{2(n-r)}(1-\mixrate^2)^r/K$. Thus the horizon exponent cannot be improved when
+$0<\mixrate<1$. The overlap bound $\sqrt{A_rJ_r}$ is attained by the model
+$\bm z_\theta=\theta(y-\bm u)_r$. For $K=2$, the normalized spectrum is the
+$\mathrm{Binomial}(n,1-\mixrate^2)$ law: each letter contributes its mean with weight $\mixrate^2$ or its
+fluctuation with weight $1-\mixrate^2$ \citep{odonnell2014analysis}.
 \end{remark}
-
 
 \begin{remark}[Control: first occurrence]
 \label{rem:control}
 \label{cor:controls}
-First occurrence is not a permutation task. With query frequency $p$, $\mathbf 1[y=1]=b_1$, so
+First occurrence is a control outside modular counting. With query frequency $p$, $\mathbf 1[y=1]=b_1$, so
 $\mathbb E\|(y-\bm u)_{\{1\}}\|^2\ge p(1-p)$ for every $n$: a degree-$1$ piece that does not decay. Outcome training
 learns it (\cref{tab:main}).
 \end{remark}
@@ -459,7 +415,7 @@ learns it (\cref{tab:main}).
 
 The statement below is the model ingredient used by both credit theorems.
 A score adds at most two sites and costs four powers of $\initscale$.
-Its technical proof is in \cref{app:network}.
+Its proof and the position-selection bound follow below.
 
 \paragraph{The score expansion.} For $\xi\in[0,1]$ let $\bm z(\xi)$ be the network with every score $\psi_{il}$, in both
 blocks, replaced by $\xi\psi_{il}$. Then $\bm z(1)=\bm z_\theta$, and by Taylor's theorem in $\xi$, for every $\bar k\ge0$,
@@ -496,15 +452,159 @@ and the same holds for $\bm z^{[k]},\bm z^{{\mathrm{rem}},\bar k}$ with one more
 \end{proposition}
 
 Fix $\attconst$ large enough for this proposition and the position-selection bound
-\cref{lem:dilution}. It depends on $a_0$, $\varsigma$ and $K$, not on the widths or $n$.
+\cref{prop:network}. It depends on $a_0$, $\varsigma$ and $K$, not on the widths or $n$.
 All theorem-level bounds below use this one constant.
+
+\label{app:network}
+\label{app:two-block}
+\label{app:envelope}
+
+\begin{proposition}[Technical bounds for the score expansion]
+\label{prop:network}
+Under (A1)--(A2), the following bounds hold uniformly on $\initball$, at every position and input.
+Here $x_i$ is the token-plus-position vector, and $\|F\|_{\mathrm{abs}}$ is the sum of monomial norm bounds before
+cancellation; its differentiated version uses the product rule.
+\begin{enumerate}[label=(\roman*),leftmargin=*,itemsep=1pt,topsep=2pt]
+\item With input-independent offsets $\bm O^1=\bm o_1$, $\bm O^2=\bm o_1+\bm o_2$,
+$h_i^\ell=x_i+\bm O^\ell+O(\initscale^2)$, $|\psi_{il}|\le C\initscale^4$,
+$\|\bm z_i\|\le C\initscale^2$ and $\|\partial_v\bm z_i\|\le C\initscale\|v\|$.
+\item For $k\ge1$, $\xi\in[0,1]$ and a unit parameter direction $v$,
+\[
+ \frac{\|\partial_\xi^k\bm z_i\|}{k!}\le C\initscale^3(C_0\initscale^4)^k,
+ \qquad
+ \frac{\|\partial_v\partial_\xi^k\bm z_i\|}{k!}\le C\initscale^2(C_0\initscale^4)^k.
+\]
+The same bounds hold for the absolute coefficient sums at $\xi=0$, and for $h_i^2$ with one fewer power of
+$\initscale$. Taylor remainders obey these bounds with $k=\bar k+1$.
+\item The zero-score network is affine in the inputs. Its transported logit terms have tangent
+$O(\initscale^2)$, while direct-input and input-free terms have tangent $O(\initscale)$.
+An order-$k$ coefficient contains at most $2k+1$ inputs. A one-score logit term has size
+$O(\initscale^7)$ and tangent $O(\initscale^6)$.
+\item With full-prefix attention, terms containing an earlier input $x_l$, $l<i$, gain the factor
+\begin{equation}
+ \kappa_{l,i}=\frac1{m_i}\left(1+\sum_{l<j\le i}\frac1{m_j}\right),\qquad m_i=i+1,
+ \label{eq:dilution}
+\end{equation}
+in the absolute coefficient and tangent bounds of (ii), after enlarging $C_0$.
+\end{enumerate}
+The constants are independent of $n$, the widths and $k$.
+\end{proposition}
+
+\begin{proof}
+\proofstep{Affine blocks and amplitudes.}
+The bias condition gives $|b_m|\ge\initscale/2$ and $|(W_{\mathrm{in}}h)_m|\le C\initscale^2$,
+so one diagonal activation matrix $D$ applies to every input and every $\xi\in[0,1]$.
+Each block is
+\[
+ h_i^\ell=M_\ell(h_i^{\ell-1}+\bm a_i^\ell)+\bm o_\ell,
+ \quad M_\ell=I+W_{\mathrm{out}}^\ell DW_{\mathrm{in}}^\ell,
+ \quad\bm o_\ell=W_{\mathrm{out}}^\ell D\bm b^\ell,
+\]
+where $\bm a_i^\ell=\sum_{\mathrm{heads}}\sum_{j\le i}\alpha_{ij}W_Vh_j^{\ell-1}$ and
+$\alpha_{i\cdot}=\softmax(\xi\psi_{i\cdot})$. Operator norms give
+$\|M_\ell-I\|\le C\initscale^2$, $\|\bm o_\ell\|\le2a_0\beta\initscale^2\le a_0\initscale$ and
+$\|\partial_v\bm o_\ell\|\le(a_0+2\beta)\initscale\|v\|\le C\|v\|$.
+Since attention rows have $\ell_1$ norm $1$, two-block induction gives (i), including its tangent bound.
+All sums over hidden coordinates remain inside operator products; all sums over positions are averages.
+
+\proofstep{Softmax calculus.}
+Writing $\langle f\rangle_\alpha=\sum_j\alpha_jf_j$, the derivative identities are
+\[
+ \partial\alpha[v]_j=\alpha_j(v_j-\langle v\rangle_\alpha),\qquad
+ \partial_v\langle f\rangle_\alpha=\langle vf\rangle_\alpha-\langle v\rangle_\alpha\langle f\rangle_\alpha.
+\]
+After $k$ derivatives, each term has at most $k+1$ averages and contains each direction once.
+The absolute coefficient sum satisfies $a_{k+1}\le2(k+1)a_k$, $a_0=1$. Duality therefore gives
+\begin{equation}
+ \|\partial^k\alpha[v_1,\ldots,v_k]\|_1\le2^k k!\prod_a\|v_a\|_\infty.
+ \label{eq:softmax-avg}
+\end{equation}
+A vector-valued average gains only $\max_j\|f_j\|$. For normalized derivatives $F_k=F^{(k)}/k!$, products use
+convolution, while composition sums over $k_1+\cdots+k_j=k$, $k_a\ge1$. There are
+$\binom{k-1}{j-1}$ such compositions; thus if $\|\partial^jF\|/j!\le A c^j$ and
+$\|h_k\|\le a b^k$, then $\|(F\circ h)_k\|\le Aca b^k(1+ca)^{k-1}$.
+These identities also bound the absolute sums at zero scores.
+
+\proofstep{Derivative induction.}
+Let $H_{\ell,k},\Psi_{\ell,k},Z_k$ be the supremum norms of the normalized $\xi$-derivatives of
+$h_i^\ell,\psi_{ij}^\ell,\bm z_i$, respectively. Let $U_{\ell,k},B_{\ell,k}$ denote the corresponding attention-row
+$\ell_1$ and head-output bounds, and $\Xi_{\ell,k}$ those of $\xi\psi^\ell$. The preceding calculus gives
+\begin{align*}
+ \Psi_{\ell,k}&\le C\initscale^2\sum_{a+b=k}H_{\ell-1,a}H_{\ell-1,b},
+ &\Xi_{\ell,k}&\le\Psi_{\ell,k}+\Psi_{\ell,k-1},\\
+ U_{\ell,k}&\le\sum_{j=1}^k2^j\sum_{a_1+\cdots+a_j=k}\prod_r\Xi_{\ell,a_r},
+ &B_{\ell,k}&\le C\initscale\sum_{a+c=k}U_{\ell,a}H_{\ell-1,c},\\
+ H_{\ell,k}&\le C(H_{\ell-1,k}+B_{\ell,k}),
+ &Z_k&\le C\initscale H_{2,k}.
+\end{align*}
+Here $a_r\ge1$, $U_{\ell,0}=1$ and $H_{0,k}=0$ for $k\ge1$; all suprema cover $\xi\in[0,1]$.
+For $b=C\initscale^4$, block $1$ gives $U_{1,k}\le b^k$ and
+$B_{1,k}+H_{1,k}\le C\initscale^2b^k$. In block $2$,
+$\Psi_{2,k}\le C\initscale^5(k+1)b^k$, hence $\Xi_{2,k}\le C(2b)^k$ and
+$U_{2,k}\le C\sum_{j=1}^k\binom{k-1}{j-1}C^j(2b)^k\le C(Cb)^k$.
+It follows that $B_{2,k}+H_{2,k}\le C\initscale^2(Cb)^k$ and $Z_k\le C\initscale^3(C_0\initscale^4)^k$.
+
+Take one derivative in a unit parameter direction before taking each supremum; denote these tangent bounds by a dot. A product term replaces one factor by its tangent;
+a softmax term replaces one $\Xi$ or gains $\partial^{j+1}\alpha[\partial_v\Xi_{\ell,0},\ldots]$.
+The base bounds are $\dot{H}_{0,0}=O(1)$ and $\dot{\Psi}_{\ell,0}=O(\initscale^3)$.
+The extra factor $j+1\le2^k$ is absorbed into $C_0^k$, giving
+\[
+ \dot{U}_{\ell,k}\le C\initscale^{-1}(C_0\initscale^4)^k,
+ \quad\partial_v B_{\ell,k}+\dot{H}_{\ell,k}\le C\initscale(C_0\initscale^4)^k,
+ \quad\dot{Z}_k\le C\initscale^2(C_0\initscale^4)^k.
+\]
+Taylor's integral remainder is bounded by the supremum of the next normalized derivative.
+At $\xi=0$, uniform averaging satisfies
+$\|m^{-1}\sum_j\prod_rF_r(j)\|_{\mathrm{abs}}\le\prod_r\max_j\|F_r(j)\|_{\mathrm{abs}}$.
+An order-$k$ monomial has $O(k+1)$ parameter/input occurrences; differentiating its norm bound costs at most
+$C(k+1)/\initscale$. Absorbing $k+1\le2^k$ proves the absolute-sum claims in (ii).
+
+\proofstep{Support and one-score terms.}
+At zero scores,
+$h_j^1=M_1(x_j+m_j^{-1}\sum_{l\le j}W_V^1x_l)+\bm o_1$ and
+$\bm z_i^{[0]}=V[M_2(h_i^1+m_i^{-1}\sum_{j\le i}W_V^2h_j^1)+\bm o_2]$.
+Every term is affine; transported terms contain $V,W_V,x_j$ and have tangent $O(\initscale^2)$.
+If $d(F)$ counts input occurrences, induction gives
+$d(h^{\ell,[a]})\le2a+1$, $d(\psi^{\ell,[b]})\le2b+2$ and
+$d((\xi\psi)^{[a]})\le2a$. Thus an order-$k$ head term with
+$a_1+\cdots+a_j+c=k$ uses at most $2a_1+\cdots+2a_j+2c+1=2k+1$ inputs.
+Affine MLPs and parameter derivatives add none. The one-score correction is
+\[
+ \frac1{m_i}\sum_{j\le i}(\psi_{ij}(0)-\bar\psi_i(0))W_Vh_j(0),
+ \qquad\bar\psi_i(0)=\frac1{m_i}\sum_{l\le i}\psi_{il}(0).
+\]
+After readout, its terms contain $V,W_V,W_Q,W_K$ and three residual inputs: size $O(\initscale^7)$ and tangent
+$O(\initscale^6)$. This proves (iii).
+
+\proofstep{Position selection.}
+In block $1$, the relative absolute weight of terms containing $x_l$ is $0$ for $j<l$, $1$ for $j=l$ and
+$C\initscale/m_j$ for $j>l$. In block $2$, choosing an $x_l$ contribution from the query costs
+$C\initscale/m_i$; from key $l$, $1/m_i$; from later keys,
+$(C\initscale/m_i)\sum_{l<j\le i}m_j^{-1}$. The residual path costs $C/m_i$.
+There are $O(k+1)$ factor choices in an order-$k$ term. Multiplying the bounds in (ii) by these weights,
+and absorbing $k+1$ into $C_0^k$, proves (iv), for both coefficients and tangents.
+\end{proof}
+
+\begin{proof}[Proof of \cref{prop:score-degree}]
+A term supported on sites $U$ has zero Efron--Stein component outside $S\subseteq U$, and
+$\sup\|\term_S\|\le2^{|S|}\sup\|\term\|$. Summing costs $\sum_{S\subseteq U}2^{|S|}=3^{|U|}$.
+At the answer position the direct input is fixed, so (iii) gives the zero-score bounds.
+For $k\ge1$, (ii)--(iii) give
+\[
+ \sum_S\sup\|J_S^{[k]}\|_F
+ \le\sqrt K\,3^{2k+1}\|\partial\bm z^{[k]}\|_{\mathrm{abs}}
+ \le C\initscale^2(\attconst\initscale^4)^k,
+ \qquad J_S^{[k]}=0\quad(|S|>2k+1),
+\]
+with $\attconst\ge9C_0$. Part (ii) gives the remainder, and logits gain one power of $\initscale$.
+\end{proof}
 
 \subsection{Spectral overlap: outcome starvation and plateau}
 \label{app:thm1}
 
 We prove the parts of \cref{thm:main} in order.
 
-\paragraph{Spectral overlap.} Set $\rho_\initscale=\attconst\initscale^4$ and $q_{\mathrm{att}}=\rho_\initscale/\mixrate^2$, and let
+\paragraph{Spectral overlap.} In this subsection, set $\rho_\initscale=\attconst\initscale^4$ and $q_{\mathrm{att}}=\rho_\initscale/\mixrate^2$, and let
 $\operatorname{credit}_k=\|\E[(J^{[k]})^\top(y-\bm u)]\|$ be the credit of the $k$-score part of the Jacobian. For $0<\mixrate<1$,
 \cref{lem:target-contraction,prop:score-degree} give
 \begin{equation}
@@ -598,6 +698,237 @@ With a zero readout, the proof of \cref{thm:outcome-end} then allows $j\stepsize
 order at least $\initscale^{-(2n-1)}$. Counting modulo $2$ at match probability $\frac12$ and three-object BIG-Bench Hard are this case.
 \end{remark}
 
+\paragraph{Certified regions and convergence.}
+\label{app:basin-proofs}
+
+\begin{definition}[Supervised loss and certified region]
+\label{def:basin}
+A \emph{supervised loss} is $L(\theta)=\sum_{i\in\items}\pi_i\ell_i(\theta)$ over a finite set $\items$ of
+items, each a prompt with a supervised position, where $\pi_i>0$, $\sum_i\pi_i=1$ and $\ell_i$ is the
+cross-entropy of the gold token. Let $\pimin=\min_i\pi_i$. The \emph{certified region} of $L$ is the sublevel set
+$\basin(L)=\{\theta:L(\theta)<\pimin/4\}$; it is not a basin of attraction in the dynamical sense, but gradient descent with
+backtracking step sizes never leaves it (\cref{lem:basin}).
+\end{definition}
+For $\Lstep$ the items are the pairs $(P,t)$ of a prompt and a state position, with
+$\pi_{(P,t)}=\pi_P/n$, where $\pi_P$ is the probability of prompt $P$; for $\Lout$ there is one item per prompt.
+
+\begin{assumption}[Backtracking step sizes]
+\label{ass:armijo}
+From $\theta_j$, the step size is $\stepsize_j=\bar\stepsize\,b^{u_{\mathrm{bt}}}$ for the smallest
+$u_{\mathrm{bt}}\ge0$ such that
+\begin{equation}
+ L(\theta_j-\stepsize_j\nabla L(\theta_j))\le L(\theta_j)-\tfrac{\stepsize_j}2\|\nabla L(\theta_j)\|^2,
+ \tag{Armijo}\label{eq:descent}
+\end{equation}
+with fixed $\bar\stepsize>0$ and $b\in(0,1)$, and $L$ is continuously differentiable near each iterate.
+\end{assumption}
+This is the Armijo rule \citep{nocedal2006numerical}; with finitely many prompts, $L$ is smooth wherever
+no ReLU pre-activation is exactly zero.
+
+\begin{lemma}[Executors lie in a certified region from which gradient descent converges]
+\label{lem:basin}
+\label{thm:basin}
+Let $L$ be a supervised loss with logits as in \cref{ass:arch}.
+\begin{enumerate}[label=(\roman*),leftmargin=*,itemsep=0pt,topsep=2pt]
+\item For the executors of \cref{prop:represent} and $L\in\{\Lstep,\Lstep^{\mathrm{full}},\Lout\}$ of the matching format,
+replacing the readout $V^\star$ by $aV^\star$ with $a$ large enough gives a point of the open set $\basin(L)$.
+\item Let $\theta_{j+1}=\theta_j-\stepsize_j\nabla L(\theta_j)$ with step sizes as in \cref{ass:armijo} for $j\ge \entryidx$, and
+suppose $\theta_{\entryidx}\in\basin(L)$. Let $L_{\entryidx}=L(\theta_{\entryidx})$,
+$\margin_{\entryidx}=\log(\pimin/(2L_{\entryidx}))$ and $\traintime_j=\sum_{i=\entryidx}^{j-1}\stepsize_i$. Then for every $j\ge \entryidx$,
+$\theta_j\in\basin(L)$, on every item the gold token has the strictly largest logit, and
+$L(\theta_j)\le L_{\entryidx}\big/\bigl(1+\frac{\margin_{\entryidx}^2}{32}\log(1+2L_{\entryidx}\traintime_j/\|V_{\entryidx}\|_F^2)\bigr)$.
+\end{enumerate}
+\end{lemma}
+The rate in (ii) is a worst case that assumes nothing about how the features move.
+
+\begin{corollary}[Exact generation]
+\label{cor:exact}
+Let $\Lstep^{\mathrm{full}}$ supervise every generated token of the step format: the states, the
+formatting tokens and the final answer. Under the hypotheses of \cref{lem:basin}(ii) for
+$\Lstep^{\mathrm{full}}$, greedy decoding generates the exact step continuation on every supported
+prompt at every update $j\ge \entryidx$. If moreover $\traintime_j\to\infty$, then $L(\theta_j)\to0$.
+\end{corollary}
+
+For \cref{thm:outcome-end}: for $\initscale$ below a constant, $\Lout(\theta_j)\ge\log2-\frac14>\pimin/4$ along the iterates
+it covers, so they stay outside $\basin(\Lout)$. For item $i$ with logits $\bm z_i=Vh_i$ and gold token $y_i$, write
+$\hat y_i=\softmax(\bm z_i)$, $q_i=\hat y_{i,y_i}$ and $\margin_i=\min_{a\ne y_i}(z_{i,y_i}-z_{i,a})$.
+
+\begin{lemma}[Cross-entropy margin facts]
+\label{lem:end-barrier}
+\label{lem:end-readout}
+\label{lem:end-nonempty}
+\begin{enumerate}[label=(\roman*),leftmargin=*,itemsep=0pt,topsep=2pt]
+\item If $L(\theta)<\pimin/4$, then for every item $\ell_i<\frac14$, $q_i>\frac12$, and the gold logit is strictly largest with
+$\margin_i\ge\log(\pi_i/(2L(\theta)))\ge\log(\pimin/(2L(\theta)))>\log2$.
+\item If moreover $\margin=\log(\pimin/(2L(\theta)))$, then $\langle V,\nabla_VL\rangle_F\le-\frac\margin2L$ and
+$\|\nabla L\|\ge\|\nabla_VL\|_F\ge\margin L/(2\|V\|_F)$.
+\item If $\theta^\star$ has margin at least $\execmargin>0$ on every item and $\Ktokens$ logits, then replacing $V^\star$ by $aV^\star$ with
+$a>(\execmargin)^{-1}\log(4(\Ktokens-1)/\pimin)$ gives a point of the open set $\basin(L)$. The executors of \cref{prop:represent}
+have $\execmargin>19$ at every supervised position, so this holds for $\Lstep$, $\Lstep^{\mathrm{full}}$ and $\Lout$.
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+(i) $\pi_i\ell_i\le L<\pimin/4$ gives $\ell_i<\frac14$ and $q_i=e^{-\ell_i}>\frac12$. Since
+$\ell_i\ge\log(1+e^{-\margin_i})$, $e^{-\margin_i}\le e^{\ell_i}-1\le2\ell_i\le2L/\pi_i$.
+(ii) As $h_i$ does not depend on $V$, $\langle V,\nabla_V\ell_i\rangle_F=-\langle\bm z_i,\bm e_{y_i}-\hat y_i\rangle
+=-\sum_{a\ne y_i}\hat y_{i,a}(z_{i,y_i}-z_{i,a})\le-\margin_i(1-q_i)\le-\frac12\margin_i\ell_i$, using
+$\ell_i\le(1-q_i)/q_i\le2(1-q_i)$. Weight by $\pi_i$, sum, and apply Cauchy--Schwarz; $V\ne0$ since the logits are not all equal.
+(iii) Scaling $V$ scales every margin by $a$, so $\ell_i\le(\Ktokens-1)e^{-a\execmargin}<\pimin/4$; $\basin(L)$ is open by continuity.
+The executor margin is the finite-score step of the proof of \cref{prop:represent}.
+\end{proof}
+
+\begin{proof}[Proof of \cref{lem:basin}]
+Part~(i) is \cref{lem:end-barrier}(iii). For part~(ii),
+write $L_j=L(\theta_j)$ and $V_j$ for the readout of $\theta_j$. By \cref{eq:descent}, which \cref{ass:armijo} guarantees,
+the losses are non-increasing for $j\ge\entryidx$, so $L_j\le L_{\entryidx}<\pimin/4$ and $\theta_j\in\basin(L)$.
+\Cref{lem:end-barrier}(i) then gives the strict gold logit, every margin is at least $\log(\pimin/(2L_j))\ge\margin_{\entryidx}>\log2$,
+and $V_j\ne0$.
+
+Summing \cref{eq:descent} over $i=\entryidx,\ldots,j-1$ gives $\sum_i\stepsize_i\|\nabla L(\theta_i)\|^2\le2L_{\entryidx}$.
+Since $V$ is a block of $\theta$, the triangle and Cauchy--Schwarz inequalities give
+$\|V_j-V_{\entryidx}\|_F\le\sum_i\stepsize_i\|\nabla L(\theta_i)\|\le(\traintime_j\sum_i\stepsize_i\|\nabla L(\theta_i)\|^2)^{1/2}
+\le(2L_{\entryidx}\traintime_j)^{1/2}$, hence
+\begin{equation}
+ \|V_j\|_F^2\le2\|V_{\entryidx}\|_F^2+4L_{\entryidx}\traintime_j .
+ \label{eq:end-vgrowth}
+\end{equation}
+At each $i\ge\entryidx$, \cref{eq:descent} and \cref{lem:end-barrier}(ii), which applies because $\theta_i\in\basin(L)$, give
+\[
+ L_{i+1}\le L_i-\frac{\stepsize_i}2\|\nabla L(\theta_i)\|^2\le L_i(1-a_iL_i),
+ \qquad a_i:=\frac{\stepsize_i\margin_{\entryidx}^2}{8\|V_i\|_F^2}.
+\]
+Since $L_{i+1}>0$, $0\le a_iL_i<1$, and $1/(1-x)\ge1+x$ gives $1/L_{i+1}\ge1/L_i+a_i$. Sum over $i$, bound $\|V_i\|_F^2$ by
+\cref{eq:end-vgrowth}, and compare the sum with the integral of the decreasing function $\traintime\mapsto1/(a+b\traintime)$,
+where $a=2\|V_{\entryidx}\|_F^2$ and $b=4L_{\entryidx}$, using $\traintime_{i+1}=\traintime_i+\stepsize_i$:
+\[
+ \begin{aligned}
+ \frac1{L_j}&\ge\frac1{L_{\entryidx}}+\frac{\margin_{\entryidx}^2}8\sum_{i=\entryidx}^{j-1}\frac{\stepsize_i}{a+b\traintime_i}
+ \ge\frac1{L_{\entryidx}}+\frac{\margin_{\entryidx}^2}8\int_0^{\traintime_j}\frac{d\traintime}{a+b\traintime}\\
+ &=\frac1{L_{\entryidx}}\Bigl(1+\frac{\margin_{\entryidx}^2}{32}\log\bigl(1+2L_{\entryidx}\traintime_j/\|V_{\entryidx}\|_F^2\bigr)\Bigr).
+ \end{aligned}
+\]
+Inverting gives the rate.
+\end{proof}
+
+\begin{proof}[Proof of \cref{cor:exact}]
+By \cref{lem:basin}(ii) for $\Lstep^{\mathrm{full}}$, at every $j\ge\entryidx$ the gold token has the strictly largest
+teacher-forced logit at every generated position of every supported prompt. Induct on the generated positions: if
+the first $t$ greedy tokens agree with the gold continuation, the prefix is the gold prefix, so the next greedy token
+is the teacher-forced prediction and hence gold. The gold continuation ends in EOS, where greedy decoding stops.
+The limit follows from the rate in \cref{lem:basin}(ii).
+\end{proof}
+
+\paragraph{Exponential plateau.}
+\label{app:end}
+
+\paragraph{Enlarged ball.} For \cref{thm:outcome-end}, take $\ballradius\le\min(1/8,\varsigma/4)$ in (A2) and let
+$\initball'=\{\theta:\|\theta-\theta_0\|\le2\ballradius\initscale,\ b=0\}$. Then $2\ballradius$ satisfies the constraint of (A2),
+so every bound of \cref{app:mainproofs} that holds on $\initball$ also holds on $\initball'$, with constants
+independent of $n$, $\initscale$ and $\stepsize$. A zero readout in $\tilde\theta$ is admissible: (A2) constrains the MLP biases
+and the value-token embeddings, not the readout, and a zero block only lowers the norms in those bounds.
+
+\begin{lemma}[Smoothness near initialization]
+\label{lem:end-smooth}
+Assume (A1) and (A2), with $\initscale\le\initscale_0$. There is $C_1$, independent of $n$ and $\initscale$, such that for every
+$\theta\in\initball'$ and every direction $\bm v$,
+\[
+ \|\nabla \Lout(\theta)\|\le C_1\initscale,
+ \qquad
+ |\partial^2\Lout(\theta)[\bm v,\bm v]|\le C_1\|\bm v\|^2 .
+\]
+\end{lemma}
+
+\begin{proof}
+Along a unit parameter direction, write a profile $(a,b,c)$ for a quantity's value, first derivative and second derivative
+bounds. Parameter blocks have profiles $(a_0\initscale,1,0)$, inputs $(a_0\initscale,2,0)$ and bias vectors
+$(2\beta\initscale,1,0)$. The product rule
+$(FG)''=F''G+2F'G'+FG''$ and the affine-block formula of \cref{prop:network} give the following induction.
+If a residual has profile $(C\initscale,C,C)$, its score has profile
+$(C\initscale^4,C\initscale^3,C\initscale^2)$. By \cref{eq:softmax-avg} for $k=1,2$, an attention row has
+first and second $\ell_1$ derivatives $O(\initscale^3)$ and $O(\initscale^2)$.
+The value vectors have profile $(C\initscale^2,C\initscale,C)$, so their attention average has profile
+$(C\initscale^2,C\initscale,C)$. Finally $M_\ell-I$ has profile
+$(C\initscale^2,C\initscale,C)$ and $\bm o_\ell$ profile $(C\initscale,C,C)$, using
+$\beta\initscale\le1/2$. Thus each residual retains $(C\initscale,C,C)$ and logits have
+$(C\initscale^2,C\initscale,C)$. For cross-entropy,
+\[
+ \ell'=\langle\hat y-\bm e_y,\bm z'\rangle,\qquad
+ \ell''=\bm z'^\top(\operatorname{diag}\hat y-\hat y\hat y^\top)\bm z'
+       +\langle\hat y-\bm e_y,\bm z''\rangle.
+\]
+Use $\|\hat y-\bm e_y\|\le\sqrt2$ and softmax covariance norm at most $1/2$, then average over prompts.
+All position sums use attention-row $\ell_1$ norms, so the constants are independent of $n$ and width.
+\end{proof}
+
+\paragraph{The outcome plateau without a cap.}
+
+\begin{proof}[Proof of \cref{thm:outcome-end}]
+Let $C_1$ be the constant of \cref{lem:end-smooth} and $C_2$ that of \cref{lem:score-sum} on $\initball'$, valid for
+$\initscale\le c\mixrate$, so that $|\outcredit(\theta)|\le C_2\initscale^2\mixrate^n$ on $\initball'$. Take
+$\stepsize\le\stepsize_0:=\min(1,\ballradius)/C_1$ and $c_{\mathrm{time}}:=\ballradius^2/(2C_2)$, and decrease $\initscale_0$
+so that $C_2\initscale_0^2\le1/4$.
+
+For one prompt, $\KL(\bm u\|\hat y)=\log\sum_ae^{z_a}-\log K-\langle\bm u,\bm z\rangle$, so
+$\ell=\log K+\KL(\bm u\|\hat y)-\langle\bm z,\bm e_y-\bm u\rangle$. Taking expectations,
+\begin{equation}
+ \Lout(\theta)=\log K+\E\,\KL(\bm u\,\|\,\hat y_\theta)-\outcredit(\theta).
+ \label{eq:lo-identity}
+\end{equation}
+At $\theta_0$ the readout is zero, so $\bm z=0$, $\hat y=\bm u$ and $\Lout(\theta_0)=\log K$. Since $\KL\ge0$,
+\cref{eq:lo-identity} gives the floor
+\begin{equation}
+ \Lout(\theta)\ge\log K-C_2\initscale^2\mixrate^n,\qquad\theta\in\initball'.
+ \label{eq:lo-floor}
+\end{equation}
+
+We show by induction that $\theta_j\in\initball$ whenever $j\stepsize\le c_{\mathrm{time}}\mixrate^{-n}$. Suppose
+$\theta_0,\ldots,\theta_j\in\initball$ and $(j+1)\stepsize\le c_{\mathrm{time}}\mixrate^{-n}$. For $i\le j$, \cref{lem:end-smooth}
+gives $\|\theta_{i+1}-\theta_i\|=\stepsize\|\nabla\Lout(\theta_i)\|\le\stepsize_0C_1\initscale\le\ballradius\initscale$, so the
+segment from $\theta_i$ to $\theta_{i+1}$ lies in $\initball'$, where $\Lout$ is smooth with Hessian bounded by $C_1$.
+The standard descent lemma for $C_1$-smooth functions \citep{nocedal2006numerical} and $C_1\stepsize\le1$ give
+$\Lout(\theta_{i+1})\le\Lout(\theta_i)-\tfrac\stepsize2\|\nabla\Lout(\theta_i)\|^2$.
+Summing over $i\le j$ and applying \cref{eq:lo-floor} at $\theta_{j+1}\in\initball'$,
+$\frac\stepsize2\sum_{i\le j}\|\nabla\Lout(\theta_i)\|^2\le\Lout(\theta_0)-\Lout(\theta_{j+1})\le C_2\initscale^2\mixrate^n$. By the
+triangle and Cauchy--Schwarz inequalities,
+\[
+ \|\theta_{j+1}-\theta_0\|\le\stepsize\sum_{i\le j}\|\nabla\Lout(\theta_i)\|
+ \le\bigl(2(j+1)\stepsize\,C_2\initscale^2\mixrate^n\bigr)^{1/2}\le\ballradius\initscale
+\]
+by the choice of $c_{\mathrm{time}}$. This closes the induction, and \cref{eq:lo-floor} gives the loss bound.
+
+The descent inequality also gives $\Lout(\theta_j)\le\Lout(\theta_0)=\log K$, so \cref{eq:lo-identity} yields
+$\E\,\KL(\bm u\|\hat y_j)\le\outcredit(\theta_j)\le C_2\initscale^2\mixrate^n$. Since $\hat y_{j,y}-1/K\le\mathrm{TV}(\hat y_j,\bm u)$,
+Pinsker's and Jensen's inequalities give
+\[
+ \E\,\hat y_{j,y}-\frac1K\le\E\sqrt{\tfrac12\KL(\bm u\|\hat y_j)}\le\sqrt{\tfrac12\E\,\KL(\bm u\|\hat y_j)}\le\sqrt{C_2/2}\;\initscale\mixrate^{n/2}.
+\]
+The theorem holds with $c=c_{\mathrm{time}}$, step-size bound $\stepsize_0$ and $C=\max(C_2,\sqrt{C_2/2})$.
+\end{proof}
+
+\begin{remark}[A zero readout leaves \cref{thm:separation} unchanged]
+\label{rem:zero-readout}
+Both formats can therefore share the initialization of \cref{thm:outcome-end}.
+Part~(i) of \cref{thm:separation} uses $\hat y-\bm u=O(\initscale^2)$, which holds exactly at $\theta_0$ when $\tilde V=0$.
+Part~(ii) bounds $\|\nabla\rulecredit\|$ from above on $\initball$ for every readout. Its lower bound uses $F_n$ of
+\cref{lem:leading}, a derivative in one readout entry equal to $\E_t\E[(\bm g_t)_kh^2_{i_t,l}]$. The residual $h^2$ does
+not involve $V$, and $P_n$ depends only on attention and embedding entries, so fixing $\tilde V=0$ changes neither
+the law of $P_n$ nor the event in the lower bound.
+\end{remark}
+
+
+
+\begin{remark}[Gradient flow]
+\label{rem:flow}
+The bounds of \cref{thm:outcome-end} also hold for gradient flow $\dot\theta=-\nabla\Lout(\theta)$ from $\theta_0$, with
+$j\stepsize$ replaced by the time $t$, for all $t\le c\,\mixrate^{-n}$. The proof is the same, with the descent lemma replaced
+by $\frac{d}{dt}\Lout(\theta(t))=-\|\nabla\Lout(\theta(t))\|^2$: while $\theta$ stays in $\initball$,
+$\int_0^t\|\nabla\Lout\|^2\,ds\le C\initscale^2\mixrate^n$ by \cref{eq:lo-floor}, and
+$\|\theta(t)-\theta_0\|\le(t\int_0^t\|\nabla\Lout\|^2\,ds)^{1/2}$ by Cauchy--Schwarz, so the first exit time from
+$\initball$ is at least $c\,\mixrate^{-n}$. This uses only that $\Lout$ is smooth on $\initball'$, which the fixed ReLU
+pattern gives.
+\end{remark}
+
 \subsection{Local targets: step rule credit}
 \label{app:thm2}
 \label{app:separation}
@@ -605,11 +936,11 @@ order at least $\initscale^{-(2n-1)}$. Counting modulo $2$ at match probability 
 
 We first identify contributing terms, then bound a nonzero readout derivative.
 
-\paragraph{Notation.} Let $\bm g_t=\bm e_{s_t}-\overline{\bm T}^\top\bm e_{s_{t-1}}$ and $\rulecredit(\theta)=\mathbb E_t\mathbb E\langle\bm z_t,\bm g_t\rangle$, so $\rulecred:=\|\partial\rulecredit/\partial\theta\|$. Average over $t=2,\ldots,n$.
+\paragraph{Local notation.} Let $\bm g_t=(b_t-p)(\bm e_{s_{t-1}+1}-\bm e_{s_{t-1}})$ and $\rulecredit(\theta)=\mathbb E_t\mathbb E\langle\bm z_t,\bm g_t\rangle$. Average over $t=2,\ldots,n$.
 Letter $w_t$ sits at $l_t=1+t$.
 Position $i_t=n+1+t$ predicts $s_t$ and holds $s_{t-1}$.
 Thus $m_{l_t}=t+2$ and $m_{i_t}=n+2+t$. The tokens visible from $i_t$ are $s_0$, the query, the letters and the displayed
-states, each a function of $(s_0,q,w_{<t})$. \Cref{lem:size,lem:support,lem:dilution} hold at every position.
+states, each a function of $(s_0,q,w_{<t})$. \Cref{prop:network} holds at every position.
 \begin{lemma}[Average positional dilution]
 \label{lem:dilution-average}
 For $n\ge2$ and the step positions above, with $t$ uniform on $\{2,\ldots,n\}$,
@@ -633,6 +964,18 @@ Using $m_j=j+1$, $m_{i_t}\ge n+4$ and an integral bound,
 \end{proof}
 
 
+For completeness, its variance bound uses only counting. In this paragraph let
+$\zeta=e^{2\pi\mathrm i/K}$ and let the unit count mode have coordinates
+$(\bm f_j)_s=\zeta^{-js}/\sqrt K$. Then
+\[
+ \langle\bm f_j,\bm g_t\rangle
+ =\frac{\zeta^{j s_{t-1}}}{\sqrt K}\bigl(\zeta^{j b_t}-(1-p+p\zeta^j)\bigr),
+ \qquad
+ \E|\langle\bm f_j,\bm g_t\rangle|^2
+ =\frac{1-|1-p+p\zeta^j|^2}{K}\ge\frac{1-\mixrate^2}{K}.
+\]
+A uniform start makes the distinct modes uncorrelated, giving the same lower bound in every centred direction.
+
 \begin{lemma}[Only the letter and a state earn rule credit]
 \label{lem:rule-sites}
 Under (A3$'$), a term $\term$ of $\bm z_t$ or $h^2_{i_t}$ has $\mathbb E\langle \term,\bm g_t\rangle=0$ unless it contains the letter input $x_{l_t}$ and
@@ -648,10 +991,10 @@ Let $A$ be the term's input sites. If $l_t\notin A$, condition on $(s_0,q,w_{\ne
 \]
 If $A$ contains no state input, the term is a function of $(q,w)$, and (A3$'$) gives
 \[
- \E[\bm g_t\mid q,w]=\bm u-\overline{\bm T}^\top\bm u=0,
+ \E[\bm g_t\mid q,w]=(b_t-p)(\bm u-\bm u)=0,
  \qquad\E\langle\term,\bm g_t\rangle=0.
 \]
-Every contributing term has at least two sites; \cref{lem:support}(a) excludes $k=0$.
+Every contributing term has at least two sites; \cref{prop:network}(iii) excludes $k=0$.
 \end{proof}
 
 
@@ -664,7 +1007,7 @@ For readout indices $a,b$, let
  \qquad
  \bar\psi^{(0)}_i=\frac1{m_i}\sum_{l\le i}\psi^{(0)}_{il},
 \]
-the one-score term of \cref{lem:support}(c) with every residual replaced by its input, and
+the one-score term of \cref{prop:network}(iii) with every residual replaced by its input, and
 $P_n(\tilde\theta):=\mathbb E_t\,\mathbb E\bigl[(\bm g_t)_a(Q_t)_b\bigr]\big|_{\theta=\tilde\theta}$.
 
 \begin{lemma}[Leading rule coefficient]
@@ -674,7 +1017,7 @@ Assume (A3$'$). Fix a readout entry $V_{ab}$ and define the directional derivati
  F_n(\initscale):=\left.\frac{\partial\rulecredit(\theta)}{\partial V_{ab}}\right|_{\theta=\initscale\tilde\theta}
  =\left.\mathbb E_t\mathbb E[(\bm g_t)_a h^2_{i_t,b}]\right|_{\theta=\initscale\tilde\theta}.
 \]
-The coordinate direction has unit norm, hence $\rulecred(\theta_0)\ge|F_n(\initscale)|$.
+The coordinate direction has unit norm, hence $\|\nabla\rulecredit(\theta_0)\|\ge|F_n(\initscale)|$.
 Let $P_n$ be defined from $Q_t$ above.
 \begin{enumerate}[label=(\roman*),leftmargin=*,itemsep=0pt,topsep=2pt]
  \item $P_n$ is a homogeneous polynomial of degree $6$ in the attention and embedding entries of $\tilde\theta$, the
@@ -693,7 +1036,7 @@ Let $P_n$ be defined from $Q_t$ above.
 \begin{proof}
 \proofstep{(i) Leading term.}
 Take $\bar k=2+\lceil\log_2 n\rceil$ and $\rho_\initscale=\attconst\initscale^4\le1/2$.
-By \cref{lem:rule-sites,lem:dilution,eq:dilution-avg},
+By \cref{lem:rule-sites,prop:network,eq:dilution-avg},
 \begin{align*}
  \E[(\bm g_t)_a h_{i_t,b}^{2,[0]}]&=0,\\
  2C\initscale^2\E_t\kappa_{l_t,i_t}\sum_{k=2}^{\bar k}\rho_\initscale^k
@@ -752,23 +1095,27 @@ The uniform start makes $s_{t-1}$ independent of all letters. Therefore
 \end{proof}
 
 \begin{proof}[Proof of \cref{thm:separation}(i)] At the position $i$ predicting $s_t$,
-$h^{(0)}_i=E_{\mathrm{val}}^\top\bm e_{s_{t-1}}+P\bm e_i$, and \cref{lem:size}(a) gives $h_i=h^{(0)}_i+\bm O^2+O(\initscale^2)$ and $\hat y_i-\bm u=O(\initscale^2)$.
+$h^{(0)}_i=E_{\mathrm{val}}^\top\bm e_{s_{t-1}}+P\bm e_i$, and \cref{prop:network}(i) gives $h_i=h^{(0)}_i+\bm O^2+O(\initscale^2)$ and $\hat y_i-\bm u=O(\initscale^2)$.
 The offset $\bm O^2$ is the same for every prompt, and $\mathbb E[\bm e_{s_t}-\bm u]=0$, so it does not contribute below;
 its product with $\hat y_i-\bm u$ is $O(\initscale^3)$.
-Using $\mathbb E[\bm e_{s_t}-\bm u]=0$ and $\mathbb E[\bm e_{s_t}\bm e_{s_{t-1}}^\top]=\frac1K\overline{\bm T}^\top$,
+Use $\E[\bm e_{s_t}-\bm u]=0$ and define, only in this proof, the count cross-covariance
 \[
- \dpd{\Lstep^{\ge2}}{V}=-\mathbb E\bigl[(\bm e_{s_t}-\bm u)h_i^{(0)\top}\bigr]+O(\initscale^2)=-\bm\Gamma E_{\mathrm{val}}+O(\initscale^2),
- \qquad
- \bm\Gamma=\tfrac1K\bigl(\overline{\bm T}^\top-\tfrac1K\one\one^\top\bigr).
+ \bm\Gamma:=\frac1K\sum_{s=0}^{K-1}
+ \bigl((1-p)\bm e_s+p\bm e_{s+1}-\bm u\bigr)\bm e_s^\top.
+\]
+Then
+\[
+ \dpd{\Lstep^{\ge2}}{V}=-\E\bigl[(\bm e_{s_t}-\bm u)h_i^{(0)\top}\bigr]+O(\initscale^2)
+ =-\bm\Gamma E_{\mathrm{val}}+O(\initscale^2).
 \]
 By (A2), $E_{\mathrm{val}}$ has full row rank and
 $\varsigma_{\min}(E_{\mathrm{val}})\ge\initscale\varsigma/2$ on $\initball$.
-The largest singular value of $\bm\Gamma$ is $\mixrate/K$.
+In the nonconstant count modes, $\bm\Gamma$ has singular values $|1-p+p e^{2\pi\mathrm i j/K}|/K$, so its largest is $\mixrate/K$.
 For $\initscale\le\mixrate\varsigma/(4KC)$, this gives
 \[
  \Bigl\|\dpd{\Lstep^{\ge2}}{\theta}\Bigr\|\ge\Bigl\|\dpd{\Lstep^{\ge2}}{V}\Bigr\|_F\ge\|\bm\Gamma E_{\mathrm{val}}\|_F-C\initscale^2\ge\frac{\initscale\mixrate\varsigma}{4K}.
 \]
-For the outcome bound, \cref{lem:gradient-split,lem:size,lem:score-sum} give, on $\initball$ and for $\initscale\le c\mixrate$,
+For the outcome bound, \cref{lem:gradient-split,prop:network,lem:score-sum} give, on $\initball$ and for $\initscale\le c\mixrate$,
 $\nabla\Lout=\E[(\Jz)^\top(\hat y-\bm u)]-\nabla\outcredit$ with $\sup\|\Jz\|_F\le C\initscale$,
 $\sup\|\hat y-\bm u\|\le C\sup\|\bm z\|\le C\initscale^2$ and $\|\nabla\outcredit\|\le C\initscale\mixrate^n$. Thus
 \begin{equation}
@@ -780,23 +1127,36 @@ $\sup\|\hat y-\bm u\|\le C\sup\|\bm z\|\le C\initscale^2$ and $\|\nabla\outcredi
 
 \begin{proof}[Proof of \cref{thm:separation}(ii)]
 Set $\rho_\initscale=\attconst\initscale^4\le1/2$ and $\bar k=1+\lceil\log_2 n\rceil$.
-By \cref{lem:rule-sites,lem:dilution,lem:dilution-average},
+By \cref{lem:rule-sites,prop:network,lem:dilution-average},
 \begin{align*}
- \rulecred(\theta)
+ \|\nabla\rulecredit(\theta)\|
  &\le2C\initscale^2\E_t\kappa_{l_t,i_t}\sum_{k=1}^{\bar k}\rho_\initscale^k
      +2C\initscale^2\rho_\initscale^{\bar k+1}\\
  &\le C\attconst\initscale^6\left(\E_t\kappa_{l_t,i_t}+2^{-\bar k}\right)
  \le C\attconst\initscale^6\left(\frac6n+\frac1{2n}\right)
  \le\frac{C\initscale^6}{n}.
 \end{align*}
-The remainder uses \cref{lem:size}(b), with constants independent of $\bar k$.
+The remainder uses \cref{prop:network}(ii), with constants independent of $\bar k$.
 \end{proof}
 
 
-\begin{proof}[Proof of \cref{thm:separation}(iii)]
-Fix $n$. The non-bias entries are independent and uniform with variance $1/\text{fan-in}$; the six entries of
+\begin{proposition}[Rule credit at a random initialization]
+\label{prop:rule-lower}
+Consider counting with a fixed query of match probability $p<1/2$, full-prefix attention, fixed MLP biases as in
+\cref{ass:init}, and all weight and embedding entries of $\tilde\theta$ independent and centred uniform with variance $1/\text{fan-in}$
+(embeddings: $1/d_{\mathrm{res}}$). For every $\failprob\in(0,1)$ there is $a_\failprob>0$, depending only on
+$\failprob,p,K$, such that for every $n\ge2$ and every choice of widths with $d_{\mathrm{res}}\ge\max(K,3)$ there is a deterministic
+$\initscale_\failprob=\initscale_\failprob(n,\text{widths})>0$ for which, with probability at least $1-\failprob$ over $\tilde\theta$,
+$\|\nabla\rulecredit(\initscale\tilde\theta)\|\ge a_\failprob\initscale^6/(n\,d_{\mathrm{res}}^3\sqrt{d_{\mathrm h}})$ simultaneously for all $0<\initscale\le\initscale_\failprob$.
+\end{proposition}
+
+\begin{proof}[Proof of \cref{prop:rule-lower}]
+Fix $\failprob,p,K$, then $n$ and the widths. The weight and embedding entries are independent and uniform with variance $1/\text{fan-in}$; the six entries of
 $\mathcal E$ (embeddings and $W_Q,W_K,W_V$) all have variance $1/d_{\mathrm{res}}$.
-The monomial in \cref{lem:leading}(ii) is the unique degree-$6$ term with support $\mathcal E$, so, with
+The monomial in \cref{lem:leading}(ii) is the unique degree-$6$ term with support $\mathcal E$. Since $P_n$ is homogeneous of
+degree $6$ (\cref{lem:leading}(i)) and the entries are independent, centred and symmetric, every other degree-$6$ monomial $m$
+has $\E[m\prod_{y\in\mathcal E}y]=0$: some entry would appear to an odd power. The monomials of $P_n$ are therefore orthogonal to
+this one in $L^2$, so, with
 $a_{\mathrm{w}}:=a_{\mathrm{match}}/d_{\mathrm{res}}^3$,
 \[
  \E P_n(\tilde\theta)^2\ge a_{\mathcal E}^2\prod_{y\in \mathcal E}\E y^2
@@ -806,9 +1166,10 @@ For $t_{\mathrm{CW}}=(\failprob/(12C_{\mathrm{CW}}))^6$, Carbery--Wright gives
 \[
  \Pr\left(|P_n(\tilde\theta)|\ge\frac{t_{\mathrm{CW}} a_{\mathrm{w}}}{n}\right)\ge1-\failprob/2.
 \]
-By \cref{rem:end-width}, with probability at least $1-\failprob/2$ the matrix and embedding blocks of $\tilde\theta$ satisfy
-(A2) with $a_0,\varsigma$ depending only on $\failprob$, $K$ and the aspect ratios. On this event the constants of
-\cref{lem:leading}(i) are common. Choose
+For these fixed dimensions, choose deterministic bounds $a_0,\varsigma>0$ such that the matrix and embedding blocks satisfy
+(A2) with probability at least $1-\failprob/2$. Such bounds exist because their norms are finite and the value-token embedding block
+has full row rank almost surely when $d_{\mathrm{res}}\ge K$; \cref{rem:end-width} gives quantitative bounds at larger widths.
+On this event the constants of \cref{lem:leading}(i) are common. The condition $d_{\mathrm{res}}\ge3$ permits the three coordinates in $\mathcal E$. Choose
 \[
  \initscale_\failprob=\min\left\{\initscale_0,
     \frac{t_{\mathrm{CW}} a_{\mathrm{w}}\initscale_0}{4C'},
@@ -819,232 +1180,24 @@ On both events, for every $\initscale\le\initscale_\failprob$,
  |\varrho_n(\initscale)|
  &\le\frac{C'}{\initscale_0}\frac{\initscale^7}n+\frac{C\initscale^{10}}n
  \le\frac{t_{\mathrm{CW}} a_{\mathrm{w}}}{2}\frac{\initscale^6}n,\\
- \rulecred(\theta_0)&\ge|F_n(\initscale)|
+ \|\nabla\rulecredit(\theta_0)\|&\ge|F_n(\initscale)|
  \ge\initscale^6|P_n|-|\varrho_n(\initscale)|
  \ge\frac{t_{\mathrm{CW}} a_{\mathrm{w}}}{2}\frac{\initscale^6}n
  =a_\failprob\frac{\initscale^6}{n\,d_{\mathrm{res}}^3\sqrt{d_{\mathrm h}}},
 \end{align*}
 with $a_\failprob=t_{\mathrm{CW}}\,p(1-p)\min(1-2p,\frac14)/(6K)$, which does not depend on the widths. The threshold
-$\initscale_\failprob$ depends on them only through $a_{\mathrm w}$, $\initscale_0$ and the aspect ratios, polynomially.
+$\initscale_\failprob$ is chosen before the random draw and may depend on $n$ and the widths through $a_{\mathrm w}$,
+$\initscale_0$ and the block aspect ratios. The probability event above is for each fixed $n$ and set of widths,
+and is simultaneous over $0<\initscale\le\initscale_\failprob$; no intersection over all $n$ is asserted.
 The factor $d_{\mathrm{res}}^{-3}$ comes from retaining one monomial and is conservative.
 \end{proof}
 
 
 %-----------------------------------------------------------------------------
-\subsection{End of training: basins and the outcome plateau}
-\label{app:end}
+\paragraph{Carbery--Wright inequality \citep{carbery2001distributional}.} A polynomial $f$ of degree $d$
+under a log-concave law satisfies $\Pr[|f|\le t_{\mathrm{CW}}(\mathbb Ef^2)^{1/2}]\le C_{\mathrm{CW}}\,d\,t_{\mathrm{CW}}^{1/d}$, with $C_{\mathrm{CW}}$ absolute.
 
-This subsection proves \cref{thm:outcome-end,thm:basin,cor:exact}. The table lists what each result uses.
-
-\begin{center}\small
-\fitwidth{\begin{tabular}{@{}lll@{}}
-\toprule
-Result & Uses & Hypotheses\\
-\midrule
-\Cref{lem:end-barrier}: cross-entropy margin facts & definitions, proof of \cref{prop:represent} & $L(\theta)<\pimin/4$, logits $Vh$\\
-\Cref{thm:basin}: convergence in the basin & \cref{lem:end-barrier} & \cref{eq:descent} for $j\ge \entryidx$, $\theta_{\entryidx}\in\basin(L)$\\
-\Cref{cor:exact}: exact generation & \cref{thm:basin} & as \cref{thm:basin}, for $\Lstep^{\mathrm{full}}$\\
-\Cref{lem:end-smooth}: smoothness near $\theta_0$ & \cref{lem:softmax-all}, fixed ReLU pattern & (A1), (A2) on $\initball'$\\
-\Cref{thm:outcome-end}: outcome does not converge & \cref{lem:score-sum,lem:end-smooth}, Pinsker & (A1)--(A3), $\initscale\le c\mixrate$, $\tilde V=0$\\
-\bottomrule
-\end{tabular}}
-\end{center}
-
-\paragraph{Setting.} $L=\sum_{i\in\items}\pi_i\ell_i$ is a supervised loss as in \cref{sec:end}.
-For item $i$ with logits $\bm z_i=Vh_i$ and gold token $y_i$, write
-$\hat y_i=\softmax(\bm z_i)$, $q_i=\hat y_{i,y_i}$ and
-$\margin_i=\min_{a\ne y_i}(z_{i,y_i}-z_{i,a})$.
-
-\begin{lemma}[Cross-entropy margin facts]
-\label{lem:end-barrier}
-\label{lem:end-readout}
-\label{lem:end-nonempty}
-\begin{enumerate}[label=(\roman*),leftmargin=*,itemsep=0pt,topsep=2pt]
-\item If $L(\theta)<\pimin/4$, then for every item $\ell_i<\frac14$, $q_i>\frac12$, and the gold logit is strictly largest with
-$\margin_i\ge\log(\pi_i/(2L(\theta)))\ge\log(\pimin/(2L(\theta)))>\log2$.
-\item If moreover $\margin=\log(\pimin/(2L(\theta)))$, then $\langle V,\nabla_VL\rangle_F\le-\frac\margin2L$ and
-$\|\nabla L\|\ge\|\nabla_VL\|_F\ge\margin L/(2\|V\|_F)$.
-\item If $\theta^\star$ has margin at least $\execmargin>0$ on every item and $\Ktokens$ logits, then replacing $V^\star$ by $aV^\star$ with
-$a>(\execmargin)^{-1}\log(4(\Ktokens-1)/\pimin)$ gives a point of the open set $\basin(L)$. The executors of \cref{prop:represent}
-have $\execmargin>19$ at every supervised position, so this holds for $\Lstep$, $\Lstep^{\mathrm{full}}$ and $\Lout$.
-\end{enumerate}
-\end{lemma}
-
-\begin{proof}
-(i) $\pi_i\ell_i\le L<\pimin/4$ gives $\ell_i<\frac14$ and $q_i=e^{-\ell_i}>\frac12$. Since
-$\ell_i\ge\log(1+e^{-\margin_i})$, $e^{-\margin_i}\le e^{\ell_i}-1\le2\ell_i\le2L/\pi_i$.
-(ii) As $h_i$ does not depend on $V$, $\langle V,\nabla_V\ell_i\rangle_F=-\langle\bm z_i,\bm e_{y_i}-\hat y_i\rangle
-=-\sum_{a\ne y_i}\hat y_{i,a}(z_{i,y_i}-z_{i,a})\le-\margin_i(1-q_i)\le-\frac12\margin_i\ell_i$, using
-$\ell_i\le(1-q_i)/q_i\le2(1-q_i)$. Weight by $\pi_i$, sum, and apply Cauchy--Schwarz; $V\ne0$ since the logits are not all equal.
-(iii) Scaling $V$ scales every margin by $a$, so $\ell_i\le(\Ktokens-1)e^{-a\execmargin}<\pimin/4$; $\basin(L)$ is open by continuity.
-The executor margin is the finite-score step of the proof of \cref{prop:represent}.
-\end{proof}
-
-\paragraph{Convergence in the basin.}
-
-\begin{proof}[Proof of \cref{thm:basin}]
-Write $L_j=L(\theta_j)$ and $V_j$ for the readout of $\theta_j$. By \cref{eq:descent}, which \cref{ass:armijo} guarantees,
-the losses are non-increasing for $j\ge\entryidx$, so $L_j\le L_{\entryidx}<\pimin/4$ and $\theta_j\in\basin(L)$.
-\Cref{lem:end-barrier} then gives part~(i), every margin is at least $\log(\pimin/(2L_j))\ge\margin_{\entryidx}>\log2$,
-and $V_j\ne0$.
-
-Summing \cref{eq:descent} over $i=\entryidx,\ldots,j-1$ gives $\sum_i\stepsize_i\|\nabla L(\theta_i)\|^2\le2L_{\entryidx}$.
-Since $V$ is a block of $\theta$, the triangle and Cauchy--Schwarz inequalities give
-$\|V_j-V_{\entryidx}\|_F\le\sum_i\stepsize_i\|\nabla L(\theta_i)\|\le(\traintime_j\sum_i\stepsize_i\|\nabla L(\theta_i)\|^2)^{1/2}
-\le(2L_{\entryidx}\traintime_j)^{1/2}$, hence
-\begin{equation}
- \|V_j\|_F^2\le2\|V_{\entryidx}\|_F^2+4L_{\entryidx}\traintime_j .
- \label{eq:end-vgrowth}
-\end{equation}
-At each $i\ge\entryidx$, \cref{eq:descent} and \cref{lem:end-barrier}(ii), which applies because $\theta_i\in\basin(L)$, give
-\[
- L_{i+1}\le L_i-\frac{\stepsize_i}2\|\nabla L(\theta_i)\|^2\le L_i(1-a_iL_i),
- \qquad a_i:=\frac{\stepsize_i\margin_{\entryidx}^2}{8\|V_i\|_F^2}.
-\]
-Since $L_{i+1}>0$, $0\le a_iL_i<1$, and $1/(1-x)\ge1+x$ gives $1/L_{i+1}\ge1/L_i+a_i$. Sum over $i$, bound $\|V_i\|_F^2$ by
-\cref{eq:end-vgrowth}, and compare the sum with the integral of the decreasing function $\traintime\mapsto1/(a+b\traintime)$,
-where $a=2\|V_{\entryidx}\|_F^2$ and $b=4L_{\entryidx}$, using $\traintime_{i+1}=\traintime_i+\stepsize_i$:
-\[
- \begin{aligned}
- \frac1{L_j}&\ge\frac1{L_{\entryidx}}+\frac{\margin_{\entryidx}^2}8\sum_{i=\entryidx}^{j-1}\frac{\stepsize_i}{a+b\traintime_i}
- \ge\frac1{L_{\entryidx}}+\frac{\margin_{\entryidx}^2}8\int_0^{\traintime_j}\frac{d\traintime}{a+b\traintime}\\
- &=\frac1{L_{\entryidx}}\Bigl(1+\frac{\margin_{\entryidx}^2}{32}\log\bigl(1+2L_{\entryidx}\traintime_j/\|V_{\entryidx}\|_F^2\bigr)\Bigr).
- \end{aligned}
-\]
-Inverting gives part~(ii).
-\end{proof}
-
-\begin{proof}[Proof of \cref{cor:exact}]
-By \cref{thm:basin}(i) for $\Lstep^{\mathrm{full}}$, at every $j\ge\entryidx$ the gold token has the strictly largest
-teacher-forced logit at every generated position of every supported prompt. Induct on the generated positions: if
-the first $t$ greedy tokens agree with the gold continuation, the prefix is the gold prefix, so the next greedy token
-is the teacher-forced prediction and hence gold. The gold continuation ends in EOS, where greedy decoding stops.
-\end{proof}
-
-\paragraph{Enlarged ball.} For \cref{thm:outcome-end}, take $\ballradius\le\min(1/8,\varsigma/4)$ in (A2) and let
-$\initball'=\{\theta:\|\theta-\theta_0\|\le2\ballradius\initscale\}$. Then $2\ballradius$ satisfies the constraint of (A2),
-so every bound of \cref{app:mainproofs} that holds on $\initball$ also holds on $\initball'$, with constants
-independent of $n$, $\initscale$ and $\stepsize$. A zero readout in $\tilde\theta$ is admissible: (A2) constrains the MLP biases
-and the value-token embeddings, not the readout, and a zero block only lowers the norms in those bounds.
-
-\begin{lemma}[Smoothness near initialization]
-\label{lem:end-smooth}
-Assume (A1) and (A2), with $\initscale\le\initscale_0$. There is $C_1$, independent of $n$ and $\initscale$, such that for every
-$\theta\in\initball'$ and every direction $\bm v$,
-\[
- \|\nabla \Lout(\theta)\|\le C_1\initscale,
- \qquad
- |\partial^2\Lout(\theta)[\bm v,\bm v]|\le C_1\|\bm v\|^2 .
-\]
-\end{lemma}
-
-\begin{proof}
-Fix a unit direction $\bm v$ and write $F'$, $F''$ for derivatives along $\xi\mapsto\theta+\xi\bm v$. Say $F$ has
-\emph{profile} $(a,b,c)$ if $\|F\|\le a$, $\|F'\|\le b$ and $\|F''\|\le c$ on $\initball'$ for every input; each $C$ below
-is independent of $n$, $\initscale$, the widths, the input and the position. Every weight matrix and embedding block has
-profile $(a_0\initscale,1,0)$, with $a_0$ as in \cref{app:network}, every bias vector has profile $(2\beta\initscale,1,0)$, and every input $x_j=E\bm e_{\mathrm{tok}_j}+P_{\mathrm{pos}}\bm e_j$ has profile
-$(a_0\initscale,2,0)$. By the product rule $(FG)''=F''G+2F'G'+FG''$, a bilinear product of norm at most $1$ of factors
-with profiles $(a_F,b_F,c_F)$ and $(a_G,b_G,c_G)$ has profile $(a_Fa_G,\,b_Fa_G+a_Fb_G,\,c_Fa_G+2b_Fb_G+a_Fc_G)$.
-
-We show by induction over the blocks that every residual $h^\ell_i$ has profile $(C\initscale,C,C)$; for $\ell=0$ this is
-the input bound. The score $\psi_{ij}=(W_Qh_i)^\top W_Kh_j/\sqrt{d_{\mathrm h}}$ is a product of four factors of profile
-$(C\initscale,C,C)$, so $|\psi_{ij}|\le C\initscale^4$, $|\psi_{ij}'|\le C\initscale^3$ and $|\psi_{ij}''|\le C\initscale^2$,
-since a second derivative leaves at least two factors undifferentiated. By \cref{lem:softmax-all} with $k=1,2$, the
-attention row satisfies $\|\alpha_{i\cdot}'\|_1\le2\|\psi_{i\cdot}'\|_\infty\le C\initscale^3$ and
-$\|\alpha_{i\cdot}''\|_1\le8\|\psi_{i\cdot}'\|_\infty^2+2\|\psi_{i\cdot}''\|_\infty\le C\initscale^2$ on any number of positions,
-and $\|\alpha_{i\cdot}\|_1=1$. A head output $\bm a_i=\sum_{j\le i}\alpha_{ij}\bm u_j$ with $\bm u_j=W_Vh_j$ of profile
-$(C\initscale^2,C\initscale,C)$ therefore satisfies
-\[
- \|\bm a_i''\|\le\|\alpha_{i\cdot}''\|_1\max_j\|\bm u_j\|+2\|\alpha_{i\cdot}'\|_1\max_j\|\bm u_j'\|+\max_j\|\bm u_j''\|\le C,
-\]
-and similarly $\|\bm a_i\|\le C\initscale^2$ and $\|\bm a_i'\|\le C\initscale$; only $\ell_1$ norms of attention rows enter, so
-the bounds do not depend on the number of positions. On $\initball'$ the ReLU pattern is fixed, so
-$h^\ell_i=(h^{\ell-1}_i+\bm a^\ell_i)+(M_\ell-I)(h^{\ell-1}_i+\bm a^\ell_i)+\bm o_\ell$, where $M_\ell-I=W_{\mathrm{out}}DW_{\mathrm{in}}$
-has profile $(C\initscale^2,C\initscale,C)$ and $\bm o_\ell=W_{\mathrm{out}}D\bm b$ has profile $(C\initscale,C,C)$, since
-$\beta\initscale\le\beta\initscale_0\le\frac12$. The product
-rule gives $h^\ell_i$ profile $(C\initscale,C,C)$, which completes the induction.
-
-The logits $\bm z=Vh^2$ then have profile $(C\initscale^2,C\initscale,C)$. For one prompt, $\ell=\log\sum_ae^{z_a}-z_y$, so
-\[
- |\ell'|=|\langle\hat y-\bm e_y,\bm z'\rangle|\le\sqrt2\,C\initscale,
- \qquad
- |\ell''|=\bigl|\bm z'^\top(\operatorname{diag}\hat y-\hat y\hat y^\top)\bm z'+\langle\hat y-\bm e_y,\bm z''\rangle\bigr|
- \le\tfrac12C^2\initscale^2+\sqrt2\,C,
-\]
-using $\|\hat y-\bm e_y\|\le\sqrt2$ and that the softmax covariance has operator norm at most $1/2$: for a unit $v$,
-$v^\top(\operatorname{diag}\hat y-\hat y\hat y^\top)v=\operatorname{Var}_{\hat y}(v)\le\frac14(\max_av_a-\min_av_a)^2\le\frac12$.
-Averaging over prompts and taking the supremum over unit $\bm v$ gives the claim with $C_1=\frac12C^2+\sqrt2C$.
-\end{proof}
-
-\paragraph{The outcome plateau without a cap.}
-
-\begin{proof}[Proof of \cref{thm:outcome-end}]
-Let $C_1$ be the constant of \cref{lem:end-smooth} and $C_2$ that of \cref{lem:score-sum} on $\initball'$, valid for
-$\initscale\le c\mixrate$, so that $|\outcredit(\theta)|\le C_2\initscale^2\mixrate^n$ on $\initball'$. Take
-$\stepsize\le\stepsize_0:=\min(1,\ballradius)/C_1$ and $c_{\mathrm{time}}:=\ballradius^2/(2C_2)$, and decrease $\initscale_0$
-so that $C_2\initscale_0^2\le1/4$.
-
-For one prompt, $\KL(\bm u\|\hat y)=\log\sum_ae^{z_a}-\log K-\langle\bm u,\bm z\rangle$, so
-$\ell=\log K+\KL(\bm u\|\hat y)-\langle\bm z,\bm e_y-\bm u\rangle$. Taking expectations,
-\begin{equation}
- \Lout(\theta)=\log K+\E\,\KL(\bm u\,\|\,\hat y_\theta)-\outcredit(\theta).
- \label{eq:lo-identity}
-\end{equation}
-At $\theta_0$ the readout is zero, so $\bm z=0$, $\hat y=\bm u$ and $\Lout(\theta_0)=\log K$. Since $\KL\ge0$,
-\cref{eq:lo-identity} gives the floor
-\begin{equation}
- \Lout(\theta)\ge\log K-C_2\initscale^2\mixrate^n,\qquad\theta\in\initball'.
- \label{eq:lo-floor}
-\end{equation}
-
-We show by induction that $\theta_j\in\initball$ whenever $j\stepsize\le c_{\mathrm{time}}\mixrate^{-n}$. Suppose
-$\theta_0,\ldots,\theta_j\in\initball$ and $(j+1)\stepsize\le c_{\mathrm{time}}\mixrate^{-n}$. For $i\le j$, \cref{lem:end-smooth}
-gives $\|\theta_{i+1}-\theta_i\|=\stepsize\|\nabla\Lout(\theta_i)\|\le\stepsize_0C_1\initscale\le\ballradius\initscale$, so the
-segment from $\theta_i$ to $\theta_{i+1}$ lies in $\initball'$, where $\Lout$ is smooth with Hessian bounded by $C_1$.
-The standard descent lemma for $C_1$-smooth functions \citep{nocedal2006numerical} and $C_1\stepsize\le1$ give
-$\Lout(\theta_{i+1})\le\Lout(\theta_i)-\tfrac\stepsize2\|\nabla\Lout(\theta_i)\|^2$.
-Summing over $i\le j$ and applying \cref{eq:lo-floor} at $\theta_{j+1}\in\initball'$,
-$\frac\stepsize2\sum_{i\le j}\|\nabla\Lout(\theta_i)\|^2\le\Lout(\theta_0)-\Lout(\theta_{j+1})\le C_2\initscale^2\mixrate^n$. By the
-triangle and Cauchy--Schwarz inequalities,
-\[
- \|\theta_{j+1}-\theta_0\|\le\stepsize\sum_{i\le j}\|\nabla\Lout(\theta_i)\|
- \le\bigl(2(j+1)\stepsize\,C_2\initscale^2\mixrate^n\bigr)^{1/2}\le\ballradius\initscale
-\]
-by the choice of $c_{\mathrm{time}}$. This closes the induction, and \cref{eq:lo-floor} gives the loss bound.
-
-The descent inequality also gives $\Lout(\theta_j)\le\Lout(\theta_0)=\log K$, so \cref{eq:lo-identity} yields
-$\E\,\KL(\bm u\|\hat y_j)\le\outcredit(\theta_j)\le C_2\initscale^2\mixrate^n$. Since $\hat y_{j,y}-1/K\le\mathrm{TV}(\hat y_j,\bm u)$,
-Pinsker's and Jensen's inequalities give
-\[
- \E\,\hat y_{j,y}-\frac1K\le\E\sqrt{\tfrac12\KL(\bm u\|\hat y_j)}\le\sqrt{\tfrac12\E\,\KL(\bm u\|\hat y_j)}\le\sqrt{C_2/2}\;\initscale\mixrate^{n/2}.
-\]
-Finally $\pimin/4\le1/4<\log2-1/4\le\log K-C_2\initscale_0^2\le\Lout(\theta_j)$, so $\theta_j\notin\basin(\Lout)$. The theorem
-holds with $c=c_{\mathrm{time}}$, step-size bound $\stepsize_0$ and $C=\max(C_2,\sqrt{C_2/2})$.
-\end{proof}
-
-\begin{remark}[A zero readout leaves \cref{thm:separation} unchanged]
-\label{rem:zero-readout}
-Both formats can therefore share the initialization of \cref{thm:outcome-end}.
-Part~(i) of \cref{thm:separation} uses $\hat y-\bm u=O(\initscale^2)$, which holds exactly at $\theta_0$ when $\tilde V=0$.
-Part~(ii) bounds $\rulecred$ from above on $\initball$ for every readout. Its lower bound uses $F_n$ of
-\cref{lem:leading}, a derivative in one readout entry equal to $\E_t\E[(\bm g_t)_kh^2_{i_t,l}]$. The residual $h^2$ does
-not involve $V$, and $P_n$ depends only on attention and embedding entries, so fixing $\tilde V=0$ changes neither
-the law of $P_n$ nor the event in the lower bound.
-\end{remark}
-
-
-
-\begin{remark}[Gradient flow]
-\label{rem:flow}
-The bounds of \cref{thm:outcome-end} also hold for gradient flow $\dot\theta=-\nabla\Lout(\theta)$ from $\theta_0$, with
-$j\stepsize$ replaced by the time $t$, for all $t\le c\,\mixrate^{-n}$. The proof is the same, with the descent lemma replaced
-by $\frac{d}{dt}\Lout(\theta(t))=-\|\nabla\Lout(\theta(t))\|^2$: while $\theta$ stays in $\initball$,
-$\int_0^t\|\nabla\Lout\|^2\,ds\le C\initscale^2\mixrate^n$ by \cref{eq:lo-floor}, and
-$\|\theta(t)-\theta_0\|\le(t\int_0^t\|\nabla\Lout\|^2\,ds)^{1/2}$ by Cauchy--Schwarz, so the first exit time from
-$\initball$ is at least $c\,\mixrate^{-n}$. This uses only that $\Lout$ is smooth on $\initball'$, which the fixed ReLU
-pattern gives.
-\end{remark}
-
+\subsection{Initialization and width}
 \begin{remark}[Width]
 \label{rem:end-width}
 \emph{Constants.} Every proof in this appendix bounds the network through operator norms of parameter blocks,
@@ -1056,7 +1209,8 @@ biases down by $\sqrt w$ shrinks the margin of the sign condition by the same fa
 
 \emph{The following fan-in-scaled initialization satisfies (A2) at every width.} Weight matrices have independent
 mean-zero Gaussian or uniform entries of variance $1/\text{fan-in}$; embedding blocks have variance $1/d_{\mathrm{res}}$ (one-hot inputs
-have fan-in $1$); and $|\tilde b_m|\in[1,2]$, so $\beta\le2\sqrt w$. Standard sub-Gaussian bounds on operator norms and smallest
+have fan-in $1$); and $|\tilde b_m|\in[1,2]$, so $\beta\le2\sqrt w$. The weight conditions are standard; the bias
+condition is not, and it is what fixes the ReLU pattern and makes each MLP a fixed linear map on $\initball$. Standard sub-Gaussian bounds on operator norms and smallest
 singular values \citep[Thms.~4.4.5, 4.6.1]{vershynin2018high} and a union bound over the blocks give, with probability at least
 $1-\failprob$, $a_0\le C(1+r+\sqrt{\log(1/\failprob)})$ with $r$ the largest aspect ratio, and $\varsigma\ge\frac12$ once
 $d_{\mathrm{res}}\ge C(K+\log(1/\failprob))$.
@@ -1065,8 +1219,7 @@ $d_{\mathrm{res}}\ge C(K+\log(1/\failprob))$.
 $w=\max\{|\Sigma|,3K(n+1),2n+1\}$, so every aspect ratio is bounded in terms of $K$ and $|\Sigma|$. With the
 initialization above, \cref{thm:main,thm:outcome-end} and \cref{thm:separation}(i)--(ii) therefore hold
 in the architecture of \cref{prop:represent} with $n$-independent constants, for $\initscale\le c\min(\mixrate,n^{-1/2})$.
-\Cref{thm:basin} has no such constants. So outcome training from a zero readout stays out of $\basin(\Lout)$ for time
-$c\mixrate^{-n}$ in an architecture that contains $\thout$. In \cref{thm:separation}(iii) the lower bound becomes
+Thus the exponential outcome plateau holds in an architecture that contains $\thout$. In \cref{prop:rule-lower} the lower bound becomes
 $a_\failprob\initscale^6/(n\,d_{\mathrm{res}}^3\sqrt{d_{\mathrm h}})$, of order $\initscale^6n^{-9/2}$, so step rule credit exceeds the
 outcome interaction bound by $\mixrate^{-(n-3)}/\mathrm{poly}(n)$.
 
@@ -1075,377 +1228,11 @@ pieces that grows with $n$. This is a remark about our construction, not a prove
 \end{remark}
 
 
-\subsection{Technical verification of the score-count bounds}
-\label{app:network}
-\label{app:two-block}
-\label{app:envelope}
-
-This subsection proves the model statement in \cref{app:model-spectrum}.
-We use normalized derivatives, Taylor coefficients and input support.
-
-\paragraph{Setting.} Assume (A1) and (A2). Constants depend only on $a_0$, $\varsigma$, $K$ and the numbers of blocks
-and heads. Enlarge $a_0\ge1$ so that on $\initball$ every weight matrix and embedding block has operator norm at most $a_0\initscale$,
-and every input $x_j=E\bm e_{{\mathrm{tok}}_j}+P\bm e_j$ has $\|x_j\|\le a_0\initscale$. Bias vectors are not parameter
-blocks in this sense: on $\initball$ they satisfy $\|\bm b\|\le2\beta\initscale$. All bounds use operator norms of blocks,
-never entrywise or Frobenius norms of weight matrices, and sums over hidden units occur only inside the products
-$W_{\mathrm{out}}DW_{\mathrm{in}}$ and $W_{\mathrm{out}}D\bm b$. A \emph{site} is a position whose
-token varies: the letters in \cref{thm:main}, and in \cref{thm:separation} also $s_0$, the query
-and the displayed states. For a parameter direction $\bm v$, $\partial_{\bm v}$ denotes the directional
-derivative; a bound $\|\partial_{\bm v}\bm z\|\le a\|\bm v\|$ for all $\bm v$ gives $\|\Jz\|_F\le\sqrt K\,a$.
-
-\paragraph{Affine MLPs.} A pre-activation is $b_m+(W_{\mathrm{in}}h)_m$.
-On $\initball$, $|b_m|\ge\initscale/2$ and $|(W_{\mathrm{in}}h)_m|\le\|(W_{\mathrm{in}})_{m,:}\|\|h\|\le C\initscale^2$.
-These bounds hold under score scaling for every $\xi\in[0,1]$.
-For $\initscale<\initscale_0:=\min(1/(2C),1/(2\beta))$, the sign is fixed by $\tilde b_m$.
-The bias offset then satisfies $\|\bm o_\ell\|\le2a_0\beta\initscale^2\le a_0\initscale$: it is input-independent and
-no larger than an input. Its tangent satisfies $\|\partial_{\bm v}\bm o_\ell\|\le(a_0+2\beta)\initscale\|\bm v\|\le C\|\bm v\|$.
-These two bounds are the only uses of $\beta$.
-In each block, a fixed diagonal $0/1$ matrix $D$ describes the ReLUs.
-The network is smooth in $(\xi,\theta)$.
-Block $\ell$ becomes
-
-\begin{gather*}
- h^\ell_i=M_\ell\bigl(h^{\ell-1}_i+\bm a^\ell_i\bigr)+\bm o_\ell,
- \qquad
- \bm a^\ell_i=\sum_{\mathrm{heads}}\sum_{j\le i}\alpha_{ij}W_Vh^{\ell-1}_j,
- \\
- M_\ell=I+W^\ell_{\mathrm{out}}DW^\ell_{\mathrm{in}},\quad \bm o_\ell=W^\ell_{\mathrm{out}}D\bm b^\ell,
-\end{gather*}
-with $h^0_i=x_i$, $\bm z_i=Vh^2_i$, $\alpha_{i\cdot}=\mathrm{softmax}(\xi\psi_{i\cdot})$ and $\psi_{il}=(W_Qh_i)^\top W_Kh_l/\sqrt{d_{\mathrm{h}}}$.
-
-
-\paragraph{Normalized derivatives.}
-For $\ell=1,2$ and $k\ge0$, define
-\[
- H_{\ell,k}=\sup_{\xi,i}\frac{\|\partial_\xi^kh_i^\ell(\xi)\|}{k!},\quad
- \Psi_{\ell,k}=\sup_{\xi,i,j}\frac{|\partial_\xi^k\psi_{ij}^\ell(\xi)|}{k!},\quad
- Z_k=\sup_{\xi,i}\frac{\|\partial_\xi^k\bm z_i(\xi)\|}{k!}.
-\]
-A dot adds $\partial_{\bm v}$ and the supremum over $\|\bm v\|=1$.
-All suprema also cover $\initball$ and the inputs.
-
-\begin{lemma}[Uniform softmax derivative bound]
-\label{lem:softmax-all}
-For $\alpha=\softmax(\psi)$ on any number of positions,
-\begin{equation}
- \|\partial^k\alpha(\psi)[v_1,\ldots,v_k]\|_1
- \le 2^k k!\prod_{a=1}^k\|v_a\|_\infty,\qquad k\ge1.
- \label{eq:softmax-avg}
-\end{equation}
-The same bound times $\max_j\|u_j\|$ holds for
-$\|\sum_j \partial^k\alpha_j[v_1,\ldots,v_k]u_j\|$.
-\end{lemma}
-
-\begin{proof}
-Write $\langle f\rangle_\alpha=\sum_j\alpha_jf_j$.
-\[
- \partial\alpha(\psi)[v]_j=\alpha_j(v_j-\langle v\rangle_\alpha),\qquad
- \partial_v\langle f\rangle_\alpha
- =\langle vf\rangle_\alpha-\langle v\rangle_\alpha\langle f\rangle_\alpha.
-\]
-After $k$ derivatives, each summand is a product of at most $k+1$ averages.
-Each $v_a$ and $f$ occurs once. If $a_k$ is the sum of absolute coefficients, then
-\[
- a_0=1,\qquad a_{k+1}\le2(k+1)a_k,\qquad a_k\le2^k k!.
-\]
-Thus
-\[
- |\partial_{v_1}\cdots\partial_{v_k}\langle f\rangle_\alpha|
- \le2^k k!\|f\|_\infty\prod_a\|v_a\|_\infty.
-\]
-Take the supremum over $\|f\|_\infty\le1$ for the $\ell_1$ bound.
-For vector-valued $f$, one average in each product is vector-valued; the same triangle inequality applies.
-\end{proof}
-
-\begin{lemma}[Normalized product and composition bounds]
-\label{lem:classes}
-Write $f_k=f^{(k)}/k!$. For a bilinear product of norm at most $1$,
-\[
- \|(fg)_k\|\le\sum_{a+b=k}\|f_a\|\|h_b\|.
-\]
-If $\|\partial^jF\|/j!\le a_0 c^j$ and $\|h_k\|\le a b^k$ for $k\ge1$, then
-\[
- \|(F\circ h)_k\|\le a_0ca\,b^k(1+ca)^{k-1},\qquad k\ge1.
-\]
-\end{lemma}
-
-\begin{proof}
-Leibniz gives the first bound. The chain rule in normalized form gives
-\begin{align*}
- (F\circ h)_k
- &=\sum_{j=1}^k\frac1{j!}\partial^jF(h)
-       \sum_{\substack{k_1+\cdots+k_j=k\\k_a\ge1}}
-       [h_{k_1},\ldots,h_{k_j}],\\
- \|(F\circ h)_k\|
- &\le a_0 b^k\sum_{j=1}^k\binom{k-1}{j-1}(ca)^j
- =a_0ca\,b^k(1+ca)^{k-1}.
-\end{align*}
-\end{proof}
-
-\paragraph{Absolute coefficient sums.}
-For a fixed expansion $F=\sum_\nu w_\nu\term_\nu$ at $\xi=0$, let
-\[
- \|F\|_{\mathrm{abs}}=\sum_\nu|w_\nu|N(\term_\nu),\qquad
- \|\partial F\|_{\mathrm{abs}}=\sum_\nu|w_\nu|
-       \sup_{\initball,\,\|\bm v\|=1}\|\partial_{\bm v}\term_\nu\|.
-\]
-Here $N(\term)$ multiplies the $a_0\initscale$ bounds on parameter and input factors.
-Both sums bound the norm before cancellation. The first is subadditive and submultiplicative;
- the tangent sum obeys the product rule.
-They are needed when summing over input supports.
-
-
-\begin{lemma}[Score-count size bound]
-\label{lem:size}
-There are $\initscale_0>0$, $C$ and $C_{\mathrm{size}}$, independent of $n$ and $k$, such that for $\initscale\le\initscale_0$, $\theta\in \initball$, every position $i$,
-every input and every $k\ge1$:
-\begin{enumerate}[label=(\alph*),leftmargin=*,itemsep=0pt,topsep=2pt]
- \item $\|h^\ell_i-x_i-\bm O^\ell\|\le C\initscale^2$ with the input-independent offsets $\bm O^1=\bm o_1$, $\bm O^2=\bm o_1+\bm o_2$; $|\psi_{il}|\le C\initscale^4$, $\|\bm z_i\|\le C\initscale^2$ and $\|\partial_{\bm v}\bm z_i\|\le C\initscale\|\bm v\|$, at every $\xi\in[0,1]$.
- \item For every $\xi\in[0,1]$,
- \[
- \frac{\|\bm z_i^{(k)}(\xi)\|}{k!}\le C\initscale^3(C_{\mathrm{size}}\initscale^4)^k,
- \qquad
- \frac{\|\partial_{\bm v}\bm z_i^{(k)}(\xi)\|}{k!}\le C\initscale^2(C_{\mathrm{size}}\initscale^4)^k\|\bm v\|,
- \]
- and the same for $h^2_i$ with $C\initscale^2,C\initscale$ in place of $C\initscale^3,C\initscale^2$. Hence $\|\bm z^{{\mathrm{rem}},\bar k}_i\|\le C\initscale^3(C_{\mathrm{size}}\initscale^4)^{\bar k+1}$ and
- $\|\partial_{\bm v}\bm z^{{\mathrm{rem}},\bar k}_i\|\le C\initscale^2(C_{\mathrm{size}}\initscale^4)^{\bar k+1}\|\bm v\|$ for every $\bar k\ge0$.
- \item $\|\bm z_i^{[k]}\|_{\mathrm{abs}}\le C\initscale^3(C_{\mathrm{size}}\initscale^4)^k$ and $\|\partial\bm z_i^{[k]}\|_{\mathrm{abs}}\le C\initscale^2(C_{\mathrm{size}}\initscale^4)^k$,
- and the same holds for $h^{2,[k]}_i$ with $C\initscale^2,C\initscale$ in place of $C\initscale^3,C\initscale^2$.
-\end{enumerate}
-\end{lemma}
-
-
-\begin{proof}
-\proofstep{(a) Amplitudes.}
-For $\ell=1,2$,
-\begin{align*}
- \|\bm a_i^\ell\|&\le3a_0\initscale\max_j\|h_j^{\ell-1}\|\le C\initscale^2,\\
- \|M_\ell-I\|&\le C\initscale^2,\qquad\|\bm o_\ell\|\le a_0\initscale,\qquad
- H_{\ell,0}\le C\initscale,\qquad\|h_i^\ell-x_i-\bm O^\ell\|\le C\initscale^2,\\
- \Psi_{\ell,0}&\le C\initscale^2H_{\ell-1,0}^2\le C\initscale^4,
- \qquad Z_0\le\|V\|H_{2,0}\le C\initscale^2.
-\end{align*}
-Unit parameter directions satisfy
-\[
- \dot H_{0,0}\le C,\quad
- \dot \Psi_{\ell,0}\le C\initscale^3,
- \quad \|\partial_{\bm v}\alpha_{i\cdot}^\ell\|_1\le C\initscale^3,
- \quad \dot H_{\ell,0}\le C,\quad \dot Z_0\le C\initscale.
-\]
-
-\proofstep{(b) Derivatives and remainder.}
-Let $\Xi_{\ell,k}$ be the normalized derivative bound for the scaled score $\xi\psi^\ell$.
-Leibniz and \cref{lem:softmax-all,lem:classes} give
-\begin{align*}
- \Psi_{\ell,k}&\le C\initscale^2\sum_{a+b=k}H_{\ell-1,a}H_{\ell-1,b},\\
- \Xi_{\ell,k}&\le \Psi_{\ell,k}+\Psi_{\ell,k-1}\quad(k\ge1),\\
- U_{\ell,k}&:=\sup_{\xi,i}\frac{\|\partial_\xi^k\alpha_{i\cdot}^\ell\|_1}{k!}
- \le\sum_{j=1}^k2^j
-    \sum_{\substack{a_1+\cdots+a_j=k\\a_r\ge1}}
-    \prod_{r=1}^j\Xi_{\ell,a_r},\\
- B_{\ell,k}&:=\sup_{\xi,i}\frac{\|\partial_\xi^k\bm a_i^\ell\|}{k!}
- \le C\initscale\sum_{a+c=k}U_{\ell,a}H_{\ell-1,c},\\
- H_{\ell,k}&\le C(H_{\ell-1,k}+B_{\ell,k}),\qquad Z_k\le C\initscale H_{2,k}.
-\end{align*}
-Here $U_{\ell,0}=1$ and $H_{0,k}=0$ for $k\ge1$.
-For a fixed $b=C\initscale^4$, the first block gives
-\[
- U_{1,k}\le b^k,\qquad
- B_{1,k}+H_{1,k}\le C\initscale^2b^k\quad(k\ge1).
-\]
-The second block then satisfies, after enlarging fixed factors,
-\begin{align*}
- \Psi_{2,k}&\le C\initscale^5(k+1)b^k\le C\initscale^5(2b)^k,\\
- \Xi_{2,k}&\le C(2b)^k,\\
- U_{2,k}&\le C\sum_{j=1}^k\binom{k-1}{j-1}C^j(2b)^k
-                \le C[C b]^k,\\
- B_{2,k}+H_{2,k}&\le C\initscale^2[C b]^k,\qquad
- Z_k\le C\initscale^3(C_{\mathrm{size}}\initscale^4)^k.
-\end{align*}
-Each $C$ here is fixed; only two blocks are composed.
-
-For tangents, differentiate the preceding recurrences. In particular,
-\begin{align*}
- \dot \Psi_{\ell,k}
- &\le C\initscale\sum_{a+c=k}H_{\ell-1,a}H_{\ell-1,c}
-     +C\initscale^2\sum_{a+c=k}
-       (\dot H_{\ell-1,a}H_{\ell-1,c}+H_{\ell-1,a}\dot H_{\ell-1,c}),\\
- \dot\Xi_{\ell,k}&\le\dot \Psi_{\ell,k}+\dot \Psi_{\ell,k-1},\\
- \dot B_{\ell,k}
- &\le C\sum_{a+c=k}U_{\ell,a}H_{\ell-1,c}
-      +C\initscale\sum_{a+c=k}
-       (\dot U_{\ell,a}H_{\ell-1,c}+U_{\ell,a}\dot H_{\ell-1,c}).
-\end{align*}
-A differentiated softmax term has either one $\dot\Xi$ factor or
-$\partial^{j+1}\alpha[\dot\Xi_{\ell,0},\ldots]$.
-By \cref{lem:softmax-all}, the extra factor $j+1\le2^k$ is absorbed into the derivative scale.
-The two-block induction yields
-\[
- \dot U_{\ell,k}\le C\initscale^{-1}(C_{\mathrm{size}}\initscale^4)^k,\quad
- \dot B_{\ell,k}+\dot H_{\ell,k}\le C\initscale(C_{\mathrm{size}}\initscale^4)^k,\quad
- \dot Z_k\le C\initscale^2(C_{\mathrm{size}}\initscale^4)^k.
-\]
-Taylor's integral remainder gives
-\begin{align*}
- \|\bm z_i^{{\mathrm{rem}},\bar k}\|
- &\le\sup_\xi\frac{\|\partial_\xi^{\bar k+1}\bm z_i(\xi)\|}{(\bar k+1)!}
- \le C\initscale^3(C_{\mathrm{size}}\initscale^4)^{\bar k+1},\\
- \|\partial\bm z_i^{{\mathrm{rem}},\bar k}\|
- &\le C\initscale^2(C_{\mathrm{size}}\initscale^4)^{\bar k+1}.
-\end{align*}
-The same estimates before the readout give the residual bounds.
-
-\proofstep{(c) Coefficient sums.}
-At $\xi=0$, every average in the softmax proof is uniform, and
-\[
- \left\|\frac1m\sum_j\prod_rF_r(j)\right\|_{\mathrm{abs}}
- \le\prod_r\max_j\|F_r(j)\|_{\mathrm{abs}}.
-\]
-Thus the recurrences in (b) also bound $\|\bm z_i^{[k]}\|_{\mathrm{abs}}$.
-For a monomial with $f(\term)$ parameter and input occurrences,
-\[
- \sup\|\partial_{\bm v}\term\|
- \le\frac{2f(\term)}{a_0\initscale}N(\term)\|\bm v\|,
- \qquad f(\term)\le C(k+1),\qquad k+1\le2^k.
-\]
-The occurrence bound follows by induction over the two blocks and the score factors.
-Enlarging $C_{\mathrm{size}}$ gives $\|\partial\bm z_i^{[k]}\|_{\mathrm{abs}}\le C\initscale^2(C_{\mathrm{size}}\initscale^4)^k$.
-\end{proof}
-
-\begin{lemma}[Score-count support bound]
-\label{lem:support}
-For every position $i$ and every $k\ge1$:
-\begin{enumerate}[label=(\alph*),leftmargin=*,itemsep=0pt,topsep=2pt]
- \item $\bm z^{[0]}_i=\bm z(0)$ is affine in the inputs: a sum of terms that each contain one input $x_j$
- or none, with total weight at most $C$. A transported input term has $\|\partial_{\bm v}\term\|\le C\initscale^2\|\bm v\|$;
- the direct input term and input-free terms have bound $C\initscale\|\bm v\|$.
- \item Every term of $\bm z^{[k]}_i$, and of $h^{\ell,[k]}_i$, contains at most $2k+1$ inputs.
- \item The one-score part is the first-order term of the softmax, displayed below; each of its terms $\term$
- has $\|\term\|\le C\initscale^7$ and $\|\partial_{\bm v}\term\|\le C\initscale^6\|\bm v\|$.
-\end{enumerate}
-\end{lemma}
-
-
-\begin{proof}
-\proofstep{(a) Zero scores.}
-With $W_V^\ell$ denoting the sum of value maps,
-\begin{align*}
- h_j^1(0)&=M_1\left(x_j+\frac1{m_j}\sum_{l\le j}W_V^1x_l\right)+\bm o_1,
- \\
- \bm z_i^{[0]}&=V\left[M_2\left(h_i^1(0)+\frac1{m_i}\sum_{j\le i}W_V^2h_j^1(0)\right)+\bm o_2\right].
-\end{align*}
-Every term is affine in the inputs. A transported term contains $V,W_V,x_j$;
-its tangent is $O(\initscale^2)$. The direct term $VM_2M_1x_i$ has tangent $O(\initscale)$.
-
-\proofstep{(b) Input support.}
-Let $d(F)$ count the largest number of input occurrences in an expanded monomial.
-\[
- d(F+G)\le\max(d(F),d(G)),\qquad d(FG)\le d(F)+d(G),\qquad d(x_i)=1.
-\]
-Starting from $d(h^{0,[0]})=1$, induction gives
-\begin{align*}
- d(h^{\ell,[a]})&\le2a+1,\\
- d(\psi^{\ell,[b]})
- &\le\max_{a+c=b}\{(2a+1)+(2c+1)\}=2b+2,\\
- d((\xi\psi^\ell)^{[a]})&\le2a\qquad(a\ge1).
-\end{align*}
-A head coefficient of order $k$ has $a_1+\cdots+a_j+c=k$, so
-\[
- d\left(\frac1{j!}\partial^j\alpha(0)
-       [\psi^{[a_1-1]},\ldots,\psi^{[a_j-1]}]W_Vh^{[c]}\right)
- \le2a_1+\cdots+2a_j+2c+1=2k+1.
-\]
-Affine MLPs and the readout introduce no new input products.
-Parameter differentiation cannot increase this count.
-
-\proofstep{(c) One score.}
-The contribution from differentiating one attention weight is
-\[
- \frac1{m_i}\sum_{j\le i}(\psi_{ij}(0)-\bar\psi_i(0))W_Vh_j(0),
- \qquad \bar\psi_i(0)=\frac1{m_i}\sum_{l\le i}\psi_{il}(0).
-\]
-Each logit term contains $V,W_V,W_Q,W_K$ and three residual inputs. Hence
-\[
- \|\term\|\le C\initscale^7,\qquad
- \|\partial_{\bm v}\term\|\le C\initscale^6\|\bm v\|.
-\]
-\end{proof}
-
-
-\paragraph{Proof of \cref{prop:score-degree}.}
-\begin{proof}
-For a term with site set $U$, the Efron--Stein formula gives
-\[
- \term_S=0\quad(S\nsubseteq U),\qquad
- \sup\|\term_S\|\le2^{|S|}\sup\|\term\|,
- \qquad \sum_{S\subseteq U}2^{|S|}=3^{|U|}.
-\]
-At the answer position, the direct input is fixed. By \cref{lem:support}(a),
-\[
- \sup\|J^{[0]}\|_F\le C\initscale,\qquad
- \sum_{|S|=1}\sup\|J_S^{[0]}\|_F\le C\initscale^2,\qquad
- J_S^{[0]}=0\quad(|S|\ge2).
-\]
-For $k\ge1$, \cref{lem:size,lem:support} give
-\[
- \sum_S\sup\|J_S^{[k]}\|_F
- \le\sqrt K\,3^{2k+1}\|\partial\bm z^{[k]}\|_{\mathrm{abs}}
- \le C\initscale^2(\attconst\initscale^4)^k,\qquad
- J_S^{[k]}=0\quad(|S|>2k+1),
-\]
-with $\attconst\ge9C_{\mathrm{size}}$. The remainder bound is \cref{lem:size}(b).
-The logit bounds have one additional factor $\initscale$.
-\end{proof}
-
-
-\begin{lemma}[Position-selection penalty]
-\label{lem:dilution}
-Fix positions $l<i$ and $k\ge1$, and let
-\begin{equation}
- \kappa_{l,i}:=\frac1{m_i}\Bigl(1+\sum_{l<j\le i}\frac1{m_j}\Bigr).
- \label{eq:dilution}
-\end{equation}
-After enlarging $\attconst$, the terms of $\bm z^{[k]}_i$ that contain $x_l$ have $\|\cdot\|_{\mathrm{abs}}$ at most $C\initscale^3(\attconst\initscale^4)^k\kappa_{l,i}$ and $\|\partial(\cdot)\|_{\mathrm{abs}}$ at most $C\initscale^2(\attconst\initscale^4)^k\kappa_{l,i}$, and the same holds for $h^{2,[k]}_i$ with $C\initscale^2,C\initscale$ in place of
-$C\initscale^3,C\initscale^2$.
-\end{lemma}
-
-
-\begin{proof}
-Let $[F]_l$ collect expanded terms containing $x_l$.
-Uniform attention in block 1 gives
-\[
- \frac{\|[h_j^{1,[0]}]_l\|_{\mathrm{abs}}}{C\initscale}
- \le\begin{cases}0,&j<l,\\1,&j=l,\\C\initscale/m_j,&j>l.\end{cases}
-\]
-The same upper bounds hold for the relative tangent sums.
-In block 2, replacing one residual factor by its $x_l$ part costs at most
-\[
- \frac{C\initscale}{m_i}\quad\text{(query residual)},\qquad
- \frac1{m_i}\quad\text{(key $l$)},\qquad
- \frac{C\initscale}{m_i}\sum_{l<j\le i}\frac1{m_j}\quad\text{(later keys)}.
-\]
-The residual connection contributes at cost $C/m_i$.
-There are at most $C(k+1)$ residual-factor choices in an order-$k$ term. Therefore
-\begin{align*}
- \|[\bm z_i^{[k]}]_l\|_{\mathrm{abs}}
- &\le C(k+1)\initscale^3(C_{\mathrm{size}}\initscale^4)^k\kappa_{l,i}
- \le C\initscale^3(\attconst\initscale^4)^k\kappa_{l,i},\\
- \|\partial[\bm z_i^{[k]}]_l\|_{\mathrm{abs}}
- &\le C\initscale^2(\attconst\initscale^4)^k\kappa_{l,i}.
-\end{align*}
-The same induction before the readout gives the residual estimates.
-\end{proof}
-
-%=============================================================================
-
-
 \section{Numerical verification of the theory}
 \label{app:verify}
 
-\Cref{tab:verify} maps claims to exact computations.
-Gradients and spectra are summed over all words in float64.
-Unless stated otherwise, the bias condition (A2) holds.
-The tables below give detailed measurements.
+\Cref{tab:verify} compares each proved bound with an exact computation, summed over all words in float64 with the bias
+condition (A2) in force. Per-draw values and commands are in \texttt{CHECKS.md} of the repository.
 
 \begin{table}[htbp]
 \centering\small
@@ -1455,47 +1242,26 @@ The tables below give detailed measurements.
 \midrule
 1 & \Cref{eq:horizon}, counting & answer-dependent gradient vs $n$ & factor $\mixrate=0.5$ per letter & $0.48$--$0.51$ (\cref{tab:spectrum})\\
 2 & \Cref{eq:P1}, degree $r$ & exponent of $\sum_{|S|=r}\|(\Jz)_S\|$ in $\initscale$ & $2$; $6$ ($r=2,3$); $\ge10$ & $2.0,6.1,7.0,11.1,12.0$ for $r=1..5$\\
-3 & \Cref{eq:P1} gives $\sum_{r\ge2}J_r\le C\initscale^{12}$ & exponent of $\Jhigh/\Jtotal$ in $\initscale$ & $\ge10$ & $10.00$--$10.11$ ($n=4,5$)\\
+3 & \Cref{eq:P1} gives $\sum_{r\ge2}J_r\le C\initscale^{12}$ & exponent of ${\sum_{r\ge2}J_r}/{\sum_r J_r}$ in $\initscale$ & $\ge10$ & $10.00$--$10.11$ ($n=4,5$)\\
 4 & \Cref{thm:separation}(i), outcome bound & $\|\pd{\Lout}\theta(\theta_0)\|/\initscale(\initscale^2+\mixrate^n+\initscale\mixrate^{n-1})$, $n=4..10$ & bounded & $3.9$--$5.3$\\
 5 & \Cref{thm:separation}(i) & $\|\pd{\Lstep^{\ge2}}V\|/\initscale$, $n=4,6,8$ & $\|\bm\Gamma\tilde E_{\mathrm{val}}\|_F=0.811$ & $0.807$--$0.816$\\
-6 & \Cref{thm:separation}(iii), \cref{lem:leading} & rule credit at $\tilde\theta^\circ$ vs $\initscale^6P_n(\tilde\theta^\circ)$ & equal to leading order & equal to six digits, $n=2..12$\\
-7 & \Cref{thm:separation}(ii)--(iii) & $n\rulecred/\initscale^6$, fixed query & flat in $n$ & \cref{tab:verify-query}\\
-8 & \Cref{prop:represent} & executors rebuilt from \cref{app:params} & identical tensors, exact & identical; exact up to $n=1000$\\
+6 & \Cref{prop:rule-lower}, \cref{lem:leading} & rule credit at $\tilde\theta^\circ$ vs $\initscale^6P_n(\tilde\theta^\circ)$ & equal to leading order & equal to six digits, $n=2..12$\\
+7 & \Cref{thm:separation}(ii), \cref{prop:rule-lower} & $n\|\nabla\rulecredit\|/\initscale^6$, fixed query, $n=4..8$ & flat in $n$ & $304$--$324$ and $130$--$134$ (two draws)\\
+8 & \Cref{prop:represent} & executor reconstruction script & identical tensors, exact & identical; exact up to $n=1000$\\
 \bottomrule
 \end{tabular}}
-\caption{\textbf{Credit and plateau bounds are checked against exact computations.}
+\caption{\textbf{Every proved bound is checked against an exact computation.}
 All rows use the two-block Transformer of (A1) at width $16$, counting with $K=2$ unless
 stated; exponents in $\initscale$ are fitted on $[0.005,0.05]$.}
 \label{tab:verify}
 \end{table}
-
-\paragraph{Row 2.} Two blocks, width $16$, $n=6$, exact over all $4^6$ words. The proved exponents are
-attained at $r=1,2$, the degrees the theorems use.
-
-\paragraph{Rows 4 and 5.} Over $20$ exact full-batch updates ($n=4,6,8$, $\initscale\in\{10^{-2},3\times10^{-3}\}$) the step loss falls by
-$1.5$--$2.2\,\initscale^2$ and the outcome loss by at most $7\times10^{-6}\,\initscale^2$.
-
-\begin{table}[htbp]
-\centering\small
-\begin{tabular}{@{}lccccc@{}}
-\toprule
-$n$ & $4$ & $5$ & $6$ & $7$ & $8$\\
-\midrule
-fixed query, $n\rulecred/\initscale^6$, draws 1, 2 & $309$, $133$ & $308$, $130$ & $309$, $130$ & $324$, $131$ & $304$, $134$\\
-\bottomrule
-\end{tabular}
-\caption{\textbf{Row 7: the rule credit is $\Theta(\initscale^6/n)$ for a fixed query.}
-$|\Sigma|=4$ uniform letters, $p=\frac14$, $\mixrate=\frac12$, $\initscale=0.02$, exponent in $\initscale$ $6.00$ throughout.}
-\label{tab:verify-query}
-\end{table}
-
 
 %=============================================================================
 \section{Experiments}
 \label{app:experiments}
 \label{app:experimental-details}
 
-The subsections follow the predictions in \cref{sec:validation}.
+The subsections follow the order of \cref{sec:experiments}.
 
 \subsection{Protocol}
 \label{app:letter-protocol}
@@ -1505,7 +1271,7 @@ The subsections follow the predictions in \cref{sec:validation}.
 \toprule
 & Letter tasks (two-block) & Boolean-8, register (GPT-2L) & LoRA (SmolLM2, Qwen2.5)\\
 \midrule
-Model & \cref{app:model}, $\blocks=2$, $3$ heads & $2$ blocks, $4$ heads, width $128$, LayerNorm & rank $8$\\
+Model & \cref{app:model}, $2$ blocks, $3$ heads & $2$ blocks, $4$ heads, width $128$, LayerNorm & rank $8$\\
 Data & $20{,}000$ train, $1{,}000$ test & $20{,}000$ train, $500$--$1{,}000$ test & $12{,}000$ train\\
 Initialization & every tensor $\mathrm N(0,0.02^2)$ & default & default LoRA\\
 Optimizer & AdamW, lr $10^{-3}$, clip $1$, batch $256$ & AdamW, lr $3\times10^{-4}$, batch $128$ & batch $16$\\
@@ -1526,77 +1292,49 @@ Their spread does not capture data variability.
 \label{app:regime}
 
 
-These runs satisfy (A1)--(A4) and give \cref{fig:theory-measurement}(a) and \cref{tab:matched}. The exit-time runs start
-from a zero readout, as in \cref{thm:outcome-end}; the credit measurements keep a nonzero readout (\cref{rem:zero-readout}).
-Use $K=2$, two blocks, width $16$, three heads of dimension $8$, and MLP width $16$.
-Every initial scaled bias has $|\tilde b_m|\ge1$.
-Compute full-batch gradients in float64; the step objective is $\Lstep^{\ge2}$.
-Two letters with match probability $1/4$ allow enumeration up to $n=14$.
-They give the same $\mixrate=1/2$ as four uniform letters.
-Each update moves the parameters by $10^{-3}\initscale\|\tilde\theta\|$ along $-\nabla L$, and the training time is the sum
-of the step sizes. Define $\traintime(\ballradius)$ by $\|\theta_j-\theta_0\|=\ballradius\initscale\|\tilde\theta\|$.
-These runs approximate gradient flow (\cref{rem:flow}): at $n=12$, halving or quartering the update length changes
-$\traintime(0.1)$ by less than $1\%$ for both losses.
-No ReLU switches with the letters in any run.
+These runs satisfy (A1)--(A4) and give \cref{fig:theory-measurement}(a) and \cref{tab:matched}: $K=2$, two blocks of width
+$16$ with three heads of dimension $8$ and MLP width $16$, $|\tilde b_m|\ge1$, two letters with match probability $\frac14$
+($\mixrate=\frac12$, exact up to $n=14$), full-batch float64 gradients, step objective $\Lstep^{\ge2}$. The exit-time runs start from a zero
+readout; the credit measurements keep a nonzero readout (\cref{rem:zero-readout}). Each update moves the parameters by
+$10^{-3}\initscale\|\tilde\theta\|$, and $\traintime(\ballradius)$ is the accumulated step size when $\|\theta_j-\theta_0\|=\ballradius\initscale\|\tilde\theta\|$; halving
+or quartering the update changes $\traintime(0.1)$ by less than $1\%$, so the runs approximate gradient flow. No ReLU switches.
 
-\paragraph{The outcome loss takes time of order $\mixrate^{-n}$ to leave the ball.} From a zero readout, the outcome time
-grows by $4.4$ to $5.1$ per two letters at $\initscale=0.002$, against $\mixrate^{-2}=4$, as \cref{thm:outcome-end} predicts.
-At $\initscale=0.02$ it is shorter at small $n$ and meets the $\initscale=0.002$ times by $n=14$. The step time does not
-depend on $n$; in that time the step loss falls by $10$ to $13\initscale^2$ at every $n$, which is progress on the prior,
-not yet the rule.
-\begin{center}\small
-\begin{tabular}{@{}lcccccc@{}}
-\toprule
-$\traintime(0.1)$, zero readout & $n=4$ & $6$ & $8$ & $10$ & $12$ & $14$\\
-\midrule
-outcome, $\initscale=0.002$, draw 1 & $9.3\mathrm{e}3$ & $4.6\mathrm{e}4$ & $2.3\mathrm{e}5$ & $1.0\mathrm{e}6$ & $4.7\mathrm{e}6$ & $2.2\mathrm{e}7$\\
-outcome, $\initscale=0.002$, draw 2 & $1.2\mathrm{e}4$ & $6.1\mathrm{e}4$ & $2.9\mathrm{e}5$ & $1.3\mathrm{e}6$ & $6.2\mathrm{e}6$ & $2.8\mathrm{e}7$\\
-outcome, $\initscale=0.002$, draw 3 & $1.5\mathrm{e}4$ & $7.7\mathrm{e}4$ & $3.8\mathrm{e}5$ & $1.8\mathrm{e}6$ & $7.8\mathrm{e}6$ & $3.8\mathrm{e}7$\\
-outcome, $\initscale=0.02$, draw 1 & $7.8\mathrm{e}2$ & $3.8\mathrm{e}3$ & $1.9\mathrm{e}4$ & $9.4\mathrm{e}4$ & $2.1\mathrm{e}6$ & $3.0\mathrm{e}7$\\
-step, $\initscale=0.002$, draws 1, 2, 3 & \multicolumn{6}{c}{$4.18$, $4.33$, $5.55$ at every $n$ (to three digits)}\\
-step, $\initscale=0.02$, draw 1 & $4.17$ & $4.18$ & $4.19$ & $4.19$ & $4.20$ & $4.20$\\
-\bottomrule
-\end{tabular}
-\end{center}
-
-\paragraph{Curvature.} The top Hessian eigenvalue of $\outcredit$ at $\theta_0$ falls from $2.2\times10^{-3}$ at
-$n=4$ to $1.0\times10^{-6}$ at $n=14$, while that of the step loss stays at $0.25$--$0.26$ ($\initscale=0.02$, Lanczos).
-
-\paragraph{The rule credit is of order $\initscale^6/n$ and has no factor $\mixrate$.} Credits at initialization,
-three draws of $\tilde\theta$, $\initscale=0.02$. Between $\initscale=0.005$ and $0.02$ the exponents in $\initscale$ are $1.00$ for the prior,
-$6.00$ for the rule and $2.1$ for the total outcome credit, in every row. The total outcome credit is
-the larger up to $n=14$, but almost all of it is at degree $0$, which no executor is built from.
 \begin{center}\small
 \fitwidth{\begin{tabular}{@{}lcccccc@{}}
 \toprule
 & $n=4$ & $6$ & $8$ & $10$ & $12$ & $14$\\
 \midrule
-prior credit, draw 1 & $3.3\mathrm{e}{-2}$ & $3.3\mathrm{e}{-2}$ & $3.3\mathrm{e}{-2}$ & $3.3\mathrm{e}{-2}$ & $3.3\mathrm{e}{-2}$ & $3.3\mathrm{e}{-2}$\\
-rule credit, draw 1 & $3.3\mathrm{e}{-9}$ & $2.5\mathrm{e}{-9}$ & $1.8\mathrm{e}{-9}$ & $1.3\mathrm{e}{-9}$ & $1.1\mathrm{e}{-9}$ & $8.8\mathrm{e}{-10}$\\
-rule credit $\times\,n/\initscale^6$, draws 1, 2, 3 & $207$, $195$, $120$ & $231$, $194$, $112$ & $227$, $175$, $97$ & $208$, $144$, $122$ & $211$, $141$, $145$ & $192$, $147$, $169$\\
-total outcome credit, draw 1 & $1.6\mathrm{e}{-4}$ & $3.2\mathrm{e}{-5}$ & $6.6\mathrm{e}{-6}$ & $1.4\mathrm{e}{-6}$ & $3.2\mathrm{e}{-7}$ & $7.1\mathrm{e}{-8}$\\
+outcome $\traintime(0.1)$, $\initscale=0.002$, three draws & $0.9$--$1.5\mathrm{e}4$ & $0.5$--$0.8\mathrm{e}5$ & $2.3$--$3.8\mathrm{e}5$ & $1.0$--$1.8\mathrm{e}6$ & $4.7$--$7.8\mathrm{e}6$ & $2.2$--$3.8\mathrm{e}7$\\
+step $\traintime(0.1)$, $\initscale=0.002$, three draws & \multicolumn{6}{c}{$4.18$--$5.55$ at every $n$}\\
+rule credit $\times\,n/\initscale^6$, $\initscale=0.02$, three draws & $120$--$207$ & $112$--$231$ & $97$--$227$ & $122$--$208$ & $141$--$211$ & $147$--$192$\\
+rule$/$outcome interaction credit, uniform start & $64$--$119$ & $129$--$268$ & $315$--$709$ & $803$--$2{,}000$ & $2{,}600$--$6{,}730$ & $9{,}410$--$21{,}300$\\
 \bottomrule
 \end{tabular}}
 \end{center}
 
-\paragraph{The rule credit exceeds the outcome interaction credit by a margin that grows
-exponentially.} We split the answer exactly into its Efron--Stein components over the letters,
-for each start state, and measure the outcome credit at degrees $\ge2$ under a uniform start. The
-interaction credit has exponent $7.0$ in $\initscale$ in every row (observed, not proved). With the start state
-fixed, as in \cref{thm:main}, its exponent is $6.0$, and the rule credit exceeds it by $1.3$ to $2.5$
-times at $n=4$ and $30$ to $70$ times at $n=12$.
-\begin{center}\small
-\fitwidth{\begin{tabular}{@{}lcccccc@{}}
+\begin{table}[htbp]
+\centering\small
+\fitwidth{\begin{tabular}{@{}lcccc@{}}
 \toprule
-& $n=4$ & $6$ & $8$ & $10$ & $12$ & $14$\\
+part of the gradient at $\theta_0$ & bound scale & $n=4$ & $n=8$ & $n=12$\\
 \midrule
-interaction credit, uniform start, draw 1 & $2.8\mathrm{e}{-11}$ & $9.2\mathrm{e}{-12}$ & $2.6\mathrm{e}{-12}$ & $6.7\mathrm{e}{-13}$ & $1.7\mathrm{e}{-13}$ & $4.2\mathrm{e}{-14}$\\
-rule$/$interaction, draws 1, 2, 3 & $119$, $64$, $80$ & $268$, $129$, $150$ & $709$, $315$, $351$ & $2{,}000$, $803$, $1{,}350$ & $6{,}730$, $2{,}600$, $5{,}310$ & $21{,}100$, $9{,}410$, $21{,}300$\\
+\multicolumn{5}{@{}l}{\emph{Absorbed by single-position features}}\\
+step: prior & $\initscale\mixrate$ & $3.3\mathrm{e}{-2}$ & $3.3\mathrm{e}{-2}$ & $3.3\mathrm{e}{-2}$\\
+outcome: degrees $0$ and $1$ & $\initscale\mixrate^n$ & $1.6\mathrm{e}{-4}$ & $6.7\mathrm{e}{-6}$ & $3.2\mathrm{e}{-7}$\\
+\midrule
+\multicolumn{5}{@{}l}{\emph{Requires interactions}}\\
+step: rule credit $\|\nabla\rulecredit\|$ & $\initscale^6/n$ & $3.3\mathrm{e}{-9}$ & $1.8\mathrm{e}{-9}$ & $1.1\mathrm{e}{-9}$\\
+outcome: degrees $\ge2$, start state fixed & $\initscale^6\mixrate^{n-3}$ & $1.4\mathrm{e}{-9}$ & $1.9\mathrm{e}{-10}$ & $1.6\mathrm{e}{-11}$\\
+outcome: degrees $\ge2$, uniform start & $\initscale^6\mixrate^{n-3}$ & $2.8\mathrm{e}{-11}$ & $2.6\mathrm{e}{-12}$ & $1.7\mathrm{e}{-13}$\\
 \bottomrule
 \end{tabular}}
-\end{center}
+\caption{\textbf{Rule credit has polynomial horizon cost; outcome interaction credit has exponential cost.} Norm of each
+part of the gradient at initialization, with the scale of its theorem bound (constants omitted). Counting, $K=2$, $\mixrate=\frac12$,
+$\initscale=0.02$, exact over all words (\cref{app:exp-regime}).}
+\label{tab:matched}
+\end{table}
 
-\subsection{Predictions 1--3: spectra and gradients at initialization}
+\subsection{Spectra and gradients at initialization}
 \label{app:exp-spectra}
 \label{app:spectrum}
 \label{app:validation-spectra}
@@ -1606,74 +1344,15 @@ rule$/$interaction, draws 1, 2, 3 & $119$, $64$, $80$ & $268$, $129$, $150$ & $7
 \includegraphics[width=\linewidth]{figures/overlap_spectra.pdf}
 \caption{\textbf{The answer and a fresh network barely overlap.} Counting, $K=2$, $n=8$.
 (a)~The target spectrum $A_r$ puts its mass at high degree. (b)~The Jacobian spectrum $J_r$ of the
-two-block Transformer at initialization is $99.6\%$ degree~$0$. (c)~The bound $\sqrt{A_rJ_r}$ on the
-degree-$r$ credit.}
+two-block Transformer at initialization is $99.6\%$ degree~$0$. (c)~The bound $\sqrt{A_rJ_r}$ on degree-$r$ credit. All three spectra use the same exact letter split and $16$ parameter directions at $\initscale=0.02$.}
 \label{fig:overlap}
 \end{figure}
 
-\paragraph{Answer spectra.} For counting, $A_r$ has the closed form of \cref{rem:tight}. For GPT-2L tasks, propagate the second moment of $\bm v_t$
-from \cref{lem:target-contraction}.
-The resulting $\sum_r A_r$ matches the centred answer variance $1-1/K$.
-
-Boolean-8 has $4$ bits ($K=16$) and NOT, CNOT, SWAP and Toffoli gates on uniformly
-random wires ($52$ distinct gates, $n=8$). The register machine has $(x,y)\in\mathbb Z_{17}^2$ ($K=289$), five
-instructions chosen uniformly, $n=16$, and answer $x$. Both mix slowly in the worst case, but almost
-none of their answer is visible at degrees $0$ and $1$.
-
-\begin{table}[htbp]
-\centering\small
-\fitwidth{\begin{tabular}{@{}lcccc@{}}
-\toprule
-Task & $\mixrate$ & share at $r\le1$ & share at $r\ge2$ & mean degree\\
-\midrule
-Count a letter mod $K$, four letters & $|\frac34+\frac14e^{2\pi i/K}|$ & $\le(1+n)\mixrate^{2(n-1)}$ & -- & linear in $n$\\
-Boolean-8 ($n=8$) & $0.820$ & $1.1\%$ & $98.9\%$ & $6.3$\\
-Register machine ($n=16$) & $0.953$ & $0.08\%$ & $99.9\%$ & $12.3$\\
-First occurrence & -- & $\ge p(1-p)$ at degree $1$ & -- & --\\
-\bottomrule
-\end{tabular}}
-\caption{\textbf{The tasks of the paper.} Share of the answer's variance by degree. First occurrence
-is not a permutation task and keeps a degree-$1$ part at every $n$ (\cref{rem:control}).}
-\label{tab:family}
-\label{tab:validation-spectra}
-\end{table}
-
-\paragraph{Jacobian spectra.} \Cref{fig:overlap} uses the AdamW architecture and initialization.
-Estimate $J_r$ from $\E\langle\Jz(x),\Jz(x_\varrho)\rangle_F=\sum_r\varrho^rJ_r$.
-The coupling keeps each letter with probability $\varrho$ and otherwise redraws it.
-At $n=8$, we also compute an exact transform:
-
-for a Gaussian parameter direction $\bm g$, $\mathbb E_{\bm g}\|(\Jz\bm g)_r\|^2=\|(\Jz)_r\|_F^2$, and the
-Efron--Stein split of $\Jz\bm g$ over the $4^8$ letter grid is an orthonormal transform along each
-letter axis. We average $16$ directions over all eight pairs $(s_0,q)$. At the experiments' scale
-$\initscale=0.02$, the share of Jacobian energy above degree $1$ is $2.4\times10^{-6}$ and $1.1\times10^{-5}$ for two seeds. It
-grows steeply with $\initscale$ and exceeds $0.99$ at $\initscale=0.5$, so the low-degree Jacobian is a property of
-small initialization, not of the architecture alone.
-
-\paragraph{A pretrained model.} \Cref{tab:bbh-spectrum} repeats the exact split for Qwen2.5-0.5B with
-rank-8 LoRA on three-object BIG-Bench Hard items, where the answer is pure degree $3$.
-
-\begin{table}[htbp]
-\centering\small
-\begin{tabular}{@{}lcccc@{}}
-\toprule
-degree & $0$ & $1$ & $2$ & $3$\\
-\midrule
-answer, $A_r/\sum A$ & $0$ & $0$ & $0$ & $100\%$\\
-LoRA gradient, $J_r/\Jtotal$ & $99.60\msd{}{0.02}\%$ & $0.256\msd{}{0.011}\%$ & $0.118\msd{}{0.007}\%$ & $0.022\msd{}{0.002}\%$\\
-\bottomrule
-\end{tabular}
-\caption{\textbf{A pretrained model's gradient is also low-degree.} Each context fixes the scene,
-items, start and query, and its three swaps range over all $6^3$ values. We take the full
-Jacobian of the three option-letter logits with respect to the $2.4$M parameters of the LoRA
-up-projection and split it exactly by degree. Mean over three LoRA initializations, ten contexts
-each. The measured $\|\pd\outcredit\theta\|$ is $2$--$6\%$ of the bound of \cref{lem:gradient-split}.}
-\label{tab:bbh-spectrum}
-\end{table}
-
-\paragraph{Prediction 3: the answer gradient decays at the predicted rate.} We sum gradients
-exactly over all $8\cdot4^n$ prompts. A log-linear fit gives $0.508$ per letter ($R^2=0.995$) for seed $42$,
-and seeds $43$ and $44$ give $0.513$ and $0.480$, against $\mixrate=0.5$.
+\paragraph{Spectrum measurement.} For a Gaussian parameter direction $\bm g$,
+$\E_{\bm g}\|(\Jz\bm g)_r\|^2=\|(\Jz)_r\|_F^2$. We split $\Jz\bm g$ exactly by an orthonormal transform along each
+letter axis of the $4^8$ grid, averaging $16$ directions over all eight $(s_0,q)$ pairs.
+The BBH measurement splits all $6^3$ swap sequences at fixed scene, assignment and query; it uses the three option
+logits and the LoRA up-projection Jacobian. Per-seed spectra and gradient fits are in \texttt{CHECKS.md}.
 
 \begin{table}[htbp]
 \centering\small
@@ -1684,9 +1363,6 @@ $n$ & $2$ & $4$ & $6$ & $8$ & $9$ & $10$\\
 answer-dependent gradient $\|\mathbb E[(\Jz)^\top(y-\bm u)]\|$ & $8.6\mathrm{e}{-4}$ & $2.5\mathrm{e}{-4}$ & $6.5\mathrm{e}{-5}$ & $2.1\mathrm{e}{-5}$ & $7.6\mathrm{e}{-6}$ & $3.6\mathrm{e}{-6}$\\
 step supervision gradient & $1.8\mathrm{e}{-2}$ & $3.0\mathrm{e}{-2}$ & $3.9\mathrm{e}{-2}$ & $4.0\mathrm{e}{-2}$ & $4.2\mathrm{e}{-2}$ & $4.3\mathrm{e}{-2}$\\
 ratio & $21$ & $119$ & $598$ & $1{,}849$ & $5{,}561$ & $11{,}708$\\
-full answer-token gradient & $0.159$ & $0.146$ & $0.165$ & $0.183$ & $0.143$ & $0.168$\\
-$J_0$ & $0.111$ & $0.111$ & $0.148$ & $0.143$ & $0.120$ & $0.127$\\
-$\sum_{r\ge1}J_r$ & $2.1\mathrm{e}{-4}$ & $3.0\mathrm{e}{-4}$ & $4.2\mathrm{e}{-4}$ & $4.6\mathrm{e}{-4}$ & $4.4\mathrm{e}{-4}$ & $4.0\mathrm{e}{-4}$\\
 \bottomrule
 \end{tabular}}
 \caption{\textbf{The answer signal decays at the predicted rate, but the step signal does not.}
@@ -1697,19 +1373,14 @@ is $5\times10^{-3}$ ($n=2$) to $2\times10^{-5}$ ($n=10$) of the full gradient.}
 \label{tab:spectrum-full}
 \end{table}
 
-\subsection{Prediction 4: outcome training plateaus}
+\subsection{Outcome training plateaus}
 \label{app:exp-plateau}
-\label{app:basin}
 \label{app:tracking}
 
-\paragraph{Outcome training stays at chance across horizons.} \Cref{tab:gap} collects the counting runs with a nonzero
-readout. At $n=16$, $K=2$, seeds $42$--$51$, step training reaches $100\%$ exact continuation by $16$k on nine of ten
-seeds, and outcome training stays at chance on nine of ten at $32$k. At $K=3$, $n=16$, outcome training stays at chance
-on eight of ten; after $32$k, seeds $42$--$44$ give step exact continuation $100\%$ each and outcome answer accuracy
-$50.0$, $33.5$ and $30.1\%$ (chance $33\%$). At $K=3$, $n=8$, with $\mixrate^8\approx0.043$, outcome training ends at
-$100.0$, $67.7$ and $99.9\%$ after $32$k. With $4$ or $6$ blocks ($n\in\{8,12\}$, seeds $42$--$44$), step training reaches
-$31$--$100\%$ after $8$k ($10$ of $12$ runs above $80\%$), outcome training stays at $47.8$--$50.9\%$, and first
-occurrence reaches $95$--$100\%$ under both.
+\Cref{tab:gap} adds nonzero-readout, initialization-scale and seed sweeps to the main results.
+At $K=3,n=8$, outcome accuracy after $32$k updates is $100.0,67.7,99.9\%$ for seeds $42$--$44$.
+With four or six blocks ($n=8,12$), step accuracy is $31$--$100\%$ ($10/12$ runs above $80\%$), outcome accuracy
+$47.8$--$50.9\%$, and first occurrence $95$--$100\%$ under both formats.
 
 \begin{table}[htbp]
 \centering\small
@@ -1740,12 +1411,6 @@ qualitative comparison that the theorems do not certify. Both handcoded executor
 \label{tab:gap}
 \end{table}
 
-\paragraph{On the plateau the Jacobian stays low-degree.} \Cref{tab:main-evidence} gives exact letter spectra of the
-outcome model through training ($n=8$, $K=2$, seed $42$). Above-degree-$1$ leakage is $0.5\%$ of the low-degree term of
-\cref{lem:gradient-split} at $1$k and $3$k and $7\%$ at $6$k, and dominates only after escape. For seeds $43$ and $44$,
-$\Jhigh/\Jtotal$ stays at most $7.6\times10^{-7}$ at every checkpoint, apart from one transient spike of $7.5\times10^{-3}$
-for seed $43$ at $6$k; accuracy stays at $48$--$52\%$.
-
 \begin{table}[htbp]
 \centering\small
 \begin{tabular}{@{}lcc@{}}
@@ -1759,75 +1424,98 @@ $6{,}000$ & $2.0\mathrm{e}{-6}$ & $48\%$\\
 $8{,}000$ (escaping) & $0.155$ & $55\%$\\
 \bottomrule
 \end{tabular}
-\caption{\textbf{The outcome plateau stays low-degree.} Counting, $K=2$, $n=8$: share of the
-outcome model's Jacobian energy above degree $1$ during training, and answer accuracy.}
+\caption{\textbf{The outcome plateau stays low-degree.} Counting, $K=2$, $n=8$, AdamW protocol of
+\cref{app:letter-protocol} with initialization scale $0.02$, seed $42$: share of the outcome model's Jacobian energy above
+degree $1$ during training, and answer accuracy.}
 \label{tab:main-evidence}
 \end{table}
 
-\subsection{Basin certificate on the training set}
+\subsection{Certificate on the training set}
+\label{app:certificate}
 \label{app:exp-certificate}
 
-\Cref{thm:basin} applies to any finite item set, so we certify runs on their training set. Counting with $K=3$,
+\Cref{lem:basin}(ii) applies to any finite item set, so we certify runs on their training set. Counting with $K=3$,
 $n=16$, $20{,}000$ training prompts and the protocol of \cref{app:letter-protocol}, trained with AdamW for $32{,}000$
 updates. Every training prompt and supervised token is one item with weight $1/(NP)$, so $L<\pimin/4$ means
 summed cross-entropy below $1/4$; there are $380{,}000$ items for the step format. From the AdamW checkpoint, we run
 exact float64 Armijo descent (initial step $100$, halving, no tolerance) on the training-set loss. Ratios are
 $4L/\pimin$; below $1$ certifies the run from that update on.
 \begin{center}\small
-\begin{tabular}{@{}lccc@{}}
+\fitwidth{\begin{tabular}{@{}lccc@{}}
 \toprule
 & ratio after AdamW & after Armijo descent & train / held-out exact\\
 \midrule
 step, seeds $42$--$44$ & $1.8$--$3.3\times10^{-4}$ & $1.7$--$3.1\times10^{-4}$ ($1{,}000$ updates) & $100\%$ / $100\%$\\
 outcome, seeds $42$--$44$ & $2.2$--$4.3\times10^{4}$ & $0.9$--$3.5\times10^{4}$ ($5{,}000$ updates) & $80$--$97\%$ / $32$--$49\%$\\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \end{center}
 Along the certified step runs, every accepted update satisfies \cref{eq:descent}, the smallest gold margin is
 $15$, and the smallest absolute ReLU pre-activation is about $10^{-12}$: positive, so the loss is differentiable at
 each iterate, but these are float64 checks, not interval arithmetic. The outcome models fit most training prompts
-but are at chance on held-out ones (chance $33\%$). The certificate covers the training prompts only. With all
-prompts enumerated at $n=6$ and $8$ (binary letters, $K=2$), AdamW also reached the basin in two of three outcome
+but reach only $32$--$49\%$ on held-out ones (chance $33\%$). The certificate covers the training prompts only. With all
+prompts enumerated at $n=6$ and $8$ (two letters, query probability $\frac14$, $K=2$, so $\mixrate=\frac12$), AdamW also reached the
+certified region in two of three outcome
 runs at $n=6$, where $\mixrate^n\approx0.016$ still leaves outcome credit; no run of either format reached it at $n=8$
 within $20{,}000$ updates.
 
-\subsection{Prediction 5: outcome accuracy over $n$ and $\mixrate$}
+\subsection{Outcome accuracy over $n$ and $\mixrate$}
 \label{app:exp-lambda}
 
-Counting modulo $2$ with an alphabet of $A\in\{4,6,10,20\}$ letters, so $p=1/A$ and $\mixrate=1-2/A\in\{0.5,0.67,0.8,0.9\}$,
-at $n\in\{6,8,10,12,16\}$; $n=4$ has too few prompts for a held-out set. Each cell trains both formats from one
-initialization for $8{,}000$ AdamW updates (\cref{app:letter-protocol}), seeds $42$--$44$. Mean held-out exact
-accuracy:
-\begin{center}\small
-\begin{tabular}{@{}lcccc@{\quad}cccc@{}}
-\toprule
-& \multicolumn{4}{c}{outcome, $\mixrate=$} & \multicolumn{4}{c}{step, $\mixrate=$}\\
-\cmidrule(lr){2-5}\cmidrule(lr){6-9}
-$n$ & $0.5$ & $0.67$ & $0.8$ & $0.9$ & $0.5$ & $0.67$ & $0.8$ & $0.9$\\
-\midrule
-$6$ & $0.50$ & $0.57$ & $0.70$ & $0.79$ & $0.64$ & $0.79$ & $0.73$ & $0.84$\\
-$8$ & $0.51$ & $0.51$ & $0.62$ & $0.71$ & $0.74$ & $0.60$ & $0.81$ & $0.75$\\
-$10$ & $0.50$ & $0.51$ & $0.55$ & $0.71$ & $0.79$ & $0.46$ & $0.73$ & $0.70$\\
-$12$ & $0.50$ & $0.52$ & $0.52$ & $0.64$ & $1.00$ & $0.16$ & $0.30$ & $0.69$\\
-$16$ & $0.50$ & $0.50$ & $0.50$ & $0.57$ & $0.23$ & $0.71$ & $0.21$ & $0.43$\\
-\bottomrule
-\end{tabular}
-\end{center}
-No outcome run reaches $90\%$; step runs reach it in $17$ of $60$, consistent with the slow, seed-dependent step
-learning of \cref{app:exp-plateau} at this budget. The comparison of interest is within outcome: its accuracy is
-ordered by $\mixrate^n$ across both $n$ and $\mixrate$.
+Counting modulo $2$ with $A\in\{4,6,10,20\}$ letters, so $\mixrate=1-2/A\in\{0.5,0.67,0.8,0.9\}$, at $n\in\{6,8,10,12,16\}$; both formats
+train from one initialization for $8{,}000$ AdamW updates (\cref{app:letter-protocol}), seeds $42$--$44$. \Cref{fig:lambda-grid} plots
+the outcome accuracies; the full grid, including step accuracies, is in \texttt{CHECKS.md}. No outcome run reaches $90\%$, and
+step runs reach it in $17$ of $60$.
 
-\subsection{Other tasks and pretrained models}
+\subsection{Beyond counting}
 \label{app:exp-other}
 \label{app:circuits}
+\label{app:bbh}
 
-GPT-2L uses character tokens.
-Boolean-8 samples a gate type uniformly, then its wires.
-Rank-8 LoRA on SmolLM2-135M and Qwen2.5-0.5B gives the same supervision gap.
-Outcome training remains poor at eight times the budget.
-On GPT-2L, answer-first and filler formats give $8.0\pm0.9\%$ and $7.8\pm0.5\%$
-over five seeds. Step supervision gives $82.0\pm7.7\%$.
-Extra tokens alone do not reproduce the benefit.
+\begin{table}[t]
+\centering\small
+\fitwidth{\begin{tabular}{@{}llccccc@{}}
+\toprule
+Task & Model & $n$ & $\mixrate$ & outcome & step & chance\\
+\midrule
+count mod $2$ & two-block & $16$ & $0.50$ & $49.8$ ($0/10$) & $93.1$ ($8/10$) & $50$\\
+count mod $3$ & two-block & $16$ & $0.66$ & $30$--$50$ & $100$ & $33$\\
+first occurrence (control) & two-block & $8$--$24$ & -- & $71$--$100$ & $80$--$99$ & --\\
+Boolean-8 & GPT-2L & $8$ & $0.82$ & $7.7$ & $82$ & $6.25$\\
+register machine & GPT-2L & $16$ & $0.95$ & $6.3$ & $99.9$ & $5.9$\\
+Boolean-8 & Qwen2.5-0.5B LoRA & $8$ & $0.82$ & $11.1$ & $98.3$ & $6.25$\\
+\midrule
+BBH, $3$ objects & Qwen2.5-0.5B LoRA & $3$ & $0$ & $35.2$ & $98.4$--$100$ & $33$\\
+BBH, $5$ objects & Qwen2.5-0.5B LoRA & $5$ & $0.50$ & $80.0$--$94.4$ & $46$--$100$ & $20$\\
+BBH, $7$ objects & Qwen2.5-0.5B LoRA & $7$ & $0.67$ & $15.2$--$24.4$ & $96.4$--$100$ & $14$\\
+\bottomrule
+\end{tabular}}
+\caption{\textbf{Answers alone mostly fail where the answer has little low-degree part; steps mostly succeed.}
+Accuracy (\%) on held-out prompts, ranges over seeds; the BIG-Bench Hard rows test on the $750$ real
+items. First occurrence keeps a degree-$1$ part at every $n$, and outcome learns it. Counting modulo~$2$: zero readout,
+$8{,}000$ updates for both formats, mean over ten paired seeds (solved seeds in parentheses). Counting modulo~$3$:
+$32$k updates, seeds $42$--$44$. For every task, $\mixrate$ is the contraction coefficient of \cref{def:lambda} for the averaged
+move: the largest singular value of $\bar T$ on mean-zero vectors. For counting and BIG-Bench Hard it sets the low-degree
+share; for Boolean-8 and the register machine it is only the slowest of many state modes, so the single-mode value
+$\mixrate^{2n}+n\mixrate^{2(n-1)}(1-\mixrate^2)$ ($20\%$ and $56\%$) far overstates their measured degree-$\le1$ shares ($1.1\%$ and
+$0.08\%$). Protocols are in \cref{app:experiments}.}
+\label{tab:main}
+\end{table}
+
+\paragraph{Tasks.} Boolean-8 has $4$ bits ($K=16$) and NOT, CNOT, SWAP and Toffoli gates on random wires ($n=8$); the register
+machine has $(x,y)\in\mathbb Z_{17}^2$, five instructions, $n=16$ and answer $x$. Their answers put $98.9\%$ and $99.9\%$ of their
+variance at degrees $\ge2$, while first occurrence keeps a degree-$1$ part at every $n$ (\cref{rem:control}). GPT-2L uses character tokens. \Cref{tab:lora} adds the conditions behind \cref{tab:main}: outcome
+training stays poor at eight times the budget, and answer-first formats do not reproduce the step benefit.
+
+\paragraph{BIG-Bench Hard.} Training items come from the benchmark's templates with new assignments and swaps; testing uses
+the official $250$ items per size, all of which parse and rebuild exactly. Traces list every holder's item with its
+option letter (``Alice has Ulysses (A)''); with item names alone, answers stayed at the letter base rate. With $m$
+objects a random swap gives $\mixrate=(mp-1)/(m-1)$ with $p=\binom{m-1}{2}/\binom m2$, which is $0$, $\frac12$ and $\frac23$ for $m=3,5,7$, and the
+share of answer variance at degrees $\le1$ is $\mixrate^{2n}+n\mixrate^{2(n-1)}(1-\mixrate^2)$: $0$, $1.56\%$ and $3.34\%$. Zero-shot accuracy is
+$33.6$, $16.4$ and $11.2\%$. At three objects, outcome runs select the most common option, whose base rate is $35.2\%$.
+Five objects reverse the ordering that the low-degree share predicts: outcome training reaches $80$--$94\%$ there but
+$15$--$24\%$ at seven objects, whose share is larger. One of three five-object step runs fails ($46\%$ on real items, $45\%$ on
+generated ones). We have not identified the cause; the LoRA runs are outside every assumption of the theory.
 
 \begin{table}[htbp]
 \centering\small
@@ -1850,110 +1538,307 @@ over seeds. Chance is $6.25\%$ for Boolean-8 and $5.88\%$ for the register machi
 \label{tab:further}
 \end{table}
 
-\subsection{BIG-Bench Hard object tracking}
-\label{app:bbh}
-
-\paragraph{Data.} Generate training items using the benchmark's templates, five scenes and item lists.
-Sample new assignments and swaps, uniformly over pairs.
-Test on the official $250$ items per size; none is used for training.
-All $750$ items parse and rebuild exactly.
-
-Zero-shot accuracy is $33.6$, $16.4$ and
-$11.2\%$ for $3$, $5$ and $7$ objects, at or below chance, scored by the log-probability of each option
-letter. Accuracy on real items tracks that on held-out generated items within about ten points.
-
-\paragraph{Traces.} Each state line lists every holder's item and its option letter, e.g.\
-``Alice has Ulysses (A)''. With item names alone, traces were correct but answers stayed at the letter base rate.
-We therefore include option letters in the traces.
-
-\paragraph{Low-degree share.} With $m$ objects, the item asked about has $K=m$ states, its holder.
-A random swap keeps the holder with probability $p=\binom{m-1}{2}/\binom m2$ and moves it to each other
-holder with probability $(1-p)/(m-1)$, so $\mixrate=(mp-1)/(m-1)$, which is $0$, $\frac12$ and $\frac23$ for $m=3,5,7$. The
-share of answer variance at degrees $\le1$ after $n$ swaps is $\mixrate^{2n}+n\mixrate^{2(n-1)}(1-\mixrate^2)$.
-
-\begin{table}[htbp]
-\centering\small
-\begin{tabular}{@{}lcccc@{}}
-\toprule
-objects (swaps) & degree-$\le1$ share & outcome, three runs & step, three runs & chance\\
-\midrule
-$3$ ($3$) & $0$ & $35.2$, $35.2$, $35.2$ & $100$, $98.4$, $100$ & $33$\\
-$5$ ($5$) & $1.56\%$ & $94.4$, $83.6$, $80.0$ & $100$, $100$, $46.0$ & $20$\\
-$7$ ($7$) & $3.34\%$ & $24.4$, $16.0$, $15.2$ & $96.4$, $100$, $100$ & $14$\\
-\bottomrule
-\end{tabular}
-\caption{\textbf{BIG-Bench Hard object tracking on real items.}
-Qwen2.5-0.5B, rank-8 LoRA. Runs share training data and order; only initialization changes.
-At three objects, outcome runs select the most common option, ``(B)''.
-Its base rate is $35.2\%$ on real items and $28.7\%$ on generated test items.
-The failed five-object step run also scores $45\%$ on generated items.}
-\label{tab:bbh}
-\end{table}
-
 
 %=============================================================================
-\section{Step training reaches its basin: simulations}
+\section{Restricted joint training}
 \label{app:reach}
 
-\paragraph{Model.} The one-block reduction of \cref{sec:reach}. The sequence is $w_1,\ldots,w_n,s_0,\ldots,s_{n-1}$; the position
-holding $s_{t-1}$ predicts $s_t$, and $w_t$ sits exactly $n$ positions back. With frozen token embeddings $h_i=e\,\bm e_{\mathrm{tok}_i}$,
+For \cref{tab:reach}, use the two-block executor architecture, counting modulo $2$, four letters and $p=\frac14$.
+Fan-in-scaled Gaussian weights, embeddings of variance $1/d_{\mathrm{res}}$ and scaled MLP biases of magnitude $1$--$2$
+are multiplied by $\initscale=0.3$; relative biases and readout start at zero.
+Full-batch gradient descent (step size $2$, $4{,}096$ training prompts) trains query/key maps, relative biases and
+readout; embeddings, values and MLPs stay fixed. A run solves when all state predictions on $16{,}384$ held-out prompts
+have positive margins. Of $17$ runs, $16$ solve; the remaining $n=12$ run reaches $99.95\%$ by $300$k updates.
+Code: \path{handcoded/step_reach_twoblock.py}; per-run measurements are in \texttt{CHECKS.md}.
+
+\begin{conjecture}[Routing is learned in polynomial time]
+\label{conj:reach}
+Under \cref{ass:arch,ass:task} with full-prefix attention, let $\theta_0$ be the fan-in-scaled random initialization of
+\cref{rem:end-width} with a zero relative bias. For every $n$ and $\failprob$, with probability at least $1-\failprob$, gradient descent on
+$\Lstep$ restricted to the scores, the relative bias and the readout reaches positive margin on every state prediction
+within time $\mathrm{poly}(n,1/\initscale,\log(1/\failprob))$.
+\end{conjecture}
+\Cref{tab:reach} tests this conjecture.
+
+\section{Proof of \texorpdfstring{\cref{thm:routing}}{Staged step learning}: a schedule learns the routing}
+\label{app:routing}
+
+The symbols below are local to this proof. We redefine the count signs and the gate scales here. We use $a$ for gate strength, $g$ for value scale, $b_*$ for the routing bias target and $\epsilon$ for leakage tolerance. The remaining auxiliary quantities are introduced only where they are used.
+
+\paragraph{Setting.} Counting modulo $2$ over $\{q,r\}$ with fixed query of probability $p\in(0,1)$ and a uniform start. Write
+$c_t=(-1)^{s_{t-1}}$, $m_t=(-1)^{b_t}$, $y_t=c_tm_t$; $c_t$ is uniform and independent of all letters, and the $m_j$
+are independent with $\Pr(m_j=-1)=p$. The initialization below has random signs $A_Q,A_K,A_V$, so $a=\initscale^4A_QA_K/\sqrt{d_{\mathrm h}}$ and $g=\initscale^2A_V$ have $|a|=\initscale^4/\sqrt{d_{\mathrm h}}$ and $|g|=\initscale^2$. The gate head's
+mask is the \emph{segment mask}: at the position $i_t$ predicting $s_t$ ($t\ge2$) it attends to $i_t$ and to the $n$ letter
+positions $\ell_1,\dots,\ell_n$, with scores shifted by a relative bias $\beta_{i_t-\ell_j}$ and $\beta_0$; the current letter has
+offset $i_t-\ell_t=n$. Write $f_t$ for the difference of the two state logits, $\phi(z)=\log(1+e^{-z})$, $v_c,v_s,v_r$ for the
+readout components along $e_c,e_s,e_r$, and
 \[
- \psi_{ij}=h_i^\top Wh_j+b_{i-j}\ (j\le i),\qquad
- \bm o_i=v\sum_j\softmax_j(\psi_{ij})\,h_j,\qquad
- \bm z_i=V[h_i;\bm o_i],
+ u_*=\log\frac{1-p}{p},\qquad \pi_0=\tfrac12\min(p,1-p).
 \]
-with $e=v=1$ (one-hot) or $e=v=\initscale$ (scale of \cref{ass:init}). $W$, $b$ and $V$ start at $\initscale$ times standard
-Gaussians and are trained by full-batch gradient descent on the teacher-forced loss over $4{,}096$ prompts; held-out
-margins use $16{,}384$ prompts. Counting with four letters, $p=\frac14$. Code: \path{handcoded/step_reach.py}.
 
-\paragraph{Sweep.} $K\in\{2,3\}$, $n\in\{6,8,10,12,16,24,32\}$, $\initscale\in\{0.005,0.01,0.02,0.05\}$, five seeds, $20{,}000$ updates of
-size $0.5$: $279$ of $280$ runs make every held-out prompt correct (the exception is $K=3$, $n=6$, $\initscale=0.05$, one seed). A
-log-linear fit of the solve time gives $n^{0.88}\log(1/\initscale)^{0.34}$ at $K=2$ and $n^{0.82}\log(1/\initscale)^{0.26}$ at $K=3$.
+\paragraph{Initialization.} Fix orthonormal residual directions $e_c,e_s,e_0,e_\ell,e_r$ and a unit vector $e_1$ in the head
+space. With independent random signs $A_Q,A_K,A_V\in\{\pm1\}$, set
+\begin{gather*}
+ E(s)=\initscale\bigl(e_c+(-1)^se_s\bigr),\qquad
+ E(q)=\initscale(e_0-e_\ell),\qquad E(r)=\initscale(e_0+e_\ell),\\
+ W_Qe_s=\initscale A_Qe_1,\qquad W_Ke_\ell=\initscale A_Ke_1,\qquad W_Ve_0=\initscale A_Ve_r
+\end{gather*}
+for the gate head (head $1$ of block $2$), with these maps zero on all other directions. Position embeddings, the other heads, the MLP
+weights and the readout are zero, and the MLP biases are $\pm\initscale$. This $\theta_0$ satisfies \cref{ass:init}: every block
+has operator norm at most $\sqrt2\,\initscale$, $|\tilde b_m|=1$, and the count embeddings have singular
+values $\sqrt2\,\initscale$.
 
-\paragraph{Phases.} One run, $K=2$, $n=16$, $\initscale=0.02$. Let $\gamma$ be the norm of the count-centred score bonus of the query
-letter, $\beta$ its count-averaged part, $b_n$ the bias on the current letter, and $v_{\mathrm{ol}}$, $v_{\mathrm{os}}$ the readout norms on the
-letter and count blocks of $\bm o$.
-\begin{center}\small
-\begin{tabular}{@{}rcccccc@{}}
-\toprule
-update & loss & $\gamma$ & $v_{\mathrm{ol}}$ & $b_n$ & $\beta$ & $v_{\mathrm{os}}$\\
-\midrule
-$0$ & $0.694$ & $0.06$ & $0.07$ & $0.00$ & $+0.02$ & $0.05$\\
-$100$ & $0.5625$ & $0.06$ & $0.06$ & $0.00$ & $+0.02$ & $0.07$\\
-$1{,}000$ & $0.5617$ & $0.39$ & $0.40$ & $0.07$ & $+0.03$ & $0.06$\\
-$1{,}400$ & $0.552$ & $1.18$ & $1.04$ & $0.68$ & $-0.01$ & $0.17$\\
-$1{,}800$ & $0.130$ & $3.90$ & $4.12$ & $5.17$ & $-2.07$ & $3.70$\\
-$2{,}400$ & $0.016$ & $4.91$ & $6.25$ & $7.14$ & $-2.78$ & $6.62$\\
-\bottomrule
-\end{tabular}
-\end{center}
-By update $100$ the loss equals the count-only prior $H(\frac14)=0.5623$. Then $\gamma$ and $v_{\mathrm{ol}}$ grow together at one
-exponential rate while $b_n$, $\beta$ and $v_{\mathrm{os}}$ stay flat: a degree-$2$ saddle. Its fitted rate times $n$ is $0.13$--$0.20$ at
-$K=2$ and $0.07$--$0.12$ at $K=3$ for every $n$ and $\initscale$. Then $b_n$ grows, and finally $\beta$ and $v_{\mathrm{os}}$ form the gate: a
-matching letter moves attention back to the count's own position.
 
-\paragraph{Scaled embeddings.} With $e=v=\initscale=0.3$ and step size $2$, the same saddle grows at about $\initscale^4$ times the
-one-hot rate, and all eight runs ($n\in\{6,8,12,16\}$, two seeds) solve the task (\cref{tab:reach}).
+\begin{lemma}[Exact features]
+\label{lem:R-features}
+Throughout the schedule, for $t\ge2$,
+$f_t=\initscale v_c+\initscale v_s\,c_t+g\,v_r\,M_t$ with
+$M_t=\dfrac{\sum_{j=1}^ne^{ac_tm_j+\beta_{i_t-\ell_j}}}{e^{\beta_0}+\sum_{j=1}^ne^{ac_tm_j+\beta_{i_t-\ell_j}}}$.
+\end{lemma}
+
+\begin{proof}
+Block $1$ and both MLPs write nothing. The query at $i_t$ is $\initscale^2A_Qc_te_1$, the key of letter $j$ is $\initscale^2A_Km_je_1$ and that of $i_t$ is $0$;
+letters carry value $\initscale^2A_Ve_r$ and $i_t$ carries $0$. Only $\beta$ and the readout are trained.
+\end{proof}
+
+\begin{lemma}[Prior and gradient identity]
+\label{lem:R-identity}
+(a) $L_A(v_c,v_s)=\E\,\phi\bigl(y(\initscale v_c+\initscale v_sc)\bigr)$ has the unique minimizer $\initscale v_c=0$, $\initscale v_s=u_*$; let $f_A=u_* c$.
+(b) For bounded $\Psi(c_t,m_t,m_{-t})$, let $\psi(c,m)=\E[\Psi\mid c_t=c,m_t=m]$ and $\widehat\Psi=\frac14\sum_{c,m}cm\,\psi(c,m)$. Then
+$\E[-y_t\operatorname{sigmoid}(-y_tf_A)\Psi]=-2p(1-p)\widehat\Psi$.
+(c) If $|f_t-f_A|\le\varrho$ on every prompt, the left side changes by at most $\frac14\varrho\sup|\Psi|$.
+\end{lemma}
+
+\begin{proof}
+(a) The loss is invariant under $(c,y)\mapsto(-c,-y)$, which maps $v_c\mapsto-v_c$, so by strict convexity $v_c=0$; the first-order
+condition in $v_s$ is $(1-p)\operatorname{sigmoid}(-\initscale v_s)=p\operatorname{sigmoid}(\initscale v_s)$. (b) Write $\psi=\psi_0+\psi_1c+\psi_2m+\widehat\Psi cm$. Since
+$y_tf_A=u_* m_t$, $\operatorname{sigmoid}(-u_* m_t)$ is $p$ for $m_t=1$ and $1-p$ for $m_t=-1$; with $c_t$ uniform and independent of
+$(m_t,m_{-t})$, $\E[c_tm_t\operatorname{sigmoid}(-u_* m_t)]=\E[m_t\operatorname{sigmoid}(-u_* m_t)]=\E[c_t\operatorname{sigmoid}(-u_* m_t)]=0$ and
+$\E[\operatorname{sigmoid}(-u_* m_t)]=2p(1-p)$. (c) $\operatorname{sigmoid}$ is $\frac14$-Lipschitz.
+\end{proof}
+
+\paragraph{Coefficients at zero bias.} At $\beta=0$ fix $t$ and $c$, and put $u=acm_t$, $R=1+\sum_{j\ne t}e^{acm_j}$ and $Z=e^u+R$,
+so $M_t=1-1/Z$. The bias derivatives of $M_t$ at $\beta=0$ are
+\[
+ \Psi_{\mathrm{cur}}=\frac{\partial M_t}{\partial\beta_n}=\frac{e^u}{Z^2},\qquad
+ \Psi_{\mathrm{self}}=\frac{\partial M_t}{\partial\beta_0}=-\frac{Z-1}{Z^2},\qquad
+ \Psi_j=\frac{\partial M_t}{\partial\beta_{i_t-\ell_j}}=\frac{e^{acm_j}}{Z^2}\quad(j\ne t).
+\]
+$R$ does not depend on $m_t$, so pairing $m=c$ with $m=-c$ gives, for any such $\Psi(u,R)$,
+\begin{equation}
+ \widehat\Psi=\tfrac14\sum_{c=\pm1}\E\int_{-a}^{a}\partial_u\Psi(u,R)\,du=\operatorname{sign}(a)\,|a|\,\overline{\partial_u\Psi},
+ \label{eq:R-hat}
+\end{equation}
+with $\overline{\,\cdot\,}$ an average over $|u|\le|a|$, over $c$ and over the letters.
+
+\begin{lemma}[Coefficient bounds]
+\label{lem:R-coeff}
+Let $n\ge2$ and $|a|\le0.1$. Then $\widehat M=\operatorname{sign}(a)\mu_M$, $\widehat\Psi_{\mathrm{cur}}=\operatorname{sign}(a)\mu_{\mathrm{cur}}$,
+$\widehat\Psi_{\mathrm{self}}=\operatorname{sign}(a)\mu_{\mathrm{self}}$ and $\widehat\Psi_j=-\operatorname{sign}(a)\mu_{\mathrm{oth}}$ with $\mu_\bullet\ge0$ and
+\[
+ \mu_M\ge\frac{0.34|a|}{n^2},\qquad \frac{0.08|a|}{n^2}\le\mu_{\mathrm{cur}}\le\frac{2.5|a|}{n^2},\qquad
+ |\mu_{\mathrm{cur}}-\mu_{\mathrm{self}}|\le\frac{4a^2}{n^3},\qquad \mu_{\mathrm{oth}}\le\frac{4|a|}{n^3};
+\]
+moreover $\sup|\Psi_{\mathrm{cur}}|,\sup|\Psi_j|\le1.5/n^2$ and $\sup|\Psi_{\mathrm{self}}|\le1.2/n$.
+\end{lemma}
+
+\begin{proof}
+For $|a|\le0.1$, $e^{\pm|a|}\in[0.904,1.106]$, $R\in[1+0.904(n-1),1+1.106(n-1)]$ and $Z\in[1+0.904n,1.61n]$. Then
+$\partial_uM_t=e^u/Z^2\ge0.34/n^2$; $\partial_u\Psi_{\mathrm{cur}}=e^u(R-e^u)/Z^3\in[0.08/n^2,2.5/n^2]$, since $R-e^u\ge0.39n$;
+$\partial_u\Psi_{\mathrm{self}}=e^u(Z-2)/Z^3\ge0$; $|\partial_u\Psi_j|=2e^{acm_j}e^u/Z^3\le4/n^3$; and
+$|\partial_u(\Psi_{\mathrm{cur}}-\Psi_{\mathrm{self}})|=2e^u|1-e^u|/Z^3\le4|a|/n^3$. Apply \cref{eq:R-hat}. The suprema follow from $Z\ge0.904n$ and
+$(Z-1)/Z^2\le1/Z$.
+\end{proof}
+
+\paragraph{Schedule.} Choose a deterministic upper bound on the Stage D burn-in, a time $T'$ after which a second
+argument certifies the margins, and a leakage tolerance covering the time up to $T'$:
+\begin{gather*}
+ C_0=2\log\frac{10}{\pi_0},\qquad
+ \overline T_D=\frac{5(2+9C_0)^2}{\pi_0 g^2a^2},\qquad
+ y=\frac{625}{\pi_0g^2a^2},\qquad
+ T'=\bigl(64y\log^2(64y)\bigr)^2,\\
+ B=\max\bigl(C_0,2\log(1+T')\bigr),\qquad
+ \epsilon=\frac{0.015|a|}{B},\qquad b_*=\log\frac{2.1n}{\epsilon},\qquad
+ \alpha_*=\frac{p(1-p)|a|}{60nb_*}.
+\end{gather*}
+(A) Gradient flow on $(v_c,v_s)$ from $0$ until $|\initscale v_c|+|\initscale v_s-u_*|\le\frac{\alpha_*}{4n}$. (B) One step on $v_r$ from $0$ with
+$\eta_B=\alpha_*/(2p(1-p)g^2\mu_M)$; let $\alpha=\operatorname{sign}(a)gv_r$. (C) One step on $\beta$ from $0$ with
+$\eta_C=b_*/(2p(1-p)\alpha\mu_{\mathrm{cur}})$. (D) Gradient flow on $(v_c,v_s,v_r)$ with $\beta$ fixed. Smallness: $|a|\le0.1$, $|a|b_*\le0.008$
+and $\initscale(1+|u_*|)\le1$, with $\initscale\le\initscale_0$ as in \cref{ass:init}. The next lemma makes the threshold explicit.
+
+\begin{lemma}[Size of the scale threshold]
+\label{lem:R-scale}
+Let $D_p=C_0+8\log(40000/\pi_0)$ and
+\[
+ \initscale_\star=\min\Bigl\{\initscale_0,\ \frac1{1+|u_*|},\ 0.1\,d_{\mathrm h}^{1/8}\bigl(1+\log(140nD_p)\bigr)^{-1/4}\Bigr\}.
+\]
+Every $0<\initscale\le\initscale_\star$ satisfies the smallness conditions. Here $\initscale_0=c\min(1,w^{-1/2})$, since the
+initialization has $|\tilde b_m|=1$ on each of the $w$ MLP units, so
+$1/\initscale_\star\le C_p\bigl(\sqrt w+(\log 2n)^{1/4}\bigr)$ with $C_p$ depending only on $p$: the threshold is polynomial in
+the width and decays only like $(\log n)^{-1/4}$ in $n$.
+\end{lemma}
+
+\begin{proof}
+Write $x=|a|=\initscale^4/\sqrt{d_{\mathrm h}}$; the third entry of the minimum gives $x\le x_0:=10^{-4}/(1+\log(140nD_p))\le10^{-4}$, so
+$|a|\le0.1$. Since $g^2a^2=\initscale^{12}/d_{\mathrm h}$ and $\pi_0\le\frac14$, $L:=\log(64y)=\log(40000d_{\mathrm h}/(\pi_0\initscale^{12}))\ge12$, and
+$\log(1+T')\le\log2+2L+4\log L\le4L$; hence $B\le C_0+8L$. As $\initscale\le1\le d_{\mathrm h}$, $\log d_{\mathrm h}\le2\log(1/x)$ and
+$12\log(1/\initscale)\le3\log(1/x)$, so $L\le\log(40000/\pi_0)+5\log(1/x)$ and $B\le D_p(1+40\log(1/x))$. With $b_*=\log(140nB/|a|)$,
+\[
+ |a|b_*\le x\log(140nD_p)+x\log\bigl(1+40\log(1/x)\bigr)+x\log(1/x).
+\]
+The first term is at most $10^{-4}$; the other two increase on $(0,10^{-4}]$ and are at most $5.9\times10^{-4}$ and
+$9.3\times10^{-4}$ there. The sum is below $0.008$. The second entry of the minimum is the last condition.
+\end{proof}
+
+\begin{lemma}[Stages A and B]
+\label{lem:R-AB}
+Stage A ends within time $\bigl(\initscale^2p(1-p)\bigr)^{-1}\log(1+4n|u_*|/\alpha_*)$, and after Stage B, $\alpha\in[\frac12\alpha_*,\frac32\alpha_*]$.
+\end{lemma}
+
+\begin{proof}
+Symmetry keeps $v_c=0$ in Stage A. With $w=\initscale v_s$, its flow is
+$\dot w=\initscale^2(1-p-\operatorname{sigmoid}(w))$, so $w$ stays between $0$ and $u_*$.
+On this interval $\operatorname{sigmoid}'(w)\ge p(1-p)$; hence
+$|w(t)-u_*|\le|u_*|e^{-\initscale^2p(1-p)t}$, giving the stated time (zero when $p=1/2$).
+For Stage B, $|f_t-f_A|\le\frac{\alpha_*}{4n}$, so by \cref{lem:R-identity} with $\Psi=M_t$,
+$\partial L/\partial v_r=g(-2p(1-p)\widehat M+r_B)$ with $|r_B|\le\alpha_*/(16n)$, and $4|r_B|\le2p(1-p)\mu_M$ by \cref{lem:R-coeff} and the Stage A tolerance.
+\end{proof}
+
+\begin{lemma}[Stage C: one step learns the routing]
+\label{lem:R-C}
+After Stage C: (a) $\beta_n\ge b_*-0.1$ and $\beta_0\ge b_*-0.5$; (b) $\Delta:=\beta_n-\beta_0$ has $|\Delta|\le1$; (c) $\beta_\delta\le0.1$ for every
+$\delta\notin\{0,n\}$; (d) on every prompt and every $t\ge2$, $|M_t-\widetilde M_t|\le\epsilon$ with $\widetilde M_t=\operatorname{sigmoid}(ac_tm_t+\Delta)$.
+\end{lemma}
+
+\begin{proof}
+For position $t$ the bias gradient is $gv_r\E[-y_t\operatorname{sigmoid}(-y_tf_t)\Psi]$. After Stage B, $|f_t-f_A|\le\frac{\alpha_*}{4n}+\alpha\le1.3\alpha$, so by
+\cref{lem:R-identity} it equals $gv_r(-2p(1-p)\widehat\Psi+r)$ with $|r|\le0.33\alpha\sup|\Psi|$, and $gv_r\widehat\Psi=\pm\alpha\mu_\bullet$ with the signs of
+\cref{lem:R-coeff}. The segment mask gives every $t$ the same coefficients. One step of size $\eta_C$ therefore gives
+$\beta_n=b_*+e_n$, $\beta_0=b_*\mu_{\mathrm{self}}/\mu_{\mathrm{cur}}+e_0$ and $\beta_\delta=-\eta_C2p(1-p)\alpha\mu_{\mathrm{oth}}c_\delta/(n-1)+e_\delta$, where $c_\delta$ counts
+the positions at which $\delta$ points to a letter other than the current one and $|e_\bullet|\le0.33\eta_C\alpha^2\sup|\Psi_\bullet|$. With
+$\alpha\le\frac32\alpha_*$, $|e_0|\le2.5b_*\alpha n/(p(1-p)|a|)\le0.07$ and $|e_n|,|e_\delta|\le0.04$; and
+$|\mu_{\mathrm{self}}/\mu_{\mathrm{cur}}-1|\le50|a|/n$, so $|\beta_0-b_*|\le50|a|b_*/n+0.07\le0.3$. This gives (a)--(c). For (d), the other letters add
+$O=\sum_{j\ne t}e^{ac_tm_j+\beta_{i_t-\ell_j}}\le(n-1)e^{0.2}$ to numerator and denominator of $\widetilde M_t$, which changes it by at most
+$O/e^{\beta_0}\le2.1ne^{-b_*}=\epsilon$.
+\end{proof}
+
+\begin{lemma}[Stage D]
+\label{lem:R-D}
+Write $\widetilde M_t=m_0+d\,c_tm_t$; then $|d|\ge0.18|a|$ and $\operatorname{sign}d=\operatorname{sign}a$. The readout $v^\star$ with $gv^\star_r=1/d$, $\initscale v^\star_c=-m_0/d$,
+$v^\star_s=0$ has margin at least $\frac12$ on every prompt and every $t\ge2$, and $|g|\|v^\star\|\le1.5/|d|$.
+Measuring time from the start of Stage D, set $T_D=\|v(0)-C_0v^\star\|^2/(0.2\pi_0)$.
+Then $T_D\le\overline T_D$, every prediction has positive margin at every time $t\ge T_D$, and $L^{\ge2}_{\mathrm{step}}\to0$.
+\end{lemma}
+
+\begin{proof}
+$|d|\ge|a|\operatorname{sigmoid}'(1.1)\ge0.18|a|$ by $|\Delta|\le1$. By \cref{lem:R-features}, $f^\star_t=(M_t-m_0)/d=c_tm_t+(M_t-\widetilde M_t)/d$, so
+$y_tf^\star_t\ge1-\epsilon/|d|\ge\frac12$; and $|gv^\star_c|=\initscale|A_V|m_0/|d|\le1/|d|$. The loss is convex in $v$, so for every comparator $u$,
+$L(v(t))\le L(u)+\|v(0)-u\|^2/(2t)$ and $\|v(t)-u\|^2\le\|v(0)-u\|^2+2tL(u)$; for $u=Cv^\star$, $L(u)\le e^{-C/2}$. With $u=C_0v^\star$,
+$L(u)\le0.1\pi_0$, so $L(v(t))\le0.2\pi_0$ for $t\ge T_D$. At the start of Stage D, $|g|\|v(0)\|\le\initscale|u_*|+\alpha\le2$, so
+\[
+ T_D\le\frac{5(2+1.5C_0/|d|)^2}{\pi_0g^2}
+ \le\frac{5(2+9C_0)^2}{\pi_0g^2a^2}=\overline T_D.
+\]
+Each margin is $\mu(c,m)+\xi$, where $\mu$ depends only on the local case $(c_t,m_t)$ and $|\xi|\le|gv_r|\epsilon$, and each case has weight
+at least $\pi_0$. If some margin is nonpositive, then $\mu\le\max|\xi|$ for its case, so every prompt of that case has margin at most
+$2\max|\xi|$.
+
+\emph{Up to $T'$.} For $0\le t\le T'$, set $u=C_tv^\star$ with $C_t=\max(C_0,2\log(1+t))\le B$. Since $tL(u)\le1$, the second convex-flow
+bound gives $|g|\|v(t)\|\le|g|\|v(0)\|+2C_t|g|\|v^\star\|+\sqrt2|g|\le6B/|d|$, so $|gv_r(t)|\epsilon\le6B\epsilon/|d|\le\frac12$. A nonpositive
+margin at a time $t\in[T_D,T']$ would give $L\ge\pi_0\phi(1)\ge0.31\pi_0$, contradicting $L(v(t))\le0.2\pi_0$.
+
+\emph{After $T'$.} For $t\ge T'$, set $u=Cv^\star$ with $C=2\log(1+t)$, so $L(u)\le1/(1+t)$ and $tL(u)\le1$. Then
+$|g|\|v(t)\|\le2+6\log(1+t)/|d|+\sqrt2|g|$, and since $6\epsilon/|d|\le0.5/B$ and $3.5\epsilon\le0.006/B$,
+$2\max|\xi|\le(\log(1+t)+0.011)/B$. As $\phi(z)\ge e^{-z}\log2$ for $z\ge0$ and $B\ge C_0\ge2$, a nonpositive margin would give
+\[
+ L(v(t))\ge\pi_0\log2\,e^{-0.011/B}(1+t)^{-1/B}\ge0.68\,\pi_0(1+t)^{-1/2}.
+\]
+The first convex-flow bound with the same $u$, $|d|\ge0.18|a|$, $|a|\le0.1$ and $\log(1+t)\ge1$ gives instead
+\[
+ L(v(t))\le\frac1{1+t}+\frac{(2+1.5C/|d|)^2}{2g^2t}\le\frac1{1+t}+\frac{145\log^2(1+t)}{g^2a^2t}.
+\]
+Since $T'\ge y^2\ge(625/\pi_0)^2$, the first term is at most $0.33\pi_0(1+t)^{-1/2}$. With $s=\sqrt t\ge1$, the second is at most
+$0.33\pi_0(1+t)^{-1/2}$ once $\log^2(1+t)/s\le1/y$. Now $\log(1+s^2)\le2\log(2s)$, $s/\log^2(2s)$ increases for $s\ge4$, and at
+$s=64y\log^2(64y)$ one has $\log(2s)\le2\log(64y)$, so $4\log^2(2s)/s\le1/y$ for all $s\ge64y\log^2(64y)$, that is, for all $t\ge T'$.
+The two bounds on $L(v(t))$ contradict each other. Hence every margin is positive at every $t\ge T_D$.
+Finally $\limsup_tL(v(t))\le e^{-C/2}$ for every $C$.
+\end{proof}
+
+\begin{proof}[Proof of \cref{thm:routing}]
+Let $T=T_A+\eta_B+\eta_C+T_D$, counting each discrete step by its step size.
+The Stage D statement $t\ge T_D$ becomes $t\ge T$ in this total clock, giving (i); the separator gives (ii).
+The burn-in is polynomial: \cref{lem:R-AB} bounds $T_A$,
+$\eta_B=O(n/(g^2b_*))$, $\eta_C=O(n^3b_*^2/(p^2(1-p)^2a^2))$, and $T_D\le\overline T_D=O(d_{\mathrm h}\initscale^{-12}\log^2(1/\pi_0)/\pi_0)$.
+Here $|a|=\initscale^4/\sqrt{d_{\mathrm h}}$, $|g|=\initscale^2$, and
+$b_*=\log(140nB/|a|)$ with $B\le C_0+8\log(64y)=O(\log(d_{\mathrm h}/(\pi_0\initscale)))$.
+These bounds yield $T\le\mathrm{poly}(n,d_{\mathrm h},\initscale^{-1},(p(1-p))^{-1})$; the threshold is \cref{lem:R-scale}.
+\end{proof}
+
+\begin{proposition}[Fixed routing]
+\label{prop:fixed-routing}
+\label{cor:fixed-route}
+With the initialization of \cref{thm:routing} but a fixed two-site mask exposing the displayed count and the current
+letter, readout gradient flow from zero reaches positive margins on every transition after the first in time
+$O_p(d_{\mathrm h}\initscale^{-12})$ and drives $\Lstep^{\ge2}$ to zero.
+\end{proposition}
+
+\begin{proof}[Proof of \cref{prop:fixed-routing}]
+With the two-site mask, $M_t=\operatorname{sigmoid}(ac_tm_t)=\tfrac12+d c_tm_t$, where
+$d=\tfrac12\tanh(a/2)$ and $|d|\ge|a|/5$ for $|a|\le1$. The separator
+$v_*=e_r/(gd)-e_c/(2\initscale d)$ has unit margin on all four cases $(c_t,m_t)$ and
+$\|v_*\|\le7.5\sqrt{d_{\mathrm h}}\initscale^{-6}$. Each case has weight at least $\pi_0$.
+For $A=\log(4/(\pi_0\log2))$, the convex-flow bound from Stage D gives
+$L(v(t))\le e^{-A}+A^2\|v_*\|^2/(2t)<\pi_0\log2$ once
+$t>2A^2\|v_*\|^2/(\pi_0\log2)$. A nonpositive margin would contribute at least
+$\pi_0\log2$, so all margins are positive thereafter by loss descent. Scaling the separator proves $L\to0$.
+\end{proof}
+
+\begin{corollary}[Outcome training in the same model]
+\label{cor:routing-outcome}
+Take the architecture and initialization of \cref{thm:routing}, with any fixed mask for the gate head at the answer position,
+and let $\mixrate=|1-2p|$.
+(a) If $p\ne\frac12$, gradient descent on $\Lout$ over any subset of the parameters that excludes $\beta$, with
+$\initscale\le\min(\initscale_\star,c\mixrate)$ and $\stepsize\le\stepsize_0$, keeps $\Lout\ge\log2-C\initscale^2\mixrate^n$ and
+$\E\softmax(\bm z)_y\le\frac12+C\initscale\mixrate^{n/2}$ for every $j\le c\mixrate^{-n}/\stepsize$. If $p=\frac12$, so $\mixrate=0$, it stays in
+$\initball$ for every $j\le c\initscale^{-1}(\attconst\initscale^4)^{-\lceil(n-1)/2\rceil}/\stepsize$, a time of order at least $\initscale^{-(2n-1)}$.
+(b) If only $\beta$ and the readout are trained, as in the schedule, the outcome logits are the same for every prompt at all times,
+so $\Lout\ge\log2$ throughout.
+\end{corollary}
+
+\begin{proof}
+(a) The initialization satisfies \cref{ass:init} with $a_0=\sqrt2$ and $\varsigma=\sqrt2$, its readout is zero, and a fixed mask is
+permitted by \cref{ass:arch}; the constants of \cref{app:mainproofs} depend only on $a_0$, $\varsigma$, $K$ and the numbers of blocks and
+heads. Apply \cref{thm:outcome-end}, and \cref{rem:end-parity} when $\mixrate=0$. (b) The answer position carries a token with zero
+embedding, so its query is zero; all letters carry the same value, and the frozen parameters write nothing else. The answer logits
+therefore depend on $\beta$ and the readout only, and with a uniform start the best prompt-independent prediction has loss $\log2$.
+\end{proof}
+
+\begin{remark}[Scope]
+\label{rem:routing-scope}
+\Cref{thm:routing,cor:routing-outcome} fix the model and the initialization but not the procedure: the step guarantee trains $\beta$
+with two large steps, while the outcome plateau of \cref{cor:routing-outcome}(a) holds $\beta$ at zero, and part (b) is degenerate
+because the gate head cannot read the letters at the answer position. A plateau for outcome training that also trains $\beta$ is not
+proved. The polynomial of \cref{thm:routing} has high degree in $1/\initscale$ (Stage D alone is of order
+$d_{\mathrm h}\initscale^{-12}/\pi_0$), so at a fixed scale the two guarantees separate only for large $n$: at $\initscale=0.02$ and
+$p=\frac14$, so $\mixrate=\frac12$, the bound on $T_D$ alone is about $6\times10^{25}d_{\mathrm h}$, which exceeds $\mixrate^{-n}$ unless $n>85$. The separation is asymptotic: with
+$\initscale=\min(\initscale_\star,c\mixrate)$, which is $1/\mathrm{poly}(n,w)$ by \cref{lem:R-scale}, step training reaches positive
+margins in time $\mathrm{poly}(n,d_{\mathrm h},w)$ and outcome training needs time $c\mixrate^{-n}$.
+The result covers transitions $t\ge2$: the first prediction has no count at its own position.
+Ordinary joint training with full-prefix attention remains \cref{conj:reach}.
+\end{remark}
 
 %=============================================================================
 \section{Reproducibility}
 \label{app:reproducibility}
 
-Run \texttt{python3} on \path{handcoded/lookup_convergence.py} for the fixed-feature check.
-It uses NumPy in float64 and saves losses, barrier-crossing updates and bound checks under
-\path{results/lookup_convergence/check.json}.
-
-Code, configurations and seeds are at \url{https://github.com/anonymous/trace}.
-\texttt{RUN.md} lists the experiment commands.
-Training data are synthetic.
-BIG-Bench Hard test items come from the official repository
-\citep{suzgun2022challenging} and are stored unchanged in \texttt{data/bbh}.
-Other test sets are generated.
-
-Software and models, with licenses: PyTorch $2.14$
-\citep{paszke2019pytorch} (BSD-3-Clause), Hugging Face Transformers $5.16$ and PEFT $0.20$
-(Apache-2.0), SmolLM2-135M and Qwen2.5-0.5B (Apache-2.0), and the BIG-Bench Hard items (MIT).
-Compute: a shared node with four NVIDIA A100 80GB GPUs, one GPU per run. A letter-task run of
-$8{,}000$ updates takes about one minute, and a Qwen2.5-0.5B LoRA run of $800$ updates with
-evaluation about fifteen minutes. Exploratory runs used more compute than the reported
-experiments.
+% TODO before submission: replace with the anonymized repository link (e.g. anonymous.4open.science).
+Code, configurations and seeds: \url{https://anonymous.4open.science/r/trace}.
+\texttt{RUN.md} gives commands; \texttt{CHECKS.md} gives per-draw measurements and script names.
+\path{handcoded/construction_from_appendix.py} checks executor tensors and
+\path{handcoded/routing_stages_check.py} checks the staged schedule.
+Training data are synthetic; official BIG-Bench Hard test items are stored unchanged in \texttt{data/bbh}.
+Runs use one NVIDIA A100 80GB GPU on a shared four-GPU node: about one minute for $8$k counting updates and
+fifteen minutes for an $800$-update Qwen2.5-0.5B LoRA run including evaluation. Exploratory runs used more compute than
+the reported experiments.
+Software and assets: PyTorch 2.13 (BSD-3-Clause), Transformers 5.16 and PEFT 0.20 (Apache-2.0), SmolLM2-135M
+\citep{allal2025smollm2} and Qwen2.5-0.5B \citep{qwen2025qwen25} (Apache-2.0), and BIG-Bench Hard \citep{suzgun2022challenging} (MIT).

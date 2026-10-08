@@ -18,7 +18,7 @@
 \usepackage{xcolor}         % colors
 \usepackage{subcaption}
 
-\title{Where the Credit Is: Why Step Targets Teach Counting That Correct Answers Miss}
+\title{Where the Credit Is: Why Running Counts Teach What Final Counts Miss}
 
 \author{%
     Anonymous Author(s)\\
@@ -92,25 +92,6 @@
 % Mean with standard deviation as a subscript, e.g. \msd{82.2}{6.8} -> 82.2_{+-6.8}.
 \newcommand{\msd}[2]{#1_{\scriptscriptstyle\pm#2}}
 
-% ---------------------------------------------------------------------------
-% Semantic names for the credit mechanism. The main text defines the operator
-% and its gradient coordinates before stating the credit results.
-% ---------------------------------------------------------------------------
-% Orthogonal projection onto the local-transition directions H, i.e. the part of
-% a gradient that says which destination a given source should prefer.
-\newcommand{\Proj}[1]{\operatorname{Proj}_{\mathsf H}\!\left(#1\right)}
-% Closeness to the uniform/mixing transition.  Named rather than \phi so the
-% depth bound reads as a statement, not a symbol.
-\newcommand{\rulestr}{\varepsilon_{\mathrm{mix}}}
-% Forward state signal and backward answer signal, both centered.  The forward
-% vector is f, not q, since q is already a target row distribution.
-\newcommand{\fwdsig}{\bar{\bm{f}}}
-\newcommand{\bwdsig}{\bar{\bm{b}}}
-
-% Supervision-mode names, used in prose and in table rows.
-\newcommand{\proc}{\textsc{Process}\xspace}
-\newcommand{\outcome}{\textsc{Outcome}\xspace}
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Figure/table helpers
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -159,9 +140,9 @@
 \bibliography{main}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% APPENDIX (appendix.tex): notation; A model and constructions; B proofs for
-% permutation tasks; C the transition model; D proofs for wrong traces;
-% E experimental details; F reproducibility.
+% APPENDIX (appendix.tex): A executor construction; B counting-credit and
+% plateau proofs; C numerical checks; D experimental details; E joint routing;
+% F staged-routing proof and fixed-routing corollary; G reproducibility.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \clearpage
@@ -182,6 +163,6 @@
 \input{appendix}
 
 \clearpage
-% \input{checklist}
+\input{checklist}
 
 \end{document}
