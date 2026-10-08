@@ -28,7 +28,7 @@ Degree counts input letters, not powers of parameters.
 \begin{assumption}[Architecture]
 \label{ass:arch}
 A causal Transformer with two blocks of softmax heads and ReLU MLPs, learned token and position
-embeddings, a learned relative position bias $b_{i-j}$ added to every attention score and initialized at zero, no
+embeddings, a learned relative position bias $\beta_{i-j}$ added to every attention score and initialized at zero, no
 LayerNorm, any widths (residual $d_{\mathrm{res}}$, head $d_{\mathrm h}$, MLP $w$) and a linear readout $V$;
 every logit vector is $\bm z=Vh$ with $h$ independent of $V$. A head may have a fixed, input-independent causal submask;
 ordinary attention uses the full prefix.
@@ -36,10 +36,10 @@ ordinary attention uses the full prefix.
 
 \begin{assumption}[Initialization]
 \label{ass:init}
-$\theta_0=\initscale\tilde\theta$ with $\initscale\le\initscale_0:=c\min(1,1/\beta)$, where every weight matrix and embedding block of $\tilde\theta$ has operator norm
-at most $a_0$, every MLP bias satisfies $|\tilde b_m|\ge1$, each MLP bias vector has norm at most $\beta$, and the
+$\theta_0=\initscale\tilde\theta$ with $\initscale\le\initscale_0:=c\min(1,1/N_b)$, where every weight matrix and embedding block of $\tilde\theta$ has operator norm
+at most $a_0$, every MLP bias satisfies $|\tilde b_m|\ge1$, each MLP bias vector has norm at most $N_b$, and the
 value-token embeddings have smallest singular value at least $\varsigma>0$. We work on
-$\initball=\{\theta:\|\theta-\theta_0\|\le\ballradius\initscale,\ b=0\}$ with $\ballradius=\min(1/8,\varsigma/4)$, where $b$ is the
+$\initball=\{\theta:\|\theta-\theta_0\|\le\ballradius\initscale,\ \beta=0\}$ with $\ballradius=\min(1/8,\varsigma/4)$, where $\beta$ is the
 relative position bias.
 \end{assumption}
 
@@ -57,14 +57,14 @@ position bias held at its zero initialization.
 
 \paragraph{Norms and the relative bias.} Parameters carry the Euclidean norm of the vectorized parameters (Frobenius on
 each block). In \cref{thm:main,thm:separation,thm:outcome-end} and \cref{prop:rule-lower} the relative bias is fixed at zero,
-which is what $b=0$ in $\initball$ and \cref{ass:gd} encode; the proofs of \cref{app:mainproofs} treat the zero-score
+which is what $\beta=0$ in $\initball$ and \cref{ass:gd} encode; the proofs of \cref{app:mainproofs} treat the zero-score
 attention as uniform and do not cover a trained bias. Only \cref{thm:routing}, \cref{tab:reach} and \cref{conj:reach}
 train it. The in-regime runs of \cref{app:exp-regime} have no relative bias.
 
 On $\initball$, no ReLU unit changes sign (\cref{app:network}). Constants $c,C>0$ depend only on $a_0$, $\varsigma$, $K$
 and the numbers of blocks and heads, never on the widths, $n$, $\initscale$ or the time. Fan-in-scaled initialization
 satisfies \cref{ass:init} w.h.p.\ at every width, with $a_0$ bounded in terms of the largest block aspect ratio,
-$\varsigma\ge\frac12$ and $\beta\le2\sqrt w$, provided the MLP biases are drawn with $|\tilde b_m|\in[1,2]$, which default
+$\varsigma\ge\frac12$ and $N_b\le2\sqrt w$, provided the MLP biases are drawn with $|\tilde b_m|\in[1,2]$, which default
 initializations (zero or small biases) do not do; at the executor width the aspect ratios are bounded, so the theorems
 hold there with $n$-independent constants for $\initscale\le c\min(\mixrate,n^{-1/2})$ (\cref{rem:end-width}).
 
@@ -103,33 +103,33 @@ looks up $s_n$ from $(\reg{s0},\reg{cnt})$. State arithmetic is modulo $K$.
 \paragraph{Architecture, registers and layout.}
 \label{app:construction}
 \label{app:model}
-Each block has three heads, with head dimension $d=2n+6$ (the number of positions), and one ReLU MLP of width
+Each block has three heads, with head dimension $d_{\mathrm h}=2n+6$ (the number of positions), and one ReLU MLP of width
 $\max\{|\Sigma|,3K(n+1),2n+1\}$, without LayerNorm:
 \begin{align*}
  h_i&\leftarrow h_i+\sum_{h=1}^{3}\sum_{j\le i}
- \operatorname{softmax}_{j\le i}\!\Big(\frac{1}{\sqrt d}(W^{(h)}_Qh_i)^{\!\top}W^{(h)}_Kh_j\Big)\,W^{(h)}_Vh_j,\\
+ \operatorname{softmax}_{j\le i}\!\Big(\frac{1}{\sqrt d_{\mathrm h}}(W^{(h)}_Qh_i)^{\!\top}W^{(h)}_Kh_j\Big)\,W^{(h)}_Vh_j,\\
  h_i&\leftarrow h_i+W_{\mathrm{out}}\relu(W_{\mathrm{in}}h_i+b_{\mathrm{in}}),
  \qquad
  \mathrm{logits}_i=V\,h_i .
 \end{align*}
-The residual stream holds, in order, the one-hot registers $\reg{tl}$ ($|\Sigma|$), $\reg{tv}$ ($K$) and $\reg{pos}$ ($d$) for the
+The residual stream holds, in order, the one-hot registers $\reg{tl}$ ($|\Sigma|$), $\reg{tv}$ ($K$) and $\reg{pos}$ ($d_{\mathrm h}$) for the
 letter or value token and the position, then $\reg{qry}$ ($|\Sigma|$), $\reg{match}$ ($1$), $\reg{prev}$ ($K$), $\reg{mt}$ ($1$),
-$\reg{cnt}$ ($1$), $\reg{s0}$ ($K$) and $\reg{out}$ ($K$), so $d_{\mathrm{res}}=2|\Sigma|+4K+d+3$; $\reg r[a]$ is coordinate $a$ of
+$\reg{cnt}$ ($1$), $\reg{s0}$ ($K$) and $\reg{out}$ ($K$), so $d_{\mathrm{res}}=2|\Sigma|+4K+d_{\mathrm h}+3$; $\reg r[a]$ is coordinate $a$ of
 register $\reg r$, and $E_{\reg a\leftarrow\reg b}$ copies register $\reg b$ into $\reg a$. Letters are $0,\ldots,|\Sigma|-1$, value
 $v$ is $|\Sigma|+v$, then SEP, ``:'' and EOS. With $0$-indexed positions the prompt is $s_0@0$, $q@1$, $w_t@(1+t)$,
 SEP$@(n+2)$; the step row continues $s_t@(n+2+t)$, ``:''$@(2n+3)$, $s_n@(2n+4)$, and the outcome row ``:''$@(n+3)$,
 $s_n@(n+4)$. Position $i$ predicts the token at $i+1$, so $n+1+t$ predicts $s_t$ and $n+3$ predicts $s_n$.
 
-\textbf{Route and average.} Give source positions score $\beta_n$ and all others score $0$.
+\textbf{Route and average.} Give source positions score $\Omega_n$ and all others score $0$.
 Let $\mathrm{src}(i)\subseteq\{0,\ldots,i\}$ be the source set.
 Unlisted positions use the fallback $\{f\}$.
-Set $C_Q=\beta_n\sqrt d$ and $\beta_n=\max\{16,3\log(8(n+3))\}$:
+Set $C_Q=\Omega_n\sqrt d_{\mathrm h}$ and $\Omega_n=\max\{16,3\log(8(n+3))\}$:
 
 \begin{equation}
  \begin{aligned}
  (W_K)_{j,\reg{pos}[j]}=1,\quad
  (W_Q)_{j,\reg{pos}[i]}&=C_Q\quad(j\in\mathrm{src}(i)),\\
- \frac1{\sqrt d}(W_Qh_i)^\top W_Kh_j&=\beta_n\,[j\in\mathrm{src}(i)].
+ \frac1{\sqrt d_{\mathrm h}}(W_Qh_i)^\top W_Kh_j&=\Omega_n\,[j\in\mathrm{src}(i)].
  \end{aligned}
  \label{eq:route}
 \end{equation}
@@ -167,9 +167,9 @@ output register supplies value logits; weight $20$ on the appropriate position c
 All unused maps are zero.
 
 \proofstep{Finite-score error.}
-With $d=2n+6$ and $\beta_n=\max\{16,3\log(8(n+3))\}$,
+With $d_{\mathrm h}=2n+6$ and $\Omega_n=\max\{16,3\log(8(n+3))\}$,
 \[
- \rho_n=(d-1)e^{-\beta_n}
+ \rho_n=(d_{\mathrm h}-1)e^{-\Omega_n}
  <\frac{2(n+3)}{(8(n+3))^3}
  =\frac1{256(n+3)^2}.
 \]
@@ -222,7 +222,7 @@ Every greedy prediction remains correct. Induction over the continuation proves 
 Write (A1)--(A4) for \cref{ass:arch,ass:init,ass:task,ass:gd}, and (A3$'$) for a uniform start.
 All initialization bounds below hold on the larger ball of radius $2\ballradius\initscale$: its relative radius is
 at most $\min(1/4,\varsigma/2)$. Constants depend only on $a_0,\varsigma,K$ and the numbers of blocks and heads.
-The only width-dependent smallness threshold is $\initscale_0=c\min(1,1/\beta)$.
+The only width-dependent smallness threshold is $\initscale_0=c\min(1,1/N_b)$.
 The state-credit loss is $\Lstep^{\ge2}$; formatting and final-answer positions are excluded.
 Unless stated otherwise, a fixed query and start count are understood.
 
@@ -432,9 +432,9 @@ $\omega_{i\cdot}=\softmax(\xi\psi_{i\cdot})$. Operator norms give
 \[
  \|M_\ell-I\|\le C\initscale^2,
  \qquad
- \|\bm o_\ell\|\le2a_0\beta\initscale^2\le a_0\initscale,
+ \|\bm o_\ell\|\le2a_0N_b\initscale^2\le a_0\initscale,
  \qquad
- \|\partial_v\bm o_\ell\|\le(a_0+2\beta)\initscale\le C .
+ \|\partial_v\bm o_\ell\|\le(a_0+2N_b)\initscale\le C .
 \]
 Attention rows have $\ell_1$ norm $1$, so induction over the two blocks gives (i), including its tangent bound. Sums over hidden
 coordinates stay inside operator products, and sums over positions are averages.
@@ -749,7 +749,7 @@ and integrating,
 \label{app:end}
 
 \paragraph{Enlarged ball.} For \cref{thm:outcome-end}, take $\ballradius\le\min(1/8,\varsigma/4)$ in (A2) and let
-$\initball'=\{\theta:\|\theta-\theta_0\|\le2\ballradius\initscale,\ b=0\}$. Then $2\ballradius$ satisfies the constraint of (A2),
+$\initball'=\{\theta:\|\theta-\theta_0\|\le2\ballradius\initscale,\ \beta=0\}$. Then $2\ballradius$ satisfies the constraint of (A2),
 so every bound of \cref{app:mainproofs} that holds on $\initball$ also holds on $\initball'$, with constants
 independent of $n$ and $\initscale$. A zero readout in $\tilde\theta$ is admissible: (A2) constrains the MLP biases
 and the value-token embeddings, not the readout, and a zero block only lowers the norms in those bounds.
@@ -779,7 +779,7 @@ $G$ have profiles $(A,A',A'')$ and $(B,B',B'')$, then $FG$ has profile
 \]
 
 \emph{Profiles through the network.} Since $\|\theta-\theta_0\|\le2\ballradius\initscale$, every parameter block, input vector and MLP
-bias vector has a profile of the form $(C\initscale,C,0)$; for the bias vectors this uses $\beta\initscale\le\frac12$. Applying the
+bias vector has a profile of the form $(C\initscale,C,0)$; for the bias vectors this uses $N_b\initscale\le\frac12$. Applying the
 product rule layer by layer gives
 \begin{center}\small
 \begin{tabular}{@{}ll@{}}
@@ -975,8 +975,8 @@ With fixed activation matrices, one-score monomials satisfy
  \deg\term\ge6.
 \]
 Degree $6$ consists exactly of $Q_t$. An MLP matrix correction adds two degrees;
-a bias output replacing an input adds one. A bias output has coefficient up to $a_0^2\beta$, but it also carries
-one extra power of $\initscale_0\le1/(2\beta)$, so $C'$ does not depend on $\beta$. The higher-degree terms obey
+a bias output replacing an input adds one. A bias output has coefficient up to $a_0^2N_b$, but it also carries
+one extra power of $\initscale_0\le1/(2N_b)$, so $C'$ does not depend on $N_b$. The higher-degree terms obey
 \[
  \initscale^{\deg\term}\le(\initscale/\initscale_0)^7\initscale_0^{\deg\term},\qquad
  2(\initscale/\initscale_0)^7C\initscale_0^6\E_t[\kappa_{l_t,i_t}]
@@ -1138,13 +1138,13 @@ keeping a single monomial and is conservative.
 \emph{Constants.} Every proof in this appendix bounds the network through operator norms of parameter blocks,
 $\ell_1$ norms of attention rows, and counts of blocks, heads, scores and sites. Hence $c$, $C$, $\attconst$, $C_1$, $C_2$,
 $\ballradius$ and $\stepsize_0$ depend only on $a_0$, $\varsigma$, $K$ and the numbers of blocks and heads.
-The widths enter only through $\initscale_0=c\min(1,1/\beta)$, via the bias offset $\bm o_\ell$ (\cref{app:network}).
-This is unavoidable in the present argument: a bias of order $1$ on each unit gives $\beta\ge\sqrt w$, and scaling the
+The widths enter only through $\initscale_0=c\min(1,1/N_b)$, via the bias offset $\bm o_\ell$ (\cref{app:network}).
+This is unavoidable in the present argument: a bias of order $1$ on each unit gives $N_b\ge\sqrt w$, and scaling the
 biases down by $\sqrt w$ shrinks the margin of the sign condition by the same factor.
 
 \emph{The following fan-in-scaled initialization satisfies (A2) at every width.} Weight matrices have independent
 mean-zero Gaussian or uniform entries of variance $1/\text{fan-in}$; embedding blocks have variance $1/d_{\mathrm{res}}$ (one-hot inputs
-have fan-in $1$); and $|\tilde b_m|\in[1,2]$, so $\beta\le2\sqrt w$. The weight conditions are standard; the bias
+have fan-in $1$); and $|\tilde b_m|\in[1,2]$, so $N_b\le2\sqrt w$. The weight conditions are standard; the bias
 condition is not, and it is what fixes the ReLU pattern and makes each MLP a fixed linear map on $\initball$. Standard sub-Gaussian bounds on operator norms and smallest
 singular values \citep[Thms.~4.4.5, 4.6.1]{vershynin2018high} and a union bound over the blocks give, with probability at least
 $1-\failprob$, $a_0\le C(1+r+\sqrt{\log(1/\failprob)})$ with $r$ the largest aspect ratio, and $\varsigma\ge\frac12$ once
@@ -1471,7 +1471,7 @@ within time $\mathrm{poly}(n,1/\initscale,\log(1/\failprob))$.
 
 \begin{restated}{\Cref{thm:routing}}
 For counting modulo~$2$ with the gate head, started from the small structured initialization below, staged block-coordinate
-gradient flow on $\Lstep^{\ge2}$ enters $\mathcal G_\epsilon$ by a time $T\le\mathrm{poly}(n,d_{\mathrm h},\initscale^{-1},(p(1-p))^{-1})$,
+gradient flow on $\Lstep^{\ge2}$ enters $\mathcal G_\zeta$ by a time $T\le\mathrm{poly}(n,d_{\mathrm h},\initscale^{-1},(p(1-p))^{-1})$,
 stays in it at every later time, and drives $\Lstep^{\ge2}$ to zero, for every $0<\initscale\le\initscale_\star$ with
 $1/\initscale_\star\le C_p\sqrt w$.
 \end{restated}
@@ -1481,26 +1481,36 @@ reduces the network to one scalar gate feature, \cref{prop:gate} and \cref{lem:w
 necessity of the seed, and \cref{lem:R-identity} is the interaction identity behind every stage. \Cref{lem:R-AB} handles the
 two readout stages (A and B); \cref{lem:R-field} computes the routing vector field on a corridor, and \cref{lem:R-C} turns it
 into an invariant region and a hitting time for Stage C; \cref{lem:R-D} handles the final readout (Stage D), and the
-assembly follows. Symbols are local to this section: $a$ is the gate strength, $g$ the value scale, $\nu$ the gate-readout
-coefficient and $\epsilon$ the leakage tolerance.
+assembly follows. Symbols are local to this section: $a$ is the gate strength, $g$ the value scale, $\chi$ the gate-readout
+coefficient and $\zeta$ the leakage tolerance.
 
-\paragraph{Setting.} Counting modulo $2$ over $\{q,r\}$ with fixed query of probability $p\in(0,1)$ and a uniform start. Write
-$c_t=(-1)^{s_{t-1}}$, $m_t=(-1)^{b_t}$, $y_t=c_tm_t$; $c_t$ is uniform and independent of all letters, and the $m_j$
-are independent with $\Pr(m_j=-1)=p$. The initialization below has random signs $A_Q,A_K,A_V$, so $a=\initscale^4A_QA_K/\sqrt{d_{\mathrm h}}$ and $g=\initscale^2A_V$ have $|a|=\initscale^4/\sqrt{d_{\mathrm h}}$ and $|g|=\initscale^2$. The gate head's
-mask is the \emph{segment mask}: at the position $i_t$ predicting $s_t$ ($t\ge2$) it attends to $i_t$ and to the $n$ letter
-positions $\ell_1,\dots,\ell_n$, with scores shifted by a relative bias $\beta_{i_t-\ell_j}$ and $\beta_0$; the current letter has
-offset $i_t-\ell_t=n$. Write $f_t$ for the difference of the two state logits, $\phi(z)=\log(1+e^{-z})$, $v_c,v_s,v_r$ for the
-readout components along $e_c,e_s,e_r$, and
+\paragraph{Setting.} We count modulo $2$ over $\{q,r\}$, with a fixed query of probability $p\in(0,1)$ and a uniform start.
+
+\emph{Task signs.} Write $c_t=(-1)^{s_{t-1}}$, $m_t=(-1)^{b_t}$ and $y_t=c_tm_t$. Then $c_t$ is uniform and independent of all
+letters, and the $m_j$ are independent with $\Pr(m_j=-1)=p$. Two task constants recur:
 \[
  u_*=\log\frac{1-p}{p},\qquad \pi_0=\frac12\min(p,1-p).
 \]
 
-\paragraph{Small structured initialization.} Fix orthonormal residual directions $e_c,e_s,e_0,e_\ell,e_r$ and a unit vector $e_1$ in the head
+\emph{Gate scales.} The initialization below has random signs $A_Q,A_K,A_V$, which give the gate strength and the value scale
+\[
+ a=\frac{\initscale^4A_QA_K}{\sqrt{d_{\mathrm h}}},\qquad g=\initscale^2A_V,
+ \qquad\text{so}\qquad |a|=\frac{\initscale^4}{\sqrt{d_{\mathrm h}}},\quad |g|=\initscale^2 .
+\]
+
+\emph{Mask and offsets.} The gate head uses the \emph{segment mask}: at the position $i_t$ predicting $s_t$ ($t\ge2$) it attends to
+$i_t$ and to the $n$ letter positions $\ell_1,\dots,\ell_n$, with scores shifted by the relative bias $\beta_{i_t-\ell_j}$ and $\beta_0$.
+The current letter has offset $i_t-\ell_t=n$.
+
+\emph{Readout.} Write $f_t$ for the difference of the two state logits, $v_c,v_s,v_r$ for the readout components along
+$\hat e_{c},\hat e_{s},\hat e_{r}$, and $\phi(z)=\log(1+e^{-z})$ for the logistic loss.
+
+\paragraph{Small structured initialization.} Fix orthonormal residual directions $\hat e_{c},\hat e_{s},\hat e_{0},\hat e_\ell,\hat e_{r}$ and a unit vector $\hat e_{1}$ in the head
 space. With independent random signs $A_Q,A_K,A_V\in\{\pm1\}$, set
 \begin{gather*}
- E(s)=\initscale\bigl(e_c+(-1)^se_s\bigr),\qquad
- E(q)=\initscale(e_0-e_\ell),\qquad E(r)=\initscale(e_0+e_\ell),\\
- W_Qe_s=\initscale A_Qe_1,\qquad W_Ke_\ell=\initscale A_Ke_1,\qquad W_Ve_0=\initscale A_Ve_r
+ E(s)=\initscale\bigl(\hat e_{c}+(-1)^s\hat e_{s}\bigr),\qquad
+ E(q)=\initscale(\hat e_{0}-\hat e_\ell),\qquad E(r)=\initscale(\hat e_{0}+\hat e_\ell),\\
+ W_Q\hat e_{s}=\initscale A_Q\hat e_{1},\qquad W_K\hat e_\ell=\initscale A_K\hat e_{1},\qquad W_V\hat e_{0}=\initscale A_V\hat e_{r}
 \end{gather*}
 for the gate head (head $1$ of block $2$), with these maps zero on all other directions. Position embeddings, the other heads, the MLP
 weights and the readout are zero, and the MLP biases are $\pm\initscale$. This $\theta_0$ satisfies \cref{ass:init}: every block
@@ -1511,56 +1521,89 @@ values $\sqrt2\,\initscale$.
 \begin{lemma}[Exact features]
 \label{lem:R-features}
 Throughout the schedule, for $t\ge2$,
-$f_t=\initscale v_c+\initscale v_s\,c_t+g\,v_r\,M_t$ with
-$M_t=\dfrac{\sum_{j=1}^ne^{ac_tm_j+\beta_{i_t-\ell_j}}}{e^{\beta_0}+\sum_{j=1}^ne^{ac_tm_j+\beta_{i_t-\ell_j}}}$.
+\[
+ f_t=\initscale v_c+\initscale v_s\,c_t+g\,v_r\,M_t,
+ \qquad
+ M_t=\frac{\sum_{j=1}^ne^{ac_tm_j+\beta_{i_t-\ell_j}}}{e^{\beta_0}+\sum_{j=1}^ne^{ac_tm_j+\beta_{i_t-\ell_j}}}.
+\]
 \end{lemma}
 
 \begin{proof}
-Block $1$ and both MLPs write nothing. The query at $i_t$ is $\initscale^2A_Qc_te_1$, the key of letter $j$ is $\initscale^2A_Km_je_1$ and that of $i_t$ is $0$;
-letters carry value $\initscale^2A_Ve_r$ and $i_t$ carries $0$. Only $\beta$ and the readout are trained.
+Block $1$ and both MLPs write nothing. The query at $i_t$ is $\initscale^2A_Qc_t\hat e_{1}$, the key of letter $j$ is $\initscale^2A_Km_j\hat e_{1}$ and that of $i_t$ is $0$;
+letters carry value $\initscale^2A_V\hat e_{r}$ and $i_t$ carries $0$. Only $\beta$ and the readout are trained.
 \end{proof}
 
 \begin{proof}[Proof of \cref{prop:gate}]
-Let $d=\frac12\tanh(a/2)$, so $|d|\ge0.249|a|$ for $|a|\le0.1$, and set $b^\star=\log(10n/|a|)$, $\beta^\star_0=\beta^\star_n=b^\star$,
-$\beta^\star_\delta=0$ otherwise. By \cref{lem:R-features}, the attention outside the two sites is
-$O/(e^{b^\star}+e^{ac_tm_t+b^\star}+O)\le Oe^{-b^\star}$ with $O\le(n-1)e^{|a|}$, hence at most $0.111|a|\le|d|/2$, and it changes $M_t$
-from $\widetilde M_t=\operatorname{sigmoid}(ac_tm_t)=\frac12+d\,c_tm_t$ by at most that much. With $gv^\star_r=1/d$,
-$\initscale v^\star_c=-1/(2d)$ and $v^\star_s=0$, $y_tf^\star_t=1+y_t(M_t-\widetilde M_t)/d\ge\frac12$. Thus
-$\theta^\star_{\mathrm{gate}}\in\mathcal G_{|d|/2}$. The stages of \cref{thm:routing} reach $\mathcal G_\epsilon$ with $\epsilon=0.015|a|/B$ by
+\emph{The routing.} Let $d=\frac12\tanh(a/2)$, so $|d|\ge0.249|a|$ for $|a|\le0.1$, and set
+\[
+ \bar\beta^\star=\log\frac{10n}{|a|},\qquad \beta^\star_0=\beta^\star_n=\bar\beta^\star,\qquad \beta^\star_\delta=0\ \text{otherwise}.
+\]
+By \cref{lem:R-features}, with $O\le(n-1)e^{|a|}$ the other letters' weight, the attention outside the two sites is
+\[
+ \frac{O}{e^{\bar\beta^\star}+e^{ac_tm_t+\bar\beta^\star}+O}\le Oe^{-\bar\beta^\star}\le0.111|a|\le\frac{|d|}2,
+\]
+and it changes $M_t$ from $\widetilde M_t=\operatorname{sigmoid}(ac_tm_t)=\frac12+d\,c_tm_t$ by at most that much.
+
+\emph{The readout.} With $gv^\star_r=\frac1d$, $\initscale v^\star_c=-\frac1{2d}$ and $v^\star_s=0$,
+\[
+ y_tf^\star_t=1+\frac{y_t(M_t-\widetilde M_t)}{d}\ge\frac12,
+\]
+so $\theta^\star_{\mathrm{gate}}\in\mathcal G_{|d|/2}$. The stages of \cref{thm:routing} reach $\mathcal G_\zeta$ with $\zeta=0.015|a|/B$ by
 \cref{lem:R-C,lem:R-D}.
 \end{proof}
 
 \begin{lemma}[Wrong seed]
 \label{lem:wrong-seed}
-Replace the key seed $W_Ke_\ell=\initscale A_Ke_1$ by $W_Ke_0=\initscale A_Ke_1$, so the key reads the direction that both letters
-share. Then for every $\beta$ and every readout, $f_t$ is a function of $c_t$ alone. Consequently
-$\Lstep^{\ge2}\ge-p\log p-(1-p)\log(1-p)$, for each displayed count one of the two letter values has nonpositive margin, and
-$\widehat M=0$, so at the prior the gate-readout gradient of \cref{lem:R-identity}(b) vanishes. The staged schedule, and any
-training of $\beta$ and the readout, stays at or above the count-only prior.
+Replace the key seed $W_K\hat e_\ell=\initscale A_K\hat e_{1}$ by $W_K\hat e_{0}=\initscale A_K\hat e_{1}$, so that the key reads the direction
+both letters share. Then, for every $\beta$ and every readout:
+\begin{enumerate}[label=(\roman*),leftmargin=*,itemsep=2pt,topsep=2pt]
+\item $f_t$ is a function of $c_t$ alone;
+\item $\Lstep^{\ge2}\ge-p\log p-(1-p)\log(1-p)$, and for each displayed count one of the two letter values has nonpositive margin;
+\item $\widehat M=0$, so at the prior the gate-readout gradient of \cref{lem:R-identity}(b) vanishes.
+\end{enumerate}
+The staged schedule, and any training of $\beta$ and the readout, therefore stays at or above the count-only prior.
 \end{lemma}
 
 \begin{proof}
-Every letter now has key $\initscale^2A_Ke_1$ and value $\initscale^2A_Ve_r$, so the scores at $i_t$ are $ac_t+\beta_{i_t-\ell_j}$ and
-$M_t$ depends on $c_t$ and $\beta$ only; the other features are $\initscale$ and $\initscale c_t$. For fixed $c$, $y_t=cm_t$ takes both
-signs, so $y_tf(c)$ is nonpositive for one of them, and
-$\min_z\{(1-p)\log(1+e^{-z})+p\log(1+e^{z})\}=-p\log p-(1-p)\log(1-p)$. Since $M_t$ does not depend on $m_t$, its
-coefficient on $c_tm_t$ is zero.
+\emph{Representation restriction.} Every letter now has key $\initscale^2A_K\hat e_{1}$ and value $\initscale^2A_V\hat e_{r}$, so the scores at
+$i_t$ are $ac_t+\beta_{i_t-\ell_j}$ and $M_t$ depends on $c_t$ and $\beta$ only. The other features are $\initscale$ and $\initscale c_t$,
+which gives (i).
+
+\emph{Loss consequence.} For fixed $c$, $y_t=cm_t$ takes both signs, so $y_tf(c)$ is nonpositive for one of them, and
+\[
+ \min_z\bigl\{(1-p)\log(1+e^{-z})+p\log(1+e^{z})\bigr\}=-p\log p-(1-p)\log(1-p),
+\]
+which gives (ii).
+
+\emph{Zero interaction coefficient.} Since $M_t$ does not depend on $m_t$, its coefficient on $c_tm_t$ is zero, which gives (iii).
 \end{proof}
 
 \begin{lemma}[Prior and gradient identity]
 \label{lem:R-identity}
-(a) $\mathcal L_A(v_c,v_s)=\E\bigl[\phi\bigl(y(\initscale v_c+\initscale v_sc)\bigr)\bigr]$ has the unique minimizer $\initscale v_c=0$, $\initscale v_s=u_*$; let $f_A=u_* c$.
-(b) For bounded $\Psi(c_t,m_t,m_{-t})$, let $\psi(c,m)=\E[\Psi\mid c_t=c,m_t=m]$ and $\widehat\Psi=\frac14\sum_{c,m}cm\,\psi(c,m)$. Then
-$\E[-y_t\operatorname{sigmoid}(-y_tf_A)\Psi]=-2p(1-p)\widehat\Psi$.
-(c) If $|f_t-f_A|\le\varrho$ on every prompt, the left side changes by at most $\frac14\varrho\,\E[|\Psi|]$.
+\begin{enumerate}[label=(\alph*),leftmargin=*,itemsep=3pt,topsep=2pt]
+\item The prior loss $\mathcal L_A(v_c,v_s)=\E\bigl[\phi\bigl(y(\initscale v_c+\initscale v_sc)\bigr)\bigr]$ has the unique minimizer
+$\initscale v_c=0$, $\initscale v_s=u_*$; let $f_A=u_*c$.
+\item For bounded $\Psi(c_t,m_t,m_{-t})$, let $\bar\Psi(c,m)=\E[\Psi\mid c_t=c,m_t=m]$ and
+$\widehat\Psi=\frac14\sum_{c,m}cm\,\bar\Psi(c,m)$. Then
+\[
+ \E\bigl[-y_t\operatorname{sigmoid}(-y_tf_A)\,\Psi\bigr]=-2p(1-p)\,\widehat\Psi .
+\]
+\item If $|f_t-f_A|\le\varrho$ on every prompt, the left side of (b) changes by at most $\frac14\varrho\,\E[|\Psi|]$.
+\end{enumerate}
 \end{lemma}
 
 \begin{proof}
-(a) The loss is invariant under $(c,y)\mapsto(-c,-y)$, which maps $v_c\mapsto-v_c$, so by strict convexity $v_c=0$; the first-order
-condition in $v_s$ is $(1-p)\operatorname{sigmoid}(-\initscale v_s)=p\operatorname{sigmoid}(\initscale v_s)$. (b) Write $\psi=\psi_0+\psi_1c+\psi_2m+\widehat\Psi cm$. Since
-$y_tf_A=u_* m_t$, $\operatorname{sigmoid}(-u_* m_t)$ is $p$ for $m_t=1$ and $1-p$ for $m_t=-1$; with $c_t$ uniform and independent of
-$(m_t,m_{-t})$, $\E[c_tm_t\operatorname{sigmoid}(-u_* m_t)]=\E[m_t\operatorname{sigmoid}(-u_* m_t)]=\E[c_t\operatorname{sigmoid}(-u_* m_t)]=0$ and
-$\E[\operatorname{sigmoid}(-u_* m_t)]=2p(1-p)$. (c) $\operatorname{sigmoid}$ is $\frac14$-Lipschitz, pointwise.
+(a) The loss is invariant under $(c,y)\mapsto(-c,-y)$, which maps $v_c\mapsto-v_c$, so by strict convexity $v_c=0$. The first-order
+condition in $v_s$ is $(1-p)\operatorname{sigmoid}(-\initscale v_s)=p\operatorname{sigmoid}(\initscale v_s)$.
+
+(b) Write $\bar\Psi=\bar\Psi_0+\bar\Psi_1c+\bar\Psi_2m+\widehat\Psi\,cm$. Since $y_tf_A=u_*m_t$, $\operatorname{sigmoid}(-u_*m_t)$ equals $p$ for
+$m_t=1$ and $1-p$ for $m_t=-1$. As $c_t$ is uniform and independent of $(m_t,m_{-t})$,
+\begin{gather*}
+ \E\bigl[c_tm_t\operatorname{sigmoid}(-u_*m_t)\bigr]=\E\bigl[m_t\operatorname{sigmoid}(-u_*m_t)\bigr]=\E\bigl[c_t\operatorname{sigmoid}(-u_*m_t)\bigr]=0,\\
+ \E\bigl[\operatorname{sigmoid}(-u_*m_t)\bigr]=2p(1-p).
+\end{gather*}
+
+(c) $\operatorname{sigmoid}$ is $\frac14$-Lipschitz pointwise.
 \end{proof}
 
 \paragraph{Interaction coefficients.} Fix $t$, $c$ and $\beta$, and write $u=acm_t$. The other letters' weights
@@ -1600,12 +1643,12 @@ For $|a|\le0.1$, $Z=e^u+R\in[1+0.904n,1.61n]$, so $\partial_uM_t=e^u/Z^2\ge0.34/
 block trained in stage $k$ and all other parameters are frozen; each of the first three stages ends at a stopping time.
 Two scales matter: the gate-readout level and the leakage tolerance,
 \[
- \nu_B=\frac{0.05\,p(1-p)|a|}{n^2},\qquad \epsilon=\frac{0.015|a|}{B},
+ \chi_B=\frac{0.05\,p(1-p)|a|}{n^2},\qquad \zeta=\frac{0.015|a|}{B},
 \]
-where $B=O(\log(d_{\mathrm h}/(\pi_0\initscale)))$ is the logarithmic factor fixed in \cref{eq:R-Dconst} before \cref{lem:R-D}. Then
-the stages are: (A) flow on $(v_c,v_s)$ from $0$ until $|\initscale v_c|+|\initscale v_s-u_*|\le\nu_B$; (B) flow on $v_r$ from $0$
-until $\nu:=\operatorname{sign}(a)gv_r=\nu_B$; (C) flow on $\beta$ from $0$ until the attention outside
-$\{$own position, current letter$\}$ is at most $\epsilon$ on every prompt and every $t\ge2$; (D) flow on $(v_c,v_s,v_r)$ with $\beta$
+where $B=O(\log(d_{\mathrm h}/(\pi_0\initscale)))$ is the logarithmic factor fixed in \cref{eq:R-Dconst} in the proof of \cref{lem:R-D}. Then
+the stages are: (A) flow on $(v_c,v_s)$ from $0$ until $|\initscale v_c|+|\initscale v_s-u_*|\le\chi_B$; (B) flow on $v_r$ from $0$
+until $\chi:=\operatorname{sign}(a)gv_r=\chi_B$; (C) flow on $\beta$ from $0$ until the attention outside
+$\{$own position, current letter$\}$ is at most $\zeta$ on every prompt and every $t\ge2$; (D) flow on $(v_c,v_s,v_r)$ with $\beta$
 frozen. Smallness: $|a|\le0.1$ and $\initscale(1+|u_*|)\le1$, with $\initscale\le\initscale_0$ as in \cref{ass:init}.
 
 \begin{lemma}[Scale threshold]
@@ -1621,148 +1664,224 @@ $|a|=\initscale^4/\sqrt{d_{\mathrm h}}\le0.1$ by the third entry; the second is 
 
 \begin{lemma}[Stages A and B]
 \label{lem:R-AB}
-Stage A ends by $T_A\le\bigl(\initscale^2p(1-p)\bigr)^{-1}\log(1+|u_*|/\nu_B)$. In Stage B, $\nu$ increases and reaches $\nu_B$
-by $T_B\le0.08\,g^{-2}$. Throughout Stages B--D before $v$ is retrained, $|f_t-f_A|\le\varrho:=2\nu_B$ on every prompt, for
-every $\beta$.
+\begin{enumerate}[label=(\alph*),leftmargin=*,itemsep=3pt,topsep=2pt]
+\item Stage A ends by $T_A\le\bigl(\initscale^2p(1-p)\bigr)^{-1}\log\bigl(1+\tfrac{|u_*|}{\chi_B}\bigr)$.
+\item In Stage B, $\chi$ increases and reaches $\chi_B$ by $T_B\le0.08\,g^{-2}$.
+\item From the end of Stage A until the readout is retrained in Stage D, for every $\beta$ and on every prompt,
+\[
+ |f_t-f_A|\le\varrho:=2\chi_B .
+\]
+\end{enumerate}
 \end{lemma}
 
 \begin{proof}
-Symmetry keeps $v_c=0$ in Stage A. With $w=\initscale v_s$, $\frac{dw}{dt}=\initscale^2(1-p-\operatorname{sigmoid}(w))$, so $w$ stays
-between $0$ and $u_*$, where $\operatorname{sigmoid}'\ge p(1-p)$; hence $|w(t)-u_*|\le|u_*|e^{-\initscale^2p(1-p)t}$ (zero time if
-$p=\frac12$). After Stage A, $f_t-f_A=\initscale v_c+(\initscale v_s-u_*)c_t+gv_rM_t$ and $|gv_rM_t|\le|gv_r|=|\nu|$, which gives the
-last claim while $0\le\nu\le\nu_B$. In Stage B, $\beta=0$ and $\frac{d\nu}{dt}=-\operatorname{sign}(a)g\,\partial \mathcal L/\partial v_r$. By
+\emph{Stage A: fit the prior.} Symmetry keeps $v_c=0$. With $\varpi=\initscale v_s$,
+\[
+ \frac{d\varpi}{dt}=\initscale^2\bigl(1-p-\operatorname{sigmoid}(\varpi)\bigr),
+\]
+so $\varpi$ stays between $0$ and $u_*$, where $\operatorname{sigmoid}'\ge p(1-p)$. Hence $|\varpi(t)-u_*|\le|u_*|e^{-\initscale^2p(1-p)t}$,
+which gives (a); the time is zero if $p=\frac12$.
+
+\emph{Distance to the prior.} After Stage A, $f_t-f_A=\initscale v_c+(\initscale v_s-u_*)c_t+gv_rM_t$, and $|gv_rM_t|\le|gv_r|=|\chi|$.
+This gives (c) as long as $0\le\chi\le\chi_B$, which (b) guarantees.
+
+\emph{Stage B: expose the interaction.} Here $\beta=0$ and $\frac{d\chi}{dt}=-\operatorname{sign}(a)\,g\,\tfrac{\partial\mathcal L}{\partial v_r}$. By
 \cref{lem:R-identity} with $\Psi=M_t$ and \cref{lem:R-coeff},
 \[
- \frac{d\nu}{dt}=g^2\bigl(2p(1-p)\mu_M-\operatorname{sign}(a)r_B\bigr),\qquad |r_B|\le\frac14\varrho\le\frac{0.025\,p(1-p)|a|}{n^2},
+ \frac{d\chi}{dt}=g^2\bigl(2p(1-p)\mu_M-\operatorname{sign}(a)\,r_B\bigr),
+ \qquad
+ |r_B|\le\frac14\varrho\le\frac{0.025\,p(1-p)|a|}{n^2}.
 \]
-so $\frac{d\nu}{dt}\ge0.65\,g^2p(1-p)|a|/n^2$ while $0\le\nu\le\nu_B$, and $T_B\le\nu_Bn^2/(0.65g^2p(1-p)|a|)\le0.08g^{-2}$.
+Since $2p(1-p)\mu_M\ge0.68\,p(1-p)|a|/n^2$, this gives $\frac{d\chi}{dt}\ge0.65\,g^2p(1-p)|a|/n^2$ while $0\le\chi\le\chi_B$, so $\chi$
+increases and $T_B\le\frac{\chi_Bn^2}{0.65\,g^2p(1-p)|a|}\le0.08\,g^{-2}$.
 \end{proof}
 
-\paragraph{Routing coordinates.} Write $b=\frac12(\beta_n+\beta_0)$, $\Delta=\beta_n-\beta_0$, and let
-$\mathcal K=\{\beta:|\Delta|\le1,\ \beta_\delta\le b+0.1\text{ for all }\delta\notin\{0,n\}\}$. Let $\Lambda(\beta)$ be the largest
-attention outside $\{$own position, current letter$\}$, over prompts and $t\ge2$.
+\paragraph{Routing coordinates.} Write
+\[
+ \bar\beta=\tfrac12(\beta_n+\beta_0)\ \ \text{(common routing strength)},
+ \qquad
+ \Delta=\beta_n-\beta_0\ \ \text{(routing imbalance)},
+\]
+and let $\mathcal K=\{\beta:|\Delta|\le1,\ \beta_\delta\le\bar\beta+0.1\text{ for all }\delta\notin\{0,n\}\}$. Let $\Lambda(\beta)$, the
+\emph{leakage}, be the largest attention outside $\{$own position, current letter$\}$ over prompts and $t\ge2$.
 
 \begin{lemma}[The routing field]
 \label{lem:R-field}
-During Stage C, for every $\beta\in\mathcal K$:
-(a) $p_0,p_{\mathrm{cur}}\ge1/(3.1n)$ for every prompt, every $t\ge2$ and every $|u|\le|a|$;
-(b) $\frac{db}{dt}\ge0.42\,p(1-p)\nu_B|a|\,\E[p_0p_O]/n$;
-(c) $\frac{d\beta_\delta}{dt}\le0$ for every $\delta\notin\{0,n\}$;
-(d) $\frac{d\Delta}{dt}<0$ if $\Delta=1$ and $\frac{d\Delta}{dt}>0$ if $\Delta=-1$;
-(e) $\E[p_0p_O]\ge0.21\,\Lambda(\beta)/n^2$.
+During Stage C, for every $\beta\in\mathcal K$ the following hold.
+\begin{enumerate}[label=(\alph*),leftmargin=*,itemsep=3pt,topsep=2pt]
+\item \emph{Useful-site mass:} $p_0,p_{\mathrm{cur}}\ge\frac1{3.1n}$ on every prompt, every $t\ge2$ and every $|u|\le|a|$.
+\item \emph{The common strength grows:}
+\[
+ \frac{d\bar\beta}{dt}\ge\frac{0.42\,p(1-p)\chi_B|a|}{n}\,\E[p_0p_O].
+\]
+\item \emph{Irrelevant biases fall:} $\frac{d\beta_\delta}{dt}\le0$ for every $\delta\notin\{0,n\}$.
+\item \emph{The imbalance stays bounded:} $\frac{d\Delta}{dt}<0$ if $\Delta=1$, and $\frac{d\Delta}{dt}>0$ if $\Delta=-1$.
+\item \emph{Leakage controls the drive:} $\E[p_0p_O]\ge\frac{0.21}{n^2}\,\Lambda(\beta)$.
+\end{enumerate}
 \end{lemma}
 
 \begin{proof}
-(a) On $\mathcal K$, $\beta_0,\beta_n\ge b-\frac12$, $|\Delta|\le1$ and the other letters add at most $(n-1)e^{|a|+b+0.1}$, so
-$Z/e^{\beta_0}\le1+e^{1.1}+(n-1)e^{0.7}\le3.1n$, and likewise $Z/e^{u+\beta_n}\le3.1n$.
-For the rest, $\frac{d\beta_\bullet}{dt}=-\partial \mathcal L/\partial\beta_\bullet=gv_r\E\bigl[y_t\operatorname{sigmoid}(-y_tf_t)\,\Psi_\bullet\bigr]$ with
-$\Psi_\bullet=\partial M_t/\partial\beta_\bullet$. Since $|f_t-f_A|\le\varrho$ (\cref{lem:R-AB}) and $\operatorname{sigmoid}$ is $\frac14$-Lipschitz,
-\cref{lem:R-identity} gives $\frac{d\beta_\bullet}{dt}=gv_r\bigl(2p(1-p)\widehat{\Psi_\bullet}-r_\bullet\bigr)$ with $|r_\bullet|\le\frac14\varrho\,\E[|\Psi_\bullet|]$, and
-$gv_r\widehat{\Psi_\bullet}=\nu_B|a|\langle\partial_u\Psi_\bullet\rangle$ by \cref{eq:R-hat}. Note $\varrho=0.1p(1-p)|a|/n^2\le0.05p(1-p)|a|/n$.
-(b) $\Psi_n+\Psi_0=-p_0p_O$ and $\partial_u(-p_0p_O)=2p_0p_Op_{\mathrm{cur}}$ by \cref{eq:R-derivs}, so with (a)
+\emph{(a) Useful-site mass.} On $\mathcal K$, $\beta_0,\beta_n\ge\bar\beta-\frac12$, $|\Delta|\le1$, and the other letters add at most
+$(n-1)e^{|a|+\bar\beta+0.1}$ to the softmax normalizer $Z$. Hence
 \[
- \frac{db}{dt}\ge2p(1-p)\nu_B|a|\langle p_0p_Op_{\mathrm{cur}}\rangle-\frac18\nu_B\varrho\,\E[p_0p_O]
- \ge\nu_B\E[p_0p_O]\Bigl(\frac{2e^{-0.4}}{3.1}-\frac{0.05}8\Bigr)\frac{p(1-p)|a|}n.
+ \frac{Z}{e^{\beta_0}}\le1+e^{1.1}+(n-1)e^{0.7}\le3.1n,
+ \qquad\text{and likewise}\qquad
+ \frac{Z}{e^{u+\beta_n}}\le3.1n .
 \]
-(c) $\partial_u(p_0p_\delta)=-2p_0p_\delta p_{\mathrm{cur}}$, so
-$\frac{d\beta_\delta}{dt}\le\nu_B\E[p_0p_\delta](-\frac{4e^{-0.4}}{3.1}+\frac{0.05}4)\frac{p(1-p)|a|}n\le0$.
-(d) $\Psi_n-\Psi_0=p_0(p_{\mathrm{cur}}+M_t)\le2p_0$ and $\partial_u(\Psi_n-\Psi_0)=2p_0p_{\mathrm{cur}}(p_0-p_{\mathrm{cur}})$. At $\Delta=1$,
-$p_{\mathrm{cur}}/p_0=e^{u+1}\ge e^{0.9}$ for all $|u|\le|a|$, so $p_0-p_{\mathrm{cur}}\le-0.59p_{\mathrm{cur}}$ and, by (a),
+
+\emph{The bias field.} For every bias coordinate, with $\Psi_\bullet=\tfrac{\partial M_t}{\partial\beta_\bullet}$,
+\[
+ \frac{d\beta_\bullet}{dt}=-\frac{\partial\mathcal L}{\partial\beta_\bullet}=gv_r\,\E\bigl[y_t\operatorname{sigmoid}(-y_tf_t)\,\Psi_\bullet\bigr].
+\]
+Since $|f_t-f_A|\le\varrho$ (\cref{lem:R-AB}) and $\operatorname{sigmoid}$ is $\frac14$-Lipschitz, \cref{lem:R-identity,eq:R-hat} give
+\[
+ \frac{d\beta_\bullet}{dt}=2p(1-p)\chi_B|a|\,\langle\partial_u\Psi_\bullet\rangle-gv_r\,r_\bullet,
+ \qquad
+ |gv_r\,r_\bullet|\le\frac14\chi_B\varrho\,\E[|\Psi_\bullet|],
+\]
+where $\varrho=\frac{0.1\,p(1-p)|a|}{n^2}\le\frac{0.05\,p(1-p)|a|}{n}$.
+
+\emph{(b) The common strength.} By \cref{eq:R-derivs}, $\Psi_n+\Psi_0=-p_0p_O$ and $\partial_u(-p_0p_O)=2p_0p_Op_{\mathrm{cur}}$, so with (a)
+\[
+ \frac{d\bar\beta}{dt}\ge2p(1-p)\chi_B|a|\,\langle p_0p_Op_{\mathrm{cur}}\rangle-\frac18\chi_B\varrho\,\E[p_0p_O]
+ \ge\chi_B\,\E[p_0p_O]\Bigl(\frac{2e^{-0.4}}{3.1}-\frac{0.05}{8}\Bigr)\frac{p(1-p)|a|}{n}.
+\]
+
+\emph{(c) Irrelevant biases.} Here $\partial_u(p_0p_\delta)=-2p_0p_\delta p_{\mathrm{cur}}$, so
+\[
+ \frac{d\beta_\delta}{dt}\le\chi_B\,\E[p_0p_\delta]\Bigl(-\frac{4e^{-0.4}}{3.1}+\frac{0.05}{4}\Bigr)\frac{p(1-p)|a|}{n}\le0 .
+\]
+
+\emph{(d) The imbalance.} Here $\Psi_n-\Psi_0=p_0(p_{\mathrm{cur}}+M_t)\le2p_0$ and
+$\partial_u(\Psi_n-\Psi_0)=2p_0p_{\mathrm{cur}}(p_0-p_{\mathrm{cur}})$. At $\Delta=1$, $\frac{p_{\mathrm{cur}}}{p_0}=e^{u+1}\ge e^{0.9}$ for all
+$|u|\le|a|$, so $p_0-p_{\mathrm{cur}}\le-0.59\,p_{\mathrm{cur}}$, and by (a)
 \begin{align*}
- \frac{d\Delta}{dt}&\le-2p(1-p)\nu_B|a|\,\langle1.18\,p_0p_{\mathrm{cur}}^2\rangle+\frac12\nu_B\varrho\,\E[p_0]\\
- &\le\nu_B\E[p_0]\Bigl(-\frac{2.36e^{-0.2}}{9.61}+\frac{0.1}2\Bigr)\frac{p(1-p)|a|}{n^2}<0.
+ \frac{d\Delta}{dt}&\le-2p(1-p)\chi_B|a|\,\langle1.18\,p_0p_{\mathrm{cur}}^2\rangle+\frac12\chi_B\varrho\,\E[p_0]\\
+ &\le\chi_B\,\E[p_0]\Bigl(-\frac{2.36\,e^{-0.2}}{9.61}+\frac{0.1}{2}\Bigr)\frac{p(1-p)|a|}{n^2}<0.
 \end{align*}
-The case $\Delta=-1$ is symmetric, with $p_0/p_{\mathrm{cur}}\ge e^{0.9}$.
-(e) Let $\Lambda$ be attained at some $t^*$. All prompts at $t^*$ have $p_O\ge e^{-4|a|}\Lambda$, position $t^*$ has weight
-$1/(n-1)$, and $p_0\ge1/(3.1n)$; so $\E[p_0p_O]\ge e^{-0.4}\Lambda/(3.1n^2)$.
+The case $\Delta=-1$ is symmetric, with $\frac{p_0}{p_{\mathrm{cur}}}\ge e^{0.9}$.
+
+\emph{(e) Leakage.} Let $\Lambda$ be attained at some position $t^*$. Every prompt at $t^*$ has $p_O\ge e^{-4|a|}\Lambda$, position $t^*$
+has weight $\frac1{n-1}$, and $p_0\ge\frac1{3.1n}$; hence $\E[p_0p_O]\ge\frac{e^{-0.4}}{3.1\,n^2}\Lambda$.
 \end{proof}
 
 \begin{lemma}[Stage C]
 \label{lem:R-C}
-Throughout Stage C, $\beta\in\mathcal K$, $b$ is nondecreasing and $\beta_\delta\le0\le b$ for $\delta\notin\{0,n\}$. Stage C ends by
+Throughout Stage C, $\beta\in\mathcal K$, $\bar\beta$ is nondecreasing, and $\beta_\delta\le0\le\bar\beta$ for every $\delta\notin\{0,n\}$. Stage C
+ends by
 \[
- T_C\le\frac{227\,n^5\log(1.83n/\epsilon)}{p^2(1-p)^2a^2\,\epsilon},
+ T_C\le\frac{227\,n^5\log(1.83n/\zeta)}{p^2(1-p)^2a^2\,\zeta},
 \]
-and at its end $|\Delta|\le1$ and, on every prompt and every $t\ge2$, $|M_t-\widetilde M_t|\le\epsilon$ with
+and at its end $|\Delta|\le1$ and, on every prompt and every $t\ge2$, $|M_t-\widetilde M_t|\le\zeta$ with
 $\widetilde M_t=\operatorname{sigmoid}(ac_tm_t+\Delta)$.
 \end{lemma}
 
 \begin{proof}
-At $t=0$, $\beta=0$ lies in $\mathcal K$ with $|\Delta|<1$. Let $\tau$ be the first exit time from $\mathcal K$. On $[0,\tau]$,
-\cref{lem:R-field}(b,c) give $b\ge0$ nondecreasing and $\beta_\delta\le0$, so $\beta_\delta-b\le0<0.1$; an exit must therefore occur
-through $|\Delta|=1$, which \cref{lem:R-field}(d) forbids, because $\Delta$ would reach $\pm1$ with $\frac{d\Delta}{dt}$ pointing inward.
-Hence $\tau$ does not occur. On $\mathcal K$ with $\beta_\delta\le0$, $Z\ge e^{\beta_0}\ge e^{b-1/2}$ gives
-$\Lambda\le(n-1)e^{0.1}e^{1/2}e^{-b}\le1.83ne^{-b}$, so Stage C ends once $b\ge\log(1.83n/\epsilon)$. Before then $\Lambda>\epsilon$, and
-\cref{lem:R-field}(b,e) give $\frac{db}{dt}\ge0.0882\,p(1-p)\nu_B|a|\epsilon/n^3=0.00441\,p^2(1-p)^2a^2\epsilon/n^5$, which
-gives the bound on $T_C$. Finally, adding the other letters' weight $O$ to the numerator and denominator of $\widetilde M_t$ changes
-it by at most $O/Z=p_O\le\epsilon$.
-\end{proof}
+\emph{Invariant corridor.} At $t=0$, $\beta=0$ lies in $\mathcal K$ with $|\Delta|<1$. Let $\tau$ be the first exit time from $\mathcal K$. On
+$[0,\tau]$, \cref{lem:R-field}(b,c) give $\bar\beta\ge0$ nondecreasing and $\beta_\delta\le0$, so $\beta_\delta-\bar\beta\le0<0.1$. An exit would
+therefore have to occur through $|\Delta|=1$, which \cref{lem:R-field}(d) forbids, since there $\frac{d\Delta}{dt}$ points inward. Hence the
+trajectory never leaves $\mathcal K$.
 
-\paragraph{Stage D constants.} The final readout stage uses
-\begin{equation}
- \begin{gathered}
- C_0=2\log\frac{10}{\pi_0},\qquad
- \overline T_D=\frac{5(2+9C_0)^2}{\pi_0 g^2a^2},\qquad
- y=\frac{625}{\pi_0g^2a^2},\\
- T'=\bigl(64y\log^2(64y)\bigr)^2,\qquad
- B=\max\bigl(C_0,2\log(1+T')\bigr):
- \end{gathered}
- \label{eq:R-Dconst}
-\end{equation}
-$\overline T_D$ bounds the burn-in, $T'$ is the time after which a second convexity argument certifies the margins, and $B$
-sets $\epsilon$ so that leakage cannot overturn a margin before $T'$.
+\emph{Hitting time.} On $\mathcal K$ with $\beta_\delta\le0$, $Z\ge e^{\beta_0}\ge e^{\bar\beta-1/2}$ gives
+\[
+ \Lambda\le(n-1)e^{0.1}e^{1/2}e^{-\bar\beta}\le1.83\,n\,e^{-\bar\beta},
+\]
+so Stage C ends once $\bar\beta\ge\log(1.83n/\zeta)$. Before then $\Lambda>\zeta$, and \cref{lem:R-field}(b,e) give
+\[
+ \frac{d\bar\beta}{dt}\ge\frac{0.0882\,p(1-p)\chi_B|a|\zeta}{n^3}=\frac{0.00441\,p^2(1-p)^2a^2\zeta}{n^5},
+\]
+which gives the bound on $T_C$.
+
+\emph{Approximation at exit.} Adding the other letters' weight $O$ to the numerator and denominator of $\widetilde M_t$ changes it by
+at most $\frac OZ=p_O\le\zeta$.
+\end{proof}
 
 \begin{lemma}[Stage D]
 \label{lem:R-D}
-Write $\widetilde M_t=m_0+d\,c_tm_t$; then $|d|\ge0.18|a|$ and $\operatorname{sign}d=\operatorname{sign}a$. The readout $v^\star$ with $gv^\star_r=1/d$, $\initscale v^\star_c=-m_0/d$,
-$v^\star_s=0$ has margin at least $\frac12$ on every prompt and every $t\ge2$, and $|g|\|v^\star\|\le1.5/|d|$.
-Measuring time from the start of Stage D, set $T_D=\|v(0)-C_0v^\star\|^2/(0.2\pi_0)$.
-Then $T_D\le\overline T_D$, every prediction has positive margin at every time $t\ge T_D$, and $\mathcal \Lstep^{\ge2}\to0$.
+Write $\widetilde M_t=m_0+d\,c_tm_t$. Then $|d|\ge0.18|a|$ and $\operatorname{sign}d=\operatorname{sign}a$, and the readout $v^\star$ with
+$gv^\star_r=\frac1d$, $\initscale v^\star_c=-\frac{m_0}{d}$ and $v^\star_s=0$ has margin at least $\frac12$ on every prompt and every
+$t\ge2$, with $|g|\|v^\star\|\le\frac{1.5}{|d|}$. Measuring time from the start of Stage D, there is $T_D\le\overline T_D$ (defined in
+\cref{eq:R-Dconst}) such that every prediction has positive margin at every time $t\ge T_D$, and $\Lstep^{\ge2}\to0$.
 \end{lemma}
 
 \begin{proof}
-$|d|\ge|a|\operatorname{sigmoid}'(1.1)\ge0.18|a|$ by $|\Delta|\le1$. By \cref{lem:R-features}, $f^\star_t=(M_t-m_0)/d=c_tm_t+(M_t-\widetilde M_t)/d$, so
-$y_tf^\star_t\ge1-\epsilon/|d|\ge\frac12$; and $|gv^\star_c|=\initscale|A_V|m_0/|d|\le1/|d|$. The loss is convex in $v$, so for every comparator $u$,
-$\mathcal L(v(t))\le \mathcal L(u)+\|v(0)-u\|^2/(2t)$ and $\|v(t)-u\|^2\le\|v(0)-u\|^2+2t\mathcal L(u)$; for $u=Cv^\star$, $\mathcal L(u)\le e^{-C/2}$. With $u=C_0v^\star$,
-$\mathcal L(u)\le0.1\pi_0$, so $\mathcal L(v(t))\le0.2\pi_0$ for $t\ge T_D$. At the start of Stage D, $|g|\|v(0)\|\le\initscale|u_*|+\nu\le2$, so
-\[
- T_D\le\frac{5(2+1.5C_0/|d|)^2}{\pi_0g^2}
- \le\frac{5(2+9C_0)^2}{\pi_0g^2a^2}=\overline T_D.
-\]
-Each margin is $\mu(c,m)+\xi$, where $\mu$ depends only on the local case $(c_t,m_t)$ and $|\xi|\le|gv_r|\epsilon$, and each case has weight
-at least $\pi_0$. If some margin is nonpositive, then $\mu\le\max|\xi|$ for its case, so every prompt of that case has margin at most
-$2\max|\xi|$.
+\emph{Choice of constants.} The argument has two time regimes, and we choose constants to control the burn-in and the
+leakage in each:
+\begin{equation}
+ \begin{gathered}
+ C_D=2\log\frac{10}{\pi_0},\qquad
+ \overline T_D=\frac{5(2+9C_D)^2}{\pi_0 g^2a^2},\qquad
+ Y=\frac{625}{\pi_0g^2a^2},\\
+ T'=\bigl(64Y\log^2(64Y)\bigr)^2,\qquad
+ B=\max\bigl(C_D,2\log(1+T')\bigr).
+ \end{gathered}
+ \label{eq:R-Dconst}
+\end{equation}
+$\overline T_D$ bounds the burn-in, $T'$ is the time after which a second convexity argument certifies the margins, and $B$ sets the
+leakage tolerance $\zeta=0.015|a|/B$ so that leakage cannot overturn a margin before $T'$.
 
-\emph{Up to $T'$.} For $0\le t\le T'$, set $u=C_tv^\star$ with $C_t=\max(C_0,2\log(1+t))\le B$. Since $t\mathcal L(u)\le1$, the second convex-flow
-bound gives $|g|\|v(t)\|\le|g|\|v(0)\|+2C_t|g|\|v^\star\|+\sqrt2|g|\le6B/|d|$, so $|gv_r(t)|\epsilon\le6B\epsilon/|d|\le\frac12$. A nonpositive
-margin at a time $t\in[T_D,T']$ would give $\mathcal L\ge\pi_0\phi(1)\ge0.31\pi_0$, contradicting $\mathcal L(v(t))\le0.2\pi_0$.
-
-\emph{After $T'$.} For $t\ge T'$, set $u=Cv^\star$ with $C=2\log(1+t)$, so $\mathcal L(u)\le1/(1+t)$ and $t\mathcal L(u)\le1$. Then
-$|g|\|v(t)\|\le2+6\log(1+t)/|d|+\sqrt2|g|$, and since $6\epsilon/|d|\le0.5/B$ and $3.5\epsilon\le0.006/B$,
-$2\max|\xi|\le(\log(1+t)+0.011)/B$. As $\phi(z)\ge e^{-z}\log2$ for $z\ge0$ and $B\ge C_0\ge2$, a nonpositive margin would give
+\emph{Separator.} By $|\Delta|\le1$, $|d|\ge|a|\operatorname{sigmoid}'(1.1)\ge0.18|a|$. By \cref{lem:R-features},
 \[
- \mathcal L(v(t))\ge\pi_0\log2\,e^{-0.011/B}(1+t)^{-1/B}\ge0.68\,\pi_0(1+t)^{-1/2}.
+ f^\star_t=\frac{M_t-m_0}{d}=c_tm_t+\frac{M_t-\widetilde M_t}{d},
 \]
-The first convex-flow bound with the same $u$, $|d|\ge0.18|a|$, $|a|\le0.1$ and $\log(1+t)\ge1$ gives instead
+so $y_tf^\star_t\ge1-\frac{\zeta}{|d|}\ge\frac12$; also $|gv^\star_c|=\initscale|A_V|\frac{m_0}{|d|}\le\frac1{|d|}$.
+
+\emph{Initial loss bound.} The loss is convex in $v$, so for every comparator $\bar v$,
+\[
+ \mathcal L(v(t))\le\mathcal L(\bar v)+\frac{\|v(0)-\bar v\|^2}{2t},
+ \qquad
+ \|v(t)-\bar v\|^2\le\|v(0)-\bar v\|^2+2t\,\mathcal L(\bar v),
+\]
+and $\mathcal L(Cv^\star)\le e^{-C/2}$. With $\bar v=C_Dv^\star$, $\mathcal L(\bar v)\le0.1\pi_0$, so $\mathcal L(v(t))\le0.2\pi_0$ for
+$t\ge T_D:=\frac{\|v(0)-C_Dv^\star\|^2}{0.2\pi_0}$. At the start of Stage D, $|g|\|v(0)\|\le\initscale|u_*|+\chi\le2$, so
+\[
+ T_D\le\frac{5(2+1.5C_D/|d|)^2}{\pi_0g^2}\le\frac{5(2+9C_D)^2}{\pi_0g^2a^2}=\overline T_D .
+\]
+Each margin is $\bar\gamma(c,m)+\xi$, where $\bar\gamma$ depends only on the local case $(c_t,m_t)$ and $|\xi|\le|gv_r|\zeta$, and each case
+has weight at least $\pi_0$. If some margin is nonpositive, then $\bar\gamma\le\max|\xi|$ for its case, so every prompt of that case has
+margin at most $2\max|\xi|$.
+
+\emph{Margins before $T'$.} For $0\le t\le T'$, take $\bar v=C_tv^\star$ with $C_t=\max(C_D,2\log(1+t))\le B$. Since
+$t\,\mathcal L(\bar v)\le1$, the second convex-flow bound gives
+\[
+ |g|\|v(t)\|\le|g|\|v(0)\|+2C_t|g|\|v^\star\|+\sqrt2|g|\le\frac{6B}{|d|},
+ \qquad\text{so}\qquad
+ |gv_r(t)|\zeta\le\frac{6B\zeta}{|d|}\le\frac12 .
+\]
+A nonpositive margin at a time $t\in[T_D,T']$ would then give $\mathcal L\ge\pi_0\phi(1)\ge0.31\pi_0$, contradicting
+$\mathcal L(v(t))\le0.2\pi_0$.
+
+\emph{Margins after $T'$.} For $t\ge T'$, take $\bar v=Cv^\star$ with $C=2\log(1+t)$, so $\mathcal L(\bar v)\le\frac1{1+t}$ and
+$t\,\mathcal L(\bar v)\le1$. Then $|g|\|v(t)\|\le2+\frac{6\log(1+t)}{|d|}+\sqrt2|g|$, and since $\frac{6\zeta}{|d|}\le\frac{0.5}B$ and
+$3.5\zeta\le\frac{0.006}B$, $2\max|\xi|\le\frac{\log(1+t)+0.011}{B}$. As $\phi(z)\ge e^{-z}\log2$ for $z\ge0$ and $B\ge C_D\ge2$, a
+nonpositive margin would give
+\[
+ \mathcal L(v(t))\ge\pi_0\log2\;e^{-0.011/B}(1+t)^{-1/B}\ge0.68\,\pi_0(1+t)^{-1/2}.
+\]
+The first convex-flow bound with the same $\bar v$, together with $|d|\ge0.18|a|$, $|a|\le0.1$ and $\log(1+t)\ge1$, gives instead
 \[
  \mathcal L(v(t))\le\frac1{1+t}+\frac{(2+1.5C/|d|)^2}{2g^2t}\le\frac1{1+t}+\frac{145\log^2(1+t)}{g^2a^2t}.
 \]
-Since $T'\ge y^2\ge(625/\pi_0)^2$, the first term is at most $0.33\pi_0(1+t)^{-1/2}$. With $s=\sqrt t\ge1$, the second is at most
-$0.33\pi_0(1+t)^{-1/2}$ once $\log^2(1+t)/s\le1/y$. Now $\log(1+s^2)\le2\log(2s)$, $s/\log^2(2s)$ increases for $s\ge4$, and at
-$s=64y\log^2(64y)$ one has $\log(2s)\le2\log(64y)$, so $4\log^2(2s)/s\le1/y$ for all $s\ge64y\log^2(64y)$, that is, for all $t\ge T'$.
-The two bounds on $\mathcal L(v(t))$ contradict each other. Hence every margin is positive at every $t\ge T_D$.
-Finally $\limsup_t\mathcal L(v(t))\le e^{-C/2}$ for every $C$.
+Since $T'\ge Y^2\ge(625/\pi_0)^2$, the first term is at most $0.33\pi_0(1+t)^{-1/2}$. With $\vartheta=\sqrt t\ge1$, the second is at
+most $0.33\pi_0(1+t)^{-1/2}$ once $\frac{\log^2(1+t)}{\vartheta}\le\frac1Y$. Now $\log(1+\vartheta^2)\le2\log(2\vartheta)$, $\frac{\vartheta}{\log^2(2\vartheta)}$
+increases for $\vartheta\ge4$, and at $\vartheta=64Y\log^2(64Y)$ one has $\log(2\vartheta)\le2\log(64Y)$; so $\frac{4\log^2(2\vartheta)}{\vartheta}\le\frac1Y$ for
+all $\vartheta\ge64Y\log^2(64Y)$, that is, for all $t\ge T'$. The two bounds on $\mathcal L(v(t))$ contradict each other.
+
+\emph{Convergence.} Every margin is therefore positive at every $t\ge T_D$, and $\limsup_t\mathcal L(v(t))\le e^{-C/2}$ for every $C$,
+so $\Lstep^{\ge2}\to0$.
 \end{proof}
 
 \begin{proof}[Proof of \cref{thm:routing}]
 Let $T=T_A+T_B+T_C+T_D$. \Cref{lem:R-AB,lem:R-C} bound the first three stopping times, and \cref{lem:R-D}, whose hypotheses
-$|\Delta|\le1$ and $|M_t-\widetilde M_t|\le\epsilon$ hold at the end of Stage C by \cref{lem:R-C}, gives positive margins at every time
-$t\ge T$ and $\Lstep^{\ge2}\to0$. The leakage stays at most $\epsilon$ and $|\Delta|\le1$ because $\beta$ is frozen after Stage C, so the
-trajectory is in $\mathcal G_\epsilon$ from $T$ on. With $|a|=\initscale^4/\sqrt{d_{\mathrm h}}$, $|g|=\initscale^2$ and
-$B\le C_0+8\log(64y)=O(\log(d_{\mathrm h}/(\pi_0\initscale)))$, the bounds $T_A=O(\initscale^{-2}\log(n/(p(1-p)|a|)))$,
+$|\Delta|\le1$ and $|M_t-\widetilde M_t|\le\zeta$ hold at the end of Stage C by \cref{lem:R-C}, gives positive margins at every time
+$t\ge T$ and $\Lstep^{\ge2}\to0$. The leakage stays at most $\zeta$ and $|\Delta|\le1$ because $\beta$ is frozen after Stage C, so the
+trajectory is in $\mathcal G_\zeta$ from $T$ on. With $|a|=\initscale^4/\sqrt{d_{\mathrm h}}$, $|g|=\initscale^2$ and
+$B\le C_D+8\log(64Y)=O(\log(d_{\mathrm h}/(\pi_0\initscale)))$, the bounds $T_A=O(\initscale^{-2}\log(n/(p(1-p)|a|)))$,
 $T_B=O(\initscale^{-4})$, $T_C=O(n^5B\log(nB/|a|)/(p^2(1-p)^2|a|^3))$ and $T_D\le\overline T_D=O(d_{\mathrm h}\initscale^{-12}/\pi_0)$
 give $T\le\mathrm{poly}(n,d_{\mathrm h},\initscale^{-1},(p(1-p))^{-1})$.
 \end{proof}
+
+\subsection{Controls and comparisons}
 
 \begin{proposition}[Fixed routing]
 \label{prop:fixed-routing}
@@ -1775,7 +1894,7 @@ $O_p(d_{\mathrm h}\initscale^{-12})$ and drives $\Lstep^{\ge2}$ to zero.
 \begin{proof}[Proof of \cref{prop:fixed-routing}]
 With the two-site mask, $M_t=\operatorname{sigmoid}(ac_tm_t)=\tfrac12+d c_tm_t$, where
 $d=\tfrac12\tanh(a/2)$ and $|d|\ge|a|/5$ for $|a|\le1$. The separator
-$v_*=e_r/(gd)-e_c/(2\initscale d)$ has unit margin on all four cases $(c_t,m_t)$ and
+$v_*=\hat e_{r}/(gd)-\hat e_{c}/(2\initscale d)$ has unit margin on all four cases $(c_t,m_t)$ and
 $\|v_*\|\le7.5\sqrt{d_{\mathrm h}}\initscale^{-6}$. Each case has weight at least $\pi_0$.
 For $A=\log(4/(\pi_0\log2))$, the convex-flow bound from Stage D gives
 $\mathcal L(v(t))\le e^{-A}+A^2\|v_*\|^2/(2t)<\pi_0\log2$ once

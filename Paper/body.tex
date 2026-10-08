@@ -233,8 +233,8 @@ which the attention outside the count's own position and the current letter chan
 two are balanced, and every prediction $s_t$, $t\ge2$, is correct with margin at least $\frac12$.
 \end{proposition}
 
-For $\epsilon>0$, the \emph{gate region} $\mathcal G_\epsilon$ is the set of parameters at which the attention outside
-$\{$own position, current letter$\}$ is at most $\epsilon$, $|\beta_n-\beta_0|\le1$, and every prediction of $\Lstep^{\ge2}$ has
+For $\zeta>0$, the \emph{gate region} $\mathcal G_\zeta$ is the set of parameters at which the attention outside
+$\{$own position, current letter$\}$ is at most $\zeta$, $|\beta_n-\beta_0|\le1$, and every prediction of $\Lstep^{\ge2}$ has
 positive margin; it contains $\theta^\star_{\mathrm{gate}}$ (\cref{app:routing}).
 
 \begin{theorem}[Step training learns its routing]
@@ -242,14 +242,14 @@ positive margin; it contains $\theta^\star_{\mathrm{gate}}$ (\cref{app:routing})
 Consider counting modulo~$2$ with a fixed query of probability $p\in(0,1)$ and the two-block Transformer with the gate
 head, started from the small structured initialization of \cref{app:routing}, which supplies a weak count$\times$letter
 pathway but zero readout and relative bias. There is $\initscale_\star$ with $1/\initscale_\star\le C_p\sqrt w$ such that, for
-$0<\initscale\le\initscale_\star$, staged block-coordinate gradient flow on $\Lstep^{\ge2}$ enters $\mathcal G_\epsilon$ by a time
+$0<\initscale\le\initscale_\star$, staged block-coordinate gradient flow on $\Lstep^{\ge2}$ enters $\mathcal G_\zeta$ by a time
 $T\le\mathrm{poly}(n,d_{\mathrm h},\initscale^{-1},(p(1-p))^{-1})$, stays in it at every later time, and drives $\Lstep^{\ge2}$ to
 zero.
 \end{theorem}
 
 The schedule has four stages, each a gradient flow on one parameter block with the rest frozen: the count readout until
 it fits the count-only prior; the gate readout until its coefficient reaches a small fixed level; the relative bias until
-the attention outside the two useful sites falls below $\epsilon$; and then the full readout with $\beta$ frozen.
+the attention outside the two useful sites falls below $\zeta$; and then the full readout with $\beta$ frozen.
 
 \emph{Proof idea.} At the count-only prior $f_A$, for every bounded feature $\Psi$ of the displayed count, the current
 letter and the other letters, with $y_t,c_t,m_t\in\{\pm1\}$ the signs of the target, the displayed count and the current
@@ -259,10 +259,10 @@ match,
  \label{eq:identity}
 \end{equation}
 where $\widehat\Psi$ is $\Psi$'s coefficient on $c_tm_t$ (\cref{lem:R-identity}). Everything the prior explains cancels,
-leaving only the local interaction, paid once with factor $1-\mixrate^2$. In routing coordinates, the common bias $b$ of the
-current letter and the count's own position, and their imbalance $\Delta$, this residual defines a vector field along which $b$
+leaving only the local interaction, paid once with factor $1-\mixrate^2$. In routing coordinates, the common bias $\bar\beta$ of the
+current letter and the count's own position, and their imbalance $\Delta$, this residual defines a vector field along which $\bar\beta$
 increases, $\Delta$ stays bounded and every other letter's bias decreases; an invariant-region argument gives polynomial
-time to $\mathcal G_\epsilon$ (\cref{lem:R-field,lem:R-C}), after which the readout problem is convex and separable. The seed is
+time to $\mathcal G_\zeta$ (\cref{lem:R-field,lem:R-C}), after which the readout problem is convex and separable. The seed is
 necessary: if the key reads a direction both letters share, the gate output depends on the displayed count alone and no
 choice of $\beta$ and readout leaves the count-only prior (\cref{lem:wrong-seed}). The identity is related to the parity
 analysis of \citet{kim2024parity}; here the computation is learned rather than built into the nonlinearity.
