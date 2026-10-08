@@ -77,7 +77,7 @@ mode $\alpha^{js_t}$ by $1-p+p\alpha^j$, of modulus at most $\mixrate$, while on
 \end{equation}
 which is \cref{eq:local-variation} in Fourier coordinates. Hence every set $S$ of letters has
 \begin{equation}
- \E\bigl[\|(y-\bm u)_S\|^2\bigr]\le(1-\frac1K)\mixrate^{2(n-|S|)}
+ \E\bigl[\|(y-\bm u)_S\|^2\bigr]\le\left(1-\frac1K\right)\mixrate^{2(n-|S|)}
  \label{eq:horizon}
 \end{equation}
 (\cref{lem:target-contraction}). Write $A_r:=\E[\|(y-\bm u)_r\|^2]$ and $J_r(\theta):=\E[\|(\Jz)_r\|_F^2]$ as in \cref{eq:credit-degree}; the
@@ -157,7 +157,7 @@ The routes and lookups above give $\reg{match}_{1+t}=2\sum_{a\in\Sigma}\relu([w_
 $\reg{prev}_{n+1+t}=\bm e_{s_{t-1}}$, $\reg{mt}_{n+1+t}=b_t$, and, for the outcome program, $\reg{cnt}_{n+3}=n\cdot\frac1n\sum_tb_t=m$ and
 $\reg{s0}_{n+3}=\bm e_{s_0}$. With $[m=a]=\relu(m-a+1)-2\relu(m-a)+\relu(m-a-1)$,
 \begin{align*}
- \reg{out}_{n+1+t}&=\sum_{j,\iota}\bm e_{j+\iota}\,2\relu\bigl([s_{t-1}=j]+[b_t=\iota]-\frac32\bigr)=\bm e_{s_t},\\
+ \reg{out}_{n+1+t}&=\sum_{j,\iota}\bm e_{j+\iota}\,2\relu\Bigl([s_{t-1}=j]+[b_t=\iota]-\frac32\Bigr)=\bm e_{s_t},\\
  \reg{out}_{n+3}&=\sum_{j,a}\bm e_{j+a}[s_0=j][m=a]=\bm e_{s_0+m}=\bm e_{s_n}.
 \end{align*}
 All state indices are modulo $K$. To gate the outcome equality test by $s_0=j$, add
@@ -264,7 +264,7 @@ $\outcredit(\theta)=\mathbb E[\langle\bm z_\theta,y-\bm u\rangle]$,
  -\underbrace{\dpd\outcredit\theta}_{\text{answer-dependent}},
 \]
 \[
- \Bigl\|\dpd\outcredit\theta\Bigr\|\le\sqrt{(A_0+A_1)(J_0+J_1)}+\sqrt{(1-\frac1K)\,{\sum_{r\ge2}J_r}}.
+ \Bigl\|\dpd\outcredit\theta\Bigr\|\le\sqrt{(A_0+A_1)(J_0+J_1)}+\sqrt{\left(1-\frac1K\right)\,{\sum_{r\ge2}J_r}}.
 \]
 \end{lemma}
 
@@ -286,11 +286,11 @@ Assume (A3), and fix the start count. For every $S\subseteq[n]$,
 \[
  \E\bigl[\|(y-\bm u)_S\|^2\bigr]
  =\frac1K\sum_{j=1}^{K-1}|\rho_j|^{2(n-|S|)}(1-|\rho_j|^2)^{|S|}
- \le(1-\frac1K)\mixrate^{2(n-|S|)},
+ \le\left(1-\frac1K\right)\mixrate^{2(n-|S|)},
 \]
 \[
  A_r=\binom nr\frac1K\sum_{j=1}^{K-1}|\rho_j|^{2(n-r)}(1-|\rho_j|^2)^r
- \le\binom nr(1-\frac1K)\mixrate^{2(n-r)}.
+ \le\binom nr\left(1-\frac1K\right)\mixrate^{2(n-r)}.
 \]
 At an endpoint, a factor with exponent zero is $1$, including $0^0$.
 \end{lemma}
