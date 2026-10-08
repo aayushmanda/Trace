@@ -283,10 +283,11 @@ score, the gate output depends on the displayed count alone, and no choice of $\
 analyses of feature learning \citep{ba2022onestep,damian2022representations}; here the computation is learned rather than
 built into the nonlinearity.
 
-\paragraph{The same model under outcome supervision.} In the architecture and from the initialization of
-\cref{thm:routing}, outcome gradient descent on any parameters other than $\beta$ stays near chance for time
-$\Omega(\mixrate^{-n})$ (\cref{cor:routing-outcome}); with only $\beta$ and the readout trained, as in the schedule, the
-outcome logits cannot depend on the prompt at all, because the gate head has no query at the answer position. The two
+\paragraph{The same model under outcome supervision.} In the architecture of \cref{thm:routing}, from the scaffold or the
+scaffold plus small fan-in nuisance weights, outcome gradient descent on any parameters other than $\beta$ stays near chance
+for time $\Omega(\mixrate^{-n})$ (\cref{cor:routing-outcome}). At the exact scaffold this is trivial, since the scaffold is a
+stationary point of $\Lout$; with only $\beta$ and the readout trained, as in the schedule, the outcome logits cannot depend
+on the prompt at all, because the gate head has no query at the answer position. The two
 guarantees therefore fix the model and the initialization but not the procedure: the step schedule trains $\beta$ with
 two large steps, and a plateau for outcome training that also trains $\beta$ is not proved. Under the staged schedule
 itself, outcome training fails trivially (\cref{rem:routing-scope}). Taking

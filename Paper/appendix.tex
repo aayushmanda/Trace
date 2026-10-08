@@ -1708,7 +1708,7 @@ the width and decays only like $(\log n)^{-1/4}$ in $n$.
 
 \begin{proof}
 Write $x=|a|=\initscale^4/\sqrt{d_{\mathrm h}}$; the third entry of the minimum gives $x\le x_0:=10^{-4}/(1+\log(140nD_p))\le10^{-4}$, so
-$|a|\le0.1$. Since $g^2a^2=\initscale^{12}/d_{\mathrm h}$ and $\pi_0\le\frac14$, $L:=\log(64y)=\log(40000d_{\mathrm h}/(\pi_0\initscale^{12}))\ge12$, and
+$|a|\le0.1$. Since $g^2a^2=\initscale^{12}/d_{\mathrm h}$ and $\pi_0\le\frac14$, $L:=\log(64y)=\log(40000d_{\mathrm h}/(\pi_0\initscale^{12}))\ge11$, and
 $\log(1+T')\le\log2+2L+4\log L\le4L$; hence $B\le C_0+8L$. As $\initscale\le1\le d_{\mathrm h}$, $\log d_{\mathrm h}\le2\log(1/x)$ and
 $12\log(1/\initscale)\le3\log(1/x)$, so $L\le\log(40000/\pi_0)+5\log(1/x)$ and $B\le D_p(1+40\log(1/x))$. With $b_*=\log(140nB/|a|)$,
 \[
@@ -1840,16 +1840,21 @@ uses the full prefix; it enters only the rule-credit bounds, not the outcome res
 \label{cor:routing-outcome}
 Take the architecture and initialization of \cref{thm:routing}, with any fixed mask for the gate head at the answer position,
 and let $\mixrate=|1-2p|$.
-(a) If $p\ne\frac12$, gradient descent on $\Lout$ over any subset of the parameters that excludes $\beta$, with
+(a) Start from the scaffold, or from the scaffold plus any perturbation with zero readout under which \cref{ass:init} still
+holds, such as small fan-in nuisance weights. If $p\ne\frac12$, gradient descent on $\Lout$ over any subset of the parameters that
+excludes $\beta$, with
 $\initscale\le\min(\initscale_\star,c\mixrate)$ and $\stepsize\le\stepsize_0$, keeps $\Lout\ge\log2-C\initscale^2\mixrate^n$ and
 $\E\softmax(\bm z)_y\le\frac12+C\initscale\mixrate^{n/2}$ for every $j\le c\mixrate^{-n}/\stepsize$. If $p=\frac12$, so $\mixrate=0$, it stays in
 $\initball$ for every $j\le c\initscale^{-1}(\attconst\initscale^4)^{-\lceil(n-1)/2\rceil}/\stepsize$, a time of order at least $\initscale^{-(2n-1)}$.
 (b) If only $\beta$ and the readout are trained, as in the schedule, the outcome logits are the same for every prompt at all times,
 so $\Lout\ge\log2$ throughout.
+At the exact scaffold, (a) holds trivially: the answer residual is the same for every prompt and the readout is zero, so
+$\theta_0$ is a stationary point of $\Lout$. With a perturbation it is not, and (a) is the informative statement.
 \end{corollary}
 
 \begin{proof}
-(a) The initialization satisfies \cref{ass:init} with $a_0=\sqrt2$, $\varsigma=\sqrt2$ and $|\tilde b_m|=1$, its readout is zero, and a
+(a) The scaffold satisfies \cref{ass:init} with $a_0=\sqrt2$, $\varsigma=\sqrt2$ and $|\tilde b_m|=1$, and so does any perturbation
+for which the bounds still hold; the readout is zero, and a
 fixed mask is permitted by \cref{ass:arch} and covered by \cref{lem:masked}; the constants of \cref{app:mainproofs} depend only on $a_0$, $\varsigma$, $K$ and the numbers of blocks and
 heads. Apply \cref{thm:outcome-end}, and \cref{rem:end-parity} when $\mixrate=0$. (b) The answer position carries a token with zero
 embedding, so its query is zero; all letters carry the same value, and the frozen parameters write nothing else. The answer logits
