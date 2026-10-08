@@ -646,7 +646,7 @@ the strictly largest logit, and
 The rate in (ii) is a worst case that assumes nothing about how the features move. Gradient descent with
 backtracking step sizes satisfies the same conclusions with $t-t_0$ replaced by the accumulated step size.
 
-For \cref{thm:outcome-end}: for $\initscale$ below a constant, $\Lout(\theta(t))\ge\log2-\frac14>\tfrac{\pimin}{4}$ along the
+For \cref{thm:outcome-end}: once $C_2\initscale^2\le\frac14$, with $C_2$ the constant of \cref{lem:score-sum}, $\Lout(\theta(t))\ge\log2-\frac14>\tfrac{\pimin}{4}$ along the
 trajectory it covers, so it stays outside $\basin(\Lout)$. For item $i$ with logits $\bm z_i=Vh_i$ and gold token $y_i$, write
 $\hat y_i=\softmax(\bm z_i)$, $q_i=\hat y_{i,y_i}$ and $\margin_i=\min_{a\ne y_i}(z_{i,y_i}-z_{i,a})$, and let
 \[
@@ -779,49 +779,55 @@ averaging over prompts gives the lemma. Every sum over positions enters through 
 sum over hidden coordinates through operator norms, so $C_1$ does not depend on $n$ or the widths.
 \end{proof}
 
-\paragraph{The outcome plateau without a cap.}
-
-\begin{proof}[Proof of \cref{thm:outcome-end}]
-Let $C_2$ be the constant of \cref{lem:score-sum} on $\initball'$, valid for $\initscale\le c\mixrate$, so that
-$|\outcredit(\theta)|\le C_2\initscale^2\mixrate^n$ on $\initball'$; take $c_{\mathrm{time}}:=\ballradius^2/C_2$ and decrease $\initscale_0$
-so that $C_2\initscale_0^2\le1/4$. On $\initball'$, $\Lout$ is smooth (\cref{lem:end-smooth}), so the flow is well defined there.
-
-For one prompt, $\KL(\bm u\|\hat y)=\log\sum_ae^{z_a}-\log K-\langle\bm u,\bm z\rangle$, so
-$\ell=\log K+\KL(\bm u\|\hat y)-\langle\bm z,\bm e_y-\bm u\rangle$. Taking expectations,
+\paragraph{Exponential outcome plateau.} For one prompt, $\KL(\bm u\|\hat y)=\log\sum_ae^{z_a}-\log K-\langle\bm u,\bm z\rangle$, so
+the cross-entropy is $\ell=\log K+\KL(\bm u\|\hat y)-\langle\bm z,\bm e_y-\bm u\rangle$; taking expectations,
 \begin{equation}
  \Lout(\theta)=\log K+\E\,\KL(\bm u\,\|\,\hat y_\theta)-\outcredit(\theta).
  \label{eq:lo-identity}
 \end{equation}
-At $\theta_0$ the readout is zero, so $\bm z=0$, $\hat y=\bm u$ and $\Lout(\theta_0)=\log K$. Since $\KL\ge0$,
-\cref{eq:lo-identity} gives the floor
+
+\begin{proof}[Proof of \cref{thm:outcome-end}]
+\emph{Loss floor.} By \cref{lem:score-sum}, valid on $\initball'$ for $\initscale\le c\mixrate$, $|\outcredit(\theta)|\le C_2\initscale^2\mixrate^n$
+there. Since $\KL\ge0$, \cref{eq:lo-identity} gives
 \begin{equation}
  \Lout(\theta)\ge\log K-C_2\initscale^2\mixrate^n,\qquad\theta\in\initball'.
  \label{eq:lo-floor}
 \end{equation}
-Let $\tau$ be the first time $\theta(t)$ leaves $\initball$. For $t\le\tau$, $\frac{d}{dt}\Lout(\theta(t))=-\|P\nabla\Lout\|^2$, so
-$\int_0^t\|P\nabla\Lout\|^2\,ds=\Lout(\theta_0)-\Lout(\theta(t))\le C_2\initscale^2\mixrate^n$ by \cref{eq:lo-floor}, and by Cauchy--Schwarz
+
+\emph{Energy bound.} On $\initball'$, $\Lout$ is smooth (\cref{lem:end-smooth}), so the flow is well defined. Let
+$\tau:=\inf\{t:\theta(t)\notin\initball\}$. For $t\le\tau$,
 \[
- \|\theta(t)-\theta_0\|\le\int_0^t\|P\nabla\Lout\|\,ds\le\Bigl(t\int_0^t\|P\nabla\Lout\|^2\,ds\Bigr)^{1/2}
- \le\bigl(t\,C_2\initscale^2\mixrate^n\bigr)^{1/2}.
+ \frac{d\Lout}{dt}=-\|P\nabla\Lout\|^2,
+ \qquad\text{so}\qquad
+ \int_0^t\|P\nabla\Lout\|^2\,ds=\Lout(\theta_0)-\Lout(\theta(t))\le C_2\initscale^2\mixrate^n,
 \]
-At $t=\tau$ the left side equals $\ballradius\initscale$, so $\tau\ge\ballradius^2/(C_2\mixrate^n)=c_{\mathrm{time}}\mixrate^{-n}$, and
-\cref{eq:lo-floor} gives the loss bound. Since $\Lout$ is nonincreasing, $\Lout(\theta(t))\le\log K$, so \cref{eq:lo-identity} yields
-$\E\,\KL(\bm u\|\hat y_t)\le\outcredit(\theta(t))\le C_2\initscale^2\mixrate^n$. Since $\hat y_{t,y}-1/K\le\mathrm{TV}(\hat y_t,\bm u)$,
+because $\Lout(\theta_0)=\log K$ at a zero readout. By Cauchy--Schwarz,
+\[
+ \|\theta(t)-\theta_0\|^2\le\Bigl(\int_0^t\|P\nabla\Lout\|\,ds\Bigr)^2\le t\,C_2\initscale^2\mixrate^n .
+\]
+
+\emph{Slow escape.} At $t=\tau$ the trajectory is on the boundary of $\initball$, so
+\[
+ \ballradius^2\initscale^2\le\tau\,C_2\initscale^2\mixrate^n
+ \quad\Longrightarrow\quad
+ \tau\ge\frac{\ballradius^2}{C_2}\,\mixrate^{-n},
+\]
+and \cref{eq:lo-floor} gives the loss bound for $t\le\tau$.
+
+\emph{Near-chance prediction.} Since $\Lout(\theta(t))\le\Lout(\theta_0)=\log K$, \cref{eq:lo-identity} also gives
+$\E\,\KL(\bm u\|\hat y_t)\le\outcredit(\theta(t))\le C_2\initscale^2\mixrate^n$. As $\hat y_{t,y}-\frac1K\le\mathrm{TV}(\hat y_t,\bm u)$,
 Pinsker's and Jensen's inequalities give
 \[
- \E\,\hat y_{t,y}-\frac1K\le\E\sqrt{\frac12\KL(\bm u\|\hat y_t)}\le\sqrt{\frac12\E\,\KL(\bm u\|\hat y_t)}\le\sqrt{C_2/2}\;\initscale\mixrate^{n/2}.
+ \E\,\hat y_{t,y}-\frac1K\le\sqrt{\frac{C_2}{2}}\;\initscale\mixrate^{n/2}.
 \]
-The theorem holds with $c=c_{\mathrm{time}}$ and $C=\max(C_2,\sqrt{C_2/2})$.
+The theorem holds with $c=\ballradius^2/C_2$ and $C=\max(C_2,\sqrt{C_2/2})$.
 \end{proof}
 
-\begin{remark}[A zero readout leaves \cref{thm:separation} unchanged]
+\begin{remark}[Zero readout]
 \label{rem:zero-readout}
-Both formats can therefore share the initialization of \cref{thm:outcome-end}.
-Part~(i) of \cref{thm:separation} uses $\hat y-\bm u=O(\initscale^2)$, which holds exactly at $\theta_0$ when $\tilde V=0$.
-Part~(ii) bounds $\|\nabla\rulecredit\|$ from above on $\initball$ for every readout. Its lower bound uses $F_n$ of
-\cref{lem:leading}, a derivative in one readout entry equal to $\E_t\E[(\bm g_t)_kh^2_{i_t,l}]$. The residual $h^2$ does
-not involve $V$, and $P_n$ depends only on attention and embedding entries, so fixing $\tilde V=0$ changes neither
-the law of $P_n$ nor the event in the lower bound.
+\Cref{thm:separation} also holds with a zero readout, so both formats can share the initialization of \cref{thm:outcome-end}:
+part~(i) uses $\hat y-\bm u=O(\initscale^2)$, which is exact at $\theta_0$, and the lower bound in part~(ii) concerns $P_n$ of
+\cref{lem:leading}, which involves no readout entries.
 \end{remark}
 
 
@@ -830,7 +836,7 @@ the law of $P_n$ nor the event in the lower bound.
 \label{rem:flow}
 For full-batch gradient descent $\theta_{j+1}=\theta_j-\stepsize P\nabla\Lout(\theta_j)$ with $\stepsize\le\stepsize_0:=\min(1,\ballradius)/C_1$,
 where $C_1$ is the constant of \cref{lem:end-smooth}, each step stays in $\initball'$ and the descent lemma replaces the energy identity;
-the same argument gives the conclusions of \cref{thm:outcome-end} for every $j$ with $j\stepsize\le\frac12c_{\mathrm{time}}\mixrate^{-n}$.
+the same argument gives the conclusions of \cref{thm:outcome-end} for every $j$ with $j\stepsize\le\frac{\ballradius^2}{2C_2}\mixrate^{-n}$.
 \end{remark}
 
 \subsection{Local targets: step rule credit}
@@ -1085,7 +1091,7 @@ under a log-concave law satisfies $\Pr[|f|\le t_{\mathrm{CW}}(\mathbb Ef^2)^{1/2
 \label{rem:end-width}
 \emph{Constants.} Every proof in this appendix bounds the network through operator norms of parameter blocks,
 $\ell_1$ norms of attention rows, and counts of blocks, heads, scores and sites. Hence $c$, $C$, $\attconst$, $C_1$, $C_2$,
-$\ballradius$, $\stepsize_0$ and $c_{\mathrm{time}}$ depend only on $a_0$, $\varsigma$, $K$ and the numbers of blocks and heads.
+$\ballradius$ and $\stepsize_0$ depend only on $a_0$, $\varsigma$, $K$ and the numbers of blocks and heads.
 The widths enter only through $\initscale_0=c\min(1,1/\beta)$, via the bias offset $\bm o_\ell$ (\cref{app:network}).
 This is unavoidable in the present argument: a bias of order $1$ on each unit gives $\beta\ge\sqrt w$, and scaling the
 biases down by $\sqrt w$ shrinks the margin of the sign condition by the same factor.
