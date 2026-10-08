@@ -430,8 +430,11 @@ The constants are independent of $n$, the widths and $k$.
 \end{proposition}
 
 \begin{proof}
-\emph{Notation.} For a quantity $F$ of the network with scores scaled by $\xi$, write $F_k=\tfrac1{k!}\tfrac{d^kF}{d\xi^k}$ for its
-normalized $\xi$-derivatives, and $F'_k=\partial_vF_k$ for their derivatives along a unit parameter direction $v$. All suprema below
+\emph{Notation.} For a quantity $F$ of the network with scores scaled by $\xi$, write
+\[
+ F_k:=\frac1{k!}\,\frac{d^kF}{d\xi^k}
+\]
+for its normalized $\xi$-derivatives, and $F'_k=\partial_vF_k$ for their derivatives along a unit parameter direction $v$. All suprema below
 are over inputs, positions and $\xi\in[0,1]$.
 
 \proofstep{Affine blocks and amplitudes (part (i)).}
@@ -470,9 +473,10 @@ $a_{k+1}\le2(k+1)a_k$ with $a_0=1$, so by duality
  \label{eq:softmax-avg}
 \end{equation}
 A vector-valued average gains only $\max_j\|f_j\|$. Normalized derivatives of products are convolutions, and those of a
-composition sum over the $\binom{k-1}{j-1}$ compositions $k_1+\cdots+k_j=k$ with $k_a\ge1$; hence
+composition sum over the $\binom{k-1}{j-1}$ compositions $k_1+\cdots+k_j=k$ with $k_a\ge1$. Hence, for a map $F(x)$ applied to
+$x=h(\xi)$,
 \[
- \frac{\|\partial^jF\|}{j!}\le Ac^j\ \text{ and }\ \|h_k\|\le ab^k
+ \frac1{j!}\Bigl\|\frac{d^jF}{dx^j}\Bigr\|\le Ac^j\ \text{ and }\ \|h_k\|\le ab^k
  \quad\Longrightarrow\quad
  \|(F\circ h)_k\|\le Aca\,b^k(1+ca)^{k-1}.
 \]
@@ -480,12 +484,12 @@ The same identities bound the absolute sums at zero scores.
 
 \proofstep{The derivative recursion (part (ii), values).}
 For block $\ell$, let $H_{\ell,k}$, $\Psi_{\ell,k}$ and $Z_k$ bound the normalized $\xi$-derivatives of $h_i^\ell$, $\psi^\ell_{ij}$ and $\bm z_i$;
-let $\Xi_{\ell,k}$ bound those of $\xi\psi^\ell$, $U_{\ell,k}$ those of an attention row in $\ell_1$ norm, and $B_{\ell,k}$ those of a head
+let $S_{\ell,k}$ bound those of $\xi\psi^\ell$, $U_{\ell,k}$ those of an attention row in $\ell_1$ norm, and $B_{\ell,k}$ those of a head
 output. The normalized derivative bounds close under the following recursion. The affine block form and the softmax calculus give, with $U_{\ell,0}=1$, $H_{0,k}=0$ for $k\ge1$, and $a_r\ge1$ in the compositions,
 \begin{align*}
  \Psi_{\ell,k}&\le C\initscale^2\sum_{a+b=k}H_{\ell-1,a}H_{\ell-1,b},
- &\Xi_{\ell,k}&\le\Psi_{\ell,k}+\Psi_{\ell,k-1},\\
- U_{\ell,k}&\le\sum_{j=1}^k2^j\sum_{a_1+\cdots+a_j=k}\prod_r\Xi_{\ell,a_r},
+ &S_{\ell,k}&\le\Psi_{\ell,k}+\Psi_{\ell,k-1},\\
+ U_{\ell,k}&\le\sum_{j=1}^k2^j\sum_{a_1+\cdots+a_j=k}\prod_rS_{\ell,a_r},
  &B_{\ell,k}&\le C\initscale\sum_{a+c=k}U_{\ell,a}H_{\ell-1,c},\\
  H_{\ell,k}&\le C\bigl(H_{\ell-1,k}+B_{\ell,k}\bigr),
  &Z_k&\le C\initscale H_{2,k}.
@@ -494,7 +498,7 @@ With $b=C\initscale^4$, block $1$ gives
 \[
  U_{1,k}\le b^k,\qquad B_{1,k}+H_{1,k}\le C\initscale^2b^k,
 \]
-and block $2$ gives $\Psi_{2,k}\le C\initscale^5(k+1)b^k$, hence $\Xi_{2,k}\le C(2b)^k$ and
+and block $2$ gives $\Psi_{2,k}\le C\initscale^5(k+1)b^k$, hence $S_{2,k}\le C(2b)^k$ and
 \[
  U_{2,k}\le C\sum_{j=1}^k\binom{k-1}{j-1}C^j(2b)^k\le C(Cb)^k.
 \]
@@ -507,7 +511,7 @@ and block $2$ gives $\Psi_{2,k}\le C\initscale^5(k+1)b^k$, hence $\Xi_{2,k}\le C
 
 \proofstep{Tangents, remainders and absolute sums (part (ii), completed).}
 Differentiate once along $v$ before taking each supremum. In a product, one factor is replaced by its tangent; in a softmax, one
-$\Xi$ is replaced or a term $D^{j+1}\omega[\partial_v\Xi_{\ell,0},\ldots]$ appears. With base bounds $H'_{0,0}=O(1)$ and
+$S_{\ell,a}$ is replaced or a term $D^{j+1}\omega[\partial_vS_{\ell,0},\ldots]$ appears. With base bounds $H'_{0,0}=O(1)$ and
 $\Psi'_{\ell,0}=O(\initscale^3)$, and the extra factor $j+1\le2^k$ absorbed into $C_0^k$,
 \[
  U'_{\ell,k}\le C\initscale^{-1}(C_0\initscale^4)^k,
