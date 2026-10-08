@@ -83,18 +83,16 @@ in which a fixed query letter $q$ has probability $p\in(0,1)$. With $b_t=\mathbf
 and the answer is $y=s_n$.
 \end{definition}
 
-Each letter permutes the counts: $\bm e_{s_t}^\top=\bm e_{s_{t-1}}^\top T_{b_t}$, with $T_0=I$ and $T_1$ the cyclic shift.
-
 \begin{definition}[Contraction coefficient]
 \label{def:lambda}
-Let $\bar T=\E[T_b]=(1-p)I+pT_1$ and
+For counting modulo $K$,
 \begin{equation}
- \mixrate=\max_{v\perp\one,\ \|v\|=1}\|v^\top\bar T\|=\bigl|1-p+p\,e^{2\pi\mathrm i/K}\bigr|.
+ \mixrate=\max_{1\le j<K}\bigl|1-p+p\,e^{2\pi\mathrm ij/K}\bigr|=\bigl|1-p+p\,e^{2\pi\mathrm i/K}\bigr|.
  \label{eq:lambda}
 \end{equation}
 \end{definition}
 
-Averaging over one unseen letter contracts every centred count direction by $\mixrate$; in information-theoretic terms,
+Averaging over one unseen letter contracts every nonconstant Fourier mode of the count by at most $\mixrate$; in information-theoretic terms,
 $\mixrate$ is the maximal correlation of consecutive counts and $\mixrate^2$ the $\chi^2$ contraction coefficient of one
 unseen letter \citep{witsenhausen1975sequences,raginsky2016strong}. The complementary quantity $1-\mixrate^2$ is the
 variance a displayed count leaves to the next letter (\cref{eq:local-variation}). For four uniform letters,
@@ -165,16 +163,20 @@ Under \cref{ass:arch,ass:init,ass:task}, with the start count fixed, for all $n\
 $\theta\in\initball$, the outcome credit at degrees $r\ge2$ is at most $C\initscale^6\mixrate^{n-3}$.
 \end{theorem}
 
-The step target separates into a part the displayed count predicts and a part only the current letter carries:
-$\bm e_{s_t}-\bm u=(\bar T^\top\bm e_{s_{t-1}}-\bm u)+(\bm e_{s_t}-\bar T^\top\bm e_{s_{t-1}})$. The second, the
-\emph{rule signal}, has covariance
+The step target separates into a part the displayed count predicts and a part only the current letter carries. With the
+state-only predictor $\bm q_s=(1-p)\bm e_s+p\,\bm e_{s+1}$, write $\bm e_{s_t}-\bm u=(\bm q_{s_{t-1}}-\bm u)+\bm g_t$, where the
+\emph{rule signal}
+\[
+ \bm g_t=\bm e_{s_t}-\bm q_{s_{t-1}}=(b_t-p)\bigl(\bm e_{s_{t-1}+1}-\bm e_{s_{t-1}}\bigr)
+\]
+has covariance
 \begin{equation}
- \operatorname{Cov}\bigl(\bm e_{s_t}-\bar T^\top\bm e_{s_{t-1}}\bigr)
- =\frac1K\bigl(I-\bar T^\top\bar T\bigr)\succeq\frac{1-\mixrate^2}{K}
- \quad\text{on }\one^\perp,
+ \operatorname{Cov}(\bm g_t)\succeq\frac{1-\mixrate^2}{K}\,I
+ \quad\text{on }\one^\perp.
  \label{eq:local-variation}
 \end{equation}
-so outcome targets pay $\mixrate^{n-r}$ while step targets pay $1-\mixrate^2$ once. Let $\rulecredit$ be the credit
+Thus outcome targets pay $\mixrate^{n-r}$ for hidden letters, whereas a displayed transition pays the local innovation
+$1-\mixrate^2$ only once. Let $\rulecredit$ be the credit
 functional with the rule signal as target.
 
 \begin{theorem}[Step credit]

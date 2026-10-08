@@ -78,22 +78,23 @@ $\varsigma\ge\frac12$ and $N_b\le2\sqrt w$, provided the MLP biases are drawn wi
 initializations (zero or small biases) do not do; at the executor width the aspect ratios are bounded, so the theorems
 hold there with $n$-independent constants for $\initscale\le c\min(\mixrate,n^{-1/2})$ (\cref{rem:end-width}).
 
-\paragraph{Contraction and spectra.} By \cref{eq:lambda}, $\mixrate^2=1-2p(1-p)(1-\cos\frac{2\pi}K)$, and for $K=2$,
-$\mixrate=|1-2p|$ and $1-\mixrate^2=4p(1-p)$. With $\alpha=e^{2\pi\mathrm i/K}$, one unseen letter multiplies each nonconstant count
-mode $\alpha^{js_t}$ by $1-p+p\alpha^j$, of modulus at most $\mixrate$, while one displayed transition keeps the innovation
+\paragraph{Contraction and spectra.}\label{app:contraction} By \cref{eq:lambda}, $\mixrate^2=1-2p(1-p)(1-\cos\frac{2\pi}K)$, and for $K=2$,
+$\mixrate=|1-2p|$ and $1-\mixrate^2=4p(1-p)$. With $\alpha=e^{2\pi\mathrm i/K}$ and the Fourier multipliers
+$\rho_j=1-p+p\alpha^j$, so that $\mixrate=\max_{j\ne0}|\rho_j|$, one unseen letter multiplies each nonconstant count
+mode $\alpha^{js_t}$ by $\rho_j$, while one displayed transition keeps the innovation
 \begin{equation}
- \E\bigl[\bigl|\alpha^{j s_t}-(1-p+p\alpha^j)\alpha^{j s_{t-1}}\bigr|^2\bigr]=1-|1-p+p\alpha^j|^2\ge1-\mixrate^2,
+ \E\bigl[\bigl|\alpha^{j s_t}-\rho_j\,\alpha^{j s_{t-1}}\bigr|^2\bigr]=1-|\rho_j|^2\ge1-\mixrate^2 .
  \label{eq:move-variance}
 \end{equation}
-which is \cref{eq:local-variation} in Fourier coordinates. Hence every set $S$ of letters has
+In the Fourier basis of $\one^\perp$, $\operatorname{Cov}(\bm g_t)$ is diagonal with entries $\frac1K(1-|\rho_j|^2)=\frac{2p(1-p)}K\bigl(1-\cos\frac{2\pi j}K\bigr)$,
+which gives \cref{eq:local-variation}. Hence every set $S$ of letters has
 \begin{equation}
  \E\bigl[\|(y-\bm u)_S\|^2\bigr]\le\left(1-\frac1K\right)\mixrate^{2(n-|S|)}
  \label{eq:horizon}
 \end{equation}
 (\cref{lem:target-contraction}). Write $A_r:=\E[\|(y-\bm u)_r\|^2]$ and $J_r(\theta):=\E[\|(\Jz)_r\|_F^2]$ as in \cref{eq:credit-degree}; the
 \emph{interaction credit} is the credit at degrees $r\ge2$, and $\outcredit=\cred_{y-\bm u}$. With the state-only predictor
-$q_s=(1-p)\bm e_s+p\bm e_{s+1}=\bar T^\top\bm e_s$, the rule signal is $g_t=\bm e_{s_t}-q_{s_{t-1}}=(b_t-p)(\bm e_{s_{t-1}+1}-\bm e_{s_{t-1}})$,
-and $\rulecredit=\E_t\E[\langle\bm z_t,g_t\rangle]$ with $t$ uniform on $\{2,\ldots,n\}$.
+$\bm q_s$ and the rule signal $\bm g_t$ of \cref{sec:setting}, $\rulecredit=\E_t\E[\langle\bm z_t,\bm g_t\rangle]$ with $t$ uniform on $\{2,\ldots,n\}$.
 
 \section{Exact two-block executors}
 \label{app:architectures}
@@ -290,8 +291,8 @@ $\sum_r A_r=\mathbb E[\|y-\bm u\|^2]=1-1/K$ for the second group.
 \subsection{Target spectrum: the exact counting formula}
 \label{app:target-spectrum}
 
-All Fourier symbols in this subsection are local: let $\alpha=e^{2\pi\mathrm i/K}$ and
-$\rho_j=1-p+p\alpha^j$ for $j=1,\ldots,K-1$. Then $|\rho_j|\le\mixrate$.
+We use the root of unity $\alpha=e^{2\pi\mathrm i/K}$ and the Fourier multipliers $\rho_j=1-p+p\alpha^j$, $j=1,\ldots,K-1$, of
+\cref{app:contraction}, with $|\rho_j|\le\mixrate$.
 
 \begin{lemma}[Exact target spectrum and contraction]
 \label{lem:target-contraction}
@@ -1223,8 +1224,9 @@ BBH, $7$ objects & Qwen2.5-0.5B LoRA & $7$ & $0.67$ & $15.2$--$24.4$ & $96.4$--$
 Accuracy (\%) on held-out prompts, ranges over seeds; the BIG-Bench Hard rows test on the $750$ real
 items. First occurrence keeps a degree-$1$ part at every $n$, and outcome learns it. Counting modulo~$2$: zero readout,
 $8{,}000$ updates for both formats, mean over ten paired seeds (solved seeds in parentheses). Counting modulo~$3$:
-$32$k updates, seeds $42$--$44$. For every task, $\mixrate$ is the contraction coefficient of \cref{def:lambda} for the averaged
-move: the largest singular value of $\bar T$ on mean-zero vectors. For counting and BIG-Bench Hard it sets the low-degree
+$32$k updates, seeds $42$--$44$. For every task, $\mixrate$ is the contraction coefficient of the averaged move: when each letter moves the state by a
+permutation, the largest singular value of the averaged permutation matrix on mean-zero vectors, which for counting is
+\cref{def:lambda}. For counting and BIG-Bench Hard it sets the low-degree
 share; for Boolean-8 and the register machine it is only the slowest of many state modes, so the single-mode value
 $\mixrate^{2n}+n\mixrate^{2(n-1)}(1-\mixrate^2)$ ($20\%$ and $56\%$) far overstates their measured degree-$\le1$ shares ($1.1\%$ and
 $0.08\%$). Protocols are in \cref{app:experiments}.}
