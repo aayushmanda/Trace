@@ -733,35 +733,50 @@ and the value-token embeddings, not the readout, and a zero block only lowers th
 
 \begin{lemma}[Smoothness near initialization]
 \label{lem:end-smooth}
-Assume (A1) and (A2), with $\initscale\le\initscale_0$. There is $C_1$, independent of $n$ and $\initscale$, such that for every
-$\theta\in\initball'$ and every direction $\bm v$,
+Assume (A1) and (A2) with $\initscale\le\initscale_0$. There is $C_1$, independent of $n$, $\initscale$ and the widths, such that
+for every $\theta\in\initball'$ and every direction $\bm v$,
 \[
- \|\nabla \Lout(\theta)\|\le C_1\initscale,
+ \|\nabla\Lout(\theta)\|\le C_1\initscale,
  \qquad
- |\partial^2\Lout(\theta)[\bm v,\bm v]|\le C_1\|\bm v\|^2 .
+ \bigl|\partial^2\Lout(\theta)[\bm v,\bm v]\bigr|\le C_1\|\bm v\|^2 .
 \]
 \end{lemma}
 
 \begin{proof}
-Along a unit parameter direction, write a profile $(a,b,c)$ for a quantity's value, first derivative and second derivative
-bounds. Parameter blocks have profiles $(a_0\initscale,1,0)$, inputs $(a_0\initscale,2,0)$ and bias vectors
-$(2\beta\initscale,1,0)$. The product rule
-$(FG)''=F''G+2F'G'+FG''$ and the affine-block formula of \cref{prop:network} give the following induction.
-If a residual has profile $(C\initscale,C,C)$, its score has profile
-$(C\initscale^4,C\initscale^3,C\initscale^2)$. By \cref{eq:softmax-avg} for $k=1,2$, an attention row has
-first and second $\ell_1$ derivatives $O(\initscale^3)$ and $O(\initscale^2)$.
-The value vectors have profile $(C\initscale^2,C\initscale,C)$, so their attention average has profile
-$(C\initscale^2,C\initscale,C)$. Finally $M_\ell-I$ has profile
-$(C\initscale^2,C\initscale,C)$ and $\bm o_\ell$ profile $(C\initscale,C,C)$, using
-$\beta\initscale\le1/2$. Thus each residual retains $(C\initscale,C,C)$ and logits have
-$(C\initscale^2,C\initscale,C)$. For cross-entropy,
+Fix $\theta\in\initball'$ and a unit direction $\bm v$. For a quantity $F$ computed by the network, write $F'$ and $F''$ for
+$\frac{d}{ds}F(\theta+s\bm v)$ and $\frac{d^2}{ds^2}F(\theta+s\bm v)$ at $s=0$, and say that $F$ has \emph{profile} $(A,A',A'')$ if
 \[
- \ell'=\langle\hat y-\bm e_y,\bm z'\rangle,\qquad
- \ell''=\bm z'^\top(\operatorname{diag}\hat y-\hat y\hat y^\top)\bm z'
-       +\langle\hat y-\bm e_y,\bm z''\rangle.
+ \|F\|\le A,\qquad \|F'\|\le A',\qquad \|F''\|\le A''.
 \]
-Use $\|\hat y-\bm e_y\|\le\sqrt2$ and softmax covariance norm at most $1/2$, then average over prompts.
-All position sums use attention-row $\ell_1$ norms, so the constants are independent of $n$ and width.
+Products obey $(FG)''=F''G+2F'G'+FG''$, so profiles multiply term by term in this sense.
+
+\emph{Inputs.} A parameter block has profile $(a_0\initscale,1,0)$, an input vector (token plus position embedding)
+$(2a_0\initscale,2,0)$, and an MLP bias vector $(2\beta\initscale,1,0)$, since $\theta$ is within $2\ballradius\initscale$ of
+$\theta_0$ and $\bm v$ has unit norm.
+
+\emph{Scores.} If a residual has profile $(C\initscale,C,C)$, then $W_Qh$ and $W_Kh$ have profile $(C\initscale^2,C\initscale,C)$,
+so each score $\psi=(W_Qh)^\top W_Kh/\sqrt{d_{\mathrm h}}$ has profile $(C\initscale^4,C\initscale^3,C\initscale^2)$.
+
+\emph{Attention rows.} By \cref{eq:softmax-avg} with $k=1,2$, a softmax row has first and second $\ell_1$ derivatives
+$O(\initscale^3)$ and $O(\initscale^2)$; its value is a probability vector.
+
+\emph{Head outputs.} Value vectors $W_Vh$ have profile $(C\initscale^2,C\initscale,C)$, and averaging them with an attention row
+keeps this profile, because rows have $\ell_1$ norm one.
+
+\emph{MLP blocks.} With the activation pattern fixed (\cref{prop:network}), each block is $h\mapsto M_\ell(h+\bm a)+\bm o_\ell$ with
+$M_\ell-I$ of profile $(C\initscale^2,C\initscale,C)$ and $\bm o_\ell$ of profile $(C\initscale,C,C)$, using $\beta\initscale\le\frac12$.
+Hence every residual keeps profile $(C\initscale,C,C)$ through both blocks, and the logits $\bm z=Vh$ have profile
+$(C\initscale^2,C\initscale,C)$.
+
+\emph{Loss.} For one prompt, with $\hat y=\softmax(\bm z)$,
+\[
+ \ell'=\langle\hat y-\bm e_y,\bm z'\rangle,
+ \qquad
+ \ell''=\bm z'^\top\bigl(\operatorname{diag}\hat y-\hat y\hat y^\top\bigr)\bm z'+\langle\hat y-\bm e_y,\bm z''\rangle .
+\]
+Since $\|\hat y-\bm e_y\|\le\sqrt2$ and the softmax covariance has norm at most $\frac12$, $|\ell'|\le C\initscale$ and $|\ell''|\le C$;
+averaging over prompts gives the lemma. Every sum over positions enters through attention rows of $\ell_1$ norm one, and every
+sum over hidden coordinates through operator norms, so $C_1$ does not depend on $n$ or the widths.
 \end{proof}
 
 \paragraph{The outcome plateau without a cap.}
