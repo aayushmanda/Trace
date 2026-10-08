@@ -150,7 +150,7 @@ where $A_r$ and $J_r$ are the target's and the Jacobian's mass at degree $r$ (\c
 \cref{lem:gradient-split}). Credit is small wherever either has little mass.
 
 \paragraph{The target sits at high degree.} Every unseen letter contracts the centred count by $\mixrate$, so for every
-set $S$ of letters, $\E[\|(y-\bm u)_S\|^2]\le(1-\frac1K)\mixrate^{2(n-|S|)}$, with equality in the exponent for counting
+set $S$ of letters, $\E[\|(y-\bm u)_S\|^2]\le(1-\tfrac1K)\mixrate^{2(n-|S|)}$, with equality in the exponent for counting
 (\cref{lem:target-contraction}).
 
 \paragraph{The network sits at low degree.} Near initialization attention is nearly uniform and the MLPs are affine, so
@@ -186,7 +186,7 @@ Under \cref{ass:arch,ass:init,ass:task} with a uniform start, for all $n\ge2$ an
 \item if $\initscale\le c\mixrate$, then $\|\nabla\Lstep(\theta)\|\ge c\,\initscale\mixrate$ while
 $\|\nabla\Lout(\theta)\|\le C\initscale(\initscale^2+\mixrate^n)$;
 \item if $\initscale\le c$ and attention uses the full causal prefix, then $\|\nabla\rulecredit(\theta)\|\le C\initscale^6/n$; if
-moreover $p<\frac12$, the degree-$6$ term is nonzero, with an explicit count$\times$letter monomial of coefficient of order $1/n$
+moreover $p<\tfrac12$, the degree-$6$ term is nonzero, with an explicit count$\times$letter monomial of coefficient of order $1/n$
 (\cref{lem:leading}).
 \end{enumerate}
 \end{theorem}
@@ -206,7 +206,7 @@ Both executors exist (\cref{prop:represent}); the question is which one training
 \begin{theorem}[Outcome training does not converge]
 \label{thm:outcome-end}
 Under \cref{ass:arch,ass:init,ass:task,ass:gd} with a zero initial readout, gradient flow
-$\frac{d\theta}{dt}=-P\nabla\Lout(\theta)$ on any parameter subset that excludes the relative bias satisfies, for all $n\ge2$,
+$\tfrac{d\theta}{dt}=-P\nabla\Lout(\theta)$ on any parameter subset that excludes the relative bias satisfies, for all $n\ge2$,
 $\initscale\le c\mixrate$ and $0\le t\le c\mixrate^{-n}$, $\theta(t)\in\initball$,
 \[
  \Lout(\theta(t))\ge\log K-C\initscale^2\mixrate^n
@@ -232,8 +232,8 @@ learned. This head supports a second exact step solution besides the lookup exec
 \begin{proposition}[Gate executor]
 \label{prop:gate}
 For counting modulo~$2$ with the gate head, there are finite relative biases and a readout, giving $\theta^\star_{\mathrm{gate}}$, at
-which the attention outside the count's own position and the current letter changes every margin by less than $\frac12$, the
-two are balanced, and every prediction $s_t$, $t\ge2$, is correct with margin at least $\frac12$.
+which the attention outside the count's own position and the current letter changes every margin by less than $\tfrac12$, the
+two are balanced, and every prediction $s_t$, $t\ge2$, is correct with margin at least $\tfrac12$.
 \end{proposition}
 
 For $\zeta>0$, the \emph{gate region} $\mathcal G_\zeta$ is the set of parameters at which the attention outside
@@ -343,7 +343,7 @@ outcome: held-out answer accuracy & $50$--$94\%$ & $50$--$55\%$ & $50\%$ & $50$-
 \end{tabular}}
 \caption{\textbf{Joint step training of the routing solves the task in most runs; outcome training under the same
 protocol solves none.} Two-block Transformer
-of \cref{ass:arch}, counting modulo $2$ with $p=\frac14$, training only the scores, the relative bias and the readout by
+of \cref{ass:arch}, counting modulo $2$ with $p=\tfrac14$, training only the scores, the relative bias and the readout by
 full-batch gradient descent (step size $2$) from $\initscale=0.3$, same seeds for both formats; a run is solved when every
 held-out prediction is correct.}
 \label{tab:reach}
