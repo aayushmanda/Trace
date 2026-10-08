@@ -627,7 +627,7 @@ $\basin(\mathcal L)=\{\theta:\mathcal L(\theta)<\tfrac{\pimin}{4}\}$; it is not 
 For $\Lstep$ the items are the pairs $(P,t)$ of a prompt and a state position, with
 $\pi_{(P,t)}=\pi_P/n$, where $\pi_P$ is the probability of prompt $P$; for $\Lout$ there is one item per prompt.
 
-\begin{lemma}[Executors lie in a certified region from which gradient descent converges]
+\begin{lemma}[Executors lie in a certified region from which gradient flow converges]
 \label{lem:basin}
 \label{thm:basin}
 Let $\mathcal L$ be a supervised loss with logits as in \cref{ass:arch}.
@@ -734,39 +734,49 @@ and the value-token embeddings, not the readout, and a zero block only lowers th
 \begin{lemma}[Smoothness near initialization]
 \label{lem:end-smooth}
 Assume (A1) and (A2) with $\initscale\le\initscale_0$. There is $C_1$, independent of $n$, $\initscale$ and the widths, such that
-for every $\theta\in\initball'$ and every direction $\bm v$,
+for every $\theta\in\initball'$ and every unit direction $\bm v$,
 \[
  \|\nabla\Lout(\theta)\|\le C_1\initscale,
  \qquad
- \bigl|\partial^2\Lout(\theta)[\bm v,\bm v]\bigr|\le C_1\|\bm v\|^2 .
+ \Bigl|\frac{d^2}{ds^2}\Lout(\theta+s\bm v)\Big|_{s=0}\Bigr|\le C_1 .
 \]
 \end{lemma}
 
 \begin{proof}
-Fix $\theta\in\initball'$ and a unit direction $\bm v$. For a quantity $F$ computed by the network, write $F'$ and $F''$ for
-$\frac{d}{ds}F(\theta+s\bm v)$ and $\frac{d^2}{ds^2}F(\theta+s\bm v)$ at $s=0$, and say that $F$ has \emph{profile} $(A,A',A'')$ if
+Fix $\theta\in\initball'$ and a unit direction $\bm v$. For a quantity $F$ computed by the network, let
 \[
- \|F\|\le A,\qquad \|F'\|\le A',\qquad \|F''\|\le A''.
+ F'=\frac{d}{ds}F(\theta+s\bm v)\Big|_{s=0},
+ \qquad
+ F''=\frac{d^2}{ds^2}F(\theta+s\bm v)\Big|_{s=0},
 \]
-Products obey $(FG)''=F''G+2F'G'+FG''$, so profiles multiply term by term in this sense.
+and say that $F$ has \emph{profile} $(A,A',A'')$ if $\|F\|\le A$, $\|F'\|\le A'$ and $\|F''\|\le A''$. By the product rule, if $F$ and
+$G$ have profiles $(A,A',A'')$ and $(B,B',B'')$, then $FG$ has profile
+\[
+ \bigl(AB,\;A'B+AB',\;A''B+2A'B'+AB''\bigr).
+\]
 
-\emph{Inputs.} A parameter block has profile $(a_0\initscale,1,0)$, an input vector (token plus position embedding)
-$(2a_0\initscale,2,0)$, and an MLP bias vector $(2\beta\initscale,1,0)$, since $\theta$ is within $2\ballradius\initscale$ of
-$\theta_0$ and $\bm v$ has unit norm.
-
-\emph{Scores.} If a residual has profile $(C\initscale,C,C)$, then $W_Qh$ and $W_Kh$ have profile $(C\initscale^2,C\initscale,C)$,
-so each score $\psi=(W_Qh)^\top W_Kh/\sqrt{d_{\mathrm h}}$ has profile $(C\initscale^4,C\initscale^3,C\initscale^2)$.
-
-\emph{Attention rows.} By \cref{eq:softmax-avg} with $k=1,2$, a softmax row has first and second $\ell_1$ derivatives
-$O(\initscale^3)$ and $O(\initscale^2)$; its value is a probability vector.
-
-\emph{Head outputs.} Value vectors $W_Vh$ have profile $(C\initscale^2,C\initscale,C)$, and averaging them with an attention row
-keeps this profile, because rows have $\ell_1$ norm one.
-
-\emph{MLP blocks.} With the activation pattern fixed (\cref{prop:network}), each block is $h\mapsto M_\ell(h+\bm a)+\bm o_\ell$ with
-$M_\ell-I$ of profile $(C\initscale^2,C\initscale,C)$ and $\bm o_\ell$ of profile $(C\initscale,C,C)$, using $\beta\initscale\le\frac12$.
-Hence every residual keeps profile $(C\initscale,C,C)$ through both blocks, and the logits $\bm z=Vh$ have profile
-$(C\initscale^2,C\initscale,C)$.
+\emph{Profiles through the network.} Since $\|\theta-\theta_0\|\le2\ballradius\initscale$, every parameter block, input vector and MLP
+bias vector has a profile of the form $(C\initscale,C,0)$; for the bias vectors this uses $\beta\initscale\le\frac12$. Applying the
+product rule layer by layer gives
+\begin{center}\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+quantity & profile\\
+\midrule
+residual stream $h$ (both blocks) & $(C\initscale,\,C,\,C)$\\
+$W_Qh$, $W_Kh$, $W_Vh$ & $(C\initscale^2,\,C\initscale,\,C)$\\
+score $\psi=(W_Qh)^\top W_Kh/\sqrt{d_{\mathrm h}}$ & $(C\initscale^4,\,C\initscale^3,\,C\initscale^2)$\\
+attention row, in $\ell_1$ norm & $(1,\,C\initscale^3,\,C\initscale^2)$\\
+head output (row average of $W_Vh$) & $(C\initscale^2,\,C\initscale,\,C)$\\
+logits $\bm z=Vh$ & $(C\initscale^2,\,C\initscale,\,C)$\\
+\bottomrule
+\end{tabular}
+\end{center}
+The attention row follows from \cref{eq:softmax-avg} with $k=1,2$ applied to the score profile. A head output averages
+value vectors with a row of $\ell_1$ norm one, so it keeps their profile. With the activation pattern fixed
+(\cref{prop:network}), each block is $h\mapsto M_\ell(h+\bm a)+\bm o_\ell$, where $M_\ell-I$ has profile
+$(C\initscale^2,C\initscale,C)$ and $\bm o_\ell$ has profile $(C\initscale,C,C)$, so the residual profile $(C\initscale,C,C)$ is preserved
+through both blocks.
 
 \emph{Loss.} For one prompt, with $\hat y=\softmax(\bm z)$,
 \[
@@ -774,9 +784,10 @@ $(C\initscale^2,C\initscale,C)$.
  \qquad
  \ell''=\bm z'^\top\bigl(\operatorname{diag}\hat y-\hat y\hat y^\top\bigr)\bm z'+\langle\hat y-\bm e_y,\bm z''\rangle .
 \]
-Since $\|\hat y-\bm e_y\|\le\sqrt2$ and the softmax covariance has norm at most $\frac12$, $|\ell'|\le C\initscale$ and $|\ell''|\le C$;
-averaging over prompts gives the lemma. Every sum over positions enters through attention rows of $\ell_1$ norm one, and every
-sum over hidden coordinates through operator norms, so $C_1$ does not depend on $n$ or the widths.
+Since $\|\hat y-\bm e_y\|\le\sqrt2$ and the softmax covariance has norm at most $\frac12$, $|\ell'|\le C\initscale$ and $|\ell''|\le C$.
+Averaging over prompts bounds $\frac{d}{ds}\Lout$ by $C\initscale$ and $\frac{d^2}{ds^2}\Lout$ by $C$ along every unit direction; the first
+bound for all $\bm v$ is the gradient bound. Every sum over positions enters through attention rows of $\ell_1$ norm one,
+and every sum over hidden coordinates through operator norms, so $C_1$ depends on neither $n$ nor the widths.
 \end{proof}
 
 \paragraph{Exponential outcome plateau.} For one prompt, $\KL(\bm u\|\hat y)=\log\sum_ae^{z_a}-\log K-\langle\bm u,\bm z\rangle$, so
