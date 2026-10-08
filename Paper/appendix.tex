@@ -196,7 +196,7 @@ The primitive routing errors satisfy
 \]
 Consequently, at the step positions,
 \[
- \mathrm{pre}_{\mathrm{correct}}\ge\frac12-4\rho_n>0>\mathrm{pre}_{\mathrm{other}},
+ \mathrm{pre}_{s_t}\ge\frac12-4\rho_n>0>\max_{a\ne s_t}\mathrm{pre}_a,
  \qquad
  \reg{out}_{s_t}\ge1-8\rho_n .
 \]
@@ -205,23 +205,23 @@ equality test is $1$-Lipschitz,
 \[
  \reg{out}_{s_n}\ge1-(4n+2)\rho_n,
  \qquad
- \reg{out}_{\mathrm{other}}\le(4n+2)\rho_n .
+ \max_{a\ne s_n}\reg{out}_a\le(4n+2)\rho_n .
 \]
-With readout weight $20$, every supervised position therefore has logit margin
+With readout weight $20$, let $a^\star$ denote the gold token at a supervised position. Then
 \[
- z_{\mathrm{correct}}-\max_{a\ne\mathrm{correct}}z_a
+ z_{a^\star}-\max_{a\ne a^\star}z_a
  \ge20\min\bigl\{1-8\rho_n,\;1-2(4n+2)\rho_n\bigr\}>19.
 \]
 
 \proofstep{Open neighbourhood.}
-For fixed $n$, let $\mathcal P_n$ be the finite set of supported gold prefixes and prediction positions.
-Continuity and the preceding margin give $\ballradius_{\mathrm{exec},n}>0$ such that
+For fixed $n$, let $\mathcal P_n$ be the finite set of supported gold prefixes and supervised positions.
+By continuity and the margin above, there is $\ballradius_{\mathrm{exec},n}>0$ such that
 \[
  \|\theta-\theta^\star\|<\ballradius_{\mathrm{exec},n}
  \quad\Longrightarrow\quad
  \max_{P\in\mathcal P_n}\|\bm z_\theta(P)-\bm z_{\theta^\star}(P)\|_\infty<19/2.
 \]
-Every greedy prediction remains correct. Induction over the continuation proves the claim.
+Every greedy prediction is therefore still $a^\star$. Induction over the continuation proves the claim.
 \end{proof}
 
 
@@ -637,137 +637,11 @@ $q_{\mathrm{att}}\le\frac12$. Apply \cref{lem:score-sum}.
 \begin{remark}[The case $\mixrate=0$]
 \label{rem:lambda-zero}
 \label{rem:end-parity}
-If $\mixrate=0$, \cref{lem:target-contraction} gives $(y-\bm u)_S=0$ unless $S=[n]$, so with $k_0=\lceil(n-1)/2\rceil$ in
-\cref{prop:score-degree} only $J^{[k_0]}$ and $J^{{\mathrm{rem}},k_0}$ pair with the answer. For $\attconst\initscale_0^4\le1$,
-\[
- \Bigl\|\dpd\outcredit\theta\Bigr\|\le C\initscale^2(\attconst\initscale^4)^{k_0},
- \qquad
- |\outcredit|\le C\initscale^3(\attconst\initscale^4)^{k_0},
- \qquad
- 4k_0+2=\begin{cases}2n,&n\text{ odd},\\2n+2,&n\text{ even}.\end{cases}
-\]
-With a zero readout, the proof of \cref{thm:outcome-end} then allows $t\le c\,\initscale^{-1}(\attconst\initscale^4)^{-k_0}$, a time of
-order at least $\initscale^{-(2n-1)}$. Counting modulo $2$ at match probability $\frac12$ and three-object BIG-Bench Hard are this case.
+If $\mixrate=0$, the outcome target is pure degree $n$ (\cref{lem:target-contraction}), so \cref{prop:score-degree} pairs it
+only with terms of order about $n/2$ in the scores, and from a zero readout the plateau of \cref{thm:outcome-end} lasts a time of
+order at least $\initscale^{-(2n-1)}$. Counting modulo $2$ at match probability $\frac12$ and three-object BIG-Bench Hard are
+this case.
 \end{remark}
-
-\paragraph{Certified regions and convergence.}
-\label{app:basin-proofs}
-\emph{Certified region.}
-
-\begin{definition}[Supervised loss and certified region]
-\label{def:basin}
-A \emph{supervised loss} is $\mathcal L(\theta)=\sum_{i\in\items}\pi_i\ell_i(\theta)$ over a finite set $\items$ of
-items, each a prompt with a supervised position, where $\pi_i>0$, $\sum_i\pi_i=1$ and $\ell_i$ is the
-cross-entropy of the gold token. Let $\pimin=\min_i\pi_i$. The \emph{certified region} of $\mathcal L$ is the sublevel set
-$\basin(\mathcal L)=\{\theta:\mathcal L(\theta)<\tfrac{\pimin}{4}\}$; it is not a basin of attraction in the dynamical sense, but gradient flow never leaves it
-(\cref{lem:basin}).
-\end{definition}
-For $\Lstep$ the items are the pairs $(P,t)$ of a prompt and a state position $t\ge2$, with
-$\pi_{(P,t)}=\pi_P/(n-1)$, where $\pi_P$ is the probability of prompt $P$; $\Lstep^{\mathrm{all}}$ also includes $t=1$, with
-$\pi_{(P,t)}=\pi_P/n$; for $\Lout$ there is one item per prompt.
-
-\begin{lemma}[Executors lie in a certified region from which gradient flow converges]
-\label{lem:basin}
-\label{thm:basin}
-Let $\mathcal L$ be a supervised loss with logits as in \cref{ass:arch}.
-\begin{enumerate}[label=(\roman*),leftmargin=*,itemsep=0pt,topsep=2pt]
-\item For the executors of \cref{prop:represent} and $\mathcal L\in\{\Lstep,\Lstep^{\mathrm{all}},\Lout\}$ of the matching format,
-replacing the readout $V^\star$ by $aV^\star$ with $a$ large enough gives a point of the open set $\basin(\mathcal L)$.
-\item Let $\theta(t)$, $t\ge t_0$, follow gradient flow $\frac{d\theta}{dt}=-P\nabla \mathcal L(\theta)$ on a parameter subset that contains the
-readout $V$, with $\mathcal L$ continuously differentiable along the trajectory, and suppose $\theta(t_0)\in\basin(\mathcal L)$. Let $\mathcal L_0=\mathcal L(\theta(t_0))$,
-$\margin_0=\log\tfrac{\pimin}{2\mathcal L_0}$ and $V_0=V(t_0)$. Then for every $t\ge t_0$, $\theta(t)\in\basin(\mathcal L)$, on every item the gold token has
-the strictly largest logit, and
-\[
- \mathcal L(\theta(t))\le\frac{\mathcal L_0}{1+\frac{\margin_0^2}{8}\log\bigl(1+\frac{\mathcal L_0(t-t_0)}{\|V_0\|_F^2}\bigr)}\to0 .
-\]
-\end{enumerate}
-\end{lemma}
-The rate in (ii) is a worst case that assumes nothing about how the features move. Gradient descent with
-backtracking step sizes satisfies the same conclusions with $t-t_0$ replaced by the accumulated step size.
-
-\emph{Cross-entropy margins.} For \cref{thm:outcome-end}: once $C_2\initscale^2\le\frac14$, with $C_2$ the constant of \cref{lem:score-sum}, $\Lout(\theta(t))\ge\log2-\frac14>\tfrac{\pimin}{4}$ along the
-trajectory it covers, so it stays outside $\basin(\Lout)$. For item $i$ with logits $\bm z_i=Vh_i$ and gold token $y_i$, write
-$\hat y_i=\softmax(\bm z_i)$, $q_i=\hat y_{i,y_i}$ and $\margin_i=\min_{a\ne y_i}(z_{i,y_i}-z_{i,a})$, and let
-\[
- \margin(\theta):=\log\frac{\pimin}{2\mathcal L(\theta)}.
-\]
-
-\begin{lemma}[Cross-entropy margin facts]
-\label{lem:end-barrier}
-\label{lem:end-readout}
-\label{lem:end-nonempty}
-\begin{enumerate}[label=(\roman*),leftmargin=*,itemsep=3pt,topsep=2pt]
-\item If $\mathcal L(\theta)<\tfrac{\pimin}{4}$, then for every item
-\[
- \ell_i<\frac14,\qquad q_i>\frac12,\qquad \margin_i\ge\margin(\theta)>\log2 .
-\]
-\item Under (i),
-\[
- \langle V,\nabla_V\mathcal L\rangle_F\le-\frac{\margin(\theta)}{2}\,\mathcal L,
- \qquad\text{hence}\qquad
- \|\nabla\mathcal L\|\ge\|\nabla_V\mathcal L\|_F\ge\frac{\margin(\theta)\,\mathcal L}{2\|V\|_F}.
-\]
-\item If $\theta^\star$ has margin at least $\execmargin>0$ on every item, then scaling its readout by any
-$a>\frac{1}{\execmargin}\log\frac{4(\Ktokens-1)}{\pimin}$ places it in the open set $\basin(\mathcal L)$.
-\end{enumerate}
-\end{lemma}
-
-The executors of \cref{prop:represent} have margin $\execmargin>19$ at every supervised position, so (iii) places suitably
-rescaled executors in $\basin(\mathcal L)$ for $\Lstep$, $\Lstep^{\mathrm{all}}$ and $\Lout$.
-
-\begin{proof}
-(i) Since $\pi_i\ell_i\le\mathcal L<\tfrac{\pimin}{4}\le\tfrac{\pi_i}{4}$, we have $\ell_i<\frac14$ and $q_i=e^{-\ell_i}>\frac12$. Also
-$\ell_i\ge\log(1+e^{-\margin_i})$, so
-\[
- e^{-\margin_i}\le e^{\ell_i}-1\le2\ell_i\le\frac{2\mathcal L}{\pi_i}\le\frac{2\mathcal L}{\pimin},
-\]
-which gives $\margin_i\ge\margin(\theta)$, and $\margin(\theta)>\log2$ because $\mathcal L<\tfrac{\pimin}{4}$.
-
-(ii) As $h_i$ does not depend on $V$,
-\[
- \langle V,\nabla_V\ell_i\rangle_F=-\langle\bm z_i,\bm e_{y_i}-\hat y_i\rangle
- =-\sum_{a\ne y_i}\hat y_{i,a}(z_{i,y_i}-z_{i,a})\le-\margin_i(1-q_i)\le-\frac12\margin_i\ell_i,
-\]
-using $\ell_i\le\tfrac{1-q_i}{q_i}\le2(1-q_i)$. Weight by $\pi_i$, sum, use $\margin_i\ge\margin(\theta)$, and apply Cauchy--Schwarz;
-$V\ne0$ since the logits are not all equal.
-
-(iii) Scaling $V$ scales every margin by $a$, so $\ell_i\le(\Ktokens-1)e^{-a\execmargin}<\tfrac{\pimin}{4}$; $\basin(\mathcal L)$ is
-open by continuity.
-\end{proof}
-
-\emph{Convergence from the region.} The proof of \cref{lem:basin}(ii) combines the margin facts with the energy identity of gradient flow.
-
-\begin{proof}[Proof of \cref{lem:basin}]
-Part~(i) is \cref{lem:end-barrier}(iii). For part~(ii), write $\mathcal L(t)=\mathcal L(\theta(t))$.
-
-\emph{Invariance.} Since
-\[
- \frac{d\mathcal L}{dt}=-\|P\nabla\mathcal L\|^2\le0,
-\]
-the trajectory stays in $\basin(\mathcal L)$, and \cref{lem:end-barrier}(i) gives the strict gold logit with the uniform margin bound
-$\margin(\theta(t))\ge\margin_0$.
-
-\emph{Gradient energy.} Integrating the loss identity,
-\[
- \int_{t_0}^t\|P\nabla\mathcal L\|^2\,ds\le\mathcal L_0 .
-\]
-
-\emph{Readout growth.} Since $V$ is one of the trained blocks, Cauchy--Schwarz gives $\|V(t)-V_0\|_F\le\sqrt{\mathcal L_0(t-t_0)}$, and hence
-\begin{equation}
- \|V(t)\|_F^2\le2\|V_0\|_F^2+2\mathcal L_0(t-t_0).
- \label{eq:end-vgrowth}
-\end{equation}
-
-\emph{Loss decay.} By \cref{lem:end-barrier}(ii) and \cref{eq:end-vgrowth},
-\[
- \frac{d}{dt}\frac1{\mathcal L(t)}=\frac{\|P\nabla\mathcal L\|^2}{\mathcal L^2}\ge\frac{\margin_0^2}{4\|V(t)\|_F^2}
- \ge\frac{\margin_0^2}{8\bigl(\|V_0\|_F^2+\mathcal L_0(t-t_0)\bigr)},
-\]
-and integrating,
-\[
- \frac1{\mathcal L(t)}\ge\frac1{\mathcal L_0}\Bigl(1+\frac{\margin_0^2}{8}\log\Bigl(1+\frac{\mathcal L_0(t-t_0)}{\|V_0\|_F^2}\Bigr)\Bigr).
-\]
-\end{proof}
 
 \paragraph{Exponential plateau.}
 \label{app:end}
@@ -1106,27 +980,16 @@ enough $\initscale$. We do not need a quantitative lower bound at random initial
 \subsection{Initialization and width}
 \begin{remark}[Width]
 \label{rem:end-width}
-\emph{Constants.} Every proof in this appendix bounds the network through operator norms of parameter blocks,
-$\ell_1$ norms of attention rows, and counts of blocks, heads, scores and sites. Hence $c$, $C$, $\attconst$, $C_1$, $C_2$,
-$\ballradius$ and $\stepsize_0$ depend only on $a_0$, $\varsigma$, $K$ and the numbers of blocks and heads.
-The widths enter only through $\initscale_0=c\min(1,1/N_b)$, via the bias offset $\bm o_\ell$ (\cref{app:network}).
-This is unavoidable in the present argument: a bias of order $1$ on each unit gives $N_b\ge\sqrt w$, and scaling the
-biases down by $\sqrt w$ shrinks the margin of the sign condition by the same factor.
-
-\emph{The following fan-in-scaled initialization satisfies (A2) at every width.} Weight matrices have independent
-mean-zero Gaussian or uniform entries of variance $1/\text{fan-in}$; embedding blocks have variance $1/d_{\mathrm{res}}$ (one-hot inputs
-have fan-in $1$); and $|\tilde b_m|\in[1,2]$, so $N_b\le2\sqrt w$. The weight conditions are standard; the bias
-condition is not, and it is what fixes the ReLU pattern and makes each MLP a fixed linear map on $\initball$. Standard sub-Gaussian bounds on operator norms and smallest
-singular values \citep[Thms.~4.4.5, 4.6.1]{vershynin2018high} and a union bound over the blocks give, with probability at least
-$1-\failprob$, $a_0\le C(1+r+\sqrt{\log(1/\failprob)})$ with $r$ the largest aspect ratio, and $\varsigma\ge\frac12$ once
-$d_{\mathrm{res}}\ge C(K+\log(1/\failprob))$.
-
-\emph{At the executor width.} The executors use $d_{\mathrm{res}}=2|\Sigma|+4K+2n+9$, $d_{\mathrm h}=2n+6$ and
-$w=\max\{|\Sigma|,3K(n+1),2n+1\}$, so every aspect ratio is bounded in terms of $K$ and $|\Sigma|$. With the
-initialization above, \cref{thm:main,thm:outcome-end} and \cref{thm:separation}(i)--(ii) therefore hold
-in the architecture of \cref{prop:represent} with $n$-independent constants, for $\initscale\le c\min(\mixrate,n^{-1/2})$.
-Thus the exponential outcome plateau holds in an architecture that contains $\thout$. The executor width grows with $n$ because one
-ReLU layer computes the count from an average; this is a property of our construction, not a lower bound.
+Every proof in this appendix bounds the network through operator norms of parameter blocks, $\ell_1$ norms of attention
+rows, and counts of blocks, heads, scores and sites, so all constants depend only on $a_0$, $\varsigma$, $K$ and the numbers of
+blocks and heads; the widths enter only through $\initscale_0=c\min(1,1/N_b)$. Fan-in-scaled initialization (weights of
+variance $1/\text{fan-in}$, embeddings of variance $1/d_{\mathrm{res}}$) with MLP biases $|\tilde b_m|\in[1,2]$, so $N_b\le2\sqrt w$,
+satisfies (A2) with high probability, with $a_0$ bounded by the largest aspect ratio and $\varsigma\ge\frac12$
+\citep[Thms.~4.4.5, 4.6.1]{vershynin2018high}. The bias condition is not standard; it is what fixes the ReLU pattern. At the
+executor widths $d_{\mathrm{res}},d_{\mathrm h},w=\Theta(n)$ the aspect ratios are bounded, so
+\cref{thm:main,thm:outcome-end} and \cref{thm:separation} hold in the architecture of \cref{prop:represent} with
+$n$-independent constants for $\initscale\le c\min(\mixrate,n^{-1/2})$: the exponential outcome plateau holds in an
+architecture that contains $\thout$.
 \end{remark}
 
 
@@ -1324,40 +1187,6 @@ $8{,}000$ (escaping) & $0.155$ & $55\%$\\
 degree $1$ during training, and answer accuracy.}
 \label{tab:main-evidence}
 \end{table}
-
-\subsection{Certificate on the training set}
-\label{app:certificate}
-\label{app:exp-certificate}
-
-\emph{Certificate criterion.} \Cref{lem:basin}(ii) applies to any finite item set, so we certify runs on their training set. Counting with $K=3$,
-$n=16$, $20{,}000$ training prompts and the protocol of \cref{app:letter-protocol}, trained with AdamW for $32{,}000$
-updates. Every training prompt and supervised token is one item with weight $1/(NP)$, so $\mathcal L<\tfrac{\pimin}{4}$ means
-summed cross-entropy below $1/4$; there are $380{,}000$ items for the step format. Ratios are $4\mathcal L/\pimin$; a ratio below $1$
-at the AdamW checkpoint certifies, by \cref{lem:basin}(ii), that gradient flow on the training-set loss from that checkpoint
-keeps every training item correct and drives the loss to zero.
-
-\emph{Continuation check.} As a finite-step check we continue from the checkpoint with
-exact float64 full-batch descent with backtracking (initial step $100$, halved until the loss falls by at least half the step
-times the squared gradient norm).
-\begin{center}\small
-\fitwidth{\begin{tabular}{@{}lccc@{}}
-\toprule
-& ratio after AdamW & after further descent & train / held-out exact\\
-\midrule
-step, seeds $42$--$44$ & $1.8$--$3.3\times10^{-4}$ & $1.7$--$3.1\times10^{-4}$ ($1{,}000$ updates) & $100\%$ / $100\%$\\
-outcome, seeds $42$--$44$ & $2.2$--$4.3\times10^{4}$ & $0.9$--$3.5\times10^{4}$ ($5{,}000$ updates) & $80$--$97\%$ / $32$--$49\%$\\
-\bottomrule
-\end{tabular}}
-\end{center}
-\emph{Result.} Along the continued step runs, the smallest gold margin is $15$ and the smallest absolute ReLU pre-activation is about
-$10^{-12}$: positive, so the loss is differentiable there, but these are float64 checks, not interval arithmetic. The outcome models fit most training prompts
-but reach only $32$--$49\%$ on held-out ones (chance $33\%$). The certificate covers the training prompts only.
-
-\emph{Enumerated prompts.} With all
-prompts enumerated at $n=6$ and $8$ (two letters, query probability $\frac14$, $K=2$, so $\mixrate=\frac12$), AdamW also reached the
-certified region in two of three outcome
-runs at $n=6$, where $\mixrate^n\approx0.016$ still leaves outcome credit; no run of either format reached it at $n=8$
-within $20{,}000$ updates.
 
 \subsection{Outcome accuracy over $n$ and $\mixrate$}
 \label{app:exp-lambda}
@@ -1642,16 +1471,10 @@ until $\alpha:=\operatorname{sign}(a)gv_r=\alpha_B$; (C) flow on $\beta$ from $0
 $\{$own position, current letter$\}$ is at most $\zeta$ on every prompt and every $t\ge2$; (D) flow on $(v_c,v_s,v_r)$ with $\beta$
 frozen. Smallness: $|a|\le0.1$ and $\initscale(1+|u_*|)\le1$, with $\initscale\le\initscale_0$ as in \cref{ass:init}.
 
-\begin{lemma}[Scale threshold]
 \label{lem:R-scale}
-Every $0<\initscale\le\initscale_\star:=\min\{\initscale_0,(1+|u_*|)^{-1},(0.1\sqrt{d_{\mathrm h}})^{1/4}\}$ satisfies the smallness
-conditions. Since the structured initialization has $|\tilde b_m|=1$ on each of the $w$ MLP units, $\initscale_0=c\min(1,w^{-1/2})$ and
-$1/\initscale_\star\le C_p\sqrt w$, with $C_p$ depending only on $p$ and independent of $n$.
-\end{lemma}
-
-\begin{proof}
-$|a|=\initscale^4/\sqrt{d_{\mathrm h}}\le0.1$ by the third entry; the second is the last condition.
-\end{proof}
+Every $0<\initscale\le\initscale_\star:=\min\{\initscale_0,(1+|u_*|)^{-1},(0.1\sqrt{d_{\mathrm h}})^{1/4}\}$ satisfies these
+conditions, since $|a|=\initscale^4/\sqrt{d_{\mathrm h}}$. The structured initialization has $|\tilde b_m|=1$ on each of the $w$ MLP
+units, so $\initscale_0=c\min(1,w^{-1/2})$ and $1/\initscale_\star\le C_p\sqrt w$, with $C_p$ depending only on $p$.
 
 \begin{lemma}[Stages A and B]
 \label{lem:R-AB}
@@ -1896,90 +1719,31 @@ Since $B\le C_D+8\log(64R_D)=O(\log(d_{\mathrm h}/(\pi_0\initscale)))$, their su
 $T\le\mathrm{poly}(n,d_{\mathrm h},\initscale^{-1},(p(1-p))^{-1})$.
 \end{proof}
 
-\subsection{Controls and comparisons}
+\subsection{Outcome training in the same model}
 
-\begin{proposition}[Fixed routing]
-\label{prop:fixed-routing}
-\label{cor:fixed-route}
-With the initialization of \cref{thm:routing} but a fixed two-site mask exposing the displayed count and the current
-letter, readout gradient flow from zero reaches positive margins on every transition after the first in time
-$O_p(d_{\mathrm h}\initscale^{-12})$ and drives $\Lstep$ to zero.
-\end{proposition}
-
-\begin{proof}[Proof of \cref{prop:fixed-routing}]
-\emph{Separator.} With the two-site mask,
-\[
- M_t=\operatorname{sigmoid}(ac_tm_t)=\frac12+d\,c_tm_t,\qquad d=\frac12\tanh\frac a2,
-\]
-and $|d|\ge|a|/5$ for $|a|\le1$. Therefore
-\[
- v^\star=\frac{\hat e_{r}}{gd}-\frac{\hat e_{c}}{2\initscale d}
-\]
-has unit margin on all four local cases $(c_t,m_t)$, with $\|v^\star\|\le7.5\sqrt{d_{\mathrm h}}\,\initscale^{-6}$. Each case has weight
-at least $\pi_0$.
-
-\emph{Positive margins.} Let $A=\log\tfrac{4}{\pi_0\log2}$. The convex-flow bound of \cref{lem:R-D}, with comparator $Av^\star$, gives
-\[
- \mathcal L(v(t))\le e^{-A}+\frac{A^2\|v^\star\|^2}{2t},
-\]
-so $\mathcal L(v(t))<\pi_0\log2$ once
-\[
- t>\frac{2A^2\|v^\star\|^2}{\pi_0\log2}=O_p(d_{\mathrm h}\initscale^{-12}).
-\]
-A nonpositive margin would contribute at least $\pi_0\log2$ to the loss, a contradiction.
-
-\emph{Convergence.} Since the loss does not increase along the flow, every margin stays positive thereafter, and comparing with
-$Cv^\star$ for every $C$ in the convex-flow bound gives $\Lstep\to0$.
-\end{proof}
-
-\begin{lemma}[Masked heads]
-\label{lem:masked}
-A head with a fixed, input-independent mask computes at each position $i$ a softmax over its visible set
-$\mathcal V_i\subseteq\{0,\dots,i\}$, which is the full-prefix softmax with scores $-\infty$ outside $\mathcal V_i$. Hence
-\cref{prop:score-degree}, \cref{prop:network}(i)--(iii), \cref{lem:score-sum,lem:end-smooth} and \cref{thm:outcome-end} hold
-unchanged for architectures with masked heads.
-\end{lemma}
-
-\begin{proof}
-Those proofs use only that each attention row is a probability vector over the visible positions, that zero-score
-attention is the uniform average over them, the softmax derivative identities and \cref{eq:softmax-avg}, which hold for any
-visible set, and counts of scores and sites, which a mask can only lower. \Cref{prop:network}(iv), the positional dilution,
-uses the full prefix; it enters only the rule-credit bounds, not the outcome results.
-\end{proof}
-
-\begin{corollary}[Outcome training in the same model]
+\begin{corollary}[Outcome training from the structured initialization]
 \label{cor:routing-outcome}
-Take the architecture and initialization of \cref{thm:routing}, with any fixed mask for the gate head at the answer position,
-and let $\mixrate=|1-2p|$.
-(a) Start from the structured initialization, or from the structured initialization plus any perturbation with zero readout under which \cref{ass:init} still
-holds, such as small fan-in nuisance weights. If $p\ne\frac12$, gradient flow on $\Lout$ over any subset of the parameters that
-excludes $\beta$, with $\initscale\le\min(\initscale_\star,c\mixrate)$, keeps $\Lout\ge\log2-C\initscale^2\mixrate^n$ and
-$\E[\softmax(\bm z)_y]\le\frac12+C\initscale\mixrate^{n/2}$ for every $t\le c\mixrate^{-n}$. If $p=\frac12$, so $\mixrate=0$, it stays in
-$\initball$ for every $t\le c\initscale^{-1}(\attconst\initscale^4)^{-\lceil(n-1)/2\rceil}$, a time of order at least $\initscale^{-(2n-1)}$.
-(b) If only $\beta$ and the readout are trained, as in the schedule, the outcome logits are the same for every prompt at all times,
-so $\Lout\ge\log2$ throughout.
-At the exact structured initialization, (a) holds trivially: the answer residual is the same for every prompt and the readout is zero, so
-$\theta_0$ is a stationary point of $\Lout$. With a perturbation it is not, and (a) is the informative statement.
+Take the architecture of \cref{thm:routing}, with any fixed mask for the gate head at the answer position, and let
+$\mixrate=|1-2p|$. From the structured initialization, or from it plus any perturbation with zero readout under which
+\cref{ass:init} still holds, gradient flow on $\Lout$ with $\beta$ fixed obeys the plateau bound of \cref{thm:outcome-end}
+for $\initscale\le\min(\initscale_\star,c\mixrate)$ (and \cref{rem:lambda-zero} when $\mixrate=0$). At the exact structured
+initialization the outcome gradient is identically zero.
 \end{corollary}
 
 \begin{proof}
-(a) The structured initialization satisfies \cref{ass:init} with $a_0=\sqrt2$, $\varsigma=\sqrt2$ and $|\tilde b_m|=1$, and so does any perturbation
-for which the bounds still hold; the readout is zero, and a
-fixed mask is permitted by \cref{ass:arch} and covered by \cref{lem:masked}; the constants of \cref{app:mainproofs} depend only on $a_0$, $\varsigma$, $K$ and the numbers of blocks and
-heads. Apply \cref{thm:outcome-end}, and \cref{rem:end-parity} when $\mixrate=0$. (b) The answer position carries a token with zero
-embedding, so its query is zero; all letters carry the same value, and the frozen parameters write nothing else. The answer logits
-therefore depend on $\beta$ and the readout only, and with a uniform start the best prompt-independent prediction has loss $\log2$.
+The structured initialization satisfies \cref{ass:init} with $a_0=\varsigma=\sqrt2$ and $|\tilde b_m|=1$, and so does any
+admissible perturbation; the readout is zero. A fixed mask is allowed by \cref{ass:arch}: each attention row is still a
+softmax over its visible sites, zero-score attention is still uniform over them, and a mask can only lower the numbers of
+scores and sites, so the arguments of \cref{prop:score-degree}, \cref{prop:network}(i)--(iii), \cref{lem:score-sum,lem:end-smooth}
+and \cref{thm:outcome-end} apply unchanged. At the exact structured initialization the answer residual is the same for every
+prompt and the readout is zero, so $\theta_0$ is a stationary point of $\Lout$.
 \end{proof}
 
 \begin{remark}[Scope]
 \label{rem:routing-scope}
-\Cref{thm:routing} does not assert polynomial-time entry into the certified region $\{\Lstep<\tfrac{\pimin}{4}\}$ of \cref{lem:basin},
-whose threshold $\pimin$ is exponentially small in $n$; with the routing fixed instead of learned, only Stage D is needed
-(\cref{prop:fixed-routing}).
-The step guarantee trains $\beta$ in a stage of its own; the plateau of \cref{cor:routing-outcome}(a) holds $\beta$ at zero, and
-part (b) is degenerate because the gate head cannot read the letters at the answer position. At $\initscale=0.02$ and
-$p=\frac14$ ($\mixrate=\frac12$) and $d_{\mathrm h}=1$ the bound on $T$, dominated by $T_C$, exceeds $\mixrate^{-n}$ unless $n>134$; with
-$\initscale=\min(\initscale_\star,c\mixrate)$, which does not depend on $n$ (\cref{lem:R-scale}), the separation is
+The step guarantee trains $\beta$ in a stage of its own, while the plateau of \cref{cor:routing-outcome} holds $\beta$ at zero.
+At $\initscale=0.02$, $p=\frac14$ ($\mixrate=\frac12$) and $d_{\mathrm h}=1$ the bound on $T$, dominated by $T_C$, exceeds
+$\mixrate^{-n}$ unless $n>134$; with $\initscale=\min(\initscale_\star,c\mixrate)$, which does not depend on $n$, the separation is
 $\mathrm{poly}(n,d_{\mathrm h},w)$ against $c\mixrate^{-n}$. The result covers transitions $t\ge2$, since the first prediction has no
 count at its own position.
 \end{remark}

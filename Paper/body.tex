@@ -199,8 +199,7 @@ carries, and its leading term is genuinely present rather than an artifact of th
 \label{sec:reach}
 \label{sec:end}
 
-Both executors of \cref{prop:represent}, with rescaled readouts, lie in a certified region of their own loss, a sublevel
-set from which gradient flow converges (\cref{lem:basin}). The formats differ in whether training reaches one.
+Both executors exist (\cref{prop:represent}); the question is which one training can reach.
 
 \begin{theorem}[Outcome training does not converge]
 \label{thm:outcome-end}
@@ -325,9 +324,7 @@ degree-$0$ and $1$ part that the theory says it can reach, and nothing beyond it
 random initialization ($\initscale=0.3$), every held-out count prediction becomes correct in $16$ of $17$ runs; the
 remaining run reaches $99.95\%$ (\cref{tab:reach}); outcome training under the same protocol and seeds solves none of $17$
 runs within $300$k updates and stays at chance for $n\ge8$. The median solve time grows from $44$k updates at $n=6$ to $237$k at
-$n=16$, where a factor $\mixrate^{-n}$ would grow $1{,}024$-fold. AdamW-trained step models at $n=16$ ($K=3$) also enter
-the certified region of their training-set loss (\cref{lem:basin}), while outcome models stay about $10^4$ times
-above its threshold (\cref{app:certificate}).
+$n=16$, where a factor $\mixrate^{-n}$ would grow $1{,}024$-fold.
 
 \begin{table}[t]
 \centering\small
