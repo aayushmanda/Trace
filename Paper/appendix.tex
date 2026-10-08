@@ -156,10 +156,10 @@ Output weights $2\bm e_{s'+b'}$ give
 The routes and lookups above give $\reg{match}_{1+t}=2\sum_{a\in\Sigma}\relu([w_t=a]+[q=a]-3/2)=b_t$,
 $\reg{prev}_{n+1+t}=\bm e_{s_{t-1}}$, $\reg{mt}_{n+1+t}=b_t$, and, for the outcome program, $\reg{cnt}_{n+3}=n\cdot\frac1n\sum_tb_t=m$ and
 $\reg{s0}_{n+3}=\bm e_{s_0}$. With $[m=a]=\relu(m-a+1)-2\relu(m-a)+\relu(m-a-1)$,
-\[
- \reg{out}_{n+1+t}=\sum_{j,\iota}\bm e_{j+\iota}\,2\relu\bigl([s_{t-1}=j]+[b_t=\iota]-\tfrac32\bigr)=\bm e_{s_t},\qquad
- \reg{out}_{n+3}=\sum_{j,a}\bm e_{j+a}[s_0=j][m=a]=\bm e_{s_0+m}=\bm e_{s_n}.
-\]
+\begin{align*}
+ \reg{out}_{n+1+t}&=\sum_{j,\iota}\bm e_{j+\iota}\,2\relu\bigl([s_{t-1}=j]+[b_t=\iota]-\tfrac32\bigr)=\bm e_{s_t},\\
+ \reg{out}_{n+3}&=\sum_{j,a}\bm e_{j+a}[s_0=j][m=a]=\bm e_{s_0+m}=\bm e_{s_n}.
+\end{align*}
 All state indices are modulo $K$. To gate the outcome equality test by $s_0=j$, add
 $(n+2)([s_0=j]-1)$ to each of its three pre-activations; this disables all other start states.
 A third step head copies the final displayed count to the answer position. A readout of weight $20$ on the
@@ -1451,10 +1451,12 @@ $\{2,\ldots,n\}$. Write $p_0$, $p_{\mathrm{cur}}$ and $p_\delta$ for the gate he
 current letter and the letter at offset $\delta$, and $p_O=1-p_0-p_{\mathrm{cur}}$ for the attention on all other letters, so
 $M_t=p_{\mathrm{cur}}+p_O$. Then
 \begin{equation}
+ \begin{gathered}
  \frac{\partial M_t}{\partial\beta_0}=-p_0M_t,\qquad
  \frac{\partial M_t}{\partial\beta_n}=p_0p_{\mathrm{cur}},\qquad
- \frac{\partial M_t}{\partial\beta_\delta}=p_0p_\delta\ (\delta\notin\{0,n\}),\qquad
- \frac{\partial p_\bullet}{\partial u}=p_\bullet(\mathbf 1[\bullet=\mathrm{cur}]-p_{\mathrm{cur}}).
+ \frac{\partial M_t}{\partial\beta_\delta}=p_0p_\delta\quad(\delta\notin\{0,n\}),\\
+ \frac{\partial p_\bullet}{\partial u}=p_\bullet\bigl(\mathbf 1[\bullet=\mathrm{cur}]-p_{\mathrm{cur}}\bigr).
+ \end{gathered}
  \label{eq:R-derivs}
 \end{equation}
 Every attention weight is a ratio of two sums whose terms change by a factor at most $e^{|a|}$ when $u$ or the other letters
@@ -1547,10 +1549,10 @@ $gv_r\widehat{\Psi_\bullet}=\alpha_B|a|\langle\partial_u\Psi_\bullet\rangle$ by 
 $\frac{d\beta_\delta}{dt}\le\alpha_B\E[p_0p_\delta](-\frac{4e^{-0.4}}{3.1}+\frac{0.05}4)\frac{p(1-p)|a|}n\le0$.
 (d) $\Psi_n-\Psi_0=p_0(p_{\mathrm{cur}}+M_t)\le2p_0$ and $\partial_u(\Psi_n-\Psi_0)=2p_0p_{\mathrm{cur}}(p_0-p_{\mathrm{cur}})$. At $\Delta=1$,
 $p_{\mathrm{cur}}/p_0=e^{u+1}\ge e^{0.9}$ for all $|u|\le|a|$, so $p_0-p_{\mathrm{cur}}\le-0.59p_{\mathrm{cur}}$ and, by (a),
-\[
- \frac{d\Delta}{dt}\le-2p(1-p)\alpha_B|a|\,\langle1.18\,p_0p_{\mathrm{cur}}^2\rangle+\tfrac12\alpha_B\varrho\,\E[p_0]
- \le\alpha_B\E[p_0]\Bigl(-\frac{2.36e^{-0.2}}{9.61}+\frac{0.1}2\Bigr)\frac{p(1-p)|a|}{n^2}<0.
-\]
+\begin{align*}
+ \frac{d\Delta}{dt}&\le-2p(1-p)\alpha_B|a|\,\langle1.18\,p_0p_{\mathrm{cur}}^2\rangle+\tfrac12\alpha_B\varrho\,\E[p_0]\\
+ &\le\alpha_B\E[p_0]\Bigl(-\frac{2.36e^{-0.2}}{9.61}+\frac{0.1}2\Bigr)\frac{p(1-p)|a|}{n^2}<0.
+\end{align*}
 The case $\Delta=-1$ is symmetric, with $p_0/p_{\mathrm{cur}}\ge e^{0.9}$.
 (e) Let $\Lambda$ be attained at some $t^*$. All prompts at $t^*$ have $p_O\ge e^{-4|a|}\Lambda$, position $t^*$ has weight
 $1/(n-1)$, and $p_0\ge1/(3.1n)$; so $\E[p_0p_O]\ge e^{-0.4}\Lambda/(3.1n^2)$.

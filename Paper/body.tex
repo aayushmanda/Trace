@@ -351,7 +351,7 @@ above its threshold (\cref{app:certificate}).
 
 \begin{table}[t]
 \centering\small
-\begin{tabular}{@{}lcccc@{}}
+\fitwidth{\begin{tabular}{@{}lcccc@{}}
 \toprule
 & $n=6$ & $n=8$ & $n=12$ & $n=16$\\
 \midrule
@@ -361,7 +361,7 @@ step: updates to solve, median (range) & $44$k ($41$--$78$k) & $61$k ($46$--$99$
 outcome: solved runs at $300$k & $0/5$ & $0/5$ & $0/5$ & $0/2$\\
 outcome: held-out answer accuracy & $50$--$94\%$ & $50$--$55\%$ & $50\%$ & $50$--$51\%$\\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \caption{\textbf{Joint step training of the routing solves the task in most runs; outcome training under the same
 protocol solves none.} Two-block Transformer
 of \cref{ass:arch}, counting modulo $2$ with $p=\frac14$, training only the scores, the relative bias and the readout by
