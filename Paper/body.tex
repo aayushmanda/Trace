@@ -8,8 +8,8 @@ matching part of the model's Jacobian. Every letter the target hides shrinks the
 factor $\mixrate<1$, so a long answer offers little signal to a freshly initialized Transformer, whose Jacobian is almost
 entirely low-degree, while a running count depends only on the displayed count and one letter. For a two-block
 Transformer that holds exact executors for both formats, we prove that outcome training from a zero readout stays near
-chance for a time exponential in the number of letters. In the same architecture and from a seeded small
-scaffold, where outcome training also stalls, a staged step-training schedule learns which letter to read and, after a
+chance for a time exponential in the number of letters. In the same architecture and from a small structured
+initialization, where outcome training also stalls, a staged step-training schedule learns which letter to read and, after a
 burn-in polynomial in the number of letters, predicts every running count after the first correctly. In experiments,
 outcome training learns the low-degree prior that $\mixrate^n$ sets and almost nothing beyond it, and step supervision
 also helps on other state-tracking tasks and with LoRA-tuned Qwen2.5-0.5B on three- and seven-object BIG-Bench Hard
@@ -56,7 +56,7 @@ factor $\mixrate^n$ (\cref{thm:main,thm:separation}).
 \item \textbf{Outcome training fails} (\cref{thm:outcome-end}). From a zero readout it stays near chance, outside the
 certified region of the outcome executor, for training time $\Omega(\mixrate^{-n})$, in a Transformer wide enough to hold
 that executor, and also in the architecture and initialization of \cref{thm:routing} (\cref{cor:routing-outcome}).
-\item \textbf{Step training succeeds} (\cref{thm:routing}). From a seeded small scaffold, staged block-coordinate gradient
+\item \textbf{Step training succeeds} (\cref{thm:routing}). From a small structured initialization, staged block-coordinate gradient
 flow learns which letter to read and predicts every running count after the first with positive margin at every time after
 a burn-in polynomial in $n$ and $1/\initscale$, where $\initscale$ can be fixed independently of $n$. Both sides of the
 separation are gradient-flow results.
@@ -237,7 +237,7 @@ learned. This head supports a second exact step solution besides the lookup exec
 
 \begin{proposition}[Gate executor]
 \label{prop:gate}
-For counting modulo~$2$ with the gate head and the scaffold below, there are finite relative biases $\beta^\star$ and a readout
+For counting modulo~$2$ with the gate head and the structured initialization below, there are finite relative biases $\beta^\star$ and a readout
 $v^\star$, giving $\theta^\star_{\mathrm{gate}}$, such that at every count position $t\ge2$ the attention outside the position itself
 and the current letter changes every margin by less than $\frac12$, the two are balanced ($\beta^\star_n=\beta^\star_0$), and every
 prediction is correct with margin at least $\frac12$.
@@ -251,7 +251,7 @@ strength $|a|$ (\cref{app:routing}).
 \begin{theorem}[Step training learns its routing]
 \label{thm:routing}
 Consider counting modulo~$2$ over two letters with a fixed query of probability $p\in(0,1)$ and the two-block Transformer of
-\cref{ass:arch} with the segment-masked gate head. Start from a seeded scaffold (\cref{app:routing}): fixed count and letter
+\cref{ass:arch} with the segment-masked gate head. Start from a small structured initialization (\cref{app:routing}): fixed count and letter
 embeddings, zero readout and relative bias, and independent random signs on the three coefficients of the
 count$\times$letter pathway (query, key and value of the gate head). Train by staged block-coordinate gradient flow: flow on the
 count readout, then on the gate readout, then on $\beta$, each until a stopping time of \cref{app:routing}, and finally on the
@@ -277,15 +277,17 @@ current letter and the count's own position, keeps the two balanced, and lowers 
 invariant argument then shows that the flow reaches $\mathcal G_\epsilon$ in polynomial time (\cref{lem:R-field,lem:R-C}).
 Once the routing is learned, the readout faces a convex, separable problem, and a second convexity argument keeps every
 margin positive after the burn-in. The theorem does not assert polynomial-time entry into the certified region
-$\{\Lstep<\pimin/4\}$ of \cref{lem:basin}, whose threshold $\pimin$ is exponentially small in $n$. The seed matters: if the key
+$\{\Lstep<\pimin/4\}$ of \cref{lem:basin}, whose threshold $\pimin$ is exponentially small in $n$. The small structured initialization isolates the routing mechanism analytically; the
+experiments also test finite-scale structured initializations with the same pathway and much larger amplitude, which the
+theorem does not cover. The seed matters: if the key
 reads the letter-presence direction shared by both letters instead of the match direction, every letter gets the same
 score, the gate output depends on the displayed count alone, and no choice of $\beta$ and readout leaves the count-only prior
 (\cref{lem:wrong-seed}). The local interaction identity is related to the parity analysis of \citet{kim2024parity}; here the
 computation is learned rather than built into the nonlinearity.
 
-\paragraph{The same model under outcome supervision.} In the architecture of \cref{thm:routing}, from the scaffold or the
-scaffold plus small fan-in nuisance weights, outcome gradient flow on any parameters other than $\beta$ stays near chance
-for time $\Omega(\mixrate^{-n})$ (\cref{cor:routing-outcome}). At the exact scaffold this is trivial, since the scaffold is a
+\paragraph{The same model under outcome supervision.} In the architecture of \cref{thm:routing}, from the structured initialization or the
+structured initialization plus small fan-in nuisance weights, outcome gradient flow on any parameters other than $\beta$ stays near chance
+for time $\Omega(\mixrate^{-n})$ (\cref{cor:routing-outcome}). At the exact structured initialization this is trivial, since the structured initialization is a
 stationary point of $\Lout$; with only $\beta$ and the readout trained, as in the schedule, the outcome logits cannot depend
 on the prompt at all, because the gate head has no query at the answer position. The two
 guarantees therefore fix the model, the initialization and the optimizer, gradient flow, but not the schedule: the step
@@ -431,13 +433,13 @@ shallow shortcut Transformers; our outcome executor is such a shortcut, and the 
 \label{sec:discussion}
 
 In one Transformer architecture that holds exact counting solutions for both formats, outcome training provably stays
-near chance for time exponential in the number of letters, while staged gradient flow on the step loss from a seeded scaffold
+near chance for time exponential in the number of letters, while staged gradient flow on the step loss from a small structured initialization
 provably learns its routing and drives $\Lstep^{\ge2}$ to zero, with positive margins after polynomial optimization time. The reason is where the credit lies: every hidden letter costs the answer a factor $\mixrate$, while a running count
 pays $1-\mixrate^2$ once.
 
 \paragraph{Limitations.} \Cref{thm:main,thm:separation,thm:outcome-end} assume small initialization, full-batch gradient
 flow and a fixed ReLU pattern, so the MLPs are linearized; the AdamW experiments leave this regime
-(\cref{rem:two-block-bias}). \Cref{thm:routing} covers counting modulo~$2$ from a seeded scaffold with a staged block-coordinate
+(\cref{rem:two-block-bias}). \Cref{thm:routing} covers counting modulo~$2$ from a small structured initialization with a staged block-coordinate
 gradient flow that freezes all but one parameter block in each of its first three stages and trains $\beta$ in a stage of
 its own, while the matching outcome plateau holds $\beta$ fixed; its polynomial has high degree in
 $1/\initscale$, so the separation it certifies is asymptotic in $n$. \Cref{thm:routing} is a controlled optimization

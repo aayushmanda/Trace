@@ -1371,7 +1371,7 @@ readout components along $e_c,e_s,e_r$, and
  u_*=\log\frac{1-p}{p},\qquad \pi_0=\tfrac12\min(p,1-p).
 \]
 
-\paragraph{Seeded scaffold.} Fix orthonormal residual directions $e_c,e_s,e_0,e_\ell,e_r$ and a unit vector $e_1$ in the head
+\paragraph{Small structured initialization.} Fix orthonormal residual directions $e_c,e_s,e_0,e_\ell,e_r$ and a unit vector $e_1$ in the head
 space. With independent random signs $A_Q,A_K,A_V\in\{\pm1\}$, set
 \begin{gather*}
  E(s)=\initscale\bigl(e_c+(-1)^se_s\bigr),\qquad
@@ -1492,7 +1492,7 @@ frozen. Smallness: $|a|\le0.1$ and $\initscale(1+|u_*|)\le1$, with $\initscale\l
 \begin{lemma}[Scale threshold]
 \label{lem:R-scale}
 Every $0<\initscale\le\initscale_\star:=\min\{\initscale_0,(1+|u_*|)^{-1},(0.1\sqrt{d_{\mathrm h}})^{1/4}\}$ satisfies the smallness
-conditions. Since the scaffold has $|\tilde b_m|=1$ on each of the $w$ MLP units, $\initscale_0=c\min(1,w^{-1/2})$ and
+conditions. Since the structured initialization has $|\tilde b_m|=1$ on each of the $w$ MLP units, $\initscale_0=c\min(1,w^{-1/2})$ and
 $1/\initscale_\star\le C_p\sqrt w$, with $C_p$ depending only on $p$ and independent of $n$.
 \end{lemma}
 
@@ -1669,19 +1669,19 @@ uses the full prefix; it enters only the rule-credit bounds, not the outcome res
 \label{cor:routing-outcome}
 Take the architecture and initialization of \cref{thm:routing}, with any fixed mask for the gate head at the answer position,
 and let $\mixrate=|1-2p|$.
-(a) Start from the scaffold, or from the scaffold plus any perturbation with zero readout under which \cref{ass:init} still
+(a) Start from the structured initialization, or from the structured initialization plus any perturbation with zero readout under which \cref{ass:init} still
 holds, such as small fan-in nuisance weights. If $p\ne\frac12$, gradient flow on $\Lout$ over any subset of the parameters that
 excludes $\beta$, with $\initscale\le\min(\initscale_\star,c\mixrate)$, keeps $\Lout\ge\log2-C\initscale^2\mixrate^n$ and
 $\E\softmax(\bm z)_y\le\frac12+C\initscale\mixrate^{n/2}$ for every $t\le c\mixrate^{-n}$. If $p=\frac12$, so $\mixrate=0$, it stays in
 $\initball$ for every $t\le c\initscale^{-1}(\attconst\initscale^4)^{-\lceil(n-1)/2\rceil}$, a time of order at least $\initscale^{-(2n-1)}$.
 (b) If only $\beta$ and the readout are trained, as in the schedule, the outcome logits are the same for every prompt at all times,
 so $\Lout\ge\log2$ throughout.
-At the exact scaffold, (a) holds trivially: the answer residual is the same for every prompt and the readout is zero, so
+At the exact structured initialization, (a) holds trivially: the answer residual is the same for every prompt and the readout is zero, so
 $\theta_0$ is a stationary point of $\Lout$. With a perturbation it is not, and (a) is the informative statement.
 \end{corollary}
 
 \begin{proof}
-(a) The scaffold satisfies \cref{ass:init} with $a_0=\sqrt2$, $\varsigma=\sqrt2$ and $|\tilde b_m|=1$, and so does any perturbation
+(a) The structured initialization satisfies \cref{ass:init} with $a_0=\sqrt2$, $\varsigma=\sqrt2$ and $|\tilde b_m|=1$, and so does any perturbation
 for which the bounds still hold; the readout is zero, and a
 fixed mask is permitted by \cref{ass:arch} and covered by \cref{lem:masked}; the constants of \cref{app:mainproofs} depend only on $a_0$, $\varsigma$, $K$ and the numbers of blocks and
 heads. Apply \cref{thm:outcome-end}, and \cref{rem:end-parity} when $\mixrate=0$. (b) The answer position carries a token with zero

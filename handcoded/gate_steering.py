@@ -51,6 +51,7 @@ ap.add_argument("--outcome_steps", type=int, default=20000)
 ap.add_argument("--outcome_lr", type=float, default=1.0)
 ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
 ap.add_argument("--out", default=None)
+ap.add_argument("--max_nfev", type=int, default=60000, help="cap on Stage C right-hand-side evaluations")
 ap.add_argument("--nuisance_keys", nargs="*", default=None, help="restrict the B/C nuisance to these blocks")
 args = ap.parse_args()
 torch.set_default_dtype(torch.float64)
@@ -243,7 +244,14 @@ def run_step(n, start, rho, seed, C):
     rec["alpha_over_alpha_B"] = float(s_alpha * v[2] / C["alpha_B"])
     # Stage C: gradient flow on beta through the full model until the leakage is at most eps.
     yt, wt, vt = torch.tensor(yy, device=dev), torch.tensor(ww, device=dev), torch.tensor(v, device=dev)
+    class Cap(Exception):
+        pass
+    last = {"b": th["beta"].detach().cpu().numpy(), "t": 0., "k": 0}
     def rhsC(t, bb):
+        last["k"] += 1
+        if last["k"] > args.max_nfev:
+            raise Cap
+        last["b"], last["t"] = bb.copy(), t
         th["beta"] = torch.tensor(bb, device=dev, requires_grad=True)
         Xt, _ = features(th, ids, pos, n)
         lossC = (wt * torch.nn.functional.softplus(-yt * (Xt.reshape(-1, 3) @ vt))).sum()
@@ -257,11 +265,18 @@ def run_step(n, start, rho, seed, C):
     evC.terminal = True
     t0C = time.time()
     if rec["TB_flow"] is not None:                       # the schedule enters Stage C only if Stage B stops
-        solC = solve_ivp(rhsC, (0, 100 * C["TC_bound"]), th["beta"].detach().cpu().numpy(), events=evC,
-                         method="LSODA", rtol=1e-8, atol=1e-10)
-        th["beta"] = torch.tensor(solC.y[:, -1], device=dev)
-        rec["TC_flow"] = float(solC.t[-1]) if solC.status == 1 else None
-        rec["stageC_nfev"], traj = int(solC.nfev), solC.y
+        try:
+            solC = solve_ivp(rhsC, (0, 100 * C["TC_bound"]), th["beta"].detach().cpu().numpy(), events=evC,
+                             method="LSODA", rtol=1e-8, atol=1e-10)
+            th["beta"] = torch.tensor(solC.y[:, -1], device=dev)
+            rec["TC_flow"] = float(solC.t[-1]) if solC.status == 1 else None
+            rec["stageC_cap"], traj = False, solC.y
+        except Cap:                                      # stopping rule not met within the evaluation cap
+            th["beta"] = torch.tensor(last["b"], device=dev)
+            rec["TC_flow"], rec["stageC_cap"] = None, True
+            rec["stageC_t_reached"] = last["t"]
+            traj = last["b"][:, None]
+        rec["stageC_nfev"] = last["k"]
     else:
         rec["TC_flow"], rec["stageC_nfev"] = None, 0
         traj = th["beta"].detach().cpu().numpy()[:, None]
