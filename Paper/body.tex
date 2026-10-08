@@ -255,10 +255,10 @@ the attention outside the two useful sites falls below $\zeta$; and then the ful
 letter and the other letters, with $y_t,c_t,m_t\in\{\pm1\}$ the signs of the target, the displayed count and the current
 match,
 \begin{equation}
- \E\bigl[-y_t\operatorname{sigmoid}(-y_tf_A)\,\Psi\bigr]=-\frac{1-\mixrate^2}{2}\,\widehat\Psi,
+ \E\bigl[-y_t\operatorname{sigmoid}(-y_tf_A)\,\Psi\bigr]=-\frac{1-\mixrate^2}{2}\,\Psi_{cm},
  \label{eq:identity}
 \end{equation}
-where $\widehat\Psi$ is $\Psi$'s coefficient on $c_tm_t$ (\cref{lem:R-identity}). Everything the prior explains cancels,
+where $\Psi_{cm}$ is $\Psi$'s coefficient on $c_tm_t$ (\cref{lem:R-identity}). Everything the prior explains cancels,
 leaving only the local interaction, paid once with factor $1-\mixrate^2$. In routing coordinates, the common bias $\bar\beta$ of the
 current letter and the count's own position, and their imbalance $\Delta$, this residual defines a vector field along which $\bar\beta$
 increases, $\Delta$ stays bounded and every other letter's bias decreases; an invariant-region argument gives polynomial
