@@ -43,7 +43,7 @@ so its signal sits at degree two with no horizon penalty.
 \caption{\textbf{Same architecture and task, different training behavior.}
 (a)~Two supervision formats for counting \texttt a in \texttt{banana}, modulo $3$; both admit exact executors.
 (b)~Counting with $n=16$, $K=2$ and zero readout: median exact continuation accuracy and interquartile band over ten paired seeds, $8$k updates.
-(c)~A separate $n=8$, $K=2$, $\initscale=0.02$ measurement with nonzero readout: target and Jacobian energy occupy different degrees (\cref{fig:overlap}).}
+(c)~A separate $n=8$, $K=2$, $\initscale=0.02$ measurement with nonzero readout: target and Jacobian energy occupy different degrees (\cref{app:spectrum}).}
 \label{fig:overview}
 \end{figure}
 
@@ -152,7 +152,7 @@ orthogonal,
  \text{credit at degree } r\le\sqrt{A_rJ_r},
  \label{eq:credit-degree}
 \end{equation}
-where $A_r$ and $J_r$ are the target's and the Jacobian's mass at degree $r$ (\cref{eq:grad-split,eq:spectra},
+where $A_r$ and $J_r$ are the target's and the Jacobian's mass at degree $r$ (\cref{eq:matching},
 \cref{lem:gradient-split}). Credit is small wherever either has little mass.
 
 \paragraph{The target sits at high degree.} Every unseen letter contracts the centred count by $\mixrate$, so for every
