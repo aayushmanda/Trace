@@ -8,7 +8,7 @@
 \item {\bf Claims}
     \item[] Question: Do the main claims made in the abstract and introduction accurately reflect the paper's contributions and scope?
     \item[] Answer: \answerYes{}
-    \item[] Justification: The abstract and the Contributions paragraph of \cref{sec:intro} state each result with its regime: degree-matched credit and the outcome interaction bound (\cref{thm:main}), the step rule credit (\cref{thm:separation}), the outcome plateau (\cref{thm:outcome-end}, \cref{cor:routing-outcome}), and the staged step result (\cref{thm:routing}) with its structured initialization and schedule. \Cref{sec:reach} and \cref{rem:routing-scope} state that the two guarantees fix the model and initialization but not the procedure, and that the polynomial bound separates from the exponential one only asymptotically in $n$. The experimental claims, including exceptions (counting modulo~$3$ at $n=8$, five-object BIG-Bench Hard), are stated in \cref{sec:experiments}.
+    \item[] Justification: The abstract and the Contributions paragraph of \cref{sec:intro} state each result with its regime: degree-matched credit and the outcome interaction bound (\cref{thm:main}), the step rule credit (\cref{thm:separation}), the outcome plateau (\cref{thm:outcome-end}, \cref{cor:routing-outcome}), and the staged step result (\cref{thm:routing}) with its seeded scaffold and schedule. \Cref{sec:reach} and \cref{rem:routing-scope} state that the two guarantees fix the model and initialization but not the procedure, and that the polynomial bound separates from the exponential one only asymptotically in $n$. The experimental claims, including exceptions (counting modulo~$3$ at $n=8$, five-object BIG-Bench Hard), are stated in \cref{sec:experiments}.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the abstract and introduction do not include the claims made in the paper.
@@ -20,7 +20,7 @@
 \item {\bf Limitations}
     \item[] Question: Does the paper discuss the limitations of the work performed by the authors?
     \item[] Answer: \answerYes{}
-    \item[] Justification: The Limitations paragraph of \cref{sec:conclusion} states that \cref{thm:main,thm:separation,thm:outcome-end} assume small initialization, full-batch gradient descent and a fixed ReLU pattern (linearized MLPs) that the AdamW runs leave; that \cref{thm:routing} uses a structured initialization and a staged schedule that trains the relative bias while the matching outcome plateau holds it fixed; that the separation is asymptotic; that joint training is a conjecture (\cref{conj:reach}); and that some experiments, including five-object BIG-Bench Hard, do not follow the $\mixrate^n$ ordering.
+    \item[] Justification: The Limitations paragraph of \cref{sec:conclusion} states that \cref{thm:main,thm:separation,thm:outcome-end} assume small initialization, full-batch gradient descent and a fixed ReLU pattern (linearized MLPs) that the AdamW runs leave; that \cref{thm:routing} uses a seeded scaffold and a staged schedule that trains the relative bias while the matching outcome plateau holds it fixed; that the separation is asymptotic; that joint training is a conjecture (\cref{conj:reach}); and that some experiments, including five-object BIG-Bench Hard, do not follow the $\mixrate^n$ ordering.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper has no limitation while the answer \answerNo{} means that the paper has limitations, but those are not discussed in the paper. 

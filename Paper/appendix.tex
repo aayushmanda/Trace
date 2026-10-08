@@ -1576,7 +1576,7 @@ readout components along $e_c,e_s,e_r$, and
  u_*=\log\frac{1-p}{p},\qquad \pi_0=\tfrac12\min(p,1-p).
 \]
 
-\paragraph{Initialization.} Fix orthonormal residual directions $e_c,e_s,e_0,e_\ell,e_r$ and a unit vector $e_1$ in the head
+\paragraph{Seeded scaffold.} Fix orthonormal residual directions $e_c,e_s,e_0,e_\ell,e_r$ and a unit vector $e_1$ in the head
 space. With independent random signs $A_Q,A_K,A_V\in\{\pm1\}$, set
 \begin{gather*}
  E(s)=\initscale\bigl(e_c+(-1)^se_s\bigr),\qquad
@@ -1599,6 +1599,34 @@ $M_t=\dfrac{\sum_{j=1}^ne^{ac_tm_j+\beta_{i_t-\ell_j}}}{e^{\beta_0}+\sum_{j=1}^n
 \begin{proof}
 Block $1$ and both MLPs write nothing. The query at $i_t$ is $\initscale^2A_Qc_te_1$, the key of letter $j$ is $\initscale^2A_Km_je_1$ and that of $i_t$ is $0$;
 letters carry value $\initscale^2A_Ve_r$ and $i_t$ carries $0$. Only $\beta$ and the readout are trained.
+\end{proof}
+
+\begin{proof}[Proof of \cref{prop:gate}]
+Let $d=\frac12\tanh(a/2)$, so $|d|\ge0.249|a|$ for $|a|\le0.1$, and set $b^\star=\log(10n/|a|)$, $\beta^\star_0=\beta^\star_n=b^\star$,
+$\beta^\star_\delta=0$ otherwise. By \cref{lem:R-features}, the attention outside the two sites is
+$O/(e^{b^\star}+e^{ac_tm_t+b^\star}+O)\le Oe^{-b^\star}$ with $O\le(n-1)e^{|a|}$, hence at most $0.111|a|\le|d|/2$, and it changes $M_t$
+from $\widetilde M_t=\operatorname{sigmoid}(ac_tm_t)=\frac12+d\,c_tm_t$ by at most that much. With $gv^\star_r=1/d$,
+$\initscale v^\star_c=-1/(2d)$ and $v^\star_s=0$, $y_tf^\star_t=1+y_t(M_t-\widetilde M_t)/d\ge\frac12$. Thus
+$\theta^\star_{\mathrm{gate}}\in\mathcal G_{|d|/2}$. The stages of \cref{thm:routing} reach $\mathcal G_\epsilon$ with $\epsilon=0.015|a|/B$: the
+attention outside the two sites is at most $Oe^{-\beta_0}\le\epsilon$ by the proof of \cref{lem:R-C}(d), $|\Delta|\le1$ by
+\cref{lem:R-C}(b), $\beta$ is fixed in Stage D, and the margins are positive from $T_D$ on by \cref{lem:R-D}.
+\end{proof}
+
+\begin{lemma}[Wrong seed]
+\label{lem:wrong-seed}
+Replace the key seed $W_Ke_\ell=\initscale A_Ke_1$ by $W_Ke_0=\initscale A_Ke_1$, so the key reads the direction that both letters
+share. Then for every $\beta$ and every readout, $f_t$ is a function of $c_t$ alone. Consequently
+$\Lstep^{\ge2}\ge-p\log p-(1-p)\log(1-p)$, for each displayed count one of the two letter values has nonpositive margin, and
+$\widehat M=0$, so at the prior the gate-readout gradient of \cref{lem:R-identity}(b) vanishes. The staged schedule, and any
+training of $\beta$ and the readout, stays at or above the count-only prior.
+\end{lemma}
+
+\begin{proof}
+Every letter now has key $\initscale^2A_Ke_1$ and value $\initscale^2A_Ve_r$, so the scores at $i_t$ are $ac_t+\beta_{i_t-\ell_j}$ and
+$M_t$ depends on $c_t$ and $\beta$ only; the other features are $\initscale$ and $\initscale c_t$. For fixed $c$, $y_t=cm_t$ takes both
+signs, so $y_tf(c)$ is nonpositive for one of them, and
+$\min_z\{(1-p)\log(1+e^{-z})+p\log(1+e^{z})\}=-p\log p-(1-p)\log(1-p)$. Since $M_t$ does not depend on $m_t$, its
+coefficient on $c_tm_t$ is zero.
 \end{proof}
 
 \begin{lemma}[Prior and gradient identity]
@@ -1793,6 +1821,21 @@ $t>2A^2\|v_*\|^2/(\pi_0\log2)$. A nonpositive margin would contribute at least
 $\pi_0\log2$, so all margins are positive thereafter by loss descent. Scaling the separator proves $L\to0$.
 \end{proof}
 
+\begin{lemma}[Masked heads]
+\label{lem:masked}
+A head with a fixed, input-independent mask computes at each position $i$ a softmax over its visible set
+$\mathcal V_i\subseteq\{0,\dots,i\}$, which is the full-prefix softmax with scores $-\infty$ outside $\mathcal V_i$. Hence
+\cref{prop:score-degree}, \cref{prop:network}(i)--(iii), \cref{lem:score-sum,lem:end-smooth} and \cref{thm:outcome-end} hold
+unchanged for architectures with masked heads.
+\end{lemma}
+
+\begin{proof}
+Those proofs use only that each attention row is a probability vector over the visible positions, that zero-score
+attention is the uniform average over them, the softmax derivative identities and \cref{eq:softmax-avg}, which hold for any
+visible set, and counts of scores and sites, which a mask can only lower. \Cref{prop:network}(iv), the positional dilution,
+uses the full prefix; it enters only the rule-credit bounds, not the outcome results.
+\end{proof}
+
 \begin{corollary}[Outcome training in the same model]
 \label{cor:routing-outcome}
 Take the architecture and initialization of \cref{thm:routing}, with any fixed mask for the gate head at the answer position,
@@ -1806,8 +1849,8 @@ so $\Lout\ge\log2$ throughout.
 \end{corollary}
 
 \begin{proof}
-(a) The initialization satisfies \cref{ass:init} with $a_0=\sqrt2$ and $\varsigma=\sqrt2$, its readout is zero, and a fixed mask is
-permitted by \cref{ass:arch}; the constants of \cref{app:mainproofs} depend only on $a_0$, $\varsigma$, $K$ and the numbers of blocks and
+(a) The initialization satisfies \cref{ass:init} with $a_0=\sqrt2$, $\varsigma=\sqrt2$ and $|\tilde b_m|=1$, its readout is zero, and a
+fixed mask is permitted by \cref{ass:arch} and covered by \cref{lem:masked}; the constants of \cref{app:mainproofs} depend only on $a_0$, $\varsigma$, $K$ and the numbers of blocks and
 heads. Apply \cref{thm:outcome-end}, and \cref{rem:end-parity} when $\mixrate=0$. (b) The answer position carries a token with zero
 embedding, so its query is zero; all letters carry the same value, and the frozen parameters write nothing else. The answer logits
 therefore depend on $\beta$ and the readout only, and with a uniform start the best prompt-independent prediction has loss $\log2$.

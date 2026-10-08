@@ -8,12 +8,12 @@ matching part of the model's Jacobian. Every letter the target hides shrinks the
 factor $\mixrate<1$, so a long answer offers little signal to a freshly initialized Transformer, whose Jacobian is almost
 entirely low-degree, while a running count depends only on the displayed count and one letter. For a two-block
 Transformer that holds exact executors for both formats, we prove that outcome training from a zero readout stays near
-chance for a time exponential in the number of letters. In the same architecture and from a structured small
-initialization, where outcome training also stalls, a staged step-training schedule learns which letter to read and, after a
+chance for a time exponential in the number of letters. In the same architecture and from a seeded small
+scaffold, where outcome training also stalls, a staged step-training schedule learns which letter to read and, after a
 burn-in polynomial in the number of letters, predicts every running count after the first correctly. In experiments,
 outcome training learns the low-degree prior that $\mixrate^n$ sets and almost nothing beyond it, and step supervision
-also helps on other state-tracking tasks and with LoRA-tuned Qwen2.5-0.5B on BIG-Bench Hard object tracking, though not
-at every size.
+also helps on other state-tracking tasks and with LoRA-tuned Qwen2.5-0.5B on three- and seven-object BIG-Bench Hard
+object tracking, though not at five objects.
 \end{abstract}
 
 % ===================================================================
@@ -56,7 +56,7 @@ factor $\mixrate^n$ (\cref{thm:main,thm:separation}).
 \item \textbf{Outcome training fails} (\cref{thm:outcome-end}). From a zero readout it stays near chance, outside the
 certified region of the outcome executor, for training time $\Omega(\mixrate^{-n})$, in a Transformer wide enough to hold
 that executor, and also in the architecture and initialization of \cref{thm:routing} (\cref{cor:routing-outcome}).
-\item \textbf{Step training succeeds} (\cref{thm:routing}). From a structured small initialization and with a staged
+\item \textbf{Step training succeeds} (\cref{thm:routing}). From a seeded small scaffold and with a staged
 schedule, step training learns which letter to read and predicts every running count after the first with positive
 margin at every time after a burn-in polynomial in $n$ and $1/\initscale$, where $1/\initscale$ may itself be polynomial
 in $n$ and the width.
@@ -197,8 +197,8 @@ Part~(i) compares whole gradients, and its lower bound $c\initscale\mixrate$ com
 the readout, which a readout alone can do and which does not solve the task. The credit that matters is part~(ii): it is
 small, of order $\initscale^6/n$ (about $10^{-9}$ at $\initscale=0.02$, \cref{tab:matched}), but carries no factor $\mixrate^n$,
 so it exceeds the outcome interaction credit of \cref{thm:main} by $\mixrate^{-(n-3)}$ up to polynomial factors. At
-$\initscale=0.02$ the measured ratio, with the start count fixed as in \cref{thm:main}, grows from $2.4$ at $n=4$ to $69$ at
-$n=12$; with a uniform start it grows from $64$--$119$ at $n=4$ to $9{,}410$--$21{,}300$ at $n=14$ (\cref{app:regime}).
+$\initscale=0.02$ the measured ratio, with the start count fixed as in \cref{thm:main}, grows from $1.3$--$2.5$ at $n=4$ to
+$30$--$70$ at $n=12$ over three draws; with a uniform start, where the outcome interaction credit is smaller, it grows from $64$--$119$ at $n=4$ to $9{,}410$--$21{,}300$ at $n=14$ (\cref{app:regime}).
 \Cref{thm:main} needs only $\initscale^2\le c\mixrate$, which makes the attention series converge; \cref{thm:separation}(i) and
 \cref{thm:outcome-end} need $\initscale\le c\mixrate$, so that the degree-$0$ and $1$ terms, of size $\initscale^2\mixrate^{n-1}$,
 stay below $\initscale\mixrate^n$.
@@ -230,22 +230,37 @@ gradient norm, the descent lemma and this loss floor, so it holds for gradient d
 that excludes the relative bias, and for gradient flow; the time bound does not depend on $\initscale$, and for $\mixrate=0$ it becomes
 $\initscale^{-(2n-1)}$ (\cref{rem:flow,rem:end-parity}).
 
-\paragraph{Step training reaches its solution.} A running count needs one routing decision: read the displayed count and
+\paragraph{Step training reaches a gate solution.} A running count needs one routing decision: read the displayed count and
 the current letter. We give one block-2 head (the gate head) a segment mask, under which each count position attends to
-itself and to all $n$ letters, and a relative bias $\beta=0$; which letter to read is encoded only in $\beta$ and must be
-learned.
+itself and to all $n$ letters, and a relative bias $\beta$; which letter to read is encoded only in $\beta$ and must be
+learned. This head supports a second exact step solution besides the lookup executor $\theta^\star_{\mathrm{lookup}}$ of
+\cref{prop:represent}.
+
+\begin{proposition}[Gate executor]
+\label{prop:gate}
+For counting modulo~$2$ with the gate head and the scaffold below, there are finite relative biases $\beta^\star$ and a readout
+$v^\star$, giving $\theta^\star_{\mathrm{gate}}$, such that at every count position $t\ge2$ the attention outside the position itself
+and the current letter changes every margin by less than $\frac12$, the two are balanced ($\beta^\star_n=\beta^\star_0$), and every
+prediction is correct with margin at least $\frac12$.
+\end{proposition}
+
+For $\epsilon>0$ let the \emph{gate region} $\mathcal G_\epsilon$ be the set of parameters at which the attention outside
+$\{$own position, current letter$\}$ is at most $\epsilon$ on every prompt and $t\ge2$, $|\beta_n-\beta_0|\le1$, and every
+prediction of $\Lstep^{\ge2}$ has positive margin; $\theta^\star_{\mathrm{gate}}\in\mathcal G_\epsilon$ for $\epsilon$ of order the gate
+strength $|a|$ (\cref{app:routing}).
 
 \begin{theorem}[Step training learns its routing]
 \label{thm:routing}
-Consider counting modulo~$2$ over two letters with a fixed query of probability $p\in(0,1)$, the two-block Transformer of
-\cref{ass:arch} with the segment-masked gate head, and the structured small initialization of \cref{app:routing}. Train in
-four stages: gradient flow on the count readout; one gradient step on the gate readout; one gradient step on $\beta$;
-gradient flow on the readout. There is $\initscale_\star>0$ with $1/\initscale_\star\le C_p(\sqrt w+(\log2n)^{1/4})$, where
+Consider counting modulo~$2$ over two letters with a fixed query of probability $p\in(0,1)$ and the two-block Transformer of
+\cref{ass:arch} with the segment-masked gate head. Start from a seeded scaffold (\cref{app:routing}): fixed count and letter
+embeddings, zero readout and relative bias, and independent random signs on the three coefficients of the
+count$\times$letter pathway (query, key and value of the gate head). Train in four stages: gradient flow on the count
+readout; one gradient step on the gate readout; one gradient step on $\beta$; gradient flow on the readout. There is $\initscale_\star>0$ with $1/\initscale_\star\le C_p(\sqrt w+(\log2n)^{1/4})$, where
 $w$ is the MLP width and $C_p$ depends only on $p$, such that for $0<\initscale\le\initscale_\star$ and the step sizes of
 \cref{app:routing}, with time measured by a clock that adds the two gradient-flow durations and the two step sizes:
-(i)~there is $T\le\mathrm{poly}(n,d_{\mathrm h},\initscale^{-1},(p(1-p))^{-1})$ such that every prediction of
-$\Lstep^{\ge2}$ has positive margin on every prompt at every time $t\ge T$; and
-(ii)~$\Lstep^{\ge2}\to0$.
+(i)~there is $T\le\mathrm{poly}(n,d_{\mathrm h},\initscale^{-1},(p(1-p))^{-1})$ such that training enters the gate region
+$\mathcal G_\epsilon$, with $\epsilon$ the leakage tolerance of \cref{app:routing}, by time $T$ and stays in it at every later time;
+and (ii)~$\Lstep^{\ge2}\to0$.
 \end{theorem}
 
 The proof rests on one identity. At the count-only prior $f_A$, for every bounded feature $\Psi$ of the displayed count,
@@ -260,7 +275,11 @@ where $\widehat\Psi$ is $\Psi$'s coefficient on $c_tm_t$, the product of the dis
 $1-\mixrate^2$. Applied to the bias gradient at $\beta=0$, it shows that one step raises the current letter and the
 count's own position by the same amount to leading order and lowers every other letter, removing the attention on other
 letters while the gate stays balanced; the readout then faces a convex problem, and a second convexity argument keeps
-every margin positive after the burn-in. The one-point analysis follows \citet{kim2024parity} and the one-large-step
+every margin positive after the burn-in. The theorem does not assert polynomial-time entry into the certified region
+$\{\Lstep<\pimin/4\}$ of \cref{lem:basin}, whose threshold $\pimin$ is exponentially small in $n$. The seed matters: if the key
+reads the letter-presence direction shared by both letters instead of the match direction, every letter gets the same
+score, the gate output depends on the displayed count alone, and no choice of $\beta$ and readout leaves the count-only prior
+(\cref{lem:wrong-seed}). The one-point analysis follows \citet{kim2024parity} and the one-large-step
 analyses of feature learning \citep{ba2022onestep,damian2022representations}; here the computation is learned rather than
 built into the nonlinearity.
 
@@ -269,7 +288,8 @@ built into the nonlinearity.
 $\Omega(\mixrate^{-n})$ (\cref{cor:routing-outcome}); with only $\beta$ and the readout trained, as in the schedule, the
 outcome logits cannot depend on the prompt at all, because the gate head has no query at the answer position. The two
 guarantees therefore fix the model and the initialization but not the procedure: the step schedule trains $\beta$ with
-two large steps, and a plateau for outcome training that also trains $\beta$ is not proved. Taking
+two large steps, and a plateau for outcome training that also trains $\beta$ is not proved. Under the staged schedule
+itself, outcome training fails trivially (\cref{rem:routing-scope}). Taking
 $\initscale=\min(\initscale_\star,c\mixrate)$, which is $1/\mathrm{poly}(n,w)$, step training reaches positive margins in time
 $\mathrm{poly}(n,d_{\mathrm h},w)$ while outcome training needs time $c\mixrate^{-n}$. The polynomial has high degree, with
 Stage~D alone of order $d_{\mathrm h}\initscale^{-12}$, so at a fixed scale such as $\initscale=0.02$ the guarantees separate
@@ -315,8 +335,9 @@ modulo~$3$ at $n=8$ ($\mixrate^n\approx0.036$), outcome training solves two of t
 of $n\in\{6,\ldots,16\}$ and $\mixrate\in\{0.5,\ldots,0.9\}$, outcome accuracy has Spearman correlation $0.91$ with
 $\mixrate^n$ and $-0.36$ with $n$ alone. Most of this correlation is the state-only prior $(1+\mixrate^n)/2$, which predicting
 from the start count achieves: cell means lie between $2$ points below and $7$ points above it (median $+0.2$), and the excess
-has Spearman correlation only $0.15$ with $\mixrate^n$ (\cref{fig:theory-measurement}b,c). Outcome training thus learns the
-degree-$0$ and $1$ part that the theory says it can reach, and at most a few points beyond it.
+has Spearman correlation only $0.15$ with $\mixrate^n$ (\cref{fig:theory-measurement}b,c). Once $\mixrate^n\le0.04$, every
+cell mean is within $1.5$ points of the prior. Outcome training thus learns the
+degree-$0$ and $1$ part that the theory says it can reach, and nothing beyond it once $\mixrate^n$ is small.
 
 \paragraph{Learning the routing jointly.} Training the scores, the relative bias and the readout jointly from a fan-in
 random initialization ($\initscale=0.3$), every held-out count prediction becomes correct in $16$ of $17$ runs; the
@@ -402,15 +423,18 @@ shallow shortcut Transformers; our outcome executor is such a shortcut, and the 
 \label{sec:discussion}
 
 In one Transformer architecture that holds exact counting solutions for both formats, outcome training provably stays
-near chance for time exponential in the number of letters, while a staged step schedule from a structured initialization
+near chance for time exponential in the number of letters, while a staged step schedule from a seeded scaffold
 provably learns its routing and drives $\Lstep^{\ge2}$ to zero, with positive margins after polynomial optimization time. The reason is where the credit lies: every hidden letter costs the answer a factor $\mixrate$, while a running count
 pays $1-\mixrate^2$ once.
 
 \paragraph{Limitations.} \Cref{thm:main,thm:separation,thm:outcome-end} assume small initialization, full-batch gradient
 descent and a fixed ReLU pattern, so the MLPs are linearized; the AdamW experiments leave this regime
-(\cref{rem:two-block-bias}). \Cref{thm:routing} covers counting modulo~$2$ from a structured initialization with a staged
+(\cref{rem:two-block-bias}). \Cref{thm:routing} covers counting modulo~$2$ from a seeded scaffold with a staged
 schedule that trains $\beta$, while the matching outcome plateau holds $\beta$ fixed; its polynomial has high degree in
-$1/\initscale$, so the separation it certifies is asymptotic in $n$. Whether joint gradient descent learns the routing
+$1/\initscale$, so the separation it certifies is asymptotic in $n$. \Cref{thm:routing} is a controlled optimization
+intervention, not a result for generic random initialization. A random initialization already contains a seed of order
+$\initscale^6/\mathrm{poly}(n)$ along the count$\times$letter pathway (\cref{thm:separation}(ii), \cref{prop:rule-lower});
+extending \cref{thm:routing} to such seeds would prove \cref{conj:reach}. Whether joint gradient descent learns the routing
 from a random initialization in polynomial time is open (\cref{conj:reach}), although it does in our experiments. Outcome
 training solves counting modulo~$3$ at $n=8$ in two of three seeds. Beyond counting, five-object BIG-Bench Hard reverses the
 ordering that $\mixrate^n$ predicts against seven objects, so $\mixrate^n$ is a guide rather than an exact predictor there.
