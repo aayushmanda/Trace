@@ -621,7 +621,7 @@ order at least $\initscale^{-(2n-1)}$. Counting modulo $2$ at match probability 
 A \emph{supervised loss} is $\mathcal L(\theta)=\sum_{i\in\items}\pi_i\ell_i(\theta)$ over a finite set $\items$ of
 items, each a prompt with a supervised position, where $\pi_i>0$, $\sum_i\pi_i=1$ and $\ell_i$ is the
 cross-entropy of the gold token. Let $\pimin=\min_i\pi_i$. The \emph{certified region} of $\mathcal L$ is the sublevel set
-$\basin(\mathcal L)=\{\theta:\mathcal L(\theta)<\pimin/4\}$; it is not a basin of attraction in the dynamical sense, but gradient flow never leaves it
+$\basin(\mathcal L)=\{\theta:\mathcal L(\theta)<\tfrac{\pimin}{4}\}$; it is not a basin of attraction in the dynamical sense, but gradient flow never leaves it
 (\cref{lem:basin}).
 \end{definition}
 For $\Lstep$ the items are the pairs $(P,t)$ of a prompt and a state position, with
@@ -636,62 +636,91 @@ Let $\mathcal L$ be a supervised loss with logits as in \cref{ass:arch}.
 replacing the readout $V^\star$ by $aV^\star$ with $a$ large enough gives a point of the open set $\basin(\mathcal L)$.
 \item Let $\theta(t)$, $t\ge t_0$, follow gradient flow $\frac{d\theta}{dt}=-P\nabla \mathcal L(\theta)$ on a parameter subset that contains the
 readout $V$, with $\mathcal L$ continuously differentiable along the trajectory, and suppose $\theta(t_0)\in\basin(\mathcal L)$. Let $\mathcal L_0=\mathcal L(\theta(t_0))$,
-$\margin_0=\log(\pimin/(2\mathcal L_0))$ and $V_0=V(t_0)$. Then for every $t\ge t_0$, $\theta(t)\in\basin(\mathcal L)$, on every item the gold token has
+$\margin_0=\log\tfrac{\pimin}{2\mathcal L_0}$ and $V_0=V(t_0)$. Then for every $t\ge t_0$, $\theta(t)\in\basin(\mathcal L)$, on every item the gold token has
 the strictly largest logit, and
-$\mathcal L(\theta(t))\le \mathcal L_0\big/\bigl(1+\frac{\margin_0^2}{8}\log(1+\mathcal L_0(t-t_0)/\|V_0\|_F^2)\bigr)\to0$.
+\[
+ \mathcal L(\theta(t))\le\frac{\mathcal L_0}{1+\frac{\margin_0^2}{8}\log\bigl(1+\frac{\mathcal L_0(t-t_0)}{\|V_0\|_F^2}\bigr)}\to0 .
+\]
 \end{enumerate}
 \end{lemma}
 The rate in (ii) is a worst case that assumes nothing about how the features move. Gradient descent with
 backtracking step sizes satisfies the same conclusions with $t-t_0$ replaced by the accumulated step size.
 
-For \cref{thm:outcome-end}: for $\initscale$ below a constant, $\Lout(\theta(t))\ge\log2-\frac14>\pimin/4$ along the trajectory
-it covers, so they stay outside $\basin(\Lout)$. For item $i$ with logits $\bm z_i=Vh_i$ and gold token $y_i$, write
-$\hat y_i=\softmax(\bm z_i)$, $q_i=\hat y_{i,y_i}$ and $\margin_i=\min_{a\ne y_i}(z_{i,y_i}-z_{i,a})$.
+For \cref{thm:outcome-end}: for $\initscale$ below a constant, $\Lout(\theta(t))\ge\log2-\frac14>\tfrac{\pimin}{4}$ along the
+trajectory it covers, so it stays outside $\basin(\Lout)$. For item $i$ with logits $\bm z_i=Vh_i$ and gold token $y_i$, write
+$\hat y_i=\softmax(\bm z_i)$, $q_i=\hat y_{i,y_i}$ and $\margin_i=\min_{a\ne y_i}(z_{i,y_i}-z_{i,a})$, and let
+\[
+ \margin(\theta):=\log\frac{\pimin}{2\mathcal L(\theta)}.
+\]
 
 \begin{lemma}[Cross-entropy margin facts]
 \label{lem:end-barrier}
 \label{lem:end-readout}
 \label{lem:end-nonempty}
-\begin{enumerate}[label=(\roman*),leftmargin=*,itemsep=0pt,topsep=2pt]
-\item If $\mathcal L(\theta)<\pimin/4$, then for every item $\ell_i<\frac14$, $q_i>\frac12$, and the gold logit is strictly largest with
-$\margin_i\ge\log(\pi_i/(2\mathcal L(\theta)))\ge\log(\pimin/(2\mathcal L(\theta)))>\log2$.
-\item If moreover $\margin=\log(\pimin/(2\mathcal L(\theta)))$, then $\langle V,\nabla_V\mathcal L\rangle_F\le-\frac\margin2\mathcal L$ and
-$\|\nabla\mathcal L\|\ge\|\nabla_V\mathcal L\|_F\ge\margin \mathcal L/(2\|V\|_F)$.
-\item If $\theta^\star$ has margin at least $\execmargin>0$ on every item and $\Ktokens$ logits, then replacing $V^\star$ by $aV^\star$ with
-$a>(\execmargin)^{-1}\log(4(\Ktokens-1)/\pimin)$ gives a point of the open set $\basin(\mathcal L)$. The executors of \cref{prop:represent}
-have $\execmargin>19$ at every supervised position, so this holds for $\Lstep$, $\Lstep^{\mathrm{full}}$ and $\Lout$.
+\begin{enumerate}[label=(\roman*),leftmargin=*,itemsep=3pt,topsep=2pt]
+\item If $\mathcal L(\theta)<\tfrac{\pimin}{4}$, then for every item
+\[
+ \ell_i<\frac14,\qquad q_i>\frac12,\qquad \margin_i\ge\margin(\theta)>\log2 .
+\]
+\item Under (i),
+\[
+ \langle V,\nabla_V\mathcal L\rangle_F\le-\frac{\margin(\theta)}{2}\,\mathcal L,
+ \qquad\text{hence}\qquad
+ \|\nabla\mathcal L\|\ge\|\nabla_V\mathcal L\|_F\ge\frac{\margin(\theta)\,\mathcal L}{2\|V\|_F}.
+\]
+\item If $\theta^\star$ has margin at least $\execmargin>0$ on every item, then scaling its readout by any
+$a>\frac{1}{\execmargin}\log\frac{4(\Ktokens-1)}{\pimin}$ places it in the open set $\basin(\mathcal L)$.
 \end{enumerate}
 \end{lemma}
 
+The executors of \cref{prop:represent} have margin $\execmargin>19$ at every supervised position, so (iii) places suitably
+rescaled executors in $\basin(\mathcal L)$ for $\Lstep$, $\Lstep^{\mathrm{full}}$ and $\Lout$.
+
 \begin{proof}
-(i) $\pi_i\ell_i\le \mathcal L<\pimin/4$ gives $\ell_i<\frac14$ and $q_i=e^{-\ell_i}>\frac12$. Since
-$\ell_i\ge\log(1+e^{-\margin_i})$, $e^{-\margin_i}\le e^{\ell_i}-1\le2\ell_i\le2\mathcal L/\pi_i$.
-(ii) As $h_i$ does not depend on $V$, $\langle V,\nabla_V\ell_i\rangle_F=-\langle\bm z_i,\bm e_{y_i}-\hat y_i\rangle
-=-\sum_{a\ne y_i}\hat y_{i,a}(z_{i,y_i}-z_{i,a})\le-\margin_i(1-q_i)\le-\frac12\margin_i\ell_i$, using
-$\ell_i\le(1-q_i)/q_i\le2(1-q_i)$. Weight by $\pi_i$, sum, and apply Cauchy--Schwarz; $V\ne0$ since the logits are not all equal.
-(iii) Scaling $V$ scales every margin by $a$, so $\ell_i\le(\Ktokens-1)e^{-a\execmargin}<\pimin/4$; $\basin(\mathcal L)$ is open by continuity.
-The executor margin is the finite-score step of the proof of \cref{prop:represent}.
+(i) Since $\pi_i\ell_i\le\mathcal L<\tfrac{\pimin}{4}\le\tfrac{\pi_i}{4}$, we have $\ell_i<\frac14$ and $q_i=e^{-\ell_i}>\frac12$. Also
+$\ell_i\ge\log(1+e^{-\margin_i})$, so
+\[
+ e^{-\margin_i}\le e^{\ell_i}-1\le2\ell_i\le\frac{2\mathcal L}{\pi_i}\le\frac{2\mathcal L}{\pimin},
+\]
+which gives $\margin_i\ge\margin(\theta)$, and $\margin(\theta)>\log2$ because $\mathcal L<\tfrac{\pimin}{4}$.
+
+(ii) As $h_i$ does not depend on $V$,
+\[
+ \langle V,\nabla_V\ell_i\rangle_F=-\langle\bm z_i,\bm e_{y_i}-\hat y_i\rangle
+ =-\sum_{a\ne y_i}\hat y_{i,a}(z_{i,y_i}-z_{i,a})\le-\margin_i(1-q_i)\le-\frac12\margin_i\ell_i,
+\]
+using $\ell_i\le\tfrac{1-q_i}{q_i}\le2(1-q_i)$. Weight by $\pi_i$, sum, use $\margin_i\ge\margin(\theta)$, and apply Cauchy--Schwarz;
+$V\ne0$ since the logits are not all equal.
+
+(iii) Scaling $V$ scales every margin by $a$, so $\ell_i\le(\Ktokens-1)e^{-a\execmargin}<\tfrac{\pimin}{4}$; $\basin(\mathcal L)$ is
+open by continuity.
 \end{proof}
 
 \begin{proof}[Proof of \cref{lem:basin}]
 Part~(i) is \cref{lem:end-barrier}(iii). For part~(ii), write $\mathcal L(t)=\mathcal L(\theta(t))$. Since
-$\frac{d\mathcal L}{dt}=-\|P\nabla\mathcal L\|^2\le0$, $\mathcal L(t)\le \mathcal L_0<\pimin/4$, so $\theta(t)\in\basin(\mathcal L)$; \cref{lem:end-barrier}(i) gives the strict gold
-logit, every margin is at least $\log(\pimin/(2\mathcal L(t)))\ge\margin_0$, and $V(t)\ne0$. Integrating,
-$\int_{t_0}^t\|P\nabla\mathcal L\|^2\,ds\le \mathcal L_0$, and since $V$ is one of the trained blocks, Cauchy--Schwarz gives
-$\|V(t)-V_0\|_F\le\int_{t_0}^t\|\nabla_V\mathcal L\|_F\,ds\le(\mathcal L_0(t-t_0))^{1/2}$, so
+\[
+ \frac{d\mathcal L}{dt}=-\|P\nabla\mathcal L\|^2\le0,
+\]
+the trajectory stays in $\basin(\mathcal L)$, and \cref{lem:end-barrier}(i) gives the strict gold logit with the uniform margin bound
+$\margin(\theta(t))\ge\margin_0$. Integrating the loss identity,
+\[
+ \int_{t_0}^t\|P\nabla\mathcal L\|^2\,ds\le\mathcal L_0 .
+\]
+Since $V$ is one of the trained blocks, Cauchy--Schwarz gives $\|V(t)-V_0\|_F\le\sqrt{\mathcal L_0(t-t_0)}$, and hence
 \begin{equation}
  \|V(t)\|_F^2\le2\|V_0\|_F^2+2\mathcal L_0(t-t_0).
  \label{eq:end-vgrowth}
 \end{equation}
-By \cref{lem:end-barrier}(ii), $\|P\nabla\mathcal L\|\ge\|\nabla_V\mathcal L\|_F\ge\margin_0\mathcal L/(2\|V\|_F)$, hence
+By \cref{lem:end-barrier}(ii) and \cref{eq:end-vgrowth},
 \[
  \frac{d}{dt}\frac1{\mathcal L(t)}=\frac{\|P\nabla\mathcal L\|^2}{\mathcal L^2}\ge\frac{\margin_0^2}{4\|V(t)\|_F^2}
- \ge\frac{\margin_0^2}{8(\|V_0\|_F^2+\mathcal L_0(t-t_0))},
+ \ge\frac{\margin_0^2}{8\bigl(\|V_0\|_F^2+\mathcal L_0(t-t_0)\bigr)},
 \]
-and integrating gives $1/\mathcal L(t)\ge\bigl(1+\frac{\margin_0^2}8\log(1+\mathcal L_0(t-t_0)/\|V_0\|_F^2)\bigr)/\mathcal L_0$.
+and integrating,
+\[
+ \frac1{\mathcal L(t)}\ge\frac1{\mathcal L_0}\Bigl(1+\frac{\margin_0^2}{8}\log\Bigl(1+\frac{\mathcal L_0(t-t_0)}{\|V_0\|_F^2}\Bigr)\Bigr).
+\]
 \end{proof}
-
-
 
 \paragraph{Exponential plateau.}
 \label{app:end}
@@ -1261,7 +1290,7 @@ degree $1$ during training, and answer accuracy.}
 
 \Cref{lem:basin}(ii) applies to any finite item set, so we certify runs on their training set. Counting with $K=3$,
 $n=16$, $20{,}000$ training prompts and the protocol of \cref{app:letter-protocol}, trained with AdamW for $32{,}000$
-updates. Every training prompt and supervised token is one item with weight $1/(NP)$, so $\mathcal L<\pimin/4$ means
+updates. Every training prompt and supervised token is one item with weight $1/(NP)$, so $\mathcal L<\tfrac{\pimin}{4}$ means
 summed cross-entropy below $1/4$; there are $380{,}000$ items for the step format. Ratios are $4\mathcal L/\pimin$; a ratio below $1$
 at the AdamW checkpoint certifies, by \cref{lem:basin}(ii), that gradient flow on the training-set loss from that checkpoint
 keeps every training item correct and drives the loss to zero. As a finite-step check we continue from the checkpoint with
@@ -1728,7 +1757,7 @@ therefore depend on $\beta$ and the readout only, and with a uniform start the b
 
 \begin{remark}[Scope]
 \label{rem:routing-scope}
-\Cref{thm:routing} does not assert polynomial-time entry into the certified region $\{\Lstep<\pimin/4\}$ of \cref{lem:basin},
+\Cref{thm:routing} does not assert polynomial-time entry into the certified region $\{\Lstep<\tfrac{\pimin}{4}\}$ of \cref{lem:basin},
 whose threshold $\pimin$ is exponentially small in $n$; with the routing fixed instead of learned, only Stage D is needed
 (\cref{prop:fixed-routing}).
 The step guarantee trains $\beta$ in a stage of its own; the plateau of \cref{cor:routing-outcome}(a) holds $\beta$ at zero, and
