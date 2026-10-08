@@ -385,17 +385,18 @@ only.
 \begin{proposition}[Technical bounds for the score expansion]
 \label{prop:network}
 Under (A1)--(A2), the following bounds hold uniformly on $\initball$, at every position and input.
-Here $x_i$ is the token-plus-position vector, and $\|F\|_{\mathrm{abs}}$ is the sum of monomial norm bounds before
-cancellation; its differentiated version uses the product rule.
+Here $x_i$ is the token-plus-position vector, $\partial_vF=\tfrac{d}{ds}F(\theta+sv)\big|_{s=0}$ is the derivative along a
+parameter direction $v$, and $\|F\|_{\mathrm{abs}}$ is the sum of monomial norm bounds before cancellation, differentiated by the
+product rule.
 \begin{enumerate}[label=(\roman*),leftmargin=*,itemsep=1pt,topsep=2pt]
 \item With input-independent offsets $\bm O^1=\bm o_1$, $\bm O^2=\bm o_1+\bm o_2$,
 $h_i^\ell=x_i+\bm O^\ell+O(\initscale^2)$, $|\psi_{il}|\le C\initscale^4$,
 $\|\bm z_i\|\le C\initscale^2$ and $\|\partial_v\bm z_i\|\le C\initscale\|v\|$.
 \item For $k\ge1$, $\xi\in[0,1]$ and a unit parameter direction $v$,
 \[
- \frac{\|\partial_\xi^k\bm z_i\|}{k!}\le C\initscale^3(C_0\initscale^4)^k,
+ \frac{1}{k!}\Bigl\|\frac{d^k\bm z_i}{d\xi^k}\Bigr\|\le C\initscale^3(C_0\initscale^4)^k,
  \qquad
- \frac{\|\partial_v\partial_\xi^k\bm z_i\|}{k!}\le C\initscale^2(C_0\initscale^4)^k.
+ \frac{1}{k!}\Bigl\|\partial_v\frac{d^k\bm z_i}{d\xi^k}\Bigr\|\le C\initscale^2(C_0\initscale^4)^k.
 \]
 The same bounds hold for the absolute coefficient sums at $\xi=0$, and for $h_i^2$ with one fewer power of
 $\initscale$. Taylor remainders obey these bounds with $k=k_0+1$.
@@ -414,98 +415,120 @@ The constants are independent of $n$, the widths and $k$.
 \end{proposition}
 
 \begin{proof}
-\proofstep{Affine blocks and amplitudes.}
-The bias condition gives $|b_m|\ge\initscale/2$ and $|(W_{\mathrm{in}}h)_m|\le C\initscale^2$,
-so one diagonal activation matrix $D$ applies to every input and every $\xi\in[0,1]$.
-Each block is
-\[
- h_i^\ell=M_\ell(h_i^{\ell-1}+\bm a_i^\ell)+\bm o_\ell,
- \quad M_\ell=I+W_{\mathrm{out}}^\ell DW_{\mathrm{in}}^\ell,
- \quad\bm o_\ell=W_{\mathrm{out}}^\ell D\bm b^\ell,
-\]
-where $\bm a_i^\ell=\sum_{\mathrm{heads}}\sum_{j\le i}\omega_{ij}W_Vh_j^{\ell-1}$ and
-$\omega_{i\cdot}=\softmax(\xi\psi_{i\cdot})$. Operator norms give
-$\|M_\ell-I\|\le C\initscale^2$, $\|\bm o_\ell\|\le2a_0\beta\initscale^2\le a_0\initscale$ and
-$\|\partial_v\bm o_\ell\|\le(a_0+2\beta)\initscale\|v\|\le C\|v\|$.
-Since attention rows have $\ell_1$ norm $1$, two-block induction gives (i), including its tangent bound.
-All sums over hidden coordinates remain inside operator products; all sums over positions are averages.
+\emph{Notation.} For a quantity $F$ of the network with scores scaled by $\xi$, write $F_k=\tfrac1{k!}\tfrac{d^kF}{d\xi^k}$ for its
+normalized $\xi$-derivatives, and $F'_k=\partial_vF_k$ for their derivatives along a unit parameter direction $v$. All suprema below
+are over inputs, positions and $\xi\in[0,1]$.
 
-\proofstep{Softmax calculus.}
-Writing $\langle f\rangle_\omega=\sum_j\omega_jf_j$, the derivative identities are
+\proofstep{Step 1: affine blocks and amplitudes (part (i)).}
+The bias condition gives $|b_m|\ge\initscale/2$, while $|(W_{\mathrm{in}}h)_m|\le C\initscale^2$, so one diagonal activation matrix
+$D$ applies to every input and every $\xi$. Each block is therefore affine,
 \[
- \partial\omega[v]_j=\omega_j(v_j-\langle v\rangle_\omega),\qquad
- \partial_v\langle f\rangle_\omega=\langle vf\rangle_\omega-\langle v\rangle_\omega\langle f\rangle_\omega.
+ h_i^\ell=M_\ell\bigl(h_i^{\ell-1}+\bm a_i^\ell\bigr)+\bm o_\ell,
+ \qquad M_\ell=I+W_{\mathrm{out}}^\ell DW_{\mathrm{in}}^\ell,
+ \qquad\bm o_\ell=W_{\mathrm{out}}^\ell D\bm b^\ell,
 \]
-After $k$ derivatives, each term has at most $k+1$ averages and contains each direction once.
-The absolute coefficient sum satisfies $a_{k+1}\le2(k+1)a_k$, $a_0=1$. Duality therefore gives
+with head output $\bm a_i^\ell=\sum_{\mathrm{heads}}\sum_{j\le i}\omega_{ij}W_Vh_j^{\ell-1}$ and attention row
+$\omega_{i\cdot}=\softmax(\xi\psi_{i\cdot})$. Operator norms give
+\[
+ \|M_\ell-I\|\le C\initscale^2,
+ \qquad
+ \|\bm o_\ell\|\le2a_0\beta\initscale^2\le a_0\initscale,
+ \qquad
+ \|\partial_v\bm o_\ell\|\le(a_0+2\beta)\initscale\le C .
+\]
+Attention rows have $\ell_1$ norm $1$, so induction over the two blocks gives (i), including its tangent bound. Sums over hidden
+coordinates stay inside operator products, and sums over positions are averages.
+
+\proofstep{Step 2: softmax calculus.}
+With $\langle f\rangle_\omega=\sum_j\omega_jf_j$,
+\[
+ \partial\omega[v]_j=\omega_j\bigl(v_j-\langle v\rangle_\omega\bigr),
+ \qquad
+ \partial_v\langle f\rangle_\omega=\langle vf\rangle_\omega-\langle v\rangle_\omega\langle f\rangle_\omega .
+\]
+After $k$ derivatives each term has at most $k+1$ averages and contains each direction once; the absolute coefficient sums satisfy
+$a_{k+1}\le2(k+1)a_k$ with $a_0=1$, so by duality
 \begin{equation}
- \|\partial^k\omega[v_1,\ldots,v_k]\|_1\le2^k k!\prod_a\|v_a\|_\infty.
+ \|\partial^k\omega[v_1,\ldots,v_k]\|_1\le2^k k!\prod_a\|v_a\|_\infty .
  \label{eq:softmax-avg}
 \end{equation}
-A vector-valued average gains only $\max_j\|f_j\|$. For normalized derivatives $F_k=F^{(k)}/k!$, products use
-convolution, while composition sums over $k_1+\cdots+k_j=k$, $k_a\ge1$. There are
-$\binom{k-1}{j-1}$ such compositions; thus if $\|\partial^jF\|/j!\le A c^j$ and
-$\|h_k\|\le a b^k$, then $\|(F\circ h)_k\|\le Aca b^k(1+ca)^{k-1}$.
-These identities also bound the absolute sums at zero scores.
+A vector-valued average gains only $\max_j\|f_j\|$. Normalized derivatives of products are convolutions, and those of a
+composition sum over the $\binom{k-1}{j-1}$ compositions $k_1+\cdots+k_j=k$ with $k_a\ge1$; hence
+\[
+ \frac{\|\partial^jF\|}{j!}\le Ac^j\ \text{ and }\ \|h_k\|\le ab^k
+ \quad\Longrightarrow\quad
+ \|(F\circ h)_k\|\le Aca\,b^k(1+ca)^{k-1}.
+\]
+The same identities bound the absolute sums at zero scores.
 
-\proofstep{Derivative induction.}
-Let $H_{\ell,k},\Psi_{\ell,k},Z_k$ be the supremum norms of the normalized $\xi$-derivatives of
-$h_i^\ell,\psi_{ij}^\ell,\bm z_i$, respectively. Let $U_{\ell,k},B_{\ell,k}$ denote the corresponding attention-row
-$\ell_1$ and head-output bounds, and $\Xi_{\ell,k}$ those of $\xi\psi^\ell$. The preceding calculus gives
+\proofstep{Step 3: the derivative recursion (part (ii), values).}
+For block $\ell$, let $H_{\ell,k}$, $\Psi_{\ell,k}$ and $Z_k$ bound the normalized $\xi$-derivatives of $h_i^\ell$, $\psi^\ell_{ij}$ and $\bm z_i$;
+let $\Xi_{\ell,k}$ bound those of $\xi\psi^\ell$, $U_{\ell,k}$ those of an attention row in $\ell_1$ norm, and $B_{\ell,k}$ those of a head
+output. Steps 1 and 2 give, with $U_{\ell,0}=1$, $H_{0,k}=0$ for $k\ge1$, and $a_r\ge1$ in the compositions,
 \begin{align*}
  \Psi_{\ell,k}&\le C\initscale^2\sum_{a+b=k}H_{\ell-1,a}H_{\ell-1,b},
  &\Xi_{\ell,k}&\le\Psi_{\ell,k}+\Psi_{\ell,k-1},\\
  U_{\ell,k}&\le\sum_{j=1}^k2^j\sum_{a_1+\cdots+a_j=k}\prod_r\Xi_{\ell,a_r},
  &B_{\ell,k}&\le C\initscale\sum_{a+c=k}U_{\ell,a}H_{\ell-1,c},\\
- H_{\ell,k}&\le C(H_{\ell-1,k}+B_{\ell,k}),
+ H_{\ell,k}&\le C\bigl(H_{\ell-1,k}+B_{\ell,k}\bigr),
  &Z_k&\le C\initscale H_{2,k}.
 \end{align*}
-Here $a_r\ge1$, $U_{\ell,0}=1$ and $H_{0,k}=0$ for $k\ge1$; all suprema cover $\xi\in[0,1]$.
-For $b=C\initscale^4$, block $1$ gives $U_{1,k}\le b^k$ and
-$B_{1,k}+H_{1,k}\le C\initscale^2b^k$. In block $2$,
-$\Psi_{2,k}\le C\initscale^5(k+1)b^k$, hence $\Xi_{2,k}\le C(2b)^k$ and
-$U_{2,k}\le C\sum_{j=1}^k\binom{k-1}{j-1}C^j(2b)^k\le C(Cb)^k$.
-It follows that $B_{2,k}+H_{2,k}\le C\initscale^2(Cb)^k$ and $Z_k\le C\initscale^3(C_0\initscale^4)^k$.
-
-Take one derivative in a unit parameter direction before taking each supremum; denote these tangent bounds by a prime. A product term replaces one factor by its tangent;
-a softmax term replaces one $\Xi$ or gains $\partial^{j+1}\omega[\partial_v\Xi_{\ell,0},\ldots]$.
-The base bounds are $H^{\prime}_{0,0}=O(1)$ and $\Psi^{\prime}_{\ell,0}=O(\initscale^3)$.
-The extra factor $j+1\le2^k$ is absorbed into $C_0^k$, giving
+With $b=C\initscale^4$, block $1$ gives
 \[
- U^{\prime}_{\ell,k}\le C\initscale^{-1}(C_0\initscale^4)^k,
- \quad\partial_v B_{\ell,k}+H^{\prime}_{\ell,k}\le C\initscale(C_0\initscale^4)^k,
- \quad Z^{\prime}_k\le C\initscale^2(C_0\initscale^4)^k.
+ U_{1,k}\le b^k,\qquad B_{1,k}+H_{1,k}\le C\initscale^2b^k,
 \]
-Taylor's integral remainder is bounded by the supremum of the next normalized derivative.
-At $\xi=0$, uniform averaging satisfies
-$\|m^{-1}\sum_j\prod_rF_r(j)\|_{\mathrm{abs}}\le\prod_r\max_j\|F_r(j)\|_{\mathrm{abs}}$.
-An order-$k$ monomial has $O(k+1)$ parameter/input occurrences; differentiating its norm bound costs at most
-$C(k+1)/\initscale$. Absorbing $k+1\le2^k$ proves the absolute-sum claims in (ii).
+and block $2$ gives $\Psi_{2,k}\le C\initscale^5(k+1)b^k$, hence $\Xi_{2,k}\le C(2b)^k$ and
+\[
+ U_{2,k}\le C\sum_{j=1}^k\binom{k-1}{j-1}C^j(2b)^k\le C(Cb)^k,
+\]
+and therefore
+\[
+ B_{2,k}+H_{2,k}\le C\initscale^2(Cb)^k,
+ \qquad
+ Z_k\le C\initscale^3(C_0\initscale^4)^k .
+\]
 
-\proofstep{Support and one-score terms.}
+\proofstep{Step 4: tangents, remainders and absolute sums (part (ii), completed).}
+Differentiate once along $v$ before taking each supremum. In a product, one factor is replaced by its tangent; in a softmax, one
+$\Xi$ is replaced or a term $\partial^{j+1}\omega[\partial_v\Xi_{\ell,0},\ldots]$ appears. With base bounds $H'_{0,0}=O(1)$ and
+$\Psi'_{\ell,0}=O(\initscale^3)$, and the extra factor $j+1\le2^k$ absorbed into $C_0^k$,
+\[
+ U'_{\ell,k}\le C\initscale^{-1}(C_0\initscale^4)^k,
+ \qquad
+ B'_{\ell,k}+H'_{\ell,k}\le C\initscale(C_0\initscale^4)^k,
+ \qquad
+ Z'_k\le C\initscale^2(C_0\initscale^4)^k .
+\]
+Taylor's integral remainder is bounded by the supremum of the next normalized derivative. At $\xi=0$, uniform averaging
+satisfies $\|m^{-1}\sum_j\prod_rF_r(j)\|_{\mathrm{abs}}\le\prod_r\max_j\|F_r(j)\|_{\mathrm{abs}}$, and an order-$k$ monomial has $O(k+1)$
+parameter and input occurrences, so differentiating its norm bound costs at most $C(k+1)/\initscale$; absorbing $k+1\le2^k$ gives the
+absolute-sum claims.
+
+\proofstep{Step 5: support and one-score terms (part (iii)).}
 At zero scores,
-$h_j^1=M_1(x_j+m_j^{-1}\sum_{l\le j}W_V^1x_l)+\bm o_1$ and
-$\bm z_i^{[0]}=V[M_2(h_i^1+m_i^{-1}\sum_{j\le i}W_V^2h_j^1)+\bm o_2]$.
-Every term is affine; transported terms contain $V,W_V,x_j$ and have tangent $O(\initscale^2)$.
-If $d(F)$ counts input occurrences, induction gives
-$d(h^{\ell,[a]})\le2a+1$, $d(\psi^{\ell,[b]})\le2b+2$ and
-$d((\xi\psi)^{[a]})\le2a$. Thus an order-$k$ head term with
-$a_1+\cdots+a_j+c=k$ uses at most $2a_1+\cdots+2a_j+2c+1=2k+1$ inputs.
-Affine MLPs and parameter derivatives add none. The one-score correction is
 \[
- \frac1{m_i}\sum_{j\le i}(\psi_{ij}(0)-\bar\psi_i(0))W_Vh_j(0),
- \qquad\bar\psi_i(0)=\frac1{m_i}\sum_{l\le i}\psi_{il}(0).
+ h_j^1=M_1\Bigl(x_j+\frac1{m_j}\sum_{l\le j}W_V^1x_l\Bigr)+\bm o_1,
+ \qquad
+ \bm z_i^{[0]}=V\Bigl[M_2\Bigl(h_i^1+\frac1{m_i}\sum_{j\le i}W_V^2h_j^1\Bigr)+\bm o_2\Bigr],
 \]
-After readout, its terms contain $V,W_V,W_Q,W_K$ and three residual inputs: size $O(\initscale^7)$ and tangent
-$O(\initscale^6)$. This proves (iii).
+so every term is affine in the inputs; transported terms contain $V$, $W_V$ and $x_j$ and have tangent $O(\initscale^2)$. Let $d(F)$
+count input occurrences. By induction, $d(h^{\ell,[a]})\le2a+1$, $d(\psi^{\ell,[b]})\le2b+2$ and $d((\xi\psi)^{[a]})\le2a$, so an
+order-$k$ head term with $a_1+\cdots+a_j+c=k$ uses at most $2a_1+\cdots+2a_j+2c+1=2k+1$ inputs; affine MLPs and parameter
+derivatives add none. The one-score correction is
+\[
+ \frac1{m_i}\sum_{j\le i}\bigl(\psi_{ij}(0)-\bar\psi_i(0)\bigr)W_Vh_j(0),
+ \qquad
+ \bar\psi_i(0)=\frac1{m_i}\sum_{l\le i}\psi_{il}(0);
+\]
+after the readout its terms contain $V$, $W_V$, $W_Q$, $W_K$ and three residual inputs, so they have size $O(\initscale^7)$ and
+tangent $O(\initscale^6)$.
 
-\proofstep{Position selection.}
-In block $1$, the relative absolute weight of terms containing $x_l$ is $0$ for $j<l$, $1$ for $j=l$ and
-$C\initscale/m_j$ for $j>l$. In block $2$, choosing an $x_l$ contribution from the query costs
-$C\initscale/m_i$; from key $l$, $1/m_i$; from later keys,
-$(C\initscale/m_i)\sum_{l<j\le i}m_j^{-1}$. The residual path costs $C/m_i$.
-There are $O(k+1)$ factor choices in an order-$k$ term. Multiplying the bounds in (ii) by these weights,
-and absorbing $k+1$ into $C_0^k$, proves (iv), for both coefficients and tangents.
+\proofstep{Step 6: position selection (part (iv)).}
+In block $1$, the relative absolute weight of terms containing $x_l$ at position $j$ is $0$ for $j<l$, $1$ for $j=l$ and
+$C\initscale/m_j$ for $j>l$. In block $2$, taking the $x_l$ contribution from the query costs $C\initscale/m_i$, from key $l$ costs
+$1/m_i$, from later keys costs $\tfrac{C\initscale}{m_i}\sum_{l<j\le i}\tfrac1{m_j}$, and the residual path costs $C/m_i$. An order-$k$ term
+has $O(k+1)$ such choices; multiplying the bounds of Step 4 by these weights and absorbing $k+1$ into $C_0^k$ gives (iv), for
+coefficients and tangents.
 \end{proof}
 
 \begin{proof}[Proof of \cref{prop:score-degree}]
@@ -1102,7 +1125,7 @@ $\initscale\le\initscale_\failprob$,
  \|\nabla\rulecredit(\initscale\tilde\theta)\|\ge\frac{t_{\mathrm{CW}}\,a_{\mathrm w}}{2}\,\frac{\initscale^6}{n}
  =a_\failprob\,\frac{\initscale^6}{n\,d_{\mathrm{res}}^3\sqrt{d_{\mathrm h}}},
  \qquad
- a_\failprob=\frac{t_{\mathrm{CW}}\,p(1-p)\min(1-2p,\frac14)}{6K},
+ a_\failprob=\frac{t_{\mathrm{CW}}\,p(1-p)\min\left(1-2p,\frac14\right)}{6K},
 \]
 and $a_\failprob$ does not depend on the widths. The event is for fixed $n$ and widths; the factor $d_{\mathrm{res}}^{-3}$ comes from
 keeping a single monomial and is conservative.
