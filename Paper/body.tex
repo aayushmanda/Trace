@@ -117,8 +117,44 @@ $\thstep$ and $\thout$ at which greedy decoding produces the correct step and ou
 a positive logit margin.
 \end{proposition}
 
-Block~1 computes each letter's match bit; in the step executor Block~2 adds it to the displayed count, and in the
-outcome executor it averages the match bits and looks up the final count (\cref{app:architectures}).
+\subsection{Two exact programs in one Transformer}
+\label{sec:exact-programs}
+The two supervision formats have the same representational feasibility. They correspond to two programs in the same architecture:
+step prediction performs a local state update, whereas outcome prediction aggregates all match bits and applies modular arithmetic at the end.
+The rest of the paper asks which program gradient-based training can reach.
+
+\begin{center}
+\small
+\begin{tabular}{@{}lp{0.22\linewidth}p{0.30\linewidth}p{0.28\linewidth}@{}}
+\toprule
+Executor & Block 1 & Block 2 & Output \\
+\midrule
+Step & $b_t=\mathbf 1[w_t=q]$ & Route $s_{t-1}$ and $b_t$ & Lookup $s_t=s_{t-1}+b_t\pmod K$ \\[1mm]
+Outcome & Compute every $b_t$ & Average $b_1,\ldots,b_n$; route $s_0$ & Lookup $s_n=s_0+\sum_t b_t\pmod K$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+Two primitives implement these programs. First, positional attention selects a visible source set $\operatorname{src}(i)$:
+\[
+ \operatorname{score}(i,j)=
+ \begin{cases}
+ \Omega_n,&j\in\operatorname{src}(i),\\
+ 0,&\text{otherwise},
+ \end{cases}
+ \qquad \Omega_n=\Theta(\log(n+3)).
+\]
+Softmax copies one selected register or averages a selected set, with leakage $O(ne^{-\Omega_n})$.
+Second, for ideal routed inputs, a ReLU unit tests each count--bit pair:
+\[
+ h_{s',b'}=\relu\left([s=s']+[b=b']-\frac32\right),
+ \qquad
+ \sum_{s',b'}2\bm e_{s'+b'}h_{s',b'}=\bm e_{s+b}.
+\]
+Only the correct pair activates; all state indices are modulo $K$.
+The outcome executor multiplies the average by $n$ to recover the integer count and uses a finite ReLU lookup indexed by the start state and count.
+With sufficiently large constants in $\Omega_n$, routing leakage is $O(n^{-2})$; the propagated errors preserve the output gap,
+and a constant readout rescaling gives a uniform positive logit margin.
+\Cref{app:architectures} gives the literal tensor entries and error calculation, certifying a margin greater than $19$ on every prompt.
 
 % ===================================================================
 \section{Credit by interaction degree}
@@ -136,7 +172,16 @@ For a target signal $g$, a random vector in $\R^K$, let $\cred_g(\theta)=\E[\lan
 $\bigl\|\E[(\Jz)_r^\top(g)_r]\bigr\|$.
 \end{definition}
 
-For the outcome signal $g=y-\bm u$ (one-hot answer minus uniform), credit is the answer-dependent part of the gradient of
+\subsection{Outcome: target degree, Jacobian degree, and credit overlap}
+\paragraph{The target sits at high degree.} Every unseen letter contracts the centred count by $\mixrate$, so for every
+set $S$ of letters, $\E[\|(y-\bm u)_S\|^2]\le(1-\tfrac1K)\mixrate^{2(n-|S|)}$, with equality in the exponent for counting
+(\cref{lem:target-contraction}).
+
+\paragraph{The network sits at low degree.} Near initialization attention is nearly uniform and the MLPs are affine, so
+the network is additive across positions. A term with $k\ge1$ attention scores reaches at most $2k+1$ letters and costs
+$\initscale^{2+4k}$ in the Jacobian (\cref{prop:score-degree}).
+
+\paragraph{Their overlap controls credit.} For the outcome signal $g=y-\bm u$ (one-hot answer minus uniform), credit is the answer-dependent part of the gradient of
 $\Lout$ \citep{shalevshwartz2017failures,abbe2025parities}. Because components on different sets of letters are
 orthogonal,
 \begin{equation}
@@ -149,13 +194,7 @@ orthogonal,
 where $A_r$ and $J_r$ are the target's and the Jacobian's mass at degree $r$ (\cref{eq:matching},
 \cref{lem:gradient-split}). Credit is small wherever either has little mass.
 
-\paragraph{The target sits at high degree.} Every unseen letter contracts the centred count by $\mixrate$, so for every
-set $S$ of letters, $\E[\|(y-\bm u)_S\|^2]\le(1-\tfrac1K)\mixrate^{2(n-|S|)}$, with equality in the exponent for counting
-(\cref{lem:target-contraction}).
-
-\paragraph{The network sits at low degree.} Near initialization attention is nearly uniform and the MLPs are affine, so
-the network is additive across positions. A term with $k\ge1$ attention scores reaches at most $2k+1$ letters and costs
-$\initscale^{2+4k}$ in the Jacobian (\cref{prop:score-degree}).
+Combining the contraction for unseen letters with the score-count expansion gives the following bound on outcome interaction credit.
 
 \begin{theorem}[Outcome interaction credit]
 \label{thm:main}
@@ -163,13 +202,14 @@ Under \cref{ass:arch,ass:init,ass:task}, with the start count fixed, for all $n\
 $\theta\in\initball$, the outcome credit at degrees $r\ge2$ is at most $C\initscale^6\mixrate^{n-3}$.
 \end{theorem}
 
+\subsection{Step: a local innovation survives}
 The step target separates into a part the displayed count predicts and a part only the current letter carries. With the
 state-only predictor $\bm q_s=(1-p)\bm e_s+p\,\bm e_{s+1}$, write $\bm e_{s_t}-\bm u=(\bm q_{s_{t-1}}-\bm u)+\bm g_t$, where the
 \emph{rule signal}
 \[
  \bm g_t=\bm e_{s_t}-\bm q_{s_{t-1}}=(b_t-p)\bigl(\bm e_{s_{t-1}+1}-\bm e_{s_{t-1}}\bigr)
 \]
-has covariance
+has covariance, on the centred state subspace $\one^\perp:=\{v\in\R^K:\one^\top v=0\}$,
 \begin{equation}
  \operatorname{Cov}(\bm g_t)\succeq\frac{1-\mixrate^2}{K}\,I
  \quad\text{on }\one^\perp.
@@ -201,7 +241,9 @@ carries, and its leading term is genuinely present rather than an artifact of th
 \label{sec:reach}
 \label{sec:end}
 
-Both executors exist (\cref{prop:represent}); the question is which one training can reach.
+Credit describes the signal near initialization. We next ask whether it controls training time, and which of the two exact programs training can reach.
+
+\subsection{Outcome: an exponential plateau}
 
 \begin{theorem}[Outcome training does not converge]
 \label{thm:outcome-end}
@@ -224,10 +266,11 @@ $\initscale\le c\mixrate$ and $0\le t\le c\mixrate^{-n}$, $\theta(t)\in\initball
 On $\initball$ the outcome loss cannot fall by more than $C\initscale^2\mixrate^n$ (\cref{thm:main}), so the trajectory
 cannot travel far, and leaving the ball takes time of order $\mixrate^{-n}$ (\cref{app:end}).
 
-\paragraph{Step training reaches a gate solution.} A running count needs one routing decision: read the displayed count and
-the current letter. We give one block-2 head, the gate head, a segment mask under which each count position attends to
-itself and to all $n$ letters, plus a relative bias $\beta$; which letter to read is encoded only in $\beta$ and must be
-learned. This head supports a second exact step solution besides the lookup executor of \cref{prop:represent}.
+\subsection{Step: amplify an interaction into learned routing}
+A running count needs one routing decision: read the displayed count and the current letter.
+We give one block-$2$ head, the gate head, a segment mask under which each count position attends to itself and all $n$ letters.
+A relative bias $\beta$ determines which letter is selected; the current letter has offset $n$.
+This head supports a second exact step solution besides the lookup executor of \cref{prop:represent}.
 
 \begin{proposition}[Gate executor]
 \label{prop:gate}
@@ -236,9 +279,63 @@ which the attention outside the count's own position and the current letter chan
 two are balanced, and every prediction $s_t$, $t\ge2$, is correct with margin at least $\tfrac12$.
 \end{proposition}
 
-For $\zeta>0$, the \emph{gate region} $\mathcal G_\zeta$ is the set of parameters at which the attention outside
-$\{$own position, current letter$\}$ is at most $\zeta$, $|\beta_n-\beta_0|\le1$, and every prediction of $\Lstep$ has
-positive margin; it contains $\theta^\star_{\mathrm{gate}}$ (\cref{app:routing}).
+\paragraph{A weak pathway at initialization.}
+Write $c_t=(-1)^{s_{t-1}}$, $m_t=(-1)^{b_t}$ and $y_t=c_tm_t$ for the task signs.
+The structured seed in \cref{app:routing} reduces the state-logit difference to
+\[
+ f_t=\initscale v_c+\initscale v_s c_t+gv_rM_t,
+ \qquad |a|=\frac{\initscale^4}{\sqrt{d_{\mathrm h}}},\quad |g|=\initscale^2.
+\]
+Here $v_c,v_s,v_r$ are readout coefficients, $M_t$ is the gate head's total attention mass on letters, and $a$ is the signed interaction
+strength in each letter score $ac_tm_j+\beta_{i_t-\ell_j}$; the own-count score is $\beta_0$.
+All three readout coefficients and all relative biases start at zero:
+\[
+ V(0)=0,\qquad \beta(0)=0.
+\]
+The initialization supplies a weak count--letter pathway. At zero bias every letter is treated symmetrically;
+the seed supplies neither a selected current letter nor a transition classifier.
+The shared-presence control confirms why the pathway matters: if the key reads a direction both letters share,
+$M_t$ depends only on the displayed count and no bias or readout can outperform the count-only prior (\cref{lem:wrong-seed}).
+
+\paragraph{Four stages.} Each stage is gradient flow on one parameter block, with all other parameters frozen:
+\[
+ \boxed{\begin{array}{cll}
+ \mathrm A &(v_c,v_s)&\text{fit the count-only prior}\\[1mm]
+ \downarrow&&\\[1mm]
+ \mathrm B &v_r&\text{give the local interaction nonzero amplitude}\\[1mm]
+ \downarrow&&\\[1mm]
+ \mathrm C &\beta&\text{route to the own count and current letter}\\[1mm]
+ \downarrow&&\\[1mm]
+ \mathrm D &(v_c,v_s,v_r)&\text{fit the transition and drive loss to zero}
+ \end{array}}
+\]
+Stage A fits $f_A=u_*c_t$, where $u_*=\log((1-p)/p)$. Stage B stops at a small gate-readout level;
+Stage C stops when attention leakage outside the two useful sites is at most $\zeta$; Stage D keeps $\beta$ frozen.
+\Cref{app:routing} specifies the stopping levels and proves the stage bounds.
+
+\paragraph{Why the stages work.} At the count-only prior, every bounded feature $\Psi$ of the displayed count and letters obeys
+\begin{equation}
+ \E\bigl[-y_t\sigma(-y_tf_A)\Psi\bigr]=-2p(1-p)\Psi_{cm}
+ =-\frac{1-\mixrate^2}{2}\Psi_{cm},
+ \label{eq:identity}
+\end{equation}
+where $\sigma$ is the logistic sigmoid and $\Psi_{cm}$ is the feature's coefficient on $c_tm_t$ (\cref{lem:R-identity}).
+Everything already explained by the displayed state cancels. The gradient extracts only the local count--letter interaction,
+with the factor $1-\mixrate^2$ paid once. Stage B gives this interaction a nonzero readout coefficient so that it can drive the bias gradient.
+
+For the common useful-site bias $\bar\beta=(\beta_n+\beta_0)/2$ and imbalance $\Delta=\beta_n-\beta_0$, Stage C establishes
+\[
+ \dot{\bar\beta}>0,\qquad
+ \dot\beta_\delta\le0\quad(\delta\notin\{0,n\}),\qquad
+ |\Delta|\le1.
+\]
+The useful sites gain mass, irrelevant offsets are suppressed, and the two useful sites remain balanced.
+An invariant-region argument bounds the leakage hitting time by a polynomial (\cref{lem:R-field,lem:R-C}).
+After routing, $M_t$ is a small perturbation of a separable two-variable feature, so the final readout loss is convex and
+has a uniform positive-margin separator. This gives the positive optimization result.
+
+For $\zeta>0$, define the \emph{gate region} $\mathcal G_\zeta$ by leakage at most $\zeta$ outside
+$\{$own position, current letter$\}$, $|\beta_n-\beta_0|\le1$, and positive margin on every prediction of $\Lstep$.
 
 \begin{theorem}[Step training learns its routing]
 \label{thm:routing}
@@ -250,42 +347,19 @@ $T\le\mathrm{poly}(n,d_{\mathrm h},\initscale^{-1},(p(1-p))^{-1})$, stays in it 
 zero.
 \end{theorem}
 
-The schedule has four stages, each a gradient flow on one parameter block with the rest frozen: the count readout until
-it fits the count-only prior; the gate readout until its coefficient reaches a small fixed level; the relative bias until
-the attention outside the two useful sites falls below $\zeta$; and then the full readout with $\beta$ frozen.
-
-\emph{Proof idea.} At the count-only prior $f_A$, for every bounded feature $\Psi$ of the displayed count, the current
-letter and the other letters, with $y_t,c_t,m_t\in\{\pm1\}$ the signs of the target, the displayed count and the current
-match,
-\begin{equation}
- \E\bigl[-y_t\sigma(-y_tf_A)\,\Psi\bigr]=-\frac{1-\mixrate^2}{2}\,\Psi_{cm},
- \label{eq:identity}
-\end{equation}
-where $\sigma(x)=(1+e^{-x})^{-1}$ is the logistic sigmoid and $\Psi_{cm}$ is $\Psi$'s coefficient on $c_tm_t$ (\cref{lem:R-identity}). Everything the prior explains cancels,
-leaving only the local interaction, paid once with factor $1-\mixrate^2$. In routing coordinates, the common bias $\bar\beta$ of the
-current letter and the count's own position, and their imbalance $\Delta$, this residual defines a vector field along which $\bar\beta$
-increases, $\Delta$ stays bounded and every other letter's bias decreases; an invariant-region argument gives polynomial
-time to $\mathcal G_\zeta$ (\cref{lem:R-field,lem:R-C}), after which the readout problem is convex and separable. The seed is
-necessary: if the key reads a direction both letters share, the gate output depends on the displayed count alone and no
-choice of $\beta$ and readout leaves the count-only prior (\cref{lem:wrong-seed}). The identity is related to the parity
-analysis of \citet{kim2024parity}; here the computation is learned rather than built into the nonlinearity.
-
-\paragraph{Scope.} \Cref{thm:routing} is a controlled optimization result: the initialization is structured and small, and
-training is staged. The structured initialization supplies a weak candidate pathway, not the routing or the transition
-predictor, since the relative bias and readout start at zero. The theorem does not address generic random initialization
-or simultaneous flow, and its polynomial has high degree, so the separation from \cref{thm:outcome-end} is asymptotic in
-$n$ (\cref{rem:routing-scope}). In the same architecture and initialization, outcome gradient flow over any parameters except
-$\beta$ also plateaus (\cref{cor:routing-outcome}); outcome training that also learns $\beta$ is not covered. Experiments also
-test finite-scale structured initializations, with the same pathway and much larger amplitude, which the theorem does not
-cover.
+The local identity is related to the parity analysis of \citet{kim2024parity}; here the computation is learned rather than built into the nonlinearity.
+In the same architecture and initialization, outcome flow with $\beta$ fixed also plateaus (\cref{cor:routing-outcome}).
+The guarantee is staged; the experiments below test whether joint finite-step training also learns the routing.
 
 % ===================================================================
+% Keep experiment floats from interrupting the routing argument above.
+\suppressfloats[t]
 \section{Experiments}
 \label{sec:experiments}
 \label{sec:validation}
 
 The theorems use full-batch gradient flow to isolate the mechanism; the experiments use standard finite-step optimizers
-and are organized by the predictions they test. The AdamW runs use learned absolute positions without the relative bias;
+and ask four questions in the same order as the theory. The AdamW runs use learned absolute positions without the relative bias;
 protocols are in \cref{app:experiments}.
 
 \begin{figure}[t]
@@ -299,7 +373,7 @@ protocols are in \cref{app:experiments}.
 \label{fig:lambda-grid}
 \end{figure}
 
-\paragraph{Prediction 1: outcome training plateaus; step training does not.} Inside the theorems' assumptions, with full-batch gradient descent in float64 and no ReLU unit switching, the
+\paragraph{Does outcome escape exponentially slowly?} Inside the theorems' assumptions, with full-batch gradient descent in float64 and no ReLU unit switching, the
 outcome exit time from the initialization ball grows at least as fast as $\mixrate^{-n}$ while the step exit time stays
 constant (\cref{fig:theory-measurement}a), because the step loss can leave the ball by fitting the count-only prior; halving the update length changes the exit time by less than $1\%$. At
 initialization, $99.6\%$ of the Jacobian's energy is at degree~$0$ (\cref{fig:overview}c), and the answer-dependent
@@ -314,7 +388,7 @@ step seed solves within $8$k. From initialization through $6$k outcome updates, 
 energy lies above degree~$1$ (\cref{app:exp-plateau}). Outcome failure is not universal at moderate $\mixrate^n$: for counting
 modulo~$3$ at $n=8$ ($\mixrate^n\approx0.036$), outcome training solves two of three seeds within $32$k updates.
 
-\paragraph{Prediction 2: outcome training learns only the low-degree prior.} Varying the alphabet sets $\mixrate=1-2/A$. Over $20$ settings
+\paragraph{Does outcome learn only the accessible low-degree prior?} Varying the alphabet sets $\mixrate=1-2/A$. Over $20$ settings
 of $n\in\{6,\ldots,16\}$ and $\mixrate\in\{0.5,\ldots,0.9\}$, outcome accuracy has Spearman correlation $0.91$ with
 $\mixrate^n$ and $-0.36$ with $n$ alone. Most of this correlation is the state-only prior $(1+\mixrate^n)/2$, which predicting
 from the start count achieves: cell means lie between $2$ points below and $7$ points above it (median $+0.2$), and the excess
@@ -322,7 +396,7 @@ has Spearman correlation only $0.15$ with $\mixrate^n$ (\cref{fig:theory-measure
 cell mean is within $1.5$ points of the prior. Outcome training thus learns the
 degree-$0$ and $1$ part that the theory says it can reach, and nothing beyond it once $\mixrate^n$ is small.
 
-\paragraph{Prediction 3: the routing is learnable.} Training the scores, the relative bias and the readout jointly from a fan-in
+\paragraph{Can ordinary finite-step training learn the routing?} Training the scores, the relative bias and the readout jointly from a fan-in
 random initialization ($\initscale=0.3$), every held-out count prediction becomes correct in $16$ of $17$ runs; the
 remaining run reaches $99.95\%$ (\cref{tab:reach}); outcome training under the same protocol and seeds solves none of $17$
 runs within $300$k updates and stays at chance for $n\ge8$. The median solve time grows from $44$k updates at $n=6$ to $237$k at
@@ -349,7 +423,7 @@ held-out prediction is correct.}
 \label{tab:reach}
 \end{table}
 
-\paragraph{Beyond counting.} These results are evidence that the mechanism extends, not instances of the theorems.
+\paragraph{Does the same pattern appear beyond counting?} These results are evidence that the mechanism extends, not instances of the theorems.
 Boolean-8 and a reversible register machine put $98.9\%$ and $99.9\%$ of their answer variance at degrees $\ge2$; outcome
 training fails on both while step training succeeds, and a first-occurrence control, which keeps a degree-$1$ part at
 every $n$, is learned from answers alone (\cref{fig:transfer}, \cref{tab:main}). With rank-8 LoRA on Qwen2.5-0.5B and the
@@ -370,6 +444,8 @@ Dashed segments show chance; exact values and protocols are in \cref{tab:main,ap
 \end{figure}
 
 % ===================================================================
+% Keep the opening citation paragraph together across the transfer float.
+\needspace{12\baselineskip}
 \section{Related work}
 \label{sec:related}
 
@@ -405,20 +481,42 @@ permit constant-depth executors. Counting modulo $K$ is a cyclic-group automaton
 shallow shortcut Transformers; our outcome executor is such a shortcut, and the question is whether training finds it.
 
 % ===================================================================
-\section{Conclusion and limitations}
+\section{Discussion and conclusion}
 \label{sec:conclusion}
 \label{sec:discussion}
 
-In one Transformer architecture that holds exact counting solutions for both formats, outcome training provably stays
-near chance for time exponential in the number of letters, while staged gradient flow on the step loss from a small structured initialization
-provably learns its routing and drives $\Lstep$ to zero, with positive margins after polynomial optimization time. The reason is where the credit lies: every hidden letter costs the answer a factor $\mixrate$, while a running count
-pays $1-\mixrate^2$ once.
+\subsection{What the paper establishes}
+In the same two-block architecture, both supervision formats admit exact solutions.
+Outcome supervision supplies exponentially weak interaction credit near small initialization and, from a zero readout,
+provably remains near chance for exponential time. Step supervision exposes a local rule signal whose leading count--letter
+coefficient is nonzero. Under a weak structured seed, staged gradient flow amplifies that interaction, learns routing in
+polynomial time, and drives the step loss to zero, with positive margins at every sufficiently late time.
 
-\paragraph{Limitations.} \Cref{thm:main,thm:separation,thm:outcome-end} assume small initialization, full-batch gradient
-flow and a fixed ReLU pattern, so the MLPs are linearized; the AdamW experiments leave this regime
-(\cref{rem:two-block-bias}). \Cref{thm:routing} covers counting modulo~$2$ from a small structured initialization with a
-staged block-coordinate gradient flow that trains one parameter block at a time, while the matching outcome plateau holds
-$\beta$ fixed. The perturbative expansion identifies a nonzero degree-$6$ count$\times$letter pathway (\cref{lem:leading}), but
-whether simultaneous gradient flow amplifies such a pathway into the routing in polynomial time is open (\cref{conj:reach}), though restricted joint gradient descent does so in our experiments. Outcome
-training solves counting modulo~$3$ at $n=8$ in two of three seeds, and five-object BIG-Bench Hard reverses the
-ordering that $\mixrate^n$ predicts against seven objects, so $\mixrate^n$ is a guide rather than an exact predictor there.
+The distinction is where the credit lies: each unseen letter contracts the outcome signal by $\mixrate$, while a displayed
+transition pays the local innovation $1-\mixrate^2$ once. Exact representational feasibility removes a capacity-based explanation
+for the gap in this model. It does not ensure that a particular optimization procedure reaches either executor.
+The experiments test the latter question: joint training of scores, relative bias and readout solves $16$ of $17$ step runs,
+and the counting and transfer experiments generally favor step supervision.
+
+\subsection{What remains open}
+The positive optimization theorem is staged and starts from a structured small initialization.
+Proving polynomial-time routing discovery under simultaneous gradient flow from generic random initialization remains open
+(\cref{conj:reach}). The perturbative expansion identifies a nonzero degree-$6$ pathway, but a nonzero coefficient alone does
+not prove that joint flow amplifies it into the required routing. The matching outcome plateau also holds the relative bias
+fixed; outcome training that learns this bias is not covered.
+
+\Cref{thm:main,thm:separation,thm:outcome-end} assume small initialization, full-batch gradient flow, and a fixed ReLU pattern,
+so the MLPs act affinely. AdamW experiments leave this regime (\cref{rem:two-block-bias}), and the routing experiments use much
+larger initialization. \Cref{thm:routing} covers counting modulo~$2$ under a segment mask and supervises transitions $t\ge2$.
+Its polynomial has high degree, so the proved separation is asymptotic in $n$ (\cref{rem:routing-scope}). Extending the positive
+result to full-prefix attention, general $K$, and ordinary joint training would connect it more closely to the empirical setting.
+
+Outcome failure is also not universal. At $n=8$ for counting modulo~$3$, two of three outcome seeds solve within $32$k updates.
+On BIG-Bench Hard, five objects reverse the pattern seen at three and seven objects: outcome succeeds and one step run fails,
+even though the low-degree variance share is smaller at five than at seven. This reversal remains unexplained.
+The degree analysis describes the initialization signal in the controlled model; it is a guide to the pretrained experiments,
+rather than an exact predictor of their optimization trajectories.
+
+\paragraph{Conclusion.} Intermediate counts expose a local innovation that final answers can hide across many unseen letters.
+The controlled dynamics show how that innovation can become learned attention routing, and the experiments test this mechanism
+under ordinary optimization. The remaining challenge is to prove routing discovery under joint training as well as under the staged schedule.
