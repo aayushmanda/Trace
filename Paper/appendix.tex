@@ -152,8 +152,7 @@ Output weights $2\bm e_{s'+b'}$ give
 
 
 \begin{proof}[Proof of \cref{prop:represent}]
-\proofstep{Ideal routing.}
-The routes and lookups above give $\reg{match}_{1+t}=2\sum_{a\in\Sigma}\relu([w_t=a]+[q=a]-3/2)=b_t$,
+We first assume exact routing. The routes and lookups above then give $\reg{match}_{1+t}=2\sum_{a\in\Sigma}\relu([w_t=a]+[q=a]-3/2)=b_t$,
 $\reg{prev}_{n+1+t}=\bm e_{s_{t-1}}$, $\reg{mt}_{n+1+t}=b_t$, and, for the outcome program, $\reg{cnt}_{n+3}=n\cdot\frac1n\sum_tb_t=m$ and
 $\reg{s0}_{n+3}=\bm e_{s_0}$. With $[m=a]=\relu(m-a+1)-2\relu(m-a)+\relu(m-a-1)$,
 \begin{align*}
@@ -166,8 +165,7 @@ A third step head copies the final displayed count to the answer position. A rea
 output register supplies value logits; weight $20$ on the appropriate position coordinates supplies ``:'' and EOS.
 All unused maps are zero.
 
-\proofstep{Finite-score error.}
-With $d=2n+6$ and $\beta_n=\max\{16,3\log(8(n+3))\}$,
+Finite scores leave a small leak. With $d=2n+6$ and $\beta_n=\max\{16,3\log(8(n+3))\}$,
 \[
  \rho_n=(d-1)e^{-\beta_n}
  <\frac{2(n+3)}{(8(n+3))^3}
@@ -200,8 +198,7 @@ With readout weight $20$, every supervised position therefore has logit margin
  \ge20\min\bigl\{1-8\rho_n,\;1-2(4n+2)\rho_n\bigr\}>19.
 \]
 
-\proofstep{Open neighbourhood.}
-For fixed $n$, let $\mathcal P_n$ be the finite set of supported gold prefixes and prediction positions.
+It remains to pass to a neighbourhood. For fixed $n$, let $\mathcal P_n$ be the finite set of supported gold prefixes and prediction positions.
 Continuity and the preceding margin give $\ballradius_{\mathrm{exec},n}>0$ such that
 \[
  \|\theta-\theta^\star\|<\ballradius_{\mathrm{exec},n}
@@ -415,12 +412,11 @@ The constants are independent of $n$, the widths and $k$.
 \end{proposition}
 
 \begin{proof}
-\emph{Notation.} For a quantity $F$ of the network with scores scaled by $\xi$, write $F_k=\tfrac1{k!}\tfrac{d^kF}{d\xi^k}$ for its
+For a quantity $F$ of the network with scores scaled by $\xi$, write $F_k=\tfrac1{k!}\tfrac{d^kF}{d\xi^k}$ for its
 normalized $\xi$-derivatives, and $F'_k=\partial_vF_k$ for their derivatives along a unit parameter direction $v$. All suprema below
 are over inputs, positions and $\xi\in[0,1]$.
 
-\proofstep{Step 1: affine blocks and amplitudes (part (i)).}
-The bias condition gives $|b_m|\ge\initscale/2$, while $|(W_{\mathrm{in}}h)_m|\le C\initscale^2$, so one diagonal activation matrix
+We begin with part~(i). The bias condition gives $|b_m|\ge\initscale/2$, while $|(W_{\mathrm{in}}h)_m|\le C\initscale^2$, so one diagonal activation matrix
 $D$ applies to every input and every $\xi$. Each block is therefore affine,
 \[
  h_i^\ell=M_\ell\bigl(h_i^{\ell-1}+\bm a_i^\ell\bigr)+\bm o_\ell,
@@ -439,8 +435,7 @@ $\omega_{i\cdot}=\softmax(\xi\psi_{i\cdot})$. Operator norms give
 Attention rows have $\ell_1$ norm $1$, so induction over the two blocks gives (i), including its tangent bound. Sums over hidden
 coordinates stay inside operator products, and sums over positions are averages.
 
-\proofstep{Step 2: softmax calculus.}
-With $\langle f\rangle_\omega=\sum_j\omega_jf_j$,
+The higher derivatives rest on the calculus of the softmax. With $\langle f\rangle_\omega=\sum_j\omega_jf_j$,
 \[
  \partial\omega[v]_j=\omega_j\bigl(v_j-\langle v\rangle_\omega\bigr),
  \qquad
@@ -461,8 +456,7 @@ composition sum over the $\binom{k-1}{j-1}$ compositions $k_1+\cdots+k_j=k$ with
 \]
 The same identities bound the absolute sums at zero scores.
 
-\proofstep{Step 3: the derivative recursion (part (ii), values).}
-For block $\ell$, let $H_{\ell,k}$, $\Psi_{\ell,k}$ and $Z_k$ bound the normalized $\xi$-derivatives of $h_i^\ell$, $\psi^\ell_{ij}$ and $\bm z_i$;
+We now turn to the values in part~(ii). For block $\ell$, let $H_{\ell,k}$, $\Psi_{\ell,k}$ and $Z_k$ bound the normalized $\xi$-derivatives of $h_i^\ell$, $\psi^\ell_{ij}$ and $\bm z_i$;
 let $\Xi_{\ell,k}$ bound those of $\xi\psi^\ell$, $U_{\ell,k}$ those of an attention row in $\ell_1$ norm, and $B_{\ell,k}$ those of a head
 output. Steps 1 and 2 give, with $U_{\ell,0}=1$, $H_{0,k}=0$ for $k\ge1$, and $a_r\ge1$ in the compositions,
 \begin{align*}
@@ -488,8 +482,7 @@ and therefore
  Z_k\le C\initscale^3(C_0\initscale^4)^k .
 \]
 
-\proofstep{Step 4: tangents, remainders and absolute sums (part (ii), completed).}
-Differentiate once along $v$ before taking each supremum. In a product, one factor is replaced by its tangent; in a softmax, one
+For the tangent bounds in part~(ii), we differentiate once along $v$ before taking each supremum. In a product, one factor is replaced by its tangent; in a softmax, one
 $\Xi$ is replaced or a term $\partial^{j+1}\omega[\partial_v\Xi_{\ell,0},\ldots]$ appears. With base bounds $H'_{0,0}=O(1)$ and
 $\Psi'_{\ell,0}=O(\initscale^3)$, and the extra factor $j+1\le2^k$ absorbed into $C_0^k$,
 \[
@@ -504,8 +497,7 @@ satisfies $\|m^{-1}\sum_j\prod_rF_r(j)\|_{\mathrm{abs}}\le\prod_r\max_j\|F_r(j)\
 parameter and input occurrences, so differentiating its norm bound costs at most $C(k+1)/\initscale$; absorbing $k+1\le2^k$ gives the
 absolute-sum claims.
 
-\proofstep{Step 5: support and one-score terms (part (iii)).}
-At zero scores,
+For part~(iii), note that at zero scores
 \[
  h_j^1=M_1\Bigl(x_j+\frac1{m_j}\sum_{l\le j}W_V^1x_l\Bigr)+\bm o_1,
  \qquad
@@ -523,11 +515,10 @@ derivatives add none. The one-score correction is
 after the readout its terms contain $V$, $W_V$, $W_Q$, $W_K$ and three residual inputs, so they have size $O(\initscale^7)$ and
 tangent $O(\initscale^6)$.
 
-\proofstep{Step 6: position selection (part (iv)).}
-In block $1$, the relative absolute weight of terms containing $x_l$ at position $j$ is $0$ for $j<l$, $1$ for $j=l$ and
+Finally, part~(iv) tracks which positions a term can select. In block $1$, the relative absolute weight of terms containing $x_l$ at position $j$ is $0$ for $j<l$, $1$ for $j=l$ and
 $C\initscale/m_j$ for $j>l$. In block $2$, taking the $x_l$ contribution from the query costs $C\initscale/m_i$, from key $l$ costs
 $1/m_i$, from later keys costs $\tfrac{C\initscale}{m_i}\sum_{l<j\le i}\tfrac1{m_j}$, and the residual path costs $C/m_i$. An order-$k$ term
-has $O(k+1)$ such choices; multiplying the bounds of Step 4 by these weights and absorbing $k+1$ into $C_0^k$ gives (iv), for
+has $O(k+1)$ such choices; multiplying the absolute-sum and tangent bounds above by these weights and absorbing $k+1$ into $C_0^k$ gives (iv), for
 coefficients and tangents.
 \end{proof}
 
@@ -778,7 +769,7 @@ $G$ have profiles $(A,A',A'')$ and $(B,B',B'')$, then $FG$ has profile
  \bigl(AB,\;A'B+AB',\;A''B+2A'B'+AB''\bigr).
 \]
 
-\emph{Profiles through the network.} Since $\|\theta-\theta_0\|\le2\ballradius\initscale$, every parameter block, input vector and MLP
+We propagate profiles through the network. Since $\|\theta-\theta_0\|\le2\ballradius\initscale$, every parameter block, input vector and MLP
 bias vector has a profile of the form $(C\initscale,C,0)$; for the bias vectors this uses $\beta\initscale\le\frac12$. Applying the
 product rule layer by layer gives
 \begin{center}\small
@@ -801,7 +792,7 @@ value vectors with a row of $\ell_1$ norm one, so it keeps their profile. With t
 $(C\initscale^2,C\initscale,C)$ and $\bm o_\ell$ has profile $(C\initscale,C,C)$, so the residual profile $(C\initscale,C,C)$ is preserved
 through both blocks.
 
-\emph{Loss.} For one prompt, with $\hat y=\softmax(\bm z)$,
+It remains to pass to the loss. For one prompt, with $\hat y=\softmax(\bm z)$,
 \[
  \ell'=\langle\hat y-\bm e_y,\bm z'\rangle,
  \qquad
@@ -821,14 +812,14 @@ the cross-entropy is $\ell=\log K+\KL(\bm u\|\hat y)-\langle\bm z,\bm e_y-\bm u\
 \end{equation}
 
 \begin{proof}[Proof of \cref{thm:outcome-end}]
-\emph{Loss floor.} By \cref{lem:score-sum}, valid on $\initball'$ for $\initscale\le c\mixrate$, $|\outcredit(\theta)|\le C_2\initscale^2\mixrate^n$
+We first bound the loss from below. By \cref{lem:score-sum}, valid on $\initball'$ for $\initscale\le c\mixrate$, $|\outcredit(\theta)|\le C_2\initscale^2\mixrate^n$
 there. Since $\KL\ge0$, \cref{eq:lo-identity} gives
 \begin{equation}
  \Lout(\theta)\ge\log K-C_2\initscale^2\mixrate^n,\qquad\theta\in\initball'.
  \label{eq:lo-floor}
 \end{equation}
 
-\emph{Energy bound.} On $\initball'$, $\Lout$ is smooth (\cref{lem:end-smooth}), so the flow is well defined. Let
+Next we bound how far the flow can travel. On $\initball'$, $\Lout$ is smooth (\cref{lem:end-smooth}), so the flow is well defined. Let
 $\tau:=\inf\{t:\theta(t)\notin\initball\}$. For $t\le\tau$,
 \[
  \frac{d\Lout}{dt}=-\|P\nabla\Lout\|^2,
@@ -840,7 +831,7 @@ because $\Lout(\theta_0)=\log K$ at a zero readout. By Cauchy--Schwarz,
  \|\theta(t)-\theta_0\|^2\le\Bigl(\int_0^t\|P\nabla\Lout\|\,ds\Bigr)^2\le t\,C_2\initscale^2\mixrate^n .
 \]
 
-\emph{Slow escape.} At $t=\tau$ the trajectory is on the boundary of $\initball$, so
+This makes the escape slow: at $t=\tau$ the trajectory is on the boundary of $\initball$, so
 \[
  \ballradius^2\initscale^2\le\tau\,C_2\initscale^2\mixrate^n
  \quad\Longrightarrow\quad
@@ -848,7 +839,7 @@ because $\Lout(\theta_0)=\log K$ at a zero readout. By Cauchy--Schwarz,
 \]
 and \cref{eq:lo-floor} gives the loss bound for $t\le\tau$.
 
-\emph{Near-chance prediction.} Since $\Lout(\theta(t))\le\Lout(\theta_0)=\log K$, \cref{eq:lo-identity} also gives
+Finally, the prediction stays near chance. Since $\Lout(\theta(t))\le\Lout(\theta_0)=\log K$, \cref{eq:lo-identity} also gives
 $\E[\KL(\bm u\|\hat y_t)]\le\outcredit(\theta(t))\le C_2\initscale^2\mixrate^n$. As $\hat y_{t,y}-\frac1K\le\mathrm{TV}(\hat y_t,\bm u)$,
 Pinsker's and Jensen's inequalities give
 \[
@@ -959,8 +950,7 @@ Let $P_n$ be defined from $Q_t$ above.
 
 
 \begin{proof}
-\proofstep{(i) Leading term.}
-Take $k_0=2+\lceil\log_2 n\rceil$ and $\rho_\initscale=\attconst\initscale^4\le1/2$.
+For part~(i), take $k_0=2+\lceil\log_2 n\rceil$ and $\rho_\initscale=\attconst\initscale^4\le1/2$.
 By \cref{lem:rule-sites,prop:network,eq:dilution-avg},
 \begin{align*}
  \E[(\bm g_t)_a h_{i_t,b}^{2,[0]}]&=0,\\
@@ -988,8 +978,7 @@ Consequently,
  |\varrho_n(\initscale)|\le\frac{C'}{\initscale_0}\frac{\initscale^7}{n}+\frac{C\initscale^{10}}n.
 \]
 
-\proofstep{(ii) A nonzero coefficient.}
-Choose a block-2 head, a state $s^\ast$, an output coordinate $b$ and $a=s^\ast+1$.
+For part~(ii), choose a block-2 head, a state $s^\ast$, an output coordinate $b$ and $a=s^\ast+1$.
 Retain only these six entries:
 \[
  \mathcal E=\{\tilde E_{s^\ast,0},\tilde E_{q,1},\tilde E_{q,2},
@@ -1091,7 +1080,7 @@ Fix $\failprob,p,K$, then $n$ and the widths. By \cref{lem:leading}(i),
 \]
 so it suffices to show that $|P_n(\tilde\theta)|$ is of order $1/n$ with high probability and that the remainder is smaller.
 
-\emph{Step 1: one monomial survives in the second moment.} By \cref{lem:leading}(ii), $P_n$ contains the monomial
+We first show that one monomial survives in the second moment. By \cref{lem:leading}(ii), $P_n$ contains the monomial
 $\prod_{y\in\mathcal E}y$ with coefficient $a_{\mathcal E}\ge a_{\mathrm{match}}/n$. Write $P_n=a_{\mathcal E}\prod_{y\in\mathcal E}y+R$. Since
 $P_n$ is homogeneous of degree $6$ and the entries are independent, centred and symmetric, every other monomial of $P_n$ contains
 some entry to an odd power against $\prod_{y\in\mathcal E}y$, so $\E[R\prod_{y\in\mathcal E}y]=0$. The six entries of $\mathcal E$ have
@@ -1100,18 +1089,18 @@ variance $1/d_{\mathrm{res}}$, hence, with $a_{\mathrm w}:=a_{\mathrm{match}}/d_
  \E[P_n(\tilde\theta)^2]\ge a_{\mathcal E}^2\prod_{y\in\mathcal E}\E[y^2]=\frac{a_{\mathcal E}^2}{d_{\mathrm{res}}^6}\ge\frac{a_{\mathrm w}^2}{n^2}.
 \]
 
-\emph{Step 2: anti-concentration.} Carbery--Wright with $d=6$ and $t_{\mathrm{CW}}=\bigl(\failprob/(12C_{\mathrm{CW}})\bigr)^6$ gives
+This second moment turns into a lower bound with high probability: Carbery--Wright with $d=6$ and $t_{\mathrm{CW}}=\bigl(\failprob/(12C_{\mathrm{CW}})\bigr)^6$ gives
 \[
  \Pr\Bigl[|P_n(\tilde\theta)|\ge\frac{t_{\mathrm{CW}}\,a_{\mathrm w}}{n}\Bigr]\ge1-\frac\failprob2 .
 \]
 
-\emph{Step 3: the initialization event.} For these fixed dimensions, choose deterministic $a_0,\varsigma>0$ such that the matrix
+The constants of \cref{lem:leading}(i) must also be controlled. For these fixed dimensions, choose deterministic $a_0,\varsigma>0$ such that the matrix
 and embedding blocks satisfy (A2) with probability at least $1-\frac\failprob2$; such bounds exist because the norms are finite and
 the value-token embedding block has full row rank almost surely when $d_{\mathrm{res}}\ge K$ (\cref{rem:end-width} gives
 quantitative bounds). On this event the constants $C,C'$ of \cref{lem:leading}(i) are fixed. The condition $d_{\mathrm{res}}\ge3$
 leaves room for the three coordinates used in $\mathcal E$.
 
-\emph{Step 4: the remainder is smaller.} Let
+It remains to make the remainder smaller than the leading term. Let
 \[
  \initscale_\failprob=\min\Bigl\{\initscale_0,\ \frac{t_{\mathrm{CW}}\,a_{\mathrm w}\,\initscale_0}{4C'},\ \Bigl(\frac{t_{\mathrm{CW}}\,a_{\mathrm w}}{4C}\Bigr)^{1/4}\Bigr\},
 \]
@@ -1119,7 +1108,7 @@ which is chosen before the draw. For every $\initscale\le\initscale_\failprob$, 
 \[
  |\varrho_n(\initscale)|\le\frac{C'}{\initscale_0}\frac{\initscale^7}{n}+\frac{C\initscale^{10}}{n}\le\frac{t_{\mathrm{CW}}\,a_{\mathrm w}}{2}\,\frac{\initscale^6}{n}.
 \]
-On the intersection of the events of Steps 2 and 3, which has probability at least $1-\failprob$, simultaneously for all
+On the intersection of these two events, which has probability at least $1-\failprob$, simultaneously for all
 $\initscale\le\initscale_\failprob$,
 \[
  \|\nabla\rulecredit(\initscale\tilde\theta)\|\ge\frac{t_{\mathrm{CW}}\,a_{\mathrm w}}{2}\,\frac{\initscale^6}{n}
