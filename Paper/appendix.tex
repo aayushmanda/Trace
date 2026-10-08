@@ -216,9 +216,9 @@ With readout weight $20$, let $a^\star$ denote the gold token at a supervised po
 
 \proofstep{Open neighbourhood.}
 For fixed $n$, let $\mathcal P_n$ be the finite set of supported gold prefixes and supervised positions.
-By continuity and the margin above, there is $\ballradius_{\mathrm{exec},n}>0$ such that
+By continuity and the margin above, there is $r_{\mathrm{exec},n}>0$ such that
 \[
- \|\theta-\theta^\star\|<\ballradius_{\mathrm{exec},n}
+ \|\theta-\theta^\star\|<r_{\mathrm{exec},n}
  \quad\Longrightarrow\quad
  \max_{P\in\mathcal P_n}\|\bm z_\theta(P)-\bm z_{\theta^\star}(P)\|_\infty<19/2.
 \]
@@ -1062,7 +1062,7 @@ $16$ with three heads of dimension $8$ and MLP width $16$, $|\tilde b_m|\ge1$, t
 \emph{Exit-time runs} start from a zero readout; \emph{credit measurements} keep a nonzero readout (\cref{rem:zero-readout}).
 
 \emph{Gradient-flow approximation.} Each update moves the parameters by
-$10^{-3}\initscale\|\tilde\theta\|$, and $\traintime(\ballradius)$ is the accumulated step size when $\|\theta_j-\theta_0\|=\ballradius\initscale\|\tilde\theta\|$; halving
+$10^{-3}\initscale\|\tilde\theta\|$, and $\traintime(r)$ is the accumulated step size when $\|\theta_j-\theta_0\|=r\initscale\|\tilde\theta\|$; halving
 or quartering the update changes $\traintime(0.1)$ by less than $1\%$, so the runs approximate gradient flow. No ReLU switches.
 
 \begin{center}\small
@@ -1321,7 +1321,7 @@ $i_t$ and to the $n$ letter positions $\ell_1,\dots,\ell_n$, with scores shifted
 The current letter has offset $i_t-\ell_t=n$.
 
 \emph{Readout.} Write $f_t$ for the difference of the two state logits, $v_c,v_s,v_r$ for the readout components along
-$\hat e_{c},\hat e_{s},\hat e_{r}$, and $\phi(z)=\log(1+e^{-z})$ for the logistic loss.
+$\hat e_{c},\hat e_{s},\hat e_{r}$, $\phi(z)=\log(1+e^{-z})$ for the logistic loss and $\sigma(x)=(1+e^{-x})^{-1}$ for the logistic sigmoid.
 
 \paragraph{Small structured initialization.} Fix orthonormal residual directions $\hat e_{c},\hat e_{s},\hat e_{0},\hat e_\ell,\hat e_{r}$ and a unit vector $\hat e_{1}$ in the head
 space. With independent random signs $A_Q,A_K,A_V\in\{\pm1\}$, set
@@ -1360,7 +1360,7 @@ By \cref{lem:R-features}, with $O\le(n-1)e^{|a|}$ the other letters' weight, the
 \[
  \frac{O}{e^{\bar\beta^\star}+e^{ac_tm_t+\bar\beta^\star}+O}\le Oe^{-\bar\beta^\star}\le0.111|a|\le\frac{|d|}2,
 \]
-and it changes $M_t$ from $\widetilde M_t=\operatorname{sigmoid}(ac_tm_t)=\frac12+d\,c_tm_t$ by at most that much.
+and it changes $M_t$ from $\widetilde M_t=\sigma(ac_tm_t)=\frac12+d\,c_tm_t$ by at most that much.
 
 \emph{The readout.} With $gv^\star_r=\frac1d$, $\initscale v^\star_c=-\frac1{2d}$ and $v^\star_s=0$,
 \[
@@ -1407,7 +1407,7 @@ $\initscale v_c=0$, $\initscale v_s=u_*$; let $f_A=u_*c$.
 \]
 be its $c_tm_t$ coefficient. Then the gradient extracts this coefficient:
 \[
- \E\bigl[-y_t\operatorname{sigmoid}(-y_tf_A)\,\Psi\bigr]=-2p(1-p)\,\Psi_{cm} .
+ \E\bigl[-y_t\sigma(-y_tf_A)\,\Psi\bigr]=-2p(1-p)\,\Psi_{cm} .
 \]
 \item If $|f_t-f_A|\le2\alpha_B$ on every prompt, the left side of (b) changes by at most $\frac12\alpha_B\,\E[|\Psi|]$.
 \end{enumerate}
@@ -1415,16 +1415,16 @@ be its $c_tm_t$ coefficient. Then the gradient extracts this coefficient:
 
 \begin{proof}
 (a) The loss is invariant under $(c,y)\mapsto(-c,-y)$, which maps $v_c\mapsto-v_c$, so by strict convexity $v_c=0$. The first-order
-condition in $v_s$ is $(1-p)\operatorname{sigmoid}(-\initscale v_s)=p\operatorname{sigmoid}(\initscale v_s)$.
+condition in $v_s$ is $(1-p)\sigma(-\initscale v_s)=p\sigma(\initscale v_s)$.
 
-(b) Write $\psi(c,m)=\psi_0+\psi_1c+\psi_2m+\Psi_{cm}\,cm$. Since $y_tf_A=u_*m_t$, $\operatorname{sigmoid}(-u_*m_t)$ equals $p$ for
+(b) Write $\psi(c,m)=\psi_0+\psi_1c+\psi_2m+\Psi_{cm}\,cm$. Since $y_tf_A=u_*m_t$, $\sigma(-u_*m_t)$ equals $p$ for
 $m_t=1$ and $1-p$ for $m_t=-1$. As $c_t$ is uniform and independent of $(m_t,m_{-t})$,
 \begin{gather*}
- \E\bigl[c_tm_t\operatorname{sigmoid}(-u_*m_t)\bigr]=\E\bigl[m_t\operatorname{sigmoid}(-u_*m_t)\bigr]=\E\bigl[c_t\operatorname{sigmoid}(-u_*m_t)\bigr]=0,\\
- \E\bigl[\operatorname{sigmoid}(-u_*m_t)\bigr]=2p(1-p).
+ \E\bigl[c_tm_t\sigma(-u_*m_t)\bigr]=\E\bigl[m_t\sigma(-u_*m_t)\bigr]=\E\bigl[c_t\sigma(-u_*m_t)\bigr]=0,\\
+ \E\bigl[\sigma(-u_*m_t)\bigr]=2p(1-p).
 \end{gather*}
 
-(c) $\operatorname{sigmoid}$ is $\frac14$-Lipschitz pointwise.
+(c) $\sigma$ is $\frac14$-Lipschitz pointwise.
 \end{proof}
 
 \paragraph{Interaction coefficients.} Fix $t$, $c$ and $\beta$, and write $u=acm_t$. The other letters' weights
@@ -1493,9 +1493,9 @@ units, so $\initscale_0=c\min(1,w^{-1/2})$ and $1/\initscale_\star\le C_p\sqrt w
 \begin{proof}
 \emph{Stage A: fit the prior.} Symmetry keeps $v_c=0$, and
 \[
- \frac{d}{dt}(\initscale v_s)=\initscale^2\bigl(1-p-\operatorname{sigmoid}(\initscale v_s)\bigr),
+ \frac{d}{dt}(\initscale v_s)=\initscale^2\bigl(1-p-\sigma(\initscale v_s)\bigr),
 \]
-so $\initscale v_s$ stays between $0$ and $u_*$, where $\operatorname{sigmoid}'\ge p(1-p)$. Hence $|\initscale v_s(t)-u_*|\le|u_*|e^{-\initscale^2p(1-p)t}$,
+so $\initscale v_s$ stays between $0$ and $u_*$, where $\sigma'\ge p(1-p)$. Hence $|\initscale v_s(t)-u_*|\le|u_*|e^{-\initscale^2p(1-p)t}$,
 which gives (a); the time is zero if $p=\frac12$.
 
 \emph{Distance to the prior.} After Stage A, $f_t-f_A=\initscale v_c+(\initscale v_s-u_*)c_t+gv_rM_t$, and $|gv_rM_t|\le|gv_r|=|\alpha|$.
@@ -1549,13 +1549,13 @@ $(n-1)e^{|a|+\bar\beta+0.1}$ to the softmax normalizer $Z$. Hence
 \emph{Bias dynamics.} For any relative offset $\delta$, gradient flow gives
 \[
  \frac{d\beta_\delta}{dt}=-\frac{\partial\mathcal L}{\partial\beta_\delta}
- =gv_r\,\E\Bigl[y_t\operatorname{sigmoid}(-y_tf_t)\,\frac{\partial M_t}{\partial\beta_\delta}\Bigr].
+ =gv_r\,\E\Bigl[y_t\sigma(-y_tf_t)\,\frac{\partial M_t}{\partial\beta_\delta}\Bigr].
 \]
 Since $|f_t-f_A|\le2\alpha_B$ (\cref{lem:R-AB}), \cref{lem:R-identity} with $\Psi=\tfrac{\partial M_t}{\partial\beta_\delta}$ and \cref{eq:R-hat} give
 \begin{equation}
- \frac{d\beta_\delta}{dt}=2p(1-p)\alpha_B|a|\,\Bigl\langle\frac{\partial^2M_t}{\partial u\,\partial\beta_\delta}\Bigr\rangle+\varepsilon_\delta,
+ \frac{d\beta_\delta}{dt}=2p(1-p)\alpha_B|a|\,\Bigl\langle\frac{\partial^2M_t}{\partial u\,\partial\beta_\delta}\Bigr\rangle+e_\delta,
  \qquad
- |\varepsilon_\delta|\le\frac{\alpha_B^2}{2}\,\E\Bigl[\Bigl|\frac{\partial M_t}{\partial\beta_\delta}\Bigr|\Bigr].
+ |e_\delta|\le\frac{\alpha_B^2}{2}\,\E\Bigl[\Bigl|\frac{\partial M_t}{\partial\beta_\delta}\Bigr|\Bigr].
  \label{eq:R-bias}
 \end{equation}
 The velocity of each bias is a local interaction drive plus a small error. Both sides are linear in the bias coordinate, so
@@ -1597,7 +1597,7 @@ ends by
  T_C\le\frac{227\,n^5\log(1.83n/\zeta)}{p^2(1-p)^2a^2\,\zeta},
 \]
 and at its end $|\Delta|\le1$ and, on every prompt and every $t\ge2$, $|M_t-\widetilde M_t|\le\zeta$ with
-$\widetilde M_t=\operatorname{sigmoid}(ac_tm_t+\Delta)$.
+$\widetilde M_t=\sigma(ac_tm_t+\Delta)$.
 \end{lemma}
 
 \begin{proof}
@@ -1644,7 +1644,7 @@ leakage in each:
 $\overline T_D$ bounds the burn-in, $T'$ is the time after which a second convexity argument certifies the margins, and $B$ sets the
 leakage tolerance $\zeta=0.015|a|/B$ so that leakage cannot overturn a margin before $T'$.
 
-\emph{Separator.} By $|\Delta|\le1$, $|d|\ge|a|\operatorname{sigmoid}'(1.1)\ge0.18|a|$. By \cref{lem:R-features},
+\emph{Separator.} By $|\Delta|\le1$, $|d|\ge|a|\sigma'(1.1)\ge0.18|a|$. By \cref{lem:R-features},
 \[
  f^\star_t=\frac{M_t-m_0}{d}=c_tm_t+\frac{M_t-\widetilde M_t}{d},
 \]
