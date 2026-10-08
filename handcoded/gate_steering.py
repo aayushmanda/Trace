@@ -16,10 +16,11 @@ Starts
   outcome_gd      outcome loss, gradient descent on every parameter except beta (Corollary routing-outcome (a))
   outcome_staged  outcome loss, gradient descent on beta and the readout only (Corollary routing-outcome (b))
 
-Schedule (Appendix G): A Newton solve of the count readout (v_c, v_s) to the prior; B one step on v_r with the
-theorem's eta_B; C one step on beta with eta_C = b_* / (2 p (1-p) alpha_* mu_cur) (nominal alpha_*, so a zero gate
-gradient gives a zero step); D gradient flow on (v_c, v_s, v_r), discretized by implicit Euler steps on a 5% geometric time grid.
-Step sizes use the scaffold constants of the cell, the same for every start.
+Schedule (Appendix G, staged block-coordinate gradient flow): A the count readout (v_c, v_s) at the prior (the limit of its
+flow, reached by Newton); B gradient flow on v_r until alpha = sign(a) g v_r reaches alpha_B = 0.05 p (1-p) |a| / n^2;
+C gradient flow on beta, through the full model, until the attention outside {own position, current letter} is at most eps;
+D gradient flow on (v_c, v_s, v_r), discretized by implicit Euler steps on a 5% geometric time grid. Stages B and C are
+integrated with LSODA and capped at 100 times their proved time bounds; a start that never meets a stopping rule fails there.
 
 Logged per run: attention on the current letter and on the own position, leakage (largest attention outside the two),
 Delta = beta_n - beta_0, alignment of beta with beta_gate*, Stage D flow time to positive margins, whether training
@@ -36,6 +37,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
+from scipy.integrate import solve_ivp
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--n", type=int, nargs="+", default=[6])
@@ -76,6 +78,9 @@ def constants(n):
     eps = .015 * a / B
     bstar = math.log(2.1 * n / eps)
     alpha = p * (1 - p) * a / (60 * n * bstar)
+    alpha_B = .05 * p * (1 - p) * a / n**2
+    TB_bound = .08 / (g * g)
+    TC_bound = 227 * n**5 * math.log(1.83 * n / eps) / (p**2 * (1 - p)**2 * a * a * eps)
     # mu_M = hat M and mu_cur = hat Psi_cur at beta = 0, a > 0: condition on (c, m_t), average the other letters.
     others = np.array(list(itertools.product([1., -1.], repeat=n - 1)))
     wo = np.prod(np.where(others < 0, p, 1 - p), 1)
@@ -86,6 +91,7 @@ def constants(n):
         mucur += c * m * np.dot(wo, math.exp(a * c * m) / Z**2) / 4
     small = dict(a_le=a <= .1, ab=a * bstar <= .008, sig_u=sig * (1 + abs(ustar)) <= 1)
     return dict(a=a, g=g, pi0=pi0, ustar=ustar, C0=C0, TD_bar=TD_bar, B=B, eps=eps, bstar=bstar, alpha=alpha,
+                alpha_B=alpha_B, TB_bound=TB_bound, TC_bound=TC_bound,
                 muM=muM, mucur=mucur, etaB=alpha / (2 * p * (1 - p) * g * g * muM),
                 etaC=bstar / (2 * p * (1 - p) * alpha * mucur), smallness=small)
 
@@ -209,7 +215,7 @@ def run_step(n, start, rho, seed, C):
     th, signs = init(n, start, rho, seed)
     a_signed = signs["AQ"] * signs["AK"] * C["a"]                          # signs already include sign_flip
     rec = dict(n=n, start=start, rho=rho, seed=seed, sigma=sig, p=p, signs=signs, consts={k: C[k] for k in
-               ("a", "g", "eps", "bstar", "alpha", "etaB", "etaC", "TD_bar", "B")}, smallness=C["smallness"])
+               ("a", "g", "eps", "alpha_B", "TB_bound", "TC_bound", "TD_bar", "B")}, smallness=C["smallness"])
     T = n - 1
     yy = y.reshape(-1).cpu().numpy()
     ww = (w[:, None].expand(-1, T) / T).reshape(-1).cpu().numpy()
@@ -225,18 +231,44 @@ def run_step(n, start, rho, seed, C):
         if np.abs(step).max() < 1e-15 * (1 + np.abs(v).max()):
             break
     rec["stageA_v"] = v.tolist()
-    # Stage B: one step on v_r from 0.
-    gr, _ = grad_hess(v, Xn, yy, ww)
-    v[2] = -C["etaB"] * gr[2]
-    rec["alpha_over_alpha_star"] = float(np.sign(C["a"] * signs["AQ"] * signs["AK"]) * signs["AV"] * C["g"] * v[2] / C["alpha"])
-    # Stage C: one step on beta.
-    th["beta"].requires_grad_(True)
-    Xt, _ = features(th, ids, pos, n)
-    m = torch.tensor(yy, device=dev) * (Xt.reshape(-1, 3) @ torch.tensor(v, device=dev))
-    (torch.tensor(ww, device=dev) * torch.nn.functional.softplus(-m)).sum().backward()
-    with torch.no_grad():
-        th["beta"] -= C["etaC"] * th["beta"].grad
-    th["beta"].requires_grad_(False)
+    # Stage B: gradient flow on v_r from 0 until alpha = sign(a) g v_r reaches alpha_B.
+    g_signed = signs["AV"] * C["g"]
+    s_alpha = math.copysign(1, a_signed) * g_signed
+    evB = lambda t, z: s_alpha * z[0] - C["alpha_B"]
+    evB.terminal = True
+    solB = solve_ivp(lambda t, z: [-grad_hess(np.array([v[0], v[1], z[0]]), Xn, yy, ww)[0][2]],
+                     (0, 100 * C["TB_bound"]), [0.], events=evB, method="LSODA", rtol=1e-10, atol=1e-30)
+    v[2] = solB.y[0, -1]
+    rec["TB_flow"] = float(solB.t[-1]) if solB.status == 1 else None
+    rec["alpha_over_alpha_B"] = float(s_alpha * v[2] / C["alpha_B"])
+    # Stage C: gradient flow on beta through the full model until the leakage is at most eps.
+    yt, wt, vt = torch.tensor(yy, device=dev), torch.tensor(ww, device=dev), torch.tensor(v, device=dev)
+    def rhsC(t, bb):
+        th["beta"] = torch.tensor(bb, device=dev, requires_grad=True)
+        Xt, _ = features(th, ids, pos, n)
+        lossC = (wt * torch.nn.functional.softplus(-yt * (Xt.reshape(-1, 3) @ vt))).sum()
+        lossC.backward()
+        return -th["beta"].grad.cpu().numpy()
+    def evC(t, bb):
+        th["beta"] = torch.tensor(bb, device=dev)
+        with torch.no_grad():
+            _, att = features(th, ids, pos, n)
+        return attention_stats(att, n)["leak_max"] - .99 * C["eps"]
+    evC.terminal = True
+    t0C = time.time()
+    if rec["TB_flow"] is not None:                       # the schedule enters Stage C only if Stage B stops
+        solC = solve_ivp(rhsC, (0, 100 * C["TC_bound"]), th["beta"].detach().cpu().numpy(), events=evC,
+                         method="LSODA", rtol=1e-8, atol=1e-10)
+        th["beta"] = torch.tensor(solC.y[:, -1], device=dev)
+        rec["TC_flow"] = float(solC.t[-1]) if solC.status == 1 else None
+        rec["stageC_nfev"], traj = int(solC.nfev), solC.y
+    else:
+        rec["TC_flow"], rec["stageC_nfev"] = None, 0
+        traj = th["beta"].detach().cpu().numpy()[:, None]
+    rec["stageC_seconds"] = time.time() - t0C
+    rec["C_b_monotone"] = bool(np.all(np.diff((traj[n] + traj[0]) / 2) >= -1e-9))
+    rec["C_Delta_max"] = float(np.abs(traj[n] - traj[0]).max())
+    rec["C_others_max"] = float(np.delete(traj, [0, n], axis=0).max())
     beta = th["beta"].cpu().numpy()
     with torch.no_grad():
         X, att = features(th, ids, pos, n)
@@ -251,7 +283,6 @@ def run_step(n, start, rho, seed, C):
     # Stage D: gradient flow on v in log time tau = log(1 + t).
     margin = lambda vv: float(np.min(yy * (Xn @ vv)))
     d = .5 * math.tanh(a_signed / 2)
-    g_signed = signs["AV"] * C["g"]                                       # g = sigma^2 A_V (Appendix G)
     vstar = np.array([-1 / (2 * d * sig), 0., 1 / (g_signed * d)])
     scale = np.abs(vstar) + 1
     # Implicit Euler (proximal) steps on a geometric time grid: v_{k+1} = argmin L(v) + |v - v_k|^2 / (2 h_k),

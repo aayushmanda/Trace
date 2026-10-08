@@ -139,20 +139,16 @@ The complete list of input records and plotted values is saved in
 The standalone predictor comparison can be regenerated with
 `python3 handcoded/lambda_grid_figure.py`; it uses the same data and summary code as Figure 2.
 
-## Staged-routing constants check
+## Staged gradient-flow routing check
 
-`python3 handcoded/routing_horizon_check.py` enumerates all prompts at n=2 and n=4,
-for p in {0.1, 0.25, 0.5, 0.9}, head width in {1, 8}, sigma in {0.02, 0.1} and both gate
-signs. All 64 cases pass the Stage B coefficient, Stage C leakage, separator-margin and
-Stage D burn-in bounds, the explicit threshold of Lemma R-scale where it applies, and the
-"after T'" inequality of Lemma R-D on a logarithmic time grid from T' to e^200 T'. It uses
-the exact prior for the numerical B/C calculation and separately checks the scalar Stage A
-curvature bound p(1-p). It does not simulate the full Stage D flow or replace the proof.
-
-The routing theorem guarantees positive margins at every time t >= T, with T the
-polynomial burn-in; the leakage tolerance covers [T_D, T'], and a second argument (loss
-upper bound ~ log^2 t / t against the lower bound ~ t^(-1/B) forced by a nonpositive
-margin) covers t >= T'. The earlier duration parameter H is gone.
+`python3 handcoded/routing_flow_check.py` integrates the four-stage block-coordinate gradient flow of Theorem 4 on the
+exact reduced model (Lemma R-features), over all prompts, for n in {2, 4, 6}, p in {0.1, 0.25, 0.5, 0.9} and
+a in {0.05, -0.05, 0.01} (36 cases). In every case Stage B reaches alpha_B within its bound 0.08 g^-2, Stage C stays in
+the routing corridor (b nondecreasing, |beta_n - beta_0| <= 2e-4, every other offset bias <= 0) and reaches leakage eps
+2-4 orders of magnitude inside its bound 227 n^5 log(1.83 n/eps)/(p^2 (1-p)^2 a^2 eps), and Stage D reaches positive
+margins within T_D-bar. It is a numerical check of Lemmas R-AB, R-field, R-C and R-D, not a substitute for the proofs.
+The superseded one-step schedule and its checks (`routing_horizon_check.py`, `routing_stages_check.py`) are kept for
+reference only.
 
 Theorem 2(iii) uses one a_delta depending only on delta,p,K, then fixes n and the
 widths before choosing a deterministic sigma_delta(n,widths). Its probability
