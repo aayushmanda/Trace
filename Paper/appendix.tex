@@ -72,18 +72,18 @@ hold there with $n$-independent constants for $\initscale\le c\min(\mixrate,n^{-
 $\mixrate=|1-2p|$ and $1-\mixrate^2=4p(1-p)$. With $\alpha=e^{2\pi\mathrm i/K}$, one unseen letter multiplies each nonconstant count
 mode $\alpha^{js_t}$ by $1-p+p\alpha^j$, of modulus at most $\mixrate$, while one displayed transition keeps the innovation
 \begin{equation}
- \E\left|\alpha^{j s_t}-(1-p+p\alpha^j)\alpha^{j s_{t-1}}\right|^2=1-|1-p+p\alpha^j|^2\ge1-\mixrate^2,
+ \E\bigl[\bigl|\alpha^{j s_t}-(1-p+p\alpha^j)\alpha^{j s_{t-1}}\bigr|^2\bigr]=1-|1-p+p\alpha^j|^2\ge1-\mixrate^2,
  \label{eq:move-variance}
 \end{equation}
 which is \cref{eq:local-variation} in Fourier coordinates. Hence every set $S$ of letters has
 \begin{equation}
- \E\|(y-\bm u)_S\|^2\le(1-\frac1K)\mixrate^{2(n-|S|)}
+ \E\bigl[\|(y-\bm u)_S\|^2\bigr]\le(1-\frac1K)\mixrate^{2(n-|S|)}
  \label{eq:horizon}
 \end{equation}
-(\cref{lem:target-contraction}). Write $A_r:=\E\|(y-\bm u)_r\|^2$ and $J_r(\theta):=\E\|(\Jz)_r\|_F^2$ as in \cref{eq:credit-degree}; the
+(\cref{lem:target-contraction}). Write $A_r:=\E[\|(y-\bm u)_r\|^2]$ and $J_r(\theta):=\E[\|(\Jz)_r\|_F^2]$ as in \cref{eq:credit-degree}; the
 \emph{interaction credit} is the credit at degrees $r\ge2$, and $\outcredit=\cred_{y-\bm u}$. With the state-only predictor
 $q_s=(1-p)\bm e_s+p\bm e_{s+1}=\bar T^\top\bm e_s$, the rule signal is $g_t=\bm e_{s_t}-q_{s_{t-1}}=(b_t-p)(\bm e_{s_{t-1}+1}-\bm e_{s_{t-1}})$,
-and $\rulecredit=\E_t\E\langle\bm z_t,g_t\rangle$ with $t$ uniform on $\{2,\ldots,n\}$.
+and $\rulecredit=\E_t\E[\langle\bm z_t,g_t\rangle]$ with $t$ uniform on $\{2,\ldots,n\}$.
 
 \section{Exact two-block executors}
 \label{app:architectures}
@@ -248,7 +248,7 @@ orthogonality and Cauchy--Schwarz,
 \begin{gather}
  \mathbb E\bigl[f^\top g\bigr]=\sum_S\mathbb E\bigl[f_S^\top g_S\bigr]=\sum_{r=0}^n\mathbb E\bigl[f_r^\top g_r\bigr],
  \nonumber\\
- \bigl\|\mathbb E[f_r^\top g_r]\bigr\|\le\Bigl(\sum_{|S|=r}\mathbb E\|f_S\|_F^2\Bigr)^{1/2}\Bigl(\sum_{|S|=r}\mathbb E\|g_S\|^2\Bigr)^{1/2}.
+ \bigl\|\mathbb E[f_r^\top g_r]\bigr\|\le\Bigl(\sum_{|S|=r}\mathbb E[\|f_S\|_F^2]\Bigr)^{1/2}\Bigl(\sum_{|S|=r}\mathbb E[\|g_S\|^2]\Bigr)^{1/2}.
  \label{eq:matching}
 \end{gather}
 At $\hat y=\bm u$ the outcome gradient is $-\pd{\Lout}\theta=\mathbb E[(\Jz)^\top(y-\bm u)]$, so \cref{eq:matching} with $f=\Jz$
@@ -257,7 +257,7 @@ and $g=y-\bm u$ is \cref{eq:credit-degree}. This identity uses only independence
 \begin{lemma}[Gradient split at any parameter value]
 \label{lem:gradient-split}
 For every differentiable model under the independent-letter law, with
-$\outcredit(\theta)=\mathbb E\langle\bm z_\theta,y-\bm u\rangle$,
+$\outcredit(\theta)=\mathbb E[\langle\bm z_\theta,y-\bm u\rangle]$,
 \[
  \dpd{\Lout}{\theta}
  =\underbrace{\mathbb E\bigl[(\Jz)^\top(\hat y-\bm u)\bigr]}_{\text{answer-independent}}
@@ -271,7 +271,7 @@ $\outcredit(\theta)=\mathbb E\langle\bm z_\theta,y-\bm u\rangle$,
 \begin{proof}
 Substitute $\hat y-y=(\hat y-\bm u)-(y-\bm u)$ in the per-prompt gradient.
 Apply \cref{eq:matching} to the degree groups $\{0,1\}$ and $\{\ge2\}$, using
-$\sum_r A_r=\mathbb E\|y-\bm u\|^2=1-1/K$ for the second group.
+$\sum_r A_r=\mathbb E[\|y-\bm u\|^2]=1-1/K$ for the second group.
 \end{proof}
 
 \subsection{Target spectrum: the exact counting formula}
@@ -284,7 +284,7 @@ $\rho_j=1-p+p\alpha^j$ for $j=1,\ldots,K-1$. Then $|\rho_j|\le\mixrate$.
 \label{lem:target-contraction}
 Assume (A3), and fix the start count. For every $S\subseteq[n]$,
 \[
- \E\|(y-\bm u)_S\|^2
+ \E\bigl[\|(y-\bm u)_S\|^2\bigr]
  =\frac1K\sum_{j=1}^{K-1}|\rho_j|^{2(n-|S|)}(1-|\rho_j|^2)^{|S|}
  \le(1-\frac1K)\mixrate^{2(n-|S|)},
 \]
@@ -304,7 +304,7 @@ Expand each factor into its mean $\rho_j$ and centred fluctuation. The term supp
  \label{eq:product-rep}
 \end{equation}
 It is centred in each bit in $S$, so it is exactly the Efron--Stein component.
-Independence and $\E|\alpha^{j b_t}-\rho_j|^2=1-|\rho_j|^2$ give its squared norm.
+Independence and $\E[|\alpha^{j b_t}-\rho_j|^2]=1-|\rho_j|^2$ give its squared norm.
 Parseval over the $K-1$ nonconstant count modes gives the first identity. Its bound follows from
 $|\rho_j|\le\mixrate$ and $1-|\rho_j|^2\le1$. Summing over the $\binom nr$ sets gives the degree spectrum.
 \end{proof}
@@ -324,7 +324,7 @@ fluctuation with weight $1-\mixrate^2$ \citep{odonnell2014analysis}.
 \label{rem:control}
 \label{cor:controls}
 First occurrence is a control outside modular counting. With query frequency $p$, $\mathbf 1[y=1]=b_1$, so
-$\mathbb E\|(y-\bm u)_{\{1\}}\|^2\ge p(1-p)$ for every $n$: a degree-$1$ piece that does not decay. Outcome training
+$\mathbb E[\|(y-\bm u)_{\{1\}}\|^2]\ge p(1-p)$ for every $n$: a degree-$1$ piece that does not decay. Outcome training
 learns it (\cref{tab:main}).
 \end{remark}
 
@@ -538,7 +538,7 @@ If $q_{\mathrm{att}}\le\frac12$, then
  \le C\initscale^6\mixrate^{n-3}.
 \]
 Moreover, if $\initscale\le c\mixrate$ with $c\le\min(1,(2\attconst)^{-1/4})$, then
-$q_{\mathrm{att}}\le\frac12$ automatically, and $\outcredit(\theta)=\mathbb E\langle\bm z_\theta,y-\bm u\rangle$
+$q_{\mathrm{att}}\le\frac12$ automatically, and $\outcredit(\theta)=\mathbb E[\langle\bm z_\theta,y-\bm u\rangle]$
 satisfies
 \begin{equation}
  \Bigl\|\dpd\outcredit\theta\Bigr\|\le C\initscale\mixrate^n,
@@ -793,7 +793,7 @@ and every sum over hidden coordinates through operator norms, so $C_1$ depends o
 \paragraph{Exponential outcome plateau.} For one prompt, $\KL(\bm u\|\hat y)=\log\sum_ae^{z_a}-\log K-\langle\bm u,\bm z\rangle$, so
 the cross-entropy is $\ell=\log K+\KL(\bm u\|\hat y)-\langle\bm z,\bm e_y-\bm u\rangle$; taking expectations,
 \begin{equation}
- \Lout(\theta)=\log K+\E\,\KL(\bm u\,\|\,\hat y_\theta)-\outcredit(\theta).
+ \Lout(\theta)=\log K+\E\bigl[\KL(\bm u\,\|\,\hat y_\theta)\bigr]-\outcredit(\theta).
  \label{eq:lo-identity}
 \end{equation}
 
@@ -826,10 +826,10 @@ because $\Lout(\theta_0)=\log K$ at a zero readout. By Cauchy--Schwarz,
 and \cref{eq:lo-floor} gives the loss bound for $t\le\tau$.
 
 \emph{Near-chance prediction.} Since $\Lout(\theta(t))\le\Lout(\theta_0)=\log K$, \cref{eq:lo-identity} also gives
-$\E\,\KL(\bm u\|\hat y_t)\le\outcredit(\theta(t))\le C_2\initscale^2\mixrate^n$. As $\hat y_{t,y}-\frac1K\le\mathrm{TV}(\hat y_t,\bm u)$,
+$\E[\KL(\bm u\|\hat y_t)]\le\outcredit(\theta(t))\le C_2\initscale^2\mixrate^n$. As $\hat y_{t,y}-\frac1K\le\mathrm{TV}(\hat y_t,\bm u)$,
 Pinsker's and Jensen's inequalities give
 \[
- \E\,\hat y_{t,y}-\frac1K\le\sqrt{\frac{C_2}{2}}\;\initscale\mixrate^{n/2}.
+ \E[\hat y_{t,y}]-\frac1K\le\sqrt{\frac{C_2}{2}}\;\initscale\mixrate^{n/2}.
 \]
 The theorem holds with $c=\ballradius^2/C_2$ and $C=\max(C_2,\sqrt{C_2/2})$.
 \end{proof}
@@ -857,7 +857,7 @@ the same argument gives the conclusions of \cref{thm:outcome-end} for every $j$ 
 
 We first identify contributing terms, then bound a nonzero readout derivative.
 
-\paragraph{Local notation.} Let $\bm g_t=(b_t-p)(\bm e_{s_{t-1}+1}-\bm e_{s_{t-1}})$ and $\rulecredit(\theta)=\mathbb E_t\mathbb E\langle\bm z_t,\bm g_t\rangle$. Average over $t=2,\ldots,n$.
+\paragraph{Local notation.} Let $\bm g_t=(b_t-p)(\bm e_{s_{t-1}+1}-\bm e_{s_{t-1}})$ and $\rulecredit(\theta)=\mathbb E_t\mathbb E[\langle\bm z_t,\bm g_t\rangle]$. Average over $t=2,\ldots,n$.
 Letter $w_t$ sits at $l_t=1+t$.
 Position $i_t=n+1+t$ predicts $s_t$ and holds $s_{t-1}$.
 Thus $m_{l_t}=t+2$ and $m_{i_t}=n+2+t$. The tokens visible from $i_t$ are $s_0$, the query, the letters and the displayed
@@ -866,7 +866,7 @@ states, each a function of $(s_0,q,w_{<t})$. \Cref{prop:network} holds at every 
 \label{lem:dilution-average}
 For $n\ge2$ and the step positions above, with $t$ uniform on $\{2,\ldots,n\}$,
 \begin{equation}
- \mathbb E_t\,\kappa_{l_t,i_t}\le\frac1{n+4}\Bigl(1+\log2+\frac{n+2}{n-1}\Bigr)\le\frac6n .
+ \mathbb E_t[\kappa_{l_t,i_t}]\le\frac1{n+4}\Bigl(1+\log2+\frac{n+2}{n-1}\Bigr)\le\frac6n .
  \label{eq:dilution-avg}
 \end{equation}
 \end{lemma}
@@ -880,7 +880,7 @@ $\sum_{t=2}^n\log\frac{n+2}{t+2}\le\sum_{k=1}^{n+2}\log\frac{n+2}k\le n+2$; aver
 
 \begin{lemma}[Only the letter and a state earn rule credit]
 \label{lem:rule-sites}
-Under (A3$'$), a term $\term$ of $\bm z_t$ or $h^2_{i_t}$ has $\mathbb E\langle \term,\bm g_t\rangle=0$ unless it contains the letter input $x_{l_t}$ and
+Under (A3$'$), a term $\term$ of $\bm z_t$ or $h^2_{i_t}$ has $\mathbb E[\langle \term,\bm g_t\rangle]=0$ unless it contains the letter input $x_{l_t}$ and
 the input of a state ($s_0$ or a displayed state). In particular no term of $\bm z^{[0]}_t$ contributes.
 \end{lemma}
 
@@ -889,12 +889,12 @@ the input of a state ($s_0$ or a displayed state). In particular no term of $\bm
 Let $A$ be the term's input sites. If $l_t\notin A$, condition on $(s_0,q,w_{\ne t})$:
 \[
  \E[\bm g_t\mid s_0,q,w_{\ne t}]=0,
- \qquad\E\langle\term,\bm g_t\rangle=0.
+ \qquad\E[\langle\term,\bm g_t\rangle]=0.
 \]
 If $A$ contains no state input, the term is a function of $(q,w)$, and (A3$'$) gives
 \[
  \E[\bm g_t\mid q,w]=(b_t-p)(\bm u-\bm u)=0,
- \qquad\E\langle\term,\bm g_t\rangle=0.
+ \qquad\E[\langle\term,\bm g_t\rangle]=0.
 \]
 Every contributing term has at least two sites; \cref{prop:network}(iii) excludes $k=0$.
 \end{proof}
@@ -941,7 +941,7 @@ Take $k_0=2+\lceil\log_2 n\rceil$ and $\rho_\initscale=\attconst\initscale^4\le1
 By \cref{lem:rule-sites,prop:network,eq:dilution-avg},
 \begin{align*}
  \E[(\bm g_t)_a h_{i_t,b}^{2,[0]}]&=0,\\
- 2C\initscale^2\E_t\kappa_{l_t,i_t}\sum_{k=2}^{k_0}\rho_\initscale^k
+ 2C\initscale^2\E_t[\kappa_{l_t,i_t}]\sum_{k=2}^{k_0}\rho_\initscale^k
  &\le C\initscale^{10}/n,\\
  2C\initscale^2\rho_\initscale^{k_0+1}
  &\le C\attconst^2\initscale^{10}2^{-(k_0-1)}\le C\initscale^{10}/n.
@@ -956,7 +956,7 @@ a bias output replacing an input adds one. A bias output has coefficient up to $
 one extra power of $\initscale_0\le1/(2\beta)$, so $C'$ does not depend on $\beta$. The higher-degree terms obey
 \[
  \initscale^{\deg\term}\le(\initscale/\initscale_0)^7\initscale_0^{\deg\term},\qquad
- 2(\initscale/\initscale_0)^7C\initscale_0^6\E_t\kappa_{l_t,i_t}
+ 2(\initscale/\initscale_0)^7C\initscale_0^6\E_t[\kappa_{l_t,i_t}]
  \le\frac{C'}{\initscale_0}\frac{\initscale^7}{n}.
 \]
 Consequently,
@@ -1032,9 +1032,9 @@ Set $\rho_\initscale=\attconst\initscale^4\le1/2$ and $k_0=1+\lceil\log_2 n\rcei
 By \cref{lem:rule-sites,prop:network,lem:dilution-average},
 \begin{align*}
  \|\nabla\rulecredit(\theta)\|
- &\le2C\initscale^2\E_t\kappa_{l_t,i_t}\sum_{k=1}^{k_0}\rho_\initscale^k
+ &\le2C\initscale^2\E_t[\kappa_{l_t,i_t}]\sum_{k=1}^{k_0}\rho_\initscale^k
      +2C\initscale^2\rho_\initscale^{k_0+1}\\
- &\le C\attconst\initscale^6\left(\E_t\kappa_{l_t,i_t}+2^{-k_0}\right)
+ &\le C\attconst\initscale^6\left(\E_t[\kappa_{l_t,i_t}]+2^{-k_0}\right)
  \le C\attconst\initscale^6\left(\frac6n+\frac1{2n}\right)
  \le\frac{C\initscale^6}{n}.
 \end{align*}
@@ -1061,7 +1061,7 @@ has $\E[m\prod_{y\in\mathcal E}y]=0$: some entry would appear to an odd power. T
 this one in $L^2$, so, with
 $a_{\mathrm{w}}:=a_{\mathrm{match}}/d_{\mathrm{res}}^3$,
 \[
- \E P_n(\tilde\theta)^2\ge a_{\mathcal E}^2\prod_{y\in \mathcal E}\E y^2
+ \E[P_n(\tilde\theta)^2]\ge a_{\mathcal E}^2\prod_{y\in \mathcal E}\E[y^2]
  =a_{\mathcal E}^2\,d_{\mathrm{res}}^{-6}\ge\frac{a_{\mathrm{w}}^2}{n^2}.
 \]
 For $t_{\mathrm{CW}}=(\failprob/(12C_{\mathrm{CW}}))^6$, Carbery--Wright gives
@@ -1235,7 +1235,7 @@ $\initscale=0.02$, exact over all words (\cref{app:exp-regime}).}
 
 \paragraph{Spectrum measurement.} \Cref{fig:overview}c shows the target and Jacobian spectra at $n=8$, $\initscale=0.02$; the
 Jacobian is $99.6\%$ degree~$0$. For a Gaussian parameter direction $\bm g$,
-$\E_{\bm g}\|(\Jz\bm g)_r\|^2=\|(\Jz)_r\|_F^2$. We split $\Jz\bm g$ exactly by an orthonormal transform along each
+$\E_{\bm g}[\|(\Jz\bm g)_r\|^2]=\|(\Jz)_r\|_F^2$. We split $\Jz\bm g$ exactly by an orthonormal transform along each
 letter axis of the $4^8$ grid, averaging $16$ directions over all eight $(s_0,q)$ pairs.
 The BBH measurement splits all $6^3$ swap sequences at fixed scene, assignment and query; it uses the three option
 logits and the LoRA up-projection Jacobian. Per-seed spectra and gradient fits are in \texttt{CHECKS.md}.
@@ -1514,10 +1514,10 @@ coefficient on $c_tm_t$ is zero.
 
 \begin{lemma}[Prior and gradient identity]
 \label{lem:R-identity}
-(a) $\mathcal L_A(v_c,v_s)=\E\,\phi\bigl(y(\initscale v_c+\initscale v_sc)\bigr)$ has the unique minimizer $\initscale v_c=0$, $\initscale v_s=u_*$; let $f_A=u_* c$.
+(a) $\mathcal L_A(v_c,v_s)=\E\bigl[\phi\bigl(y(\initscale v_c+\initscale v_sc)\bigr)\bigr]$ has the unique minimizer $\initscale v_c=0$, $\initscale v_s=u_*$; let $f_A=u_* c$.
 (b) For bounded $\Psi(c_t,m_t,m_{-t})$, let $\psi(c,m)=\E[\Psi\mid c_t=c,m_t=m]$ and $\widehat\Psi=\frac14\sum_{c,m}cm\,\psi(c,m)$. Then
 $\E[-y_t\operatorname{sigmoid}(-y_tf_A)\Psi]=-2p(1-p)\widehat\Psi$.
-(c) If $|f_t-f_A|\le\varrho$ on every prompt, the left side changes by at most $\frac14\varrho\,\E|\Psi|$.
+(c) If $|f_t-f_A|\le\varrho$ on every prompt, the left side changes by at most $\frac14\varrho\,\E[|\Psi|]$.
 \end{lemma}
 
 \begin{proof}
@@ -1532,7 +1532,7 @@ $\E[\operatorname{sigmoid}(-u_* m_t)]=2p(1-p)$. (c) $\operatorname{sigmoid}$ is 
 $R=e^{\beta_0}+\sum_{j\ne t}e^{acm_j+\beta_{i_t-\ell_j}}$ do not depend on $m_t$, so for every bounded $\Psi(u,R)$ pairing $m=c$ with
 $m=-c$ gives
 \begin{equation}
- \widehat\Psi=\frac14\sum_{c=\pm1}\E\int_{-a}^{a}\partial_u\Psi(u,R)\,du=\operatorname{sign}(a)\,|a|\,\langle\partial_u\Psi\rangle,
+ \widehat\Psi=\frac14\sum_{c=\pm1}\E\Bigl[\int_{-a}^{a}\partial_u\Psi(u,R)\,du\Bigr]=\operatorname{sign}(a)\,|a|\,\langle\partial_u\Psi\rangle,
  \label{eq:R-hat}
 \end{equation}
 where $\langle\cdot\rangle$ averages over $u$ uniform on $[-|a|,|a|]$, over $c$, over the other letters and over $t$ uniform on
@@ -1622,7 +1622,7 @@ During Stage C, for every $\beta\in\mathcal K$:
 $Z/e^{\beta_0}\le1+e^{1.1}+(n-1)e^{0.7}\le3.1n$, and likewise $Z/e^{u+\beta_n}\le3.1n$.
 For the rest, $\frac{d\beta_\bullet}{dt}=-\partial \mathcal L/\partial\beta_\bullet=gv_r\E\bigl[y_t\operatorname{sigmoid}(-y_tf_t)\,\Psi_\bullet\bigr]$ with
 $\Psi_\bullet=\partial M_t/\partial\beta_\bullet$. Since $|f_t-f_A|\le\varrho$ (\cref{lem:R-AB}) and $\operatorname{sigmoid}$ is $\frac14$-Lipschitz,
-\cref{lem:R-identity} gives $\frac{d\beta_\bullet}{dt}=gv_r\bigl(2p(1-p)\widehat{\Psi_\bullet}-r_\bullet\bigr)$ with $|r_\bullet|\le\frac14\varrho\,\E|\Psi_\bullet|$, and
+\cref{lem:R-identity} gives $\frac{d\beta_\bullet}{dt}=gv_r\bigl(2p(1-p)\widehat{\Psi_\bullet}-r_\bullet\bigr)$ with $|r_\bullet|\le\frac14\varrho\,\E[|\Psi_\bullet|]$, and
 $gv_r\widehat{\Psi_\bullet}=\nu_B|a|\langle\partial_u\Psi_\bullet\rangle$ by \cref{eq:R-hat}. Note $\varrho=0.1p(1-p)|a|/n^2\le0.05p(1-p)|a|/n$.
 (b) $\Psi_n+\Psi_0=-p_0p_O$ and $\partial_u(-p_0p_O)=2p_0p_Op_{\mathrm{cur}}$ by \cref{eq:R-derivs}, so with (a)
 \[
@@ -1770,7 +1770,7 @@ and let $\mixrate=|1-2p|$.
 (a) Start from the structured initialization, or from the structured initialization plus any perturbation with zero readout under which \cref{ass:init} still
 holds, such as small fan-in nuisance weights. If $p\ne\frac12$, gradient flow on $\Lout$ over any subset of the parameters that
 excludes $\beta$, with $\initscale\le\min(\initscale_\star,c\mixrate)$, keeps $\Lout\ge\log2-C\initscale^2\mixrate^n$ and
-$\E\softmax(\bm z)_y\le\frac12+C\initscale\mixrate^{n/2}$ for every $t\le c\mixrate^{-n}$. If $p=\frac12$, so $\mixrate=0$, it stays in
+$\E[\softmax(\bm z)_y]\le\frac12+C\initscale\mixrate^{n/2}$ for every $t\le c\mixrate^{-n}$. If $p=\frac12$, so $\mixrate=0$, it stays in
 $\initball$ for every $t\le c\initscale^{-1}(\attconst\initscale^4)^{-\lceil(n-1)/2\rceil}$, a time of order at least $\initscale^{-(2n-1)}$.
 (b) If only $\beta$ and the readout are trained, as in the schedule, the outcome logits are the same for every prompt at all times,
 so $\Lout\ge\log2$ throughout.

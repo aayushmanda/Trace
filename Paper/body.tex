@@ -87,7 +87,7 @@ Each letter permutes the counts: $\bm e_{s_t}^\top=\bm e_{s_{t-1}}^\top T_{b_t}$
 
 \begin{definition}[Contraction coefficient]
 \label{def:lambda}
-Let $\bar T=\E\,T_b=(1-p)I+pT_1$ and
+Let $\bar T=\E[T_b]=(1-p)I+pT_1$ and
 \begin{equation}
  \mixrate=\max_{v\perp\one,\ \|v\|=1}\|v^\top\bar T\|=\bigl|1-p+p\,e^{2\pi\mathrm i/K}\bigr|.
  \label{eq:lambda}
@@ -132,7 +132,7 @@ in each of them \citep{efron1981jackknife}; its \emph{degree} is $|S|$, and $(f)
 
 \begin{definition}[Credit]
 \label{def:credit}
-For a target signal $g$, a random vector in $\R^K$, let $\cred_g(\theta)=\E\langle\bm z_\theta,g\rangle$. The
+For a target signal $g$, a random vector in $\R^K$, let $\cred_g(\theta)=\E[\langle\bm z_\theta,g\rangle]$. The
 \emph{credit} for $g$ is $\|\nabla_\theta\cred_g\|$, and the credit at degree $r$ is
 $\bigl\|\E[(\Jz)_r^\top(g)_r]\bigr\|$.
 \end{definition}
@@ -151,7 +151,7 @@ where $A_r$ and $J_r$ are the target's and the Jacobian's mass at degree $r$ (\c
 \cref{lem:gradient-split}). Credit is small wherever either has little mass.
 
 \paragraph{The target sits at high degree.} Every unseen letter contracts the centred count by $\mixrate$, so for every
-set $S$ of letters, $\E\|(y-\bm u)_S\|^2\le(1-\frac1K)\mixrate^{2(n-|S|)}$, with equality in the exponent for counting
+set $S$ of letters, $\E[\|(y-\bm u)_S\|^2]\le(1-\frac1K)\mixrate^{2(n-|S|)}$, with equality in the exponent for counting
 (\cref{lem:target-contraction}).
 
 \paragraph{The network sits at low degree.} Near initialization attention is nearly uniform and the MLPs are affine, so
@@ -208,7 +208,7 @@ $\initscale\le c\mixrate$ and $0\le t\le c\mixrate^{-n}$, $\theta(t)\in\initball
 \[
  \Lout(\theta(t))\ge\log K-C\initscale^2\mixrate^n
  \quad\text{and}\quad
- \E\softmax(\bm z_{\theta(t)})_y\le\frac1K+C\initscale\mixrate^{n/2}.
+ \E\bigl[\softmax(\bm z_{\theta(t)})_y\bigr]\le\frac1K+C\initscale\mixrate^{n/2}.
 \]
 \end{theorem}
 
