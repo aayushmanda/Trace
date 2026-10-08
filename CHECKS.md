@@ -116,6 +116,13 @@ At three objects, outcome runs select the most common option, "(B)", whose base 
 on generated test items. The failed five-object step run also scores 45% on generated items. Zero-shot accuracy is 33.6,
 16.4 and 11.2% for 3, 5 and 7 objects.
 
+## Restricted joint training: outcome baseline (Table 1)
+
+`results/step_reach_outcome/sweep.sh` (`step_reach_twoblock.py --format outcome`), same seeds, sigma = 0.3, step size 2,
+300k updates. Held-out answer accuracy at the end, per seed 0-4: n=6: 80.8, 94.3, 92.4, 50.3, 53.7; n=8: 49.7, 54.8, 50.3,
+49.8, 51.1; n=12: 49.9, 49.7, 50.2, 49.8, 50.2; n=16 (seeds 0, 1): 49.7, 50.7. No run reaches positive margin on every
+held-out prompt.
+
 ## Step reachability and routing (appendix E)
 
 Scripts: `handcoded/step_reach_twoblock.py` (restricted two-block training, with `--armijo` for the basin ratio),
