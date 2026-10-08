@@ -36,9 +36,12 @@ ordinary attention uses the full prefix.
 
 \begin{assumption}[Initialization]
 \label{ass:init}
-$\theta_0=\initscale\tilde\theta$ with $\initscale\le\initscale_0:=c\min(1,1/N_b)$, where every weight matrix and embedding block of $\tilde\theta$ has operator norm
-at most $a_0$, every MLP bias satisfies $|\tilde b_m|\ge1$, each MLP bias vector has norm at most $N_b$, and the
-value-token embeddings have smallest singular value at least $\varsigma>0$. We work on
+\emph{Scale.} $\theta_0=\initscale\tilde\theta$ with $\initscale\le\initscale_0:=c\min(1,1/N_b)$, where every weight matrix and embedding block of $\tilde\theta$ has operator norm
+at most $a_0$ and the value-token embeddings have smallest singular value at least $\varsigma>0$.
+
+\emph{Biases.} Every MLP bias satisfies $|\tilde b_m|\ge1$, and each MLP bias vector has norm at most $N_b$.
+
+\emph{Neighbourhood.} We work on
 $\initball=\{\theta:\|\theta-\theta_0\|\le\ballradius\initscale,\ \beta=0\}$ with $\ballradius=\min(1/8,\varsigma/4)$, where $\beta$ is the
 relative position bias.
 \end{assumption}
@@ -55,13 +58,16 @@ the trainable parameter blocks, with the relative
 position bias held at its zero initialization.
 \end{assumption}
 
-\paragraph{Norms and the relative bias.} Parameters carry the Euclidean norm of the vectorized parameters (Frobenius on
+\begin{remark}[Norms and the relative bias]
+\label{rem:norms}
+Parameters carry the Euclidean norm of the vectorized parameters (Frobenius on
 each block). In \cref{thm:main,thm:separation,thm:outcome-end} and \cref{prop:rule-lower} the relative bias is fixed at zero,
 which is what $\beta=0$ in $\initball$ and \cref{ass:gd} encode; the proofs of \cref{app:mainproofs} treat the zero-score
 attention as uniform and do not cover a trained bias. Only \cref{thm:routing}, \cref{tab:reach} and \cref{conj:reach}
 train it. The in-regime runs of \cref{app:exp-regime} have no relative bias.
+\end{remark}
 
-On $\initball$, no ReLU unit changes sign (\cref{app:network}). Constants $c,C>0$ depend only on $a_0$, $\varsigma$, $K$
+\paragraph{Constants and widths.} On $\initball$, no ReLU unit changes sign (\cref{app:network}). Constants $c,C>0$ depend only on $a_0$, $\varsigma$, $K$
 and the numbers of blocks and heads, never on the widths, $n$, $\initscale$ or the time. Fan-in-scaled initialization
 satisfies \cref{ass:init} w.h.p.\ at every width, with $a_0$ bounded in terms of the largest block aspect ratio,
 $\varsigma\ge\frac12$ and $N_b\le2\sqrt w$, provided the MLP biases are drawn with $|\tilde b_m|\in[1,2]$, which default
@@ -103,7 +109,7 @@ looks up $s_n$ from $(\reg{s0},\reg{cnt})$. State arithmetic is modulo $K$.
 \paragraph{Architecture, registers and layout.}
 \label{app:construction}
 \label{app:model}
-Each block has three heads, with head dimension $d_{\mathrm h}=2n+6$ (the number of positions), and one ReLU MLP of width
+\emph{Architecture.} Each block has three heads, with head dimension $d_{\mathrm h}=2n+6$ (the number of positions), and one ReLU MLP of width
 $\max\{|\Sigma|,3K(n+1),2n+1\}$, without LayerNorm:
 \begin{align*}
  h_i&\leftarrow h_i+\sum_{h=1}^{3}\sum_{j\le i}
@@ -112,10 +118,13 @@ $\max\{|\Sigma|,3K(n+1),2n+1\}$, without LayerNorm:
  \qquad
  \mathrm{logits}_i=V\,h_i .
 \end{align*}
-The residual stream holds, in order, the one-hot registers $\reg{tl}$ ($|\Sigma|$), $\reg{tv}$ ($K$) and $\reg{pos}$ ($d_{\mathrm h}$) for the
+
+\emph{Registers.} The residual stream holds, in order, the one-hot registers $\reg{tl}$ ($|\Sigma|$), $\reg{tv}$ ($K$) and $\reg{pos}$ ($d_{\mathrm h}$) for the
 letter or value token and the position, then $\reg{qry}$ ($|\Sigma|$), $\reg{match}$ ($1$), $\reg{prev}$ ($K$), $\reg{mt}$ ($1$),
 $\reg{cnt}$ ($1$), $\reg{s0}$ ($K$) and $\reg{out}$ ($K$), so $d_{\mathrm{res}}=2|\Sigma|+4K+d_{\mathrm h}+3$; $\reg r[a]$ is coordinate $a$ of
-register $\reg r$, and $E_{\reg a\leftarrow\reg b}$ copies register $\reg b$ into $\reg a$. Letters are $0,\ldots,|\Sigma|-1$, value
+register $\reg r$, and $E_{\reg a\leftarrow\reg b}$ copies register $\reg b$ into $\reg a$.
+
+\emph{Sequence layout.} Letters are $0,\ldots,|\Sigma|-1$, value
 $v$ is $|\Sigma|+v$, then SEP, ``:'' and EOS. With $0$-indexed positions the prompt is $s_0@0$, $q@1$, $w_t@(1+t)$,
 SEP$@(n+2)$; the step row continues $s_t@(n+2+t)$, ``:''$@(2n+3)$, $s_n@(2n+4)$, and the outcome row ``:''$@(n+3)$,
 $s_n@(n+4)$. Position $i$ predicts the token at $i+1$, so $n+1+t$ predicts $s_t$ and $n+3$ predicts $s_n$.
@@ -296,15 +305,16 @@ At an endpoint, a factor with exponent zero is $1$, including $0^0$.
 \end{lemma}
 
 \begin{proof}
-Counting gives $\alpha^{j s_n}=\alpha^{j s_0}\prod_{t=1}^n\alpha^{j b_t}$.
+\emph{Fourier expansion.} Counting gives $\alpha^{j s_n}=\alpha^{j s_0}\prod_{t=1}^n\alpha^{j b_t}$.
 Expand each factor into its mean $\rho_j$ and centred fluctuation. The term supported on $S$ is
 \begin{equation}
  (\alpha^{j s_n})_S
  =\alpha^{j s_0}\rho_j^{n-|S|}\prod_{t\in S}(\alpha^{j b_t}-\rho_j).
  \label{eq:product-rep}
 \end{equation}
-It is centred in each bit in $S$, so it is exactly the Efron--Stein component.
-Independence and $\E[|\alpha^{j b_t}-\rho_j|^2]=1-|\rho_j|^2$ give its squared norm.
+\emph{ANOVA component.} The term \cref{eq:product-rep} is centred in each bit in $S$, so it is exactly the Efron--Stein component.
+
+\emph{Norm and summation.} Independence and $\E[|\alpha^{j b_t}-\rho_j|^2]=1-|\rho_j|^2$ give its squared norm.
 Parseval over the $K-1$ nonconstant count modes gives the first identity. Its bound follows from
 $|\rho_j|\le\mixrate$ and $1-|\rho_j|^2\le1$. Summing over the $\binom nr$ sets gives the degree spectrum.
 \end{proof}
@@ -464,7 +474,7 @@ The same identities bound the absolute sums at zero scores.
 \proofstep{The derivative recursion (part (ii), values).}
 For block $\ell$, let $H_{\ell,k}$, $\Psi_{\ell,k}$ and $Z_k$ bound the normalized $\xi$-derivatives of $h_i^\ell$, $\psi^\ell_{ij}$ and $\bm z_i$;
 let $\Xi_{\ell,k}$ bound those of $\xi\psi^\ell$, $U_{\ell,k}$ those of an attention row in $\ell_1$ norm, and $B_{\ell,k}$ those of a head
-output. The affine block form and the softmax calculus give, with $U_{\ell,0}=1$, $H_{0,k}=0$ for $k\ge1$, and $a_r\ge1$ in the compositions,
+output. The normalized derivative bounds close under the following recursion. The affine block form and the softmax calculus give, with $U_{\ell,0}=1$, $H_{0,k}=0$ for $k\ge1$, and $a_r\ge1$ in the compositions,
 \begin{align*}
  \Psi_{\ell,k}&\le C\initscale^2\sum_{a+b=k}H_{\ell-1,a}H_{\ell-1,b},
  &\Xi_{\ell,k}&\le\Psi_{\ell,k}+\Psi_{\ell,k-1},\\
@@ -479,9 +489,9 @@ With $b=C\initscale^4$, block $1$ gives
 \]
 and block $2$ gives $\Psi_{2,k}\le C\initscale^5(k+1)b^k$, hence $\Xi_{2,k}\le C(2b)^k$ and
 \[
- U_{2,k}\le C\sum_{j=1}^k\binom{k-1}{j-1}C^j(2b)^k\le C(Cb)^k,
+ U_{2,k}\le C\sum_{j=1}^k\binom{k-1}{j-1}C^j(2b)^k\le C(Cb)^k.
 \]
-and therefore
+\emph{Conclusion of the recursion.} Substituting into the last two lines of the recursion gives
 \[
  B_{2,k}+H_{2,k}\le C\initscale^2(Cb)^k,
  \qquad
@@ -638,6 +648,7 @@ order at least $\initscale^{-(2n-1)}$. Counting modulo $2$ at match probability 
 
 \paragraph{Certified regions and convergence.}
 \label{app:basin-proofs}
+\emph{Certified region.}
 
 \begin{definition}[Supervised loss and certified region]
 \label{def:basin}
@@ -669,7 +680,7 @@ the strictly largest logit, and
 The rate in (ii) is a worst case that assumes nothing about how the features move. Gradient descent with
 backtracking step sizes satisfies the same conclusions with $t-t_0$ replaced by the accumulated step size.
 
-For \cref{thm:outcome-end}: once $C_2\initscale^2\le\frac14$, with $C_2$ the constant of \cref{lem:score-sum}, $\Lout(\theta(t))\ge\log2-\frac14>\tfrac{\pimin}{4}$ along the
+\emph{Cross-entropy margins.} For \cref{thm:outcome-end}: once $C_2\initscale^2\le\frac14$, with $C_2$ the constant of \cref{lem:score-sum}, $\Lout(\theta(t))\ge\log2-\frac14>\tfrac{\pimin}{4}$ along the
 trajectory it covers, so it stays outside $\basin(\Lout)$. For item $i$ with logits $\bm z_i=Vh_i$ and gold token $y_i$, write
 $\hat y_i=\softmax(\bm z_i)$, $q_i=\hat y_{i,y_i}$ and $\margin_i=\min_{a\ne y_i}(z_{i,y_i}-z_{i,a})$, and let
 \[
@@ -719,22 +730,30 @@ $V\ne0$ since the logits are not all equal.
 open by continuity.
 \end{proof}
 
+\emph{Convergence from the region.} The proof of \cref{lem:basin}(ii) combines the margin facts with the energy identity of gradient flow.
+
 \begin{proof}[Proof of \cref{lem:basin}]
-Part~(i) is \cref{lem:end-barrier}(iii). For part~(ii), write $\mathcal L(t)=\mathcal L(\theta(t))$. Since
+Part~(i) is \cref{lem:end-barrier}(iii). For part~(ii), write $\mathcal L(t)=\mathcal L(\theta(t))$.
+
+\emph{Invariance.} Since
 \[
  \frac{d\mathcal L}{dt}=-\|P\nabla\mathcal L\|^2\le0,
 \]
 the trajectory stays in $\basin(\mathcal L)$, and \cref{lem:end-barrier}(i) gives the strict gold logit with the uniform margin bound
-$\margin(\theta(t))\ge\margin_0$. Integrating the loss identity,
+$\margin(\theta(t))\ge\margin_0$.
+
+\emph{Gradient energy.} Integrating the loss identity,
 \[
  \int_{t_0}^t\|P\nabla\mathcal L\|^2\,ds\le\mathcal L_0 .
 \]
-Since $V$ is one of the trained blocks, Cauchy--Schwarz gives $\|V(t)-V_0\|_F\le\sqrt{\mathcal L_0(t-t_0)}$, and hence
+
+\emph{Readout growth.} Since $V$ is one of the trained blocks, Cauchy--Schwarz gives $\|V(t)-V_0\|_F\le\sqrt{\mathcal L_0(t-t_0)}$, and hence
 \begin{equation}
  \|V(t)\|_F^2\le2\|V_0\|_F^2+2\mathcal L_0(t-t_0).
  \label{eq:end-vgrowth}
 \end{equation}
-By \cref{lem:end-barrier}(ii) and \cref{eq:end-vgrowth},
+
+\emph{Loss decay.} By \cref{lem:end-barrier}(ii) and \cref{eq:end-vgrowth},
 \[
  \frac{d}{dt}\frac1{\mathcal L(t)}=\frac{\|P\nabla\mathcal L\|^2}{\mathcal L^2}\ge\frac{\margin_0^2}{4\|V(t)\|_F^2}
  \ge\frac{\margin_0^2}{8\bigl(\|V_0\|_F^2+\mathcal L_0(t-t_0)\bigr)},
@@ -778,28 +797,27 @@ $G$ have profiles $(A,A',A'')$ and $(B,B',B'')$, then $FG$ has profile
  \bigl(AB,\;A'B+AB',\;A''B+2A'B'+AB''\bigr).
 \]
 
-\emph{Profiles through the network.} Since $\|\theta-\theta_0\|\le2\ballradius\initscale$, every parameter block, input vector and MLP
-bias vector has a profile of the form $(C\initscale,C,0)$; for the bias vectors this uses $N_b\initscale\le\frac12$. Applying the
-product rule layer by layer gives
-\begin{center}\small
-\begin{tabular}{@{}ll@{}}
-\toprule
-quantity & profile\\
-\midrule
-residual stream $h$ (both blocks) & $(C\initscale,\,C,\,C)$\\
-$W_Qh$, $W_Kh$, $W_Vh$ & $(C\initscale^2,\,C\initscale,\,C)$\\
-score $\psi=(W_Qh)^\top W_Kh/\sqrt{d_{\mathrm h}}$ & $(C\initscale^4,\,C\initscale^3,\,C\initscale^2)$\\
-attention row, in $\ell_1$ norm & $(1,\,C\initscale^3,\,C\initscale^2)$\\
-head output (row average of $W_Vh$) & $(C\initscale^2,\,C\initscale,\,C)$\\
-logits $\bm z=Vh$ & $(C\initscale^2,\,C\initscale,\,C)$\\
-\bottomrule
-\end{tabular}
-\end{center}
-The attention row follows from \cref{eq:softmax-avg} with $k=1,2$ applied to the score profile. A head output averages
-value vectors with a row of $\ell_1$ norm one, so it keeps their profile. With the activation pattern fixed
-(\cref{prop:network}), each block is $h\mapsto M_\ell(h+\bm a)+\bm o_\ell$, where $M_\ell-I$ has profile
+Since $\|\theta-\theta_0\|\le2\ballradius\initscale$, every parameter block, input vector and MLP
+bias vector has a profile of the form $(C\initscale,C,0)$; for the bias vectors this uses $N_b\initscale\le\frac12$. We apply the
+product rule layer by layer.
+
+\emph{Inputs and residual stream.} The residual stream $h$ has profile $(C\initscale,C,C)$ in both blocks; this is proved
+together with the MLP step below. Hence $W_Qh$, $W_Kh$ and $W_Vh$ have profile $(C\initscale^2,C\initscale,C)$.
+
+\emph{Scores.} The score $\psi=(W_Qh)^\top W_Kh/\sqrt{d_{\mathrm h}}$ is a product of two such factors and has profile
+$(C\initscale^4,C\initscale^3,C\initscale^2)$.
+
+\emph{Attention.} By \cref{eq:softmax-avg} with $k=1,2$ applied to the score profile, an attention row has profile
+$(1,C\initscale^3,C\initscale^2)$ in $\ell_1$ norm.
+
+\emph{Heads.} A head output averages value vectors $W_Vh$ with a row of $\ell_1$ norm one, so it keeps their profile
+$(C\initscale^2,C\initscale,C)$.
+
+\emph{MLPs.} With the activation pattern fixed (\cref{prop:network}), each block is $h\mapsto M_\ell(h+\bm a)+\bm o_\ell$, where $M_\ell-I$ has profile
 $(C\initscale^2,C\initscale,C)$ and $\bm o_\ell$ has profile $(C\initscale,C,C)$, so the residual profile $(C\initscale,C,C)$ is preserved
 through both blocks.
+
+\emph{Logits.} The logits $\bm z=Vh$ have profile $(C\initscale^2,C\initscale,C)$.
 
 \emph{Loss.} For one prompt, with $\hat y=\softmax(\bm z)$,
 \[
@@ -880,10 +898,14 @@ the same argument gives the conclusions of \cref{thm:outcome-end} for every $j$ 
 
 We first identify contributing terms, then bound a nonzero readout derivative.
 
-\paragraph{Local notation.} Let $\bm g_t=(b_t-p)(\bm e_{s_{t-1}+1}-\bm e_{s_{t-1}})$ and $\rulecredit(\theta)=\mathbb E_t\mathbb E[\langle\bm z_t,\bm g_t\rangle]$. Average over $t=2,\ldots,n$.
-Letter $w_t$ sits at $l_t=1+t$.
-Position $i_t=n+1+t$ predicts $s_t$ and holds $s_{t-1}$.
-Thus $m_{l_t}=t+2$ and $m_{i_t}=n+2+t$. The tokens visible from $i_t$ are $s_0$, the query, the letters and the displayed
+\paragraph{Local notation.}
+\emph{Rule signal.} Let $\bm g_t=(b_t-p)(\bm e_{s_{t-1}+1}-\bm e_{s_{t-1}})$ and
+$\rulecredit(\theta)=\mathbb E_t\mathbb E[\langle\bm z_t,\bm g_t\rangle]$, averaged over $t=2,\ldots,n$.
+
+\emph{Positions.} Letter $w_t$ sits at $l_t=1+t$, and position $i_t=n+1+t$ predicts $s_t$ and holds $s_{t-1}$.
+Thus $m_{l_t}=t+2$ and $m_{i_t}=n+2+t$.
+
+\emph{Visible information.} The tokens visible from $i_t$ are $s_0$, the query, the letters and the displayed
 states, each a function of $(s_0,q,w_{<t})$. \Cref{prop:network} holds at every position.
 \begin{lemma}[Average positional dilution]
 \label{lem:dilution-average}
@@ -959,6 +981,8 @@ Let $P_n$ be defined from $Q_t$ above.
 
 
 \begin{proof}
+The goal is to isolate the order-$\initscale^6$ term of $F_n$ and show that every other contribution is smaller by a factor $\initscale/n$ or $\initscale^4/n$.
+
 \proofstep{(i) Leading term.}
 Take $k_0=2+\lceil\log_2 n\rceil$ and $\rho_\initscale=\attconst\initscale^4\le1/2$.
 By \cref{lem:rule-sites,prop:network,eq:dilution-avg},
@@ -1220,10 +1244,13 @@ Their spread does not capture data variability.
 \label{app:regime}
 
 
-These runs satisfy (A1)--(A4) and give \cref{fig:theory-measurement}(a) and \cref{tab:matched}: $K=2$, two blocks of width
+\emph{Setting.} These runs satisfy (A1)--(A4) and give \cref{fig:theory-measurement}(a) and \cref{tab:matched}: $K=2$, two blocks of width
 $16$ with three heads of dimension $8$ and MLP width $16$, $|\tilde b_m|\ge1$, two letters with match probability $\frac14$
-($\mixrate=\frac12$, exact up to $n=14$), full-batch float64 gradients, step objective $\Lstep^{\ge2}$. The exit-time runs start from a zero
-readout; the credit measurements keep a nonzero readout (\cref{rem:zero-readout}). Each update moves the parameters by
+($\mixrate=\frac12$, exact up to $n=14$), full-batch float64 gradients, step objective $\Lstep^{\ge2}$.
+
+\emph{Exit-time runs} start from a zero readout; \emph{credit measurements} keep a nonzero readout (\cref{rem:zero-readout}).
+
+\emph{Gradient-flow approximation.} Each update moves the parameters by
 $10^{-3}\initscale\|\tilde\theta\|$, and $\traintime(\ballradius)$ is the accumulated step size when $\|\theta_j-\theta_0\|=\ballradius\initscale\|\tilde\theta\|$; halving
 or quartering the update changes $\traintime(0.1)$ by less than $1\%$, so the runs approximate gradient flow. No ReLU switches.
 
@@ -1355,12 +1382,14 @@ degree $1$ during training, and answer accuracy.}
 \label{app:certificate}
 \label{app:exp-certificate}
 
-\Cref{lem:basin}(ii) applies to any finite item set, so we certify runs on their training set. Counting with $K=3$,
+\emph{Certificate criterion.} \Cref{lem:basin}(ii) applies to any finite item set, so we certify runs on their training set. Counting with $K=3$,
 $n=16$, $20{,}000$ training prompts and the protocol of \cref{app:letter-protocol}, trained with AdamW for $32{,}000$
 updates. Every training prompt and supervised token is one item with weight $1/(NP)$, so $\mathcal L<\tfrac{\pimin}{4}$ means
 summed cross-entropy below $1/4$; there are $380{,}000$ items for the step format. Ratios are $4\mathcal L/\pimin$; a ratio below $1$
 at the AdamW checkpoint certifies, by \cref{lem:basin}(ii), that gradient flow on the training-set loss from that checkpoint
-keeps every training item correct and drives the loss to zero. As a finite-step check we continue from the checkpoint with
+keeps every training item correct and drives the loss to zero.
+
+\emph{Continuation check.} As a finite-step check we continue from the checkpoint with
 exact float64 full-batch descent with backtracking (initial step $100$, halved until the loss falls by at least half the step
 times the squared gradient norm).
 \begin{center}\small
@@ -1373,9 +1402,11 @@ outcome, seeds $42$--$44$ & $2.2$--$4.3\times10^{4}$ & $0.9$--$3.5\times10^{4}$ 
 \bottomrule
 \end{tabular}}
 \end{center}
-Along the continued step runs, the smallest gold margin is $15$ and the smallest absolute ReLU pre-activation is about
+\emph{Result.} Along the continued step runs, the smallest gold margin is $15$ and the smallest absolute ReLU pre-activation is about
 $10^{-12}$: positive, so the loss is differentiable there, but these are float64 checks, not interval arithmetic. The outcome models fit most training prompts
-but reach only $32$--$49\%$ on held-out ones (chance $33\%$). The certificate covers the training prompts only. With all
+but reach only $32$--$49\%$ on held-out ones (chance $33\%$). The certificate covers the training prompts only.
+
+\emph{Enumerated prompts.} With all
 prompts enumerated at $n=6$ and $8$ (two letters, query probability $\frac14$, $K=2$, so $\mixrate=\frac12$), AdamW also reached the
 certified region in two of three outcome
 runs at $n=6$, where $\mixrate^n\approx0.016$ still leaves outcome credit; no run of either format reached it at $n=8$
@@ -1447,12 +1478,21 @@ generated ones). We have not identified the cause; the LoRA runs are outside eve
 \section{Restricted joint training}
 \label{app:reach}
 
-For \cref{tab:reach}, use the two-block executor architecture, counting modulo $2$, four letters and $p=\frac14$.
-Fan-in-scaled Gaussian weights, embeddings of variance $1/d_{\mathrm{res}}$ and scaled MLP biases of magnitude $1$--$2$
-are multiplied by $\initscale=0.3$; relative biases and readout start at zero.
-Full-batch gradient descent (step size $2$, $4{,}096$ training prompts) trains query/key maps, relative biases and
-readout; embeddings, values and MLPs stay fixed. A run solves when all state predictions on $16{,}384$ held-out prompts
-have positive margins. Of $17$ runs, $16$ solve; the remaining $n=12$ run reaches $99.95\%$ by $300$k updates. The outcome baseline uses the same
+\Cref{tab:reach} uses the following protocol.
+\begin{center}\small
+\fitwidth{\begin{tabular}{@{}ll@{}}
+\toprule
+Model & two-block executor architecture (\cref{app:model}) \\
+Task & counting modulo $2$, four letters, $p=\frac14$ \\
+Initialization & fan-in-scaled Gaussian weights, embeddings of variance $1/d_{\mathrm{res}}$, MLP biases of magnitude $1$--$2$,\\
+& all scaled by $\initscale=0.3$; relative biases and readout zero\\
+Trained & query/key maps, relative biases, readout (embeddings, values, MLPs fixed)\\
+Optimizer & full-batch gradient descent, step size $2$, $4{,}096$ training prompts\\
+Success & every state prediction on $16{,}384$ held-out prompts has positive margin\\
+\bottomrule
+\end{tabular}}
+\end{center}
+Of $17$ runs, $16$ solve; the remaining $n=12$ run reaches $99.95\%$ by $300$k updates. The outcome baseline uses the same
 initialization, trained subset, step size and data with only the final count supervised (\texttt{--format outcome}); no run
 solves within $300$k updates.
 Code: \path{handcoded/step_reach_twoblock.py}; per-run measurements are in \texttt{CHECKS.md}.
