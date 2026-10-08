@@ -84,7 +84,7 @@
 \newcommand{\ip}[2]{\left\langle #1,#2\right\rangle}
 \newcommand{\norm}[2][2]{\left\lVert #2\right\rVert_{#1}}
 \newcommand{\define}{\triangleq}
-\newcommand{\pd}[2]{\partial #1/\partial #2}
+\newcommand{\pd}[2]{\mathchoice{\frac{\partial #1}{\partial #2}}{\tfrac{\partial #1}{\partial #2}}{\partial #1/\partial #2}{\partial #1/\partial #2}}
 \newcommand{\dpd}[2]{\frac{\partial #1}{\partial #2}}
 \input{notation}
 \newcommand{\term}{\mathsf t}

@@ -169,7 +169,7 @@ $\bm e_{s_t}-\bm u=(\bar T^\top\bm e_{s_{t-1}}-\bm u)+(\bm e_{s_t}-\bar T^\top\b
 \emph{rule signal}, has covariance
 \begin{equation}
  \operatorname{Cov}\bigl(\bm e_{s_t}-\bar T^\top\bm e_{s_{t-1}}\bigr)
- =\tfrac1K\bigl(I-\bar T^\top\bar T\bigr)\succeq\tfrac{1-\mixrate^2}{K}
+ =\frac1K\bigl(I-\bar T^\top\bar T\bigr)\succeq\frac{1-\mixrate^2}{K}
  \quad\text{on }\one^\perp,
  \label{eq:local-variation}
 \end{equation}
@@ -255,7 +255,7 @@ the attention outside the two useful sites falls below $\epsilon$; and then the 
 letter and the other letters, with $y_t,c_t,m_t\in\{\pm1\}$ the signs of the target, the displayed count and the current
 match,
 \begin{equation}
- \E\bigl[-y_t\operatorname{sigmoid}(-y_tf_A)\,\Psi\bigr]=-\tfrac{1-\mixrate^2}{2}\,\widehat\Psi,
+ \E\bigl[-y_t\operatorname{sigmoid}(-y_tf_A)\,\Psi\bigr]=-\frac{1-\mixrate^2}{2}\,\widehat\Psi,
  \label{eq:identity}
 \end{equation}
 where $\widehat\Psi$ is $\Psi$'s coefficient on $c_tm_t$ (\cref{lem:R-identity}). Everything the prior explains cancels,

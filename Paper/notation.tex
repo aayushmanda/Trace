@@ -1,8 +1,8 @@
 % !TEX root = main.tex
 % Shared mathematical notation. Change a symbol here, not in the section files.
 % Auxiliary symbols are defined where used; there is no separate notation dictionary.
-\newcommand{\Lout}{L_{\mathrm{out}}}
-\newcommand{\Lstep}{L_{\mathrm{step}}}
+\newcommand{\Lout}{\mathcal L_{\mathrm{out}}}
+\newcommand{\Lstep}{\mathcal L_{\mathrm{step}}}
 \newcommand{\cred}{\Phi}
 \newcommand{\outcredit}{\cred_{\mathrm{out}}}
 \newcommand{\rulecredit}{\cred_{\mathrm{rule}}}
@@ -23,4 +23,4 @@
 \newcommand{\entryidx}{j_0}
 \newcommand{\Ktokens}{K_{\mathrm{tokens}}}
 \newcommand{\attconst}{C_{\mathrm{att}}}
-\newcommand{\Jz}{\partial\bm z_\theta/\partial\theta}
+\newcommand{\Jz}{\mathchoice{\frac{\partial\bm z_\theta}{\partial\theta}}{\tfrac{\partial\bm z_\theta}{\partial\theta}}{\partial\bm z_\theta/\partial\theta}{\partial\bm z_\theta/\partial\theta}}

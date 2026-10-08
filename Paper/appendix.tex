@@ -50,7 +50,7 @@ The task is counting modulo $K$ (\cref{def:task}), so $\mixrate<1$.
 
 \begin{assumption}[Training]
 \label{ass:gd}
-Full-batch gradient flow $\frac{d\theta}{dt}=-P\nabla L(\theta)$ on $\Lout$ or $\Lstep$, where $P$ is the orthogonal projection onto
+Full-batch gradient flow $\frac{d\theta}{dt}=-P\nabla \mathcal L(\theta)$ on $\Lout$ or $\Lstep$, where $P$ is the orthogonal projection onto
 the trainable parameter blocks, with the relative
 position bias held at its zero initialization.
 \end{assumption}
@@ -77,7 +77,7 @@ mode $\alpha^{js_t}$ by $1-p+p\alpha^j$, of modulus at most $\mixrate$, while on
 \end{equation}
 which is \cref{eq:local-variation} in Fourier coordinates. Hence every set $S$ of letters has
 \begin{equation}
- \E\|(y-\bm u)_S\|^2\le(1-\tfrac1K)\mixrate^{2(n-|S|)}
+ \E\|(y-\bm u)_S\|^2\le(1-\frac1K)\mixrate^{2(n-|S|)}
  \label{eq:horizon}
 \end{equation}
 (\cref{lem:target-contraction}). Write $A_r:=\E\|(y-\bm u)_r\|^2$ and $J_r(\theta):=\E\|(\Jz)_r\|_F^2$ as in \cref{eq:credit-degree}; the
@@ -107,7 +107,7 @@ Each block has three heads, with head dimension $d=2n+6$ (the number of position
 $\max\{|\Sigma|,3K(n+1),2n+1\}$, without LayerNorm:
 \begin{align*}
  h_i&\leftarrow h_i+\sum_{h=1}^{3}\sum_{j\le i}
- \operatorname{softmax}_{j\le i}\!\Big(\tfrac{1}{\sqrt d}(W^{(h)}_Qh_i)^{\!\top}W^{(h)}_Kh_j\Big)\,W^{(h)}_Vh_j,\\
+ \operatorname{softmax}_{j\le i}\!\Big(\frac{1}{\sqrt d}(W^{(h)}_Qh_i)^{\!\top}W^{(h)}_Kh_j\Big)\,W^{(h)}_Vh_j,\\
  h_i&\leftarrow h_i+W_{\mathrm{out}}\relu(W_{\mathrm{in}}h_i+b_{\mathrm{in}}),
  \qquad
  \mathrm{logits}_i=V\,h_i .
@@ -129,7 +129,7 @@ Set $C_Q=\beta_n\sqrt d$ and $\beta_n=\max\{16,3\log(8(n+3))\}$:
  \begin{aligned}
  (W_K)_{j,\reg{pos}[j]}=1,\quad
  (W_Q)_{j,\reg{pos}[i]}&=C_Q\quad(j\in\mathrm{src}(i)),\\
- \tfrac1{\sqrt d}(W_Qh_i)^\top W_Kh_j&=\beta_n\,[j\in\mathrm{src}(i)].
+ \frac1{\sqrt d}(W_Qh_i)^\top W_Kh_j&=\beta_n\,[j\in\mathrm{src}(i)].
  \end{aligned}
  \label{eq:route}
 \end{equation}
@@ -157,7 +157,7 @@ The routes and lookups above give $\reg{match}_{1+t}=2\sum_{a\in\Sigma}\relu([w_
 $\reg{prev}_{n+1+t}=\bm e_{s_{t-1}}$, $\reg{mt}_{n+1+t}=b_t$, and, for the outcome program, $\reg{cnt}_{n+3}=n\cdot\frac1n\sum_tb_t=m$ and
 $\reg{s0}_{n+3}=\bm e_{s_0}$. With $[m=a]=\relu(m-a+1)-2\relu(m-a)+\relu(m-a-1)$,
 \begin{align*}
- \reg{out}_{n+1+t}&=\sum_{j,\iota}\bm e_{j+\iota}\,2\relu\bigl([s_{t-1}=j]+[b_t=\iota]-\tfrac32\bigr)=\bm e_{s_t},\\
+ \reg{out}_{n+1+t}&=\sum_{j,\iota}\bm e_{j+\iota}\,2\relu\bigl([s_{t-1}=j]+[b_t=\iota]-\frac32\bigr)=\bm e_{s_t},\\
  \reg{out}_{n+3}&=\sum_{j,a}\bm e_{j+a}[s_0=j][m=a]=\bm e_{s_0+m}=\bm e_{s_n}.
 \end{align*}
 All state indices are modulo $K$. To gate the outcome equality test by $s_0=j$, add
@@ -173,23 +173,31 @@ With $d=2n+6$ and $\beta_n=\max\{16,3\log(8(n+3))\}$,
  <\frac{2(n+3)}{(8(n+3))^3}
  =\frac1{256(n+3)^2}.
 \]
-The routing and lookup errors satisfy
-\begin{align*}
- |\reg{match}-b_t|&\le2\rho_n,\\
- \|\reg{prev}-\bm e_{s_{t-1}}\|&\le\rho_n,
- \quad |\reg{mt}-b_t|\le3\rho_n,\\
- \mathrm{pre}_{\mathrm{correct}}&\ge\tfrac12-4\rho_n>0>\mathrm{pre}_{\mathrm{other}},
- \quad\reg{out}_{s_t}\ge1-8\rho_n,\\
- |\reg{cnt}-m|&\le3n\rho_n,
- \quad\|\reg{s0}-\bm e_{s_0}\|\le\rho_n,\\
- e_{\mathrm{leak}}&=3n\rho_n+(n+2)\rho_n<\tfrac1{192},\\
- \reg{out}_{s_n}&\ge1-e_{\mathrm{leak}},
- \quad\reg{out}_{\mathrm{other}}\le e_{\mathrm{leak}}.
-\end{align*}
-The three-ReLU equality test is $1$-Lipschitz. Thus every supervised position has margin
+The primitive routing errors satisfy
+\[
+\begin{aligned}
+ |\reg{match}-b_t|&\le2\rho_n, & \|\reg{prev}-\bm e_{s_{t-1}}\|&\le\rho_n,\\
+ |\reg{mt}-b_t|&\le3\rho_n, & |\reg{cnt}-m|&\le3n\rho_n,\\
+ \|\reg{s0}-\bm e_{s_0}\|&\le\rho_n.
+\end{aligned}
+\]
+Consequently, at the step positions,
+\[
+ \mathrm{pre}_{\mathrm{correct}}\ge\frac12-4\rho_n>0>\mathrm{pre}_{\mathrm{other}},
+ \qquad
+ \reg{out}_{s_t}\ge1-8\rho_n .
+\]
+At the answer position the count and start-state errors add up to $(4n+2)\rho_n<\frac1{192}$, and since the three-ReLU
+equality test is $1$-Lipschitz,
+\[
+ \reg{out}_{s_n}\ge1-(4n+2)\rho_n,
+ \qquad
+ \reg{out}_{\mathrm{other}}\le(4n+2)\rho_n .
+\]
+With readout weight $20$, every supervised position therefore has logit margin
 \[
  z_{\mathrm{correct}}-\max_{a\ne\mathrm{correct}}z_a
- \ge\min\{20(1-8\rho_n),20(1-2e_{\mathrm{leak}})\}>19.
+ \ge20\min\bigl\{1-8\rho_n,\;1-2(4n+2)\rho_n\bigr\}>19.
 \]
 
 \proofstep{Open neighbourhood.}
@@ -256,7 +264,7 @@ $\outcredit(\theta)=\mathbb E\langle\bm z_\theta,y-\bm u\rangle$,
  -\underbrace{\dpd\outcredit\theta}_{\text{answer-dependent}},
 \]
 \[
- \Bigl\|\dpd\outcredit\theta\Bigr\|\le\sqrt{(A_0+A_1)(J_0+J_1)}+\sqrt{(1-\tfrac1K)\,{\sum_{r\ge2}J_r}}.
+ \Bigl\|\dpd\outcredit\theta\Bigr\|\le\sqrt{(A_0+A_1)(J_0+J_1)}+\sqrt{(1-\frac1K)\,{\sum_{r\ge2}J_r}}.
 \]
 \end{lemma}
 
@@ -278,11 +286,11 @@ Assume (A3), and fix the start count. For every $S\subseteq[n]$,
 \[
  \E\|(y-\bm u)_S\|^2
  =\frac1K\sum_{j=1}^{K-1}|\rho_j|^{2(n-|S|)}(1-|\rho_j|^2)^{|S|}
- \le(1-\tfrac1K)\mixrate^{2(n-|S|)},
+ \le(1-\frac1K)\mixrate^{2(n-|S|)},
 \]
 \[
  A_r=\binom nr\frac1K\sum_{j=1}^{K-1}|\rho_j|^{2(n-r)}(1-|\rho_j|^2)^r
- \le\binom nr(1-\tfrac1K)\mixrate^{2(n-r)}.
+ \le\binom nr(1-\frac1K)\mixrate^{2(n-r)}.
 \]
 At an endpoint, a factor with exponent zero is $1$, including $0^0$.
 \end{lemma}
@@ -570,7 +578,7 @@ At all degrees, including the extra factor $\initscale$ for logits,
 \end{align*}
 If $\initscale\le c\mixrate$ with $c\le\min\{1,(2\attconst)^{-1/4}\}$, then
 \[
- q_{\mathrm{att}}\le\tfrac12,\qquad
+ q_{\mathrm{att}}\le\frac12,\qquad
  \frac{\initscale^2\mixrate^{n-1}}{\initscale\mixrate^n}=\frac\initscale\mixrate\le1,\qquad
  \frac{\initscale^6\mixrate^{n-3}}{\initscale\mixrate^n}
  =\left(\frac\initscale\mixrate\right)^5\mixrate^2\le1.
@@ -610,10 +618,10 @@ order at least $\initscale^{-(2n-1)}$. Counting modulo $2$ at match probability 
 
 \begin{definition}[Supervised loss and certified region]
 \label{def:basin}
-A \emph{supervised loss} is $L(\theta)=\sum_{i\in\items}\pi_i\ell_i(\theta)$ over a finite set $\items$ of
+A \emph{supervised loss} is $\mathcal L(\theta)=\sum_{i\in\items}\pi_i\ell_i(\theta)$ over a finite set $\items$ of
 items, each a prompt with a supervised position, where $\pi_i>0$, $\sum_i\pi_i=1$ and $\ell_i$ is the
-cross-entropy of the gold token. Let $\pimin=\min_i\pi_i$. The \emph{certified region} of $L$ is the sublevel set
-$\basin(L)=\{\theta:L(\theta)<\pimin/4\}$; it is not a basin of attraction in the dynamical sense, but gradient flow never leaves it
+cross-entropy of the gold token. Let $\pimin=\min_i\pi_i$. The \emph{certified region} of $\mathcal L$ is the sublevel set
+$\basin(\mathcal L)=\{\theta:\mathcal L(\theta)<\pimin/4\}$; it is not a basin of attraction in the dynamical sense, but gradient flow never leaves it
 (\cref{lem:basin}).
 \end{definition}
 For $\Lstep$ the items are the pairs $(P,t)$ of a prompt and a state position, with
@@ -622,15 +630,15 @@ $\pi_{(P,t)}=\pi_P/n$, where $\pi_P$ is the probability of prompt $P$; for $\Lou
 \begin{lemma}[Executors lie in a certified region from which gradient descent converges]
 \label{lem:basin}
 \label{thm:basin}
-Let $L$ be a supervised loss with logits as in \cref{ass:arch}.
+Let $\mathcal L$ be a supervised loss with logits as in \cref{ass:arch}.
 \begin{enumerate}[label=(\roman*),leftmargin=*,itemsep=0pt,topsep=2pt]
-\item For the executors of \cref{prop:represent} and $L\in\{\Lstep,\Lstep^{\mathrm{full}},\Lout\}$ of the matching format,
-replacing the readout $V^\star$ by $aV^\star$ with $a$ large enough gives a point of the open set $\basin(L)$.
-\item Let $\theta(t)$, $t\ge t_0$, follow gradient flow $\frac{d\theta}{dt}=-P\nabla L(\theta)$ on a parameter subset that contains the
-readout $V$, with $L$ continuously differentiable along the trajectory, and suppose $\theta(t_0)\in\basin(L)$. Let $L_0=L(\theta(t_0))$,
-$\margin_0=\log(\pimin/(2L_0))$ and $V_0=V(t_0)$. Then for every $t\ge t_0$, $\theta(t)\in\basin(L)$, on every item the gold token has
+\item For the executors of \cref{prop:represent} and $\mathcal L\in\{\Lstep,\Lstep^{\mathrm{full}},\Lout\}$ of the matching format,
+replacing the readout $V^\star$ by $aV^\star$ with $a$ large enough gives a point of the open set $\basin(\mathcal L)$.
+\item Let $\theta(t)$, $t\ge t_0$, follow gradient flow $\frac{d\theta}{dt}=-P\nabla \mathcal L(\theta)$ on a parameter subset that contains the
+readout $V$, with $\mathcal L$ continuously differentiable along the trajectory, and suppose $\theta(t_0)\in\basin(\mathcal L)$. Let $\mathcal L_0=\mathcal L(\theta(t_0))$,
+$\margin_0=\log(\pimin/(2\mathcal L_0))$ and $V_0=V(t_0)$. Then for every $t\ge t_0$, $\theta(t)\in\basin(\mathcal L)$, on every item the gold token has
 the strictly largest logit, and
-$L(\theta(t))\le L_0\big/\bigl(1+\frac{\margin_0^2}{8}\log(1+L_0(t-t_0)/\|V_0\|_F^2)\bigr)\to0$.
+$\mathcal L(\theta(t))\le \mathcal L_0\big/\bigl(1+\frac{\margin_0^2}{8}\log(1+\mathcal L_0(t-t_0)/\|V_0\|_F^2)\bigr)\to0$.
 \end{enumerate}
 \end{lemma}
 The rate in (ii) is a worst case that assumes nothing about how the features move. Gradient descent with
@@ -645,42 +653,42 @@ $\hat y_i=\softmax(\bm z_i)$, $q_i=\hat y_{i,y_i}$ and $\margin_i=\min_{a\ne y_i
 \label{lem:end-readout}
 \label{lem:end-nonempty}
 \begin{enumerate}[label=(\roman*),leftmargin=*,itemsep=0pt,topsep=2pt]
-\item If $L(\theta)<\pimin/4$, then for every item $\ell_i<\frac14$, $q_i>\frac12$, and the gold logit is strictly largest with
-$\margin_i\ge\log(\pi_i/(2L(\theta)))\ge\log(\pimin/(2L(\theta)))>\log2$.
-\item If moreover $\margin=\log(\pimin/(2L(\theta)))$, then $\langle V,\nabla_VL\rangle_F\le-\frac\margin2L$ and
-$\|\nabla L\|\ge\|\nabla_VL\|_F\ge\margin L/(2\|V\|_F)$.
+\item If $\mathcal L(\theta)<\pimin/4$, then for every item $\ell_i<\frac14$, $q_i>\frac12$, and the gold logit is strictly largest with
+$\margin_i\ge\log(\pi_i/(2\mathcal L(\theta)))\ge\log(\pimin/(2\mathcal L(\theta)))>\log2$.
+\item If moreover $\margin=\log(\pimin/(2\mathcal L(\theta)))$, then $\langle V,\nabla_V\mathcal L\rangle_F\le-\frac\margin2\mathcal L$ and
+$\|\nabla\mathcal L\|\ge\|\nabla_V\mathcal L\|_F\ge\margin \mathcal L/(2\|V\|_F)$.
 \item If $\theta^\star$ has margin at least $\execmargin>0$ on every item and $\Ktokens$ logits, then replacing $V^\star$ by $aV^\star$ with
-$a>(\execmargin)^{-1}\log(4(\Ktokens-1)/\pimin)$ gives a point of the open set $\basin(L)$. The executors of \cref{prop:represent}
+$a>(\execmargin)^{-1}\log(4(\Ktokens-1)/\pimin)$ gives a point of the open set $\basin(\mathcal L)$. The executors of \cref{prop:represent}
 have $\execmargin>19$ at every supervised position, so this holds for $\Lstep$, $\Lstep^{\mathrm{full}}$ and $\Lout$.
 \end{enumerate}
 \end{lemma}
 
 \begin{proof}
-(i) $\pi_i\ell_i\le L<\pimin/4$ gives $\ell_i<\frac14$ and $q_i=e^{-\ell_i}>\frac12$. Since
-$\ell_i\ge\log(1+e^{-\margin_i})$, $e^{-\margin_i}\le e^{\ell_i}-1\le2\ell_i\le2L/\pi_i$.
+(i) $\pi_i\ell_i\le \mathcal L<\pimin/4$ gives $\ell_i<\frac14$ and $q_i=e^{-\ell_i}>\frac12$. Since
+$\ell_i\ge\log(1+e^{-\margin_i})$, $e^{-\margin_i}\le e^{\ell_i}-1\le2\ell_i\le2\mathcal L/\pi_i$.
 (ii) As $h_i$ does not depend on $V$, $\langle V,\nabla_V\ell_i\rangle_F=-\langle\bm z_i,\bm e_{y_i}-\hat y_i\rangle
 =-\sum_{a\ne y_i}\hat y_{i,a}(z_{i,y_i}-z_{i,a})\le-\margin_i(1-q_i)\le-\frac12\margin_i\ell_i$, using
 $\ell_i\le(1-q_i)/q_i\le2(1-q_i)$. Weight by $\pi_i$, sum, and apply Cauchy--Schwarz; $V\ne0$ since the logits are not all equal.
-(iii) Scaling $V$ scales every margin by $a$, so $\ell_i\le(\Ktokens-1)e^{-a\execmargin}<\pimin/4$; $\basin(L)$ is open by continuity.
+(iii) Scaling $V$ scales every margin by $a$, so $\ell_i\le(\Ktokens-1)e^{-a\execmargin}<\pimin/4$; $\basin(\mathcal L)$ is open by continuity.
 The executor margin is the finite-score step of the proof of \cref{prop:represent}.
 \end{proof}
 
 \begin{proof}[Proof of \cref{lem:basin}]
-Part~(i) is \cref{lem:end-barrier}(iii). For part~(ii), write $L(t)=L(\theta(t))$. Since
-$\frac{dL}{dt}=-\|P\nabla L\|^2\le0$, $L(t)\le L_0<\pimin/4$, so $\theta(t)\in\basin(L)$; \cref{lem:end-barrier}(i) gives the strict gold
-logit, every margin is at least $\log(\pimin/(2L(t)))\ge\margin_0$, and $V(t)\ne0$. Integrating,
-$\int_{t_0}^t\|P\nabla L\|^2\,ds\le L_0$, and since $V$ is one of the trained blocks, Cauchy--Schwarz gives
-$\|V(t)-V_0\|_F\le\int_{t_0}^t\|\nabla_VL\|_F\,ds\le(L_0(t-t_0))^{1/2}$, so
+Part~(i) is \cref{lem:end-barrier}(iii). For part~(ii), write $\mathcal L(t)=\mathcal L(\theta(t))$. Since
+$\frac{d\mathcal L}{dt}=-\|P\nabla\mathcal L\|^2\le0$, $\mathcal L(t)\le \mathcal L_0<\pimin/4$, so $\theta(t)\in\basin(\mathcal L)$; \cref{lem:end-barrier}(i) gives the strict gold
+logit, every margin is at least $\log(\pimin/(2\mathcal L(t)))\ge\margin_0$, and $V(t)\ne0$. Integrating,
+$\int_{t_0}^t\|P\nabla\mathcal L\|^2\,ds\le \mathcal L_0$, and since $V$ is one of the trained blocks, Cauchy--Schwarz gives
+$\|V(t)-V_0\|_F\le\int_{t_0}^t\|\nabla_V\mathcal L\|_F\,ds\le(\mathcal L_0(t-t_0))^{1/2}$, so
 \begin{equation}
- \|V(t)\|_F^2\le2\|V_0\|_F^2+2L_0(t-t_0).
+ \|V(t)\|_F^2\le2\|V_0\|_F^2+2\mathcal L_0(t-t_0).
  \label{eq:end-vgrowth}
 \end{equation}
-By \cref{lem:end-barrier}(ii), $\|P\nabla L\|\ge\|\nabla_VL\|_F\ge\margin_0L/(2\|V\|_F)$, hence
+By \cref{lem:end-barrier}(ii), $\|P\nabla\mathcal L\|\ge\|\nabla_V\mathcal L\|_F\ge\margin_0\mathcal L/(2\|V\|_F)$, hence
 \[
- \frac{d}{dt}\frac1{L(t)}=\frac{\|P\nabla L\|^2}{L^2}\ge\frac{\margin_0^2}{4\|V(t)\|_F^2}
- \ge\frac{\margin_0^2}{8(\|V_0\|_F^2+L_0(t-t_0))},
+ \frac{d}{dt}\frac1{\mathcal L(t)}=\frac{\|P\nabla\mathcal L\|^2}{\mathcal L^2}\ge\frac{\margin_0^2}{4\|V(t)\|_F^2}
+ \ge\frac{\margin_0^2}{8(\|V_0\|_F^2+\mathcal L_0(t-t_0))},
 \]
-and integrating gives $1/L(t)\ge\bigl(1+\frac{\margin_0^2}8\log(1+L_0(t-t_0)/\|V_0\|_F^2)\bigr)/L_0$.
+and integrating gives $1/\mathcal L(t)\ge\bigl(1+\frac{\margin_0^2}8\log(1+\mathcal L_0(t-t_0)/\|V_0\|_F^2)\bigr)/\mathcal L_0$.
 \end{proof}
 
 
@@ -757,7 +765,7 @@ At $t=\tau$ the left side equals $\ballradius\initscale$, so $\tau\ge\ballradius
 $\E\,\KL(\bm u\|\hat y_t)\le\outcredit(\theta(t))\le C_2\initscale^2\mixrate^n$. Since $\hat y_{t,y}-1/K\le\mathrm{TV}(\hat y_t,\bm u)$,
 Pinsker's and Jensen's inequalities give
 \[
- \E\,\hat y_{t,y}-\frac1K\le\E\sqrt{\tfrac12\KL(\bm u\|\hat y_t)}\le\sqrt{\tfrac12\E\,\KL(\bm u\|\hat y_t)}\le\sqrt{C_2/2}\;\initscale\mixrate^{n/2}.
+ \E\,\hat y_{t,y}-\frac1K\le\E\sqrt{\frac12\KL(\bm u\|\hat y_t)}\le\sqrt{\frac12\E\,\KL(\bm u\|\hat y_t)}\le\sqrt{C_2/2}\;\initscale\mixrate^{n/2}.
 \]
 The theorem holds with $c=c_{\mathrm{time}}$ and $C=\max(C_2,\sqrt{C_2/2})$.
 \end{proof}
@@ -1253,8 +1261,8 @@ degree $1$ during training, and answer accuracy.}
 
 \Cref{lem:basin}(ii) applies to any finite item set, so we certify runs on their training set. Counting with $K=3$,
 $n=16$, $20{,}000$ training prompts and the protocol of \cref{app:letter-protocol}, trained with AdamW for $32{,}000$
-updates. Every training prompt and supervised token is one item with weight $1/(NP)$, so $L<\pimin/4$ means
-summed cross-entropy below $1/4$; there are $380{,}000$ items for the step format. Ratios are $4L/\pimin$; a ratio below $1$
+updates. Every training prompt and supervised token is one item with weight $1/(NP)$, so $\mathcal L<\pimin/4$ means
+summed cross-entropy below $1/4$; there are $380{,}000$ items for the step format. Ratios are $4\mathcal L/\pimin$; a ratio below $1$
 at the AdamW checkpoint certifies, by \cref{lem:basin}(ii), that gradient flow on the training-set loss from that checkpoint
 keeps every training item correct and drives the loss to zero. As a finite-step check we continue from the checkpoint with
 exact float64 full-batch descent with backtracking (initial step $100$, halved until the loss falls by at least half the step
@@ -1388,7 +1396,7 @@ positions $\ell_1,\dots,\ell_n$, with scores shifted by a relative bias $\beta_{
 offset $i_t-\ell_t=n$. Write $f_t$ for the difference of the two state logits, $\phi(z)=\log(1+e^{-z})$, $v_c,v_s,v_r$ for the
 readout components along $e_c,e_s,e_r$, and
 \[
- u_*=\log\frac{1-p}{p},\qquad \pi_0=\tfrac12\min(p,1-p).
+ u_*=\log\frac{1-p}{p},\qquad \pi_0=\frac12\min(p,1-p).
 \]
 
 \paragraph{Small structured initialization.} Fix orthonormal residual directions $e_c,e_s,e_0,e_\ell,e_r$ and a unit vector $e_1$ in the head
@@ -1445,7 +1453,7 @@ coefficient on $c_tm_t$ is zero.
 
 \begin{lemma}[Prior and gradient identity]
 \label{lem:R-identity}
-(a) $L_A(v_c,v_s)=\E\,\phi\bigl(y(\initscale v_c+\initscale v_sc)\bigr)$ has the unique minimizer $\initscale v_c=0$, $\initscale v_s=u_*$; let $f_A=u_* c$.
+(a) $\mathcal L_A(v_c,v_s)=\E\,\phi\bigl(y(\initscale v_c+\initscale v_sc)\bigr)$ has the unique minimizer $\initscale v_c=0$, $\initscale v_s=u_*$; let $f_A=u_* c$.
 (b) For bounded $\Psi(c_t,m_t,m_{-t})$, let $\psi(c,m)=\E[\Psi\mid c_t=c,m_t=m]$ and $\widehat\Psi=\frac14\sum_{c,m}cm\,\psi(c,m)$. Then
 $\E[-y_t\operatorname{sigmoid}(-y_tf_A)\Psi]=-2p(1-p)\widehat\Psi$.
 (c) If $|f_t-f_A|\le\varrho$ on every prompt, the left side changes by at most $\frac14\varrho\,\E|\Psi|$.
@@ -1463,7 +1471,7 @@ $\E[\operatorname{sigmoid}(-u_* m_t)]=2p(1-p)$. (c) $\operatorname{sigmoid}$ is 
 $R=e^{\beta_0}+\sum_{j\ne t}e^{acm_j+\beta_{i_t-\ell_j}}$ do not depend on $m_t$, so for every bounded $\Psi(u,R)$ pairing $m=c$ with
 $m=-c$ gives
 \begin{equation}
- \widehat\Psi=\tfrac14\sum_{c=\pm1}\E\int_{-a}^{a}\partial_u\Psi(u,R)\,du=\operatorname{sign}(a)\,|a|\,\langle\partial_u\Psi\rangle,
+ \widehat\Psi=\frac14\sum_{c=\pm1}\E\int_{-a}^{a}\partial_u\Psi(u,R)\,du=\operatorname{sign}(a)\,|a|\,\langle\partial_u\Psi\rangle,
  \label{eq:R-hat}
 \end{equation}
 where $\langle\cdot\rangle$ averages over $u$ uniform on $[-|a|,|a|]$, over $c$, over the other letters and over $t$ uniform on
@@ -1526,10 +1534,10 @@ every $\beta$.
 Symmetry keeps $v_c=0$ in Stage A. With $w=\initscale v_s$, $\frac{dw}{dt}=\initscale^2(1-p-\operatorname{sigmoid}(w))$, so $w$ stays
 between $0$ and $u_*$, where $\operatorname{sigmoid}'\ge p(1-p)$; hence $|w(t)-u_*|\le|u_*|e^{-\initscale^2p(1-p)t}$ (zero time if
 $p=\frac12$). After Stage A, $f_t-f_A=\initscale v_c+(\initscale v_s-u_*)c_t+gv_rM_t$ and $|gv_rM_t|\le|gv_r|=|\nu|$, which gives the
-last claim while $0\le\nu\le\nu_B$. In Stage B, $\beta=0$ and $\frac{d\nu}{dt}=-\operatorname{sign}(a)g\,\partial L/\partial v_r$. By
+last claim while $0\le\nu\le\nu_B$. In Stage B, $\beta=0$ and $\frac{d\nu}{dt}=-\operatorname{sign}(a)g\,\partial \mathcal L/\partial v_r$. By
 \cref{lem:R-identity} with $\Psi=M_t$ and \cref{lem:R-coeff},
 \[
- \frac{d\nu}{dt}=g^2\bigl(2p(1-p)\mu_M-\operatorname{sign}(a)r_B\bigr),\qquad |r_B|\le\tfrac14\varrho\le\frac{0.025\,p(1-p)|a|}{n^2},
+ \frac{d\nu}{dt}=g^2\bigl(2p(1-p)\mu_M-\operatorname{sign}(a)r_B\bigr),\qquad |r_B|\le\frac14\varrho\le\frac{0.025\,p(1-p)|a|}{n^2},
 \]
 so $\frac{d\nu}{dt}\ge0.65\,g^2p(1-p)|a|/n^2$ while $0\le\nu\le\nu_B$, and $T_B\le\nu_Bn^2/(0.65g^2p(1-p)|a|)\le0.08g^{-2}$.
 \end{proof}
@@ -1551,13 +1559,13 @@ During Stage C, for every $\beta\in\mathcal K$:
 \begin{proof}
 (a) On $\mathcal K$, $\beta_0,\beta_n\ge b-\frac12$, $|\Delta|\le1$ and the other letters add at most $(n-1)e^{|a|+b+0.1}$, so
 $Z/e^{\beta_0}\le1+e^{1.1}+(n-1)e^{0.7}\le3.1n$, and likewise $Z/e^{u+\beta_n}\le3.1n$.
-For the rest, $\frac{d\beta_\bullet}{dt}=-\partial L/\partial\beta_\bullet=gv_r\E\bigl[y_t\operatorname{sigmoid}(-y_tf_t)\,\Psi_\bullet\bigr]$ with
+For the rest, $\frac{d\beta_\bullet}{dt}=-\partial \mathcal L/\partial\beta_\bullet=gv_r\E\bigl[y_t\operatorname{sigmoid}(-y_tf_t)\,\Psi_\bullet\bigr]$ with
 $\Psi_\bullet=\partial M_t/\partial\beta_\bullet$. Since $|f_t-f_A|\le\varrho$ (\cref{lem:R-AB}) and $\operatorname{sigmoid}$ is $\frac14$-Lipschitz,
 \cref{lem:R-identity} gives $\frac{d\beta_\bullet}{dt}=gv_r\bigl(2p(1-p)\widehat{\Psi_\bullet}-r_\bullet\bigr)$ with $|r_\bullet|\le\frac14\varrho\,\E|\Psi_\bullet|$, and
 $gv_r\widehat{\Psi_\bullet}=\nu_B|a|\langle\partial_u\Psi_\bullet\rangle$ by \cref{eq:R-hat}. Note $\varrho=0.1p(1-p)|a|/n^2\le0.05p(1-p)|a|/n$.
 (b) $\Psi_n+\Psi_0=-p_0p_O$ and $\partial_u(-p_0p_O)=2p_0p_Op_{\mathrm{cur}}$ by \cref{eq:R-derivs}, so with (a)
 \[
- \frac{db}{dt}\ge2p(1-p)\nu_B|a|\langle p_0p_Op_{\mathrm{cur}}\rangle-\tfrac18\nu_B\varrho\,\E[p_0p_O]
+ \frac{db}{dt}\ge2p(1-p)\nu_B|a|\langle p_0p_Op_{\mathrm{cur}}\rangle-\frac18\nu_B\varrho\,\E[p_0p_O]
  \ge\nu_B\E[p_0p_O]\Bigl(\frac{2e^{-0.4}}{3.1}-\frac{0.05}8\Bigr)\frac{p(1-p)|a|}n.
 \]
 (c) $\partial_u(p_0p_\delta)=-2p_0p_\delta p_{\mathrm{cur}}$, so
@@ -1565,7 +1573,7 @@ $\frac{d\beta_\delta}{dt}\le\nu_B\E[p_0p_\delta](-\frac{4e^{-0.4}}{3.1}+\frac{0.
 (d) $\Psi_n-\Psi_0=p_0(p_{\mathrm{cur}}+M_t)\le2p_0$ and $\partial_u(\Psi_n-\Psi_0)=2p_0p_{\mathrm{cur}}(p_0-p_{\mathrm{cur}})$. At $\Delta=1$,
 $p_{\mathrm{cur}}/p_0=e^{u+1}\ge e^{0.9}$ for all $|u|\le|a|$, so $p_0-p_{\mathrm{cur}}\le-0.59p_{\mathrm{cur}}$ and, by (a),
 \begin{align*}
- \frac{d\Delta}{dt}&\le-2p(1-p)\nu_B|a|\,\langle1.18\,p_0p_{\mathrm{cur}}^2\rangle+\tfrac12\nu_B\varrho\,\E[p_0]\\
+ \frac{d\Delta}{dt}&\le-2p(1-p)\nu_B|a|\,\langle1.18\,p_0p_{\mathrm{cur}}^2\rangle+\frac12\nu_B\varrho\,\E[p_0]\\
  &\le\nu_B\E[p_0]\Bigl(-\frac{2.36e^{-0.2}}{9.61}+\frac{0.1}2\Bigr)\frac{p(1-p)|a|}{n^2}<0.
 \end{align*}
 The case $\Delta=-1$ is symmetric, with $p_0/p_{\mathrm{cur}}\ge e^{0.9}$.
@@ -1613,14 +1621,14 @@ sets $\epsilon$ so that leakage cannot overturn a margin before $T'$.
 Write $\widetilde M_t=m_0+d\,c_tm_t$; then $|d|\ge0.18|a|$ and $\operatorname{sign}d=\operatorname{sign}a$. The readout $v^\star$ with $gv^\star_r=1/d$, $\initscale v^\star_c=-m_0/d$,
 $v^\star_s=0$ has margin at least $\frac12$ on every prompt and every $t\ge2$, and $|g|\|v^\star\|\le1.5/|d|$.
 Measuring time from the start of Stage D, set $T_D=\|v(0)-C_0v^\star\|^2/(0.2\pi_0)$.
-Then $T_D\le\overline T_D$, every prediction has positive margin at every time $t\ge T_D$, and $L^{\ge2}_{\mathrm{step}}\to0$.
+Then $T_D\le\overline T_D$, every prediction has positive margin at every time $t\ge T_D$, and $\mathcal \Lstep^{\ge2}\to0$.
 \end{lemma}
 
 \begin{proof}
 $|d|\ge|a|\operatorname{sigmoid}'(1.1)\ge0.18|a|$ by $|\Delta|\le1$. By \cref{lem:R-features}, $f^\star_t=(M_t-m_0)/d=c_tm_t+(M_t-\widetilde M_t)/d$, so
 $y_tf^\star_t\ge1-\epsilon/|d|\ge\frac12$; and $|gv^\star_c|=\initscale|A_V|m_0/|d|\le1/|d|$. The loss is convex in $v$, so for every comparator $u$,
-$L(v(t))\le L(u)+\|v(0)-u\|^2/(2t)$ and $\|v(t)-u\|^2\le\|v(0)-u\|^2+2tL(u)$; for $u=Cv^\star$, $L(u)\le e^{-C/2}$. With $u=C_0v^\star$,
-$L(u)\le0.1\pi_0$, so $L(v(t))\le0.2\pi_0$ for $t\ge T_D$. At the start of Stage D, $|g|\|v(0)\|\le\initscale|u_*|+\nu\le2$, so
+$\mathcal L(v(t))\le \mathcal L(u)+\|v(0)-u\|^2/(2t)$ and $\|v(t)-u\|^2\le\|v(0)-u\|^2+2t\mathcal L(u)$; for $u=Cv^\star$, $\mathcal L(u)\le e^{-C/2}$. With $u=C_0v^\star$,
+$\mathcal L(u)\le0.1\pi_0$, so $\mathcal L(v(t))\le0.2\pi_0$ for $t\ge T_D$. At the start of Stage D, $|g|\|v(0)\|\le\initscale|u_*|+\nu\le2$, so
 \[
  T_D\le\frac{5(2+1.5C_0/|d|)^2}{\pi_0g^2}
  \le\frac{5(2+9C_0)^2}{\pi_0g^2a^2}=\overline T_D.
@@ -1629,25 +1637,25 @@ Each margin is $\mu(c,m)+\xi$, where $\mu$ depends only on the local case $(c_t,
 at least $\pi_0$. If some margin is nonpositive, then $\mu\le\max|\xi|$ for its case, so every prompt of that case has margin at most
 $2\max|\xi|$.
 
-\emph{Up to $T'$.} For $0\le t\le T'$, set $u=C_tv^\star$ with $C_t=\max(C_0,2\log(1+t))\le B$. Since $tL(u)\le1$, the second convex-flow
+\emph{Up to $T'$.} For $0\le t\le T'$, set $u=C_tv^\star$ with $C_t=\max(C_0,2\log(1+t))\le B$. Since $t\mathcal L(u)\le1$, the second convex-flow
 bound gives $|g|\|v(t)\|\le|g|\|v(0)\|+2C_t|g|\|v^\star\|+\sqrt2|g|\le6B/|d|$, so $|gv_r(t)|\epsilon\le6B\epsilon/|d|\le\frac12$. A nonpositive
-margin at a time $t\in[T_D,T']$ would give $L\ge\pi_0\phi(1)\ge0.31\pi_0$, contradicting $L(v(t))\le0.2\pi_0$.
+margin at a time $t\in[T_D,T']$ would give $\mathcal L\ge\pi_0\phi(1)\ge0.31\pi_0$, contradicting $\mathcal L(v(t))\le0.2\pi_0$.
 
-\emph{After $T'$.} For $t\ge T'$, set $u=Cv^\star$ with $C=2\log(1+t)$, so $L(u)\le1/(1+t)$ and $tL(u)\le1$. Then
+\emph{After $T'$.} For $t\ge T'$, set $u=Cv^\star$ with $C=2\log(1+t)$, so $\mathcal L(u)\le1/(1+t)$ and $t\mathcal L(u)\le1$. Then
 $|g|\|v(t)\|\le2+6\log(1+t)/|d|+\sqrt2|g|$, and since $6\epsilon/|d|\le0.5/B$ and $3.5\epsilon\le0.006/B$,
 $2\max|\xi|\le(\log(1+t)+0.011)/B$. As $\phi(z)\ge e^{-z}\log2$ for $z\ge0$ and $B\ge C_0\ge2$, a nonpositive margin would give
 \[
- L(v(t))\ge\pi_0\log2\,e^{-0.011/B}(1+t)^{-1/B}\ge0.68\,\pi_0(1+t)^{-1/2}.
+ \mathcal L(v(t))\ge\pi_0\log2\,e^{-0.011/B}(1+t)^{-1/B}\ge0.68\,\pi_0(1+t)^{-1/2}.
 \]
 The first convex-flow bound with the same $u$, $|d|\ge0.18|a|$, $|a|\le0.1$ and $\log(1+t)\ge1$ gives instead
 \[
- L(v(t))\le\frac1{1+t}+\frac{(2+1.5C/|d|)^2}{2g^2t}\le\frac1{1+t}+\frac{145\log^2(1+t)}{g^2a^2t}.
+ \mathcal L(v(t))\le\frac1{1+t}+\frac{(2+1.5C/|d|)^2}{2g^2t}\le\frac1{1+t}+\frac{145\log^2(1+t)}{g^2a^2t}.
 \]
 Since $T'\ge y^2\ge(625/\pi_0)^2$, the first term is at most $0.33\pi_0(1+t)^{-1/2}$. With $s=\sqrt t\ge1$, the second is at most
 $0.33\pi_0(1+t)^{-1/2}$ once $\log^2(1+t)/s\le1/y$. Now $\log(1+s^2)\le2\log(2s)$, $s/\log^2(2s)$ increases for $s\ge4$, and at
 $s=64y\log^2(64y)$ one has $\log(2s)\le2\log(64y)$, so $4\log^2(2s)/s\le1/y$ for all $s\ge64y\log^2(64y)$, that is, for all $t\ge T'$.
-The two bounds on $L(v(t))$ contradict each other. Hence every margin is positive at every $t\ge T_D$.
-Finally $\limsup_tL(v(t))\le e^{-C/2}$ for every $C$.
+The two bounds on $\mathcal L(v(t))$ contradict each other. Hence every margin is positive at every $t\ge T_D$.
+Finally $\limsup_t\mathcal L(v(t))\le e^{-C/2}$ for every $C$.
 \end{proof}
 
 \begin{proof}[Proof of \cref{thm:routing}]
@@ -1674,7 +1682,7 @@ $d=\tfrac12\tanh(a/2)$ and $|d|\ge|a|/5$ for $|a|\le1$. The separator
 $v_*=e_r/(gd)-e_c/(2\initscale d)$ has unit margin on all four cases $(c_t,m_t)$ and
 $\|v_*\|\le7.5\sqrt{d_{\mathrm h}}\initscale^{-6}$. Each case has weight at least $\pi_0$.
 For $A=\log(4/(\pi_0\log2))$, the convex-flow bound from Stage D gives
-$L(v(t))\le e^{-A}+A^2\|v_*\|^2/(2t)<\pi_0\log2$ once
+$\mathcal L(v(t))\le e^{-A}+A^2\|v_*\|^2/(2t)<\pi_0\log2$ once
 $t>2A^2\|v_*\|^2/(\pi_0\log2)$. A nonpositive margin would contribute at least
 $\pi_0\log2$, so all margins are positive thereafter by loss descent. Scaling the separator proves $L\to0$.
 \end{proof}
