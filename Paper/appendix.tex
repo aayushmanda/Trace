@@ -1665,13 +1665,14 @@ $M_t=\omega_{\mathrm{cur}}+\omega_{\mathrm{oth}}$. Then
  \frac{\partial M_t}{\partial\beta_0}=-\omega_0M_t,\qquad
  \frac{\partial M_t}{\partial\beta_n}=\omega_0\omega_{\mathrm{cur}},\qquad
  \frac{\partial M_t}{\partial\beta_\delta}=\omega_0\omega_\delta\quad(\delta\notin\{0,n\}),\\
- \frac{\partial \omega_\bullet}{\partial u}=\omega_\bullet\bigl(\mathbf 1[\bullet=\mathrm{cur}]-\omega_{\mathrm{cur}}\bigr).
+ \frac{\partial\omega_{\mathrm{cur}}}{\partial u}=\omega_{\mathrm{cur}}(1-\omega_{\mathrm{cur}}),\qquad
+ \frac{\partial\omega_\delta}{\partial u}=-\omega_\delta\,\omega_{\mathrm{cur}}\quad(\delta\ne n).
  \end{gathered}
  \label{eq:R-derivs}
 \end{equation}
 Every attention weight is a ratio of two sums whose terms change by a factor at most $e^{|a|}$ when $u$ or the other letters
 change, so a product of $k$ weights changes by at most $e^{2k|a|}$ over $|u|\le|a|$; in particular
-$\langle \omega_0\omega_\bullet\rangle\ge e^{-4|a|}\E[\omega_0\omega_\bullet]$ and $\langle \omega_0\rangle\ge e^{-2|a|}\E[\omega_0]$.
+$\langle \omega_0\omega\rangle\ge e^{-4|a|}\E[\omega_0\omega]$ for $\omega\in\{\omega_0,\omega_{\mathrm{cur}},\omega_\delta,\omega_{\mathrm{oth}}\}$, and $\langle \omega_0\rangle\ge e^{-2|a|}\E[\omega_0]$.
 
 \begin{lemma}[Gate coefficient at zero bias]
 \label{lem:R-coeff}
@@ -1772,34 +1773,42 @@ $(n-1)e^{|a|+\bar\beta+0.1}$ to the softmax normalizer $Z$. Hence
  \frac{Z}{e^{u+\beta_n}}\le3.1n .
 \]
 
-\emph{The bias field.} For every bias coordinate, with $\Psi=\tfrac{\partial M_t}{\partial\beta_\bullet}$ in \cref{lem:R-identity},
+\needspace{14\baselineskip}
+\emph{Bias dynamics.} For any relative offset $\delta$, gradient flow gives
 \[
- \frac{d\beta_\bullet}{dt}=-\frac{\partial\mathcal L}{\partial\beta_\bullet}=gv_r\,\E\Bigl[y_t\operatorname{sigmoid}(-y_tf_t)\,\frac{\partial M_t}{\partial\beta_\bullet}\Bigr].
+ \frac{d\beta_\delta}{dt}=-\frac{\partial\mathcal L}{\partial\beta_\delta}
+ =gv_r\,\E\Bigl[y_t\operatorname{sigmoid}(-y_tf_t)\,\frac{\partial M_t}{\partial\beta_\delta}\Bigr].
 \]
-Since $|f_t-f_A|\le2\alpha_B$ (\cref{lem:R-AB}) and $\operatorname{sigmoid}$ is $\frac14$-Lipschitz, \cref{lem:R-identity,eq:R-hat} give
-\[
- \frac{d\beta_\bullet}{dt}=2p(1-p)\alpha_B|a|\,\Bigl\langle\frac{\partial^2M_t}{\partial u\,\partial\beta_\bullet}\Bigr\rangle-gv_r\,r_\bullet,
+Since $|f_t-f_A|\le2\alpha_B$ (\cref{lem:R-AB}), \cref{lem:R-identity} with $\Psi=\tfrac{\partial M_t}{\partial\beta_\delta}$ and \cref{eq:R-hat} give
+\begin{equation}
+ \frac{d\beta_\delta}{dt}=2p(1-p)\alpha_B|a|\,\Bigl\langle\frac{\partial^2M_t}{\partial u\,\partial\beta_\delta}\Bigr\rangle+\varepsilon_\delta,
  \qquad
- |gv_r\,r_\bullet|\le\frac14\alpha_B\cdot2\alpha_B\,\E\Bigl[\Bigl|\frac{\partial M_t}{\partial\beta_\bullet}\Bigr|\Bigr],
-\]
-where $2\alpha_B=\tfrac{0.1\,p(1-p)|a|}{n^2}\le\tfrac{0.05\,p(1-p)|a|}{n}$.
+ |\varepsilon_\delta|\le\frac{\alpha_B^2}{2}\,\E\Bigl[\Bigl|\frac{\partial M_t}{\partial\beta_\delta}\Bigr|\Bigr].
+ \label{eq:R-bias}
+\end{equation}
+The velocity of each bias is a local interaction drive plus a small error. Both sides are linear in the bias coordinate, so
+\cref{eq:R-bias} holds verbatim for $\bar\beta$ and $\Delta$, with $\tfrac{\partial M_t}{\partial\beta_\delta}$ replaced by the same
+combination of derivatives. Since $n\ge2$, $\alpha_B=\tfrac{0.05\,p(1-p)|a|}{n^2}\le\tfrac{0.025\,p(1-p)|a|}{n}$.
 
-\emph{(b) The common strength.} By \cref{eq:R-derivs}, $\tfrac{\partial M_t}{\partial\beta_n}+\tfrac{\partial M_t}{\partial\beta_0}=-\omega_0\omega_{\mathrm{oth}}$ and $\partial_u(-\omega_0\omega_{\mathrm{oth}})=2\omega_0\omega_{\mathrm{oth}}\omega_{\mathrm{cur}}$, so with (a)
+\emph{(b) The common strength.} Apply \cref{eq:R-bias} to $\bar\beta=\frac12(\beta_n+\beta_0)$. By \cref{eq:R-derivs},
+$\tfrac12\bigl(\tfrac{\partial M_t}{\partial\beta_n}+\tfrac{\partial M_t}{\partial\beta_0}\bigr)=-\tfrac12\omega_0\omega_{\mathrm{oth}}$, whose $u$-derivative is
+$\omega_0\omega_{\mathrm{oth}}\omega_{\mathrm{cur}}$, so with (a)
 \begin{align*}
- \frac{d\bar\beta}{dt}&\ge2p(1-p)\alpha_B|a|\,\langle \omega_0\omega_{\mathrm{oth}}\omega_{\mathrm{cur}}\rangle-\frac18\alpha_B\cdot2\alpha_B\,\E[\omega_0\omega_{\mathrm{oth}}]\\
+ \frac{d\bar\beta}{dt}&\ge2p(1-p)\alpha_B|a|\,\langle \omega_0\omega_{\mathrm{oth}}\omega_{\mathrm{cur}}\rangle-\frac{\alpha_B^2}{4}\,\E[\omega_0\omega_{\mathrm{oth}}]\\
  &\ge\alpha_B\,\E[\omega_0\omega_{\mathrm{oth}}]\Bigl(\frac{2e^{-0.4}}{3.1}-\frac{0.05}{8}\Bigr)\frac{p(1-p)|a|}{n}.
 \end{align*}
 
-\emph{(c) Irrelevant biases.} Here $\partial_u(\omega_0\omega_\delta)=-2\omega_0\omega_\delta \omega_{\mathrm{cur}}$, so
+\emph{(c) Irrelevant biases.} For $\delta\notin\{0,n\}$, \cref{eq:R-derivs} gives $\tfrac{\partial M_t}{\partial\beta_\delta}=\omega_0\omega_\delta$ with
+$u$-derivative $-2\omega_0\omega_\delta \omega_{\mathrm{cur}}$, so \cref{eq:R-bias} and (a) give
 \[
  \frac{d\beta_\delta}{dt}\le\alpha_B\,\E[\omega_0\omega_\delta]\Bigl(-\frac{4e^{-0.4}}{3.1}+\frac{0.05}{4}\Bigr)\frac{p(1-p)|a|}{n}\le0 .
 \]
 
-\emph{(d) The imbalance.} Here $\tfrac{\partial M_t}{\partial\beta_n}-\tfrac{\partial M_t}{\partial\beta_0}=\omega_0(\omega_{\mathrm{cur}}+M_t)\le2\omega_0$, with $u$-derivative
+\emph{(d) The imbalance.} Apply \cref{eq:R-bias} to $\Delta=\beta_n-\beta_0$: here $\tfrac{\partial M_t}{\partial\beta_n}-\tfrac{\partial M_t}{\partial\beta_0}=\omega_0(\omega_{\mathrm{cur}}+M_t)\le2\omega_0$, with $u$-derivative
 $2\omega_0\omega_{\mathrm{cur}}(\omega_0-\omega_{\mathrm{cur}})$. At $\Delta=1$, $\frac{\omega_{\mathrm{cur}}}{\omega_0}=e^{u+1}\ge e^{0.9}$ for all
 $|u|\le|a|$, so $\omega_0-\omega_{\mathrm{cur}}\le-0.59\,\omega_{\mathrm{cur}}$, and by (a)
 \begin{align*}
- \frac{d\Delta}{dt}&\le-2p(1-p)\alpha_B|a|\,\langle1.18\,\omega_0\omega_{\mathrm{cur}}^2\rangle+\frac12\alpha_B\cdot2\alpha_B\,\E[\omega_0]\\
+ \frac{d\Delta}{dt}&\le-2p(1-p)\alpha_B|a|\,\langle1.18\,\omega_0\omega_{\mathrm{cur}}^2\rangle+\alpha_B^2\,\E[\omega_0]\\
  &\le\alpha_B\,\E[\omega_0]\Bigl(-\frac{2.36\,e^{-0.2}}{9.61}+\frac{0.1}{2}\Bigr)\frac{p(1-p)|a|}{n^2}<0.
 \end{align*}
 The case $\Delta=-1$ is symmetric, with $\frac{\omega_0}{\omega_{\mathrm{cur}}}\ge e^{0.9}$.
@@ -1915,13 +1924,29 @@ so $\Lstep^{\ge2}\to0$.
 \end{proof}
 
 \begin{proof}[Proof of \cref{thm:routing}]
-Let $T=T_A+T_B+T_C+T_D$. \Cref{lem:R-AB,lem:R-C} bound the first three stopping times, and \cref{lem:R-D}, whose hypotheses
-$|\Delta|\le1$ and $|M_t-\widetilde M_t|\le\zeta$ hold at the end of Stage C by \cref{lem:R-C}, gives positive margins at every time
-$t\ge T$ and $\Lstep^{\ge2}\to0$. The leakage stays at most $\zeta$ and $|\Delta|\le1$ because $\beta$ is frozen after Stage C, so the
-trajectory is in $\mathcal G_\zeta$ from $T$ on. With $|a|=\initscale^4/\sqrt{d_{\mathrm h}}$, $|g|=\initscale^2$ and
-$B\le C_D+8\log(64R_D)=O(\log(d_{\mathrm h}/(\pi_0\initscale)))$, the bounds $T_A=O(\initscale^{-2}\log(n/(p(1-p)|a|)))$,
-$T_B=O(\initscale^{-4})$, $T_C=O(n^5B\log(nB/|a|)/(p^2(1-p)^2|a|^3))$ and $T_D\le\overline T_D=O(d_{\mathrm h}\initscale^{-12}/\pi_0)$
-give $T\le\mathrm{poly}(n,d_{\mathrm h},\initscale^{-1},(p(1-p))^{-1})$.
+Let $T=T_A+T_B+T_C+T_D$.
+
+\emph{Entry and convergence.} \Cref{lem:R-AB,lem:R-C} bound the first three stopping times. At the end of Stage C,
+\cref{lem:R-C} gives
+\[
+ |\Delta|\le1,\qquad |M_t-\widetilde M_t|\le\zeta,
+\]
+so \cref{lem:R-D} gives positive margins at every time $t\ge T$ and $\Lstep^{\ge2}\to0$.
+
+\emph{Persistence.} Stage D freezes $\beta$, so the leakage stays at most $\zeta$ and $|\Delta|\le1$; the trajectory is in
+$\mathcal G_\zeta$ at every $t\ge T$.
+
+\emph{Polynomial time.} With $|a|=\initscale^4/\sqrt{d_{\mathrm h}}$ and $|g|=\initscale^2$, the stage bounds are
+\[
+ \begin{aligned}
+ T_A&=O\Bigl(\initscale^{-2}\log\frac{n}{p(1-p)|a|}\Bigr), &
+ T_B&=O(\initscale^{-4}),\\
+ T_C&=O\Bigl(\frac{n^5B\log(nB/|a|)}{p^2(1-p)^2|a|^3}\Bigr), &
+ T_D&\le\overline T_D=O\Bigl(\frac{d_{\mathrm h}\initscale^{-12}}{\pi_0}\Bigr).
+ \end{aligned}
+\]
+Since $B\le C_D+8\log(64R_D)=O(\log(d_{\mathrm h}/(\pi_0\initscale)))$, their sum is
+$T\le\mathrm{poly}(n,d_{\mathrm h},\initscale^{-1},(p(1-p))^{-1})$.
 \end{proof}
 
 \subsection{Controls and comparisons}
@@ -1935,14 +1960,29 @@ $O_p(d_{\mathrm h}\initscale^{-12})$ and drives $\Lstep^{\ge2}$ to zero.
 \end{proposition}
 
 \begin{proof}[Proof of \cref{prop:fixed-routing}]
-With the two-site mask, $M_t=\operatorname{sigmoid}(ac_tm_t)=\tfrac12+d c_tm_t$, where
-$d=\tfrac12\tanh(a/2)$ and $|d|\ge|a|/5$ for $|a|\le1$. The separator
-$v_*=\hat e_{r}/(gd)-\hat e_{c}/(2\initscale d)$ has unit margin on all four cases $(c_t,m_t)$ and
-$\|v_*\|\le7.5\sqrt{d_{\mathrm h}}\initscale^{-6}$. Each case has weight at least $\pi_0$.
-For $A=\log(4/(\pi_0\log2))$, the convex-flow bound from Stage D gives
-$\mathcal L(v(t))\le e^{-A}+A^2\|v_*\|^2/(2t)<\pi_0\log2$ once
-$t>2A^2\|v_*\|^2/(\pi_0\log2)$. A nonpositive margin would contribute at least
-$\pi_0\log2$, so all margins are positive thereafter by loss descent. Scaling the separator proves $L\to0$.
+\emph{Separator.} With the two-site mask,
+\[
+ M_t=\operatorname{sigmoid}(ac_tm_t)=\frac12+d\,c_tm_t,\qquad d=\frac12\tanh\frac a2,
+\]
+and $|d|\ge|a|/5$ for $|a|\le1$. Therefore
+\[
+ v^\star=\frac{\hat e_{r}}{gd}-\frac{\hat e_{c}}{2\initscale d}
+\]
+has unit margin on all four local cases $(c_t,m_t)$, with $\|v^\star\|\le7.5\sqrt{d_{\mathrm h}}\,\initscale^{-6}$. Each case has weight
+at least $\pi_0$.
+
+\emph{Positive margins.} Let $A=\log\tfrac{4}{\pi_0\log2}$. The convex-flow bound of \cref{lem:R-D}, with comparator $Av^\star$, gives
+\[
+ \mathcal L(v(t))\le e^{-A}+\frac{A^2\|v^\star\|^2}{2t},
+\]
+so $\mathcal L(v(t))<\pi_0\log2$ once
+\[
+ t>\frac{2A^2\|v^\star\|^2}{\pi_0\log2}=O_p(d_{\mathrm h}\initscale^{-12}).
+\]
+A nonpositive margin would contribute at least $\pi_0\log2$ to the loss, a contradiction.
+
+\emph{Convergence.} Since the loss does not increase along the flow, every margin stays positive thereafter, and comparing with
+$Cv^\star$ for every $C$ in the convex-flow bound gives $\Lstep^{\ge2}\to0$.
 \end{proof}
 
 \begin{lemma}[Masked heads]
