@@ -69,10 +69,10 @@ initializations (zero or small biases) do not do; at the executor width the aspe
 hold there with $n$-independent constants for $\initscale\le c\min(\mixrate,n^{-1/2})$ (\cref{rem:end-width}).
 
 \paragraph{Contraction and spectra.} By \cref{eq:lambda}, $\mixrate^2=1-2p(1-p)(1-\cos\frac{2\pi}K)$, and for $K=2$,
-$\mixrate=|1-2p|$ and $1-\mixrate^2=4p(1-p)$. With $\zeta=e^{2\pi\mathrm i/K}$, one unseen letter multiplies each nonconstant count
-mode $\zeta^{js_t}$ by $1-p+p\zeta^j$, of modulus at most $\mixrate$, while one displayed transition keeps the innovation
+$\mixrate=|1-2p|$ and $1-\mixrate^2=4p(1-p)$. With $\alpha=e^{2\pi\mathrm i/K}$, one unseen letter multiplies each nonconstant count
+mode $\alpha^{js_t}$ by $1-p+p\alpha^j$, of modulus at most $\mixrate$, while one displayed transition keeps the innovation
 \begin{equation}
- \E\left|\zeta^{j s_t}-(1-p+p\zeta^j)\zeta^{j s_{t-1}}\right|^2=1-|1-p+p\zeta^j|^2\ge1-\mixrate^2,
+ \E\left|\alpha^{j s_t}-(1-p+p\alpha^j)\alpha^{j s_{t-1}}\right|^2=1-|1-p+p\alpha^j|^2\ge1-\mixrate^2,
  \label{eq:move-variance}
 \end{equation}
 which is \cref{eq:local-variation} in Fourier coordinates. Hence every set $S$ of letters has
@@ -269,8 +269,8 @@ $\sum_r A_r=\mathbb E\|y-\bm u\|^2=1-1/K$ for the second group.
 \subsection{Target spectrum: the exact counting formula}
 \label{app:target-spectrum}
 
-All Fourier symbols in this subsection are local: let $\zeta=e^{2\pi\mathrm i/K}$ and
-$\rho_j=1-p+p\zeta^j$ for $j=1,\ldots,K-1$. Then $|\rho_j|\le\mixrate$.
+All Fourier symbols in this subsection are local: let $\alpha=e^{2\pi\mathrm i/K}$ and
+$\rho_j=1-p+p\alpha^j$ for $j=1,\ldots,K-1$. Then $|\rho_j|\le\mixrate$.
 
 \begin{lemma}[Exact target spectrum and contraction]
 \label{lem:target-contraction}
@@ -288,15 +288,15 @@ At an endpoint, a factor with exponent zero is $1$, including $0^0$.
 \end{lemma}
 
 \begin{proof}
-Counting gives $\zeta^{j s_n}=\zeta^{j s_0}\prod_{t=1}^n\zeta^{j b_t}$.
+Counting gives $\alpha^{j s_n}=\alpha^{j s_0}\prod_{t=1}^n\alpha^{j b_t}$.
 Expand each factor into its mean $\rho_j$ and centred fluctuation. The term supported on $S$ is
 \begin{equation}
- (\zeta^{j s_n})_S
- =\zeta^{j s_0}\rho_j^{n-|S|}\prod_{t\in S}(\zeta^{j b_t}-\rho_j).
+ (\alpha^{j s_n})_S
+ =\alpha^{j s_0}\rho_j^{n-|S|}\prod_{t\in S}(\alpha^{j b_t}-\rho_j).
  \label{eq:product-rep}
 \end{equation}
 It is centred in each bit in $S$, so it is exactly the Efron--Stein component.
-Independence and $\E|\zeta^{j b_t}-\rho_j|^2=1-|\rho_j|^2$ give its squared norm.
+Independence and $\E|\alpha^{j b_t}-\rho_j|^2=1-|\rho_j|^2$ give its squared norm.
 Parseval over the $K-1$ nonconstant count modes gives the first identity. Its bound follows from
 $|\rho_j|\le\mixrate$ and $1-|\rho_j|^2\le1$. Summing over the $\binom nr$ sets gives the degree spectrum.
 \end{proof}
@@ -325,47 +325,50 @@ learns it (\cref{tab:main}).
 \subsection{Model spectrum: score count, size and support}
 \label{app:model-spectrum}
 
-The statement below is the model ingredient used by both credit theorems.
-A score adds at most two sites and costs four powers of $\initscale$.
-Its proof and the position-selection bound follow below.
+Both credit theorems rest on one model statement: near initialization, each attention score lets a term reach at most two
+more letters and costs four powers of $\initscale$.
 
-\paragraph{The score expansion.} For $\xi\in[0,1]$ let $\bm z(\xi)$ be the network with every score $\psi_{il}$, in both
-blocks, replaced by $\xi\psi_{il}$. Then $\bm z(1)=\bm z_\theta$, and by Taylor's theorem in $\xi$, for every $\bar k\ge0$,
+\paragraph{Score expansion.} For $\xi\in[0,1]$, let $\bm z(\xi)$ be the network in which every score $\psi_{il}$, in both
+blocks, is replaced by $\xi\psi_{il}$. Since $\bm z(1)=\bm z_\theta$, Taylor's theorem at $\xi=0$ gives, for every integer
+$k_0\ge0$,
 \begin{equation}
- \bm z_\theta=\sum_{k=0}^{\bar k}\bm z^{[k]}+\bm z^{{\mathrm{rem}},\bar k},
+ \bm z_\theta=\sum_{k=0}^{k_0}\bm z^{[k]}+\bm z^{{\mathrm{rem}},k_0},
  \qquad
- \bm z^{[k]}:=\frac{\bm z^{(k)}(0)}{k!},
- \qquad
- \bm z^{{\mathrm{rem}},\bar k}:=\int_0^1\frac{(1-\xi)^{\bar k}}{\bar k!}\,\bm z^{(\bar k+1)}(\xi)\,d\xi .
+ \bm z^{[k]}:=\frac{1}{k!}\frac{d^k\bm z}{d\xi^k}(0),
  \label{eq:score-split}
 \end{equation}
+with remainder
+\[
+ \bm z^{{\mathrm{rem}},k_0}:=\int_0^1\frac{(1-\xi)^{k_0}}{k_0!}\,\frac{d^{k_0+1}\bm z}{d\xi^{k_0+1}}(\xi)\,d\xi .
+\]
+The term $\bm z^{[k]}$ collects the contributions with exactly $k$ attention scores. Below, $J^{[k]}_S$ denotes the
+Efron--Stein component on the letter set $S$ of the corresponding Jacobian term.
 
 \begin{proposition}[Score count and degree]
 \label{prop:score-degree}
-Fix the start state and the query, so the sites of the answer position are the letters. For $\theta\in \initball$,
-and every $\bar k\ge0$, there is a constant $\attconst$ such that the Jacobian splits as $\Jz=\sum_{k=0}^{\bar k}J^{[k]}+J^{{\mathrm{rem}},\bar k}$ along \cref{eq:score-split} and satisfies
-\begin{equation*}
- \begin{gathered}
- \sup\|J^{[0]}\|_F\le C\initscale,
- \qquad
- \sum_{|S|=1}\sup\|J^{[0]}_S\|_F\le C\initscale^2,
- \qquad
- J^{[0]}_S=0\ \ (|S|\ge2),
- \\
- \sum_S\sup\|J^{[k]}_S\|_F\le C\initscale^2(\attconst\initscale^4)^k\ \ (k\ge1,\text{ all sets }S),
- \qquad
- J^{[k]}_S=0\ \ (|S|>2k+1),
- \\
- \sup\|J^{{\mathrm{rem}},\bar k}\|_F\le C\initscale^2(\attconst\initscale^4)^{\bar k+1},
- \end{gathered}
- \tag{P1}\label{eq:P1}
-\end{equation*}
-and the same holds for $\bm z^{[k]},\bm z^{{\mathrm{rem}},\bar k}$ with one more factor $\initscale$. The suprema are over inputs. The constants do not depend on $n$, $k$ or $\bar k$.
+Fix the start state and the query, so that the sites of the answer position are the letters. For $\theta\in\initball$, the
+Jacobian has the expansion corresponding to \cref{eq:score-split},
+\[
+ \Jz=\sum_{k=0}^{k_0}J^{[k]}+J^{{\mathrm{rem}},k_0},
+\]
+and there is a constant $\attconst$ such that:
+\begin{enumerate}[label=(\roman*),leftmargin=*,itemsep=2pt,topsep=2pt]
+\item \emph{zeroth order:} $\sup\|J^{[0]}\|_F\le C\initscale$, $\ \sum_{|S|=1}\sup\|J^{[0]}_S\|_F\le C\initscale^2$, and
+$J^{[0]}_S=0$ for $|S|\ge2$;
+\item \emph{higher orders:} for every $k\ge1$,
+\[
+ \sum_S\sup\|J^{[k]}_S\|_F\le C\initscale^2(\attconst\initscale^4)^k,
+ \qquad\text{and}\qquad
+ J^{[k]}_S=0\ \text{ for }|S|>2k+1;
+\]
+\item \emph{remainder:} $\sup\|J^{{\mathrm{rem}},k_0}\|_F\le C\initscale^2(\attconst\initscale^4)^{k_0+1}$.
+\end{enumerate}
+The same bounds hold for $\bm z^{[k]}$ and $\bm z^{{\mathrm{rem}},k_0}$ with one additional factor $\initscale$. The suprema are over inputs,
+and the constants do not depend on $n$, $k$ or $k_0$.
 \end{proposition}
 
-Fix $\attconst$ large enough for this proposition and the position-selection bound
-\cref{prop:network}. It depends on $a_0$, $\varsigma$ and $K$, not on the widths or $n$.
-All theorem-level bounds below use this one constant.
+We fix $\attconst$ once, large enough for this proposition and for \cref{prop:network}; it depends on $a_0$, $\varsigma$ and $K$
+only.
 
 \label{app:network}
 \label{app:two-block}
@@ -387,7 +390,7 @@ $\|\bm z_i\|\le C\initscale^2$ and $\|\partial_v\bm z_i\|\le C\initscale\|v\|$.
  \frac{\|\partial_v\partial_\xi^k\bm z_i\|}{k!}\le C\initscale^2(C_0\initscale^4)^k.
 \]
 The same bounds hold for the absolute coefficient sums at $\xi=0$, and for $h_i^2$ with one fewer power of
-$\initscale$. Taylor remainders obey these bounds with $k=\bar k+1$.
+$\initscale$. Taylor remainders obey these bounds with $k=k_0+1$.
 \item The zero-score network is affine in the inputs. Its transported logit terms have tangent
 $O(\initscale^2)$, while direct-input and input-free terms have tangent $O(\initscale)$.
 An order-$k$ coefficient contains at most $2k+1$ inputs. A one-score logit term has size
@@ -412,23 +415,23 @@ Each block is
  \quad M_\ell=I+W_{\mathrm{out}}^\ell DW_{\mathrm{in}}^\ell,
  \quad\bm o_\ell=W_{\mathrm{out}}^\ell D\bm b^\ell,
 \]
-where $\bm a_i^\ell=\sum_{\mathrm{heads}}\sum_{j\le i}\alpha_{ij}W_Vh_j^{\ell-1}$ and
-$\alpha_{i\cdot}=\softmax(\xi\psi_{i\cdot})$. Operator norms give
+where $\bm a_i^\ell=\sum_{\mathrm{heads}}\sum_{j\le i}\omega_{ij}W_Vh_j^{\ell-1}$ and
+$\omega_{i\cdot}=\softmax(\xi\psi_{i\cdot})$. Operator norms give
 $\|M_\ell-I\|\le C\initscale^2$, $\|\bm o_\ell\|\le2a_0\beta\initscale^2\le a_0\initscale$ and
 $\|\partial_v\bm o_\ell\|\le(a_0+2\beta)\initscale\|v\|\le C\|v\|$.
 Since attention rows have $\ell_1$ norm $1$, two-block induction gives (i), including its tangent bound.
 All sums over hidden coordinates remain inside operator products; all sums over positions are averages.
 
 \proofstep{Softmax calculus.}
-Writing $\langle f\rangle_\alpha=\sum_j\alpha_jf_j$, the derivative identities are
+Writing $\langle f\rangle_\omega=\sum_j\omega_jf_j$, the derivative identities are
 \[
- \partial\alpha[v]_j=\alpha_j(v_j-\langle v\rangle_\alpha),\qquad
- \partial_v\langle f\rangle_\alpha=\langle vf\rangle_\alpha-\langle v\rangle_\alpha\langle f\rangle_\alpha.
+ \partial\omega[v]_j=\omega_j(v_j-\langle v\rangle_\omega),\qquad
+ \partial_v\langle f\rangle_\omega=\langle vf\rangle_\omega-\langle v\rangle_\omega\langle f\rangle_\omega.
 \]
 After $k$ derivatives, each term has at most $k+1$ averages and contains each direction once.
 The absolute coefficient sum satisfies $a_{k+1}\le2(k+1)a_k$, $a_0=1$. Duality therefore gives
 \begin{equation}
- \|\partial^k\alpha[v_1,\ldots,v_k]\|_1\le2^k k!\prod_a\|v_a\|_\infty.
+ \|\partial^k\omega[v_1,\ldots,v_k]\|_1\le2^k k!\prod_a\|v_a\|_\infty.
  \label{eq:softmax-avg}
 \end{equation}
 A vector-valued average gains only $\max_j\|f_j\|$. For normalized derivatives $F_k=F^{(k)}/k!$, products use
@@ -457,7 +460,7 @@ $U_{2,k}\le C\sum_{j=1}^k\binom{k-1}{j-1}C^j(2b)^k\le C(Cb)^k$.
 It follows that $B_{2,k}+H_{2,k}\le C\initscale^2(Cb)^k$ and $Z_k\le C\initscale^3(C_0\initscale^4)^k$.
 
 Take one derivative in a unit parameter direction before taking each supremum; denote these tangent bounds by a prime. A product term replaces one factor by its tangent;
-a softmax term replaces one $\Xi$ or gains $\partial^{j+1}\alpha[\partial_v\Xi_{\ell,0},\ldots]$.
+a softmax term replaces one $\Xi$ or gains $\partial^{j+1}\omega[\partial_v\Xi_{\ell,0},\ldots]$.
 The base bounds are $H^{\prime}_{0,0}=O(1)$ and $\Psi^{\prime}_{\ell,0}=O(\initscale^3)$.
 The extra factor $j+1\le2^k$ is absorbed into $C_0^k$, giving
 \[
@@ -519,7 +522,7 @@ We prove the parts of \cref{thm:main} in order.
 \begin{lemma}[Credit summation]
 \label{lem:score-sum}
 Assume (A1)--(A3), $\theta\in \initball$, $0<\initscale\le\initscale_0$, and $0<\mixrate<1$.
-Fix the start state and the query, and set $\bar k=\lceil(n-1)/2\rceil$ and
+Fix the start state and the query, and set $k_0=\lceil(n-1)/2\rceil$ and
 $q_{\mathrm{att}}=\attconst\initscale^4/\mixrate^2$, where $\attconst$ is as in \cref{prop:score-degree}.
 If $q_{\mathrm{att}}\le\frac12$, then
 \[
@@ -540,7 +543,7 @@ These bounds also hold after averaging over the start state and query.
 
 
 \begin{proof}
-Use \cref{lem:target-contraction,prop:score-degree} with $\bar k=\lceil(n-1)/2\rceil$.
+Use \cref{lem:target-contraction,prop:score-degree} with $k_0=\lceil(n-1)/2\rceil$.
 For any selected degrees, let $\mathrm{cr}_k$ be the $k$-score credit and $\mathrm{cr}_{\mathrm{rem}}$ the remainder credit.
 \begin{align*}
  \|\E[f_S^\top(y-\bm u)_S]\|
@@ -548,16 +551,16 @@ For any selected degrees, let $\mathrm{cr}_k$ be the $k$-score credit and $\math
  \mathrm{cr}_0&\le C\initscale\mixrate^n+C\initscale^2\mixrate^{n-1},\\
  \mathrm{cr}_k&\le C\initscale^2(\attconst\initscale^4)^k\mixrate^{\max(n-2k-1,0)}
  \le C\attconst\initscale^6\mixrate^{n-3}q_{\mathrm{att}}^{k-1},\\
- \mathrm{cr}_{\mathrm{rem}}&\le C\initscale^2(\attconst\initscale^4)^{\bar k+1}
- =C\attconst\initscale^6\mixrate^{2\bar k}q_{\mathrm{att}}^{\bar k}
- \le C\attconst\initscale^6\mixrate^{n-3}q_{\mathrm{att}}^{\bar k}.
+ \mathrm{cr}_{\mathrm{rem}}&\le C\initscale^2(\attconst\initscale^4)^{k_0+1}
+ =C\attconst\initscale^6\mixrate^{2k_0}q_{\mathrm{att}}^{k_0}
+ \le C\attconst\initscale^6\mixrate^{n-3}q_{\mathrm{att}}^{k_0}.
 \end{align*}
 The $k$-score bound uses $\max(n-2k-1,0)\ge n-2k-1$ and $\mixrate<1$.
 At degrees $r\ge2$, $\mathrm{cr}_0=0$, so
 \[
  \left\|\sum_{r\ge2}\E[(\Jz)_r^\top(y-\bm u)_r]\right\|
  \le C\attconst\initscale^6\mixrate^{n-3}
-       \left(\sum_{k=1}^{\bar k}q_{\mathrm{att}}^{k-1}+q_{\mathrm{att}}^{\bar k}\right)
+       \left(\sum_{k=1}^{k_0}q_{\mathrm{att}}^{k-1}+q_{\mathrm{att}}^{k_0}\right)
  \le C\initscale^6\mixrate^{n-3}.
 \]
 At all degrees, including the extra factor $\initscale$ for logits,
@@ -576,6 +579,10 @@ This proves \cref{eq:thm1-full}. Averaging the uniform conditional bounds preser
 \end{proof}
 
 
+\Cref{thm:main} needs only $\initscale^2\le c\mixrate$, which makes the attention series converge; \cref{thm:separation}(i) and
+\cref{thm:outcome-end} need $\initscale\le c\mixrate$, so that the degree-$0$ and $1$ terms, of size $\initscale^2\mixrate^{n-1}$, stay
+below $\initscale\mixrate^n$.
+
 \begin{proof}[Proof of \cref{thm:main}]
 The hypothesis $\initscale^2\le c\mixrate$ with $c\le(2\attconst)^{-1/2}$ implies
 $q_{\mathrm{att}}\le\frac12$. Apply \cref{lem:score-sum}.
@@ -585,16 +592,16 @@ $q_{\mathrm{att}}\le\frac12$. Apply \cref{lem:score-sum}.
 \begin{remark}[The case $\mixrate=0$]
 \label{rem:lambda-zero}
 \label{rem:end-parity}
-If $\mixrate=0$, \cref{lem:target-contraction} gives $(y-\bm u)_S=0$ unless $S=[n]$, so with $\bar k=\lceil(n-1)/2\rceil$ in
-\cref{prop:score-degree} only $J^{[\bar k]}$ and $J^{{\mathrm{rem}},\bar k}$ pair with the answer. For $\attconst\initscale_0^4\le1$,
+If $\mixrate=0$, \cref{lem:target-contraction} gives $(y-\bm u)_S=0$ unless $S=[n]$, so with $k_0=\lceil(n-1)/2\rceil$ in
+\cref{prop:score-degree} only $J^{[k_0]}$ and $J^{{\mathrm{rem}},k_0}$ pair with the answer. For $\attconst\initscale_0^4\le1$,
 \[
- \Bigl\|\dpd\outcredit\theta\Bigr\|\le C\initscale^2(\attconst\initscale^4)^{\bar k},
+ \Bigl\|\dpd\outcredit\theta\Bigr\|\le C\initscale^2(\attconst\initscale^4)^{k_0},
  \qquad
- |\outcredit|\le C\initscale^3(\attconst\initscale^4)^{\bar k},
+ |\outcredit|\le C\initscale^3(\attconst\initscale^4)^{k_0},
  \qquad
- 4\bar k+2=\begin{cases}2n,&n\text{ odd},\\2n+2,&n\text{ even}.\end{cases}
+ 4k_0+2=\begin{cases}2n,&n\text{ odd},\\2n+2,&n\text{ even}.\end{cases}
 \]
-With a zero readout, the proof of \cref{thm:outcome-end} then allows $t\le c\,\initscale^{-1}(\attconst\initscale^4)^{-\bar k}$, a time of
+With a zero readout, the proof of \cref{thm:outcome-end} then allows $t\le c\,\initscale^{-1}(\attconst\initscale^4)^{-k_0}$, a time of
 order at least $\initscale^{-(2n-1)}$. Counting modulo $2$ at match probability $\frac12$ and three-object BIG-Bench Hard are this case.
 \end{remark}
 
@@ -861,14 +868,14 @@ Let $P_n$ be defined from $Q_t$ above.
 
 \begin{proof}
 \proofstep{(i) Leading term.}
-Take $\bar k=2+\lceil\log_2 n\rceil$ and $\rho_\initscale=\attconst\initscale^4\le1/2$.
+Take $k_0=2+\lceil\log_2 n\rceil$ and $\rho_\initscale=\attconst\initscale^4\le1/2$.
 By \cref{lem:rule-sites,prop:network,eq:dilution-avg},
 \begin{align*}
  \E[(\bm g_t)_a h_{i_t,b}^{2,[0]}]&=0,\\
- 2C\initscale^2\E_t\kappa_{l_t,i_t}\sum_{k=2}^{\bar k}\rho_\initscale^k
+ 2C\initscale^2\E_t\kappa_{l_t,i_t}\sum_{k=2}^{k_0}\rho_\initscale^k
  &\le C\initscale^{10}/n,\\
- 2C\initscale^2\rho_\initscale^{\bar k+1}
- &\le C\attconst^2\initscale^{10}2^{-(\bar k-1)}\le C\initscale^{10}/n.
+ 2C\initscale^2\rho_\initscale^{k_0+1}
+ &\le C\attconst^2\initscale^{10}2^{-(k_0-1)}\le C\initscale^{10}/n.
 \end{align*}
 With fixed activation matrices, one-score monomials satisfy
 \[
@@ -952,17 +959,17 @@ $\sup\|\hat y-\bm u\|\le C\sup\|\bm z\|\le C\initscale^2$ and $\|\nabla\outcredi
 
 
 \begin{proof}[Proof of \cref{thm:separation}(ii)]
-Set $\rho_\initscale=\attconst\initscale^4\le1/2$ and $\bar k=1+\lceil\log_2 n\rceil$.
+Set $\rho_\initscale=\attconst\initscale^4\le1/2$ and $k_0=1+\lceil\log_2 n\rceil$.
 By \cref{lem:rule-sites,prop:network,lem:dilution-average},
 \begin{align*}
  \|\nabla\rulecredit(\theta)\|
- &\le2C\initscale^2\E_t\kappa_{l_t,i_t}\sum_{k=1}^{\bar k}\rho_\initscale^k
-     +2C\initscale^2\rho_\initscale^{\bar k+1}\\
- &\le C\attconst\initscale^6\left(\E_t\kappa_{l_t,i_t}+2^{-\bar k}\right)
+ &\le2C\initscale^2\E_t\kappa_{l_t,i_t}\sum_{k=1}^{k_0}\rho_\initscale^k
+     +2C\initscale^2\rho_\initscale^{k_0+1}\\
+ &\le C\attconst\initscale^6\left(\E_t\kappa_{l_t,i_t}+2^{-k_0}\right)
  \le C\attconst\initscale^6\left(\frac6n+\frac1{2n}\right)
  \le\frac{C\initscale^6}{n}.
 \end{align*}
-The remainder uses \cref{prop:network}(ii), with constants independent of $\bar k$.
+The remainder uses \cref{prop:network}(ii), with constants independent of $k_0$.
 \end{proof}
 
 
@@ -1069,7 +1076,7 @@ bias condition (A2) in force; \texttt{CHECKS.md} audits every bound, per draw.
 Claim & What is measured & Predicted & Measured\\
 \midrule
 \Cref{eq:horizon} & answer-dependent gradient vs $n$ & factor $\mixrate=0.5$ per letter & $0.48$--$0.51$ (\cref{tab:spectrum})\\
-\Cref{eq:P1}, degree $r$ & exponent of $\sum_{|S|=r}\|(\Jz)_S\|$ in $\initscale$ & $2$; $6$ ($r=2,3$); $\ge10$ & $2.0,6.1,7.0,11.1,12.0$ for $r=1..5$\\
+\Cref{prop:score-degree}, degree $r$ & exponent of $\sum_{|S|=r}\|(\Jz)_S\|$ in $\initscale$ & $2$; $6$ ($r=2,3$); $\ge10$ & $2.0,6.1,7.0,11.1,12.0$ for $r=1..5$\\
 \Cref{lem:leading} & rule credit vs $\initscale^6P_n(\tilde\theta)$ & equal to leading order & equal to six digits, $n=2..12$\\
 \Cref{thm:separation}(ii) & $n\|\nabla\rulecredit\|/\initscale^6$, $n=4..8$ & flat in $n$ & $304$--$324$ and $130$--$134$ (two draws)\\
 \Cref{prop:represent} & executor reconstruction & exact & exact up to $n=1000$\\
@@ -1358,7 +1365,20 @@ within time $\mathrm{poly}(n,1/\initscale,\log(1/\failprob))$.
 \section{Proof of \texorpdfstring{\cref{thm:routing}}{Staged step learning}: a schedule learns the routing}
 \label{app:routing}
 
-The symbols below are local to this proof. We redefine the count signs and the gate scales here. We use $a$ for gate strength, $g$ for value scale, $b_*$ for the routing bias target and $\epsilon$ for leakage tolerance. The remaining auxiliary quantities are introduced only where they are used.
+\begin{restated}{\Cref{thm:routing}}
+For counting modulo~$2$ with the gate head, started from the small structured initialization below, staged block-coordinate
+gradient flow on $\Lstep^{\ge2}$ enters $\mathcal G_\epsilon$ by a time $T\le\mathrm{poly}(n,d_{\mathrm h},\initscale^{-1},(p(1-p))^{-1})$,
+stays in it at every later time, and drives $\Lstep^{\ge2}$ to zero, for every $0<\initscale\le\initscale_\star$ with
+$1/\initscale_\star\le C_p\sqrt w$.
+\end{restated}
+
+\paragraph{Roadmap.} The proof follows the four stages. After the setting and the initialization, \cref{lem:R-features}
+reduces the network to one scalar gate feature, \cref{prop:gate} and \cref{lem:wrong-seed} give the target solution and the
+necessity of the seed, and \cref{lem:R-identity} is the interaction identity behind every stage. \Cref{lem:R-AB} handles the
+two readout stages (A and B); \cref{lem:R-field} computes the routing vector field on a corridor, and \cref{lem:R-C} turns it
+into an invariant region and a hitting time for Stage C; \cref{lem:R-D} handles the final readout (Stage D), and the
+assembly follows. Symbols are local to this section: $a$ is the gate strength, $g$ the value scale, $\nu$ the gate-readout
+coefficient and $\epsilon$ the leakage tolerance.
 
 \paragraph{Setting.} Counting modulo $2$ over $\{q,r\}$ with fixed query of probability $p\in(0,1)$ and a uniform start. Write
 $c_t=(-1)^{s_{t-1}}$, $m_t=(-1)^{b_t}$, $y_t=c_tm_t$; $c_t$ is uniform and independent of all letters, and the $m_j$
@@ -1474,18 +1494,13 @@ For $|a|\le0.1$, $Z=e^u+R\in[1+0.904n,1.61n]$, so $\partial_uM_t=e^u/Z^2\ge0.34/
 
 \paragraph{Schedule.} Every stage is gradient flow $\frac{d\theta}{dt}=-P_k\nabla\Lstep^{\ge2}(\theta)$, where $P_k$ projects onto the
 block trained in stage $k$ and all other parameters are frozen; each of the first three stages ends at a stopping time.
-With
-\begin{gather*}
- C_0=2\log\frac{10}{\pi_0},\qquad
- \overline T_D=\frac{5(2+9C_0)^2}{\pi_0 g^2a^2},\qquad
- y=\frac{625}{\pi_0g^2a^2},\qquad
- T'=\bigl(64y\log^2(64y)\bigr)^2,\\
- B=\max\bigl(C_0,2\log(1+T')\bigr),\qquad
- \epsilon=\frac{0.015|a|}{B},\qquad
- \alpha_B=\frac{0.05\,p(1-p)|a|}{n^2},
-\end{gather*}
-the stages are: (A) flow on $(v_c,v_s)$ from $0$ until $|\initscale v_c|+|\initscale v_s-u_*|\le\alpha_B$; (B) flow on $v_r$ from $0$
-until $\alpha:=\operatorname{sign}(a)gv_r=\alpha_B$; (C) flow on $\beta$ from $0$ until the attention outside
+Two scales matter: the gate-readout level and the leakage tolerance,
+\[
+ \nu_B=\frac{0.05\,p(1-p)|a|}{n^2},\qquad \epsilon=\frac{0.015|a|}{B},
+\]
+where $B=O(\log(d_{\mathrm h}/(\pi_0\initscale)))$ is the logarithmic factor fixed in \cref{eq:R-Dconst} before \cref{lem:R-D}. Then
+the stages are: (A) flow on $(v_c,v_s)$ from $0$ until $|\initscale v_c|+|\initscale v_s-u_*|\le\nu_B$; (B) flow on $v_r$ from $0$
+until $\nu:=\operatorname{sign}(a)gv_r=\nu_B$; (C) flow on $\beta$ from $0$ until the attention outside
 $\{$own position, current letter$\}$ is at most $\epsilon$ on every prompt and every $t\ge2$; (D) flow on $(v_c,v_s,v_r)$ with $\beta$
 frozen. Smallness: $|a|\le0.1$ and $\initscale(1+|u_*|)\le1$, with $\initscale\le\initscale_0$ as in \cref{ass:init}.
 
@@ -1502,21 +1517,21 @@ $|a|=\initscale^4/\sqrt{d_{\mathrm h}}\le0.1$ by the third entry; the second is 
 
 \begin{lemma}[Stages A and B]
 \label{lem:R-AB}
-Stage A ends by $T_A\le\bigl(\initscale^2p(1-p)\bigr)^{-1}\log(1+|u_*|/\alpha_B)$. In Stage B, $\alpha$ increases and reaches $\alpha_B$
-by $T_B\le0.08\,g^{-2}$. Throughout Stages B--D before $v$ is retrained, $|f_t-f_A|\le\varrho:=2\alpha_B$ on every prompt, for
+Stage A ends by $T_A\le\bigl(\initscale^2p(1-p)\bigr)^{-1}\log(1+|u_*|/\nu_B)$. In Stage B, $\nu$ increases and reaches $\nu_B$
+by $T_B\le0.08\,g^{-2}$. Throughout Stages B--D before $v$ is retrained, $|f_t-f_A|\le\varrho:=2\nu_B$ on every prompt, for
 every $\beta$.
 \end{lemma}
 
 \begin{proof}
 Symmetry keeps $v_c=0$ in Stage A. With $w=\initscale v_s$, $\frac{dw}{dt}=\initscale^2(1-p-\operatorname{sigmoid}(w))$, so $w$ stays
 between $0$ and $u_*$, where $\operatorname{sigmoid}'\ge p(1-p)$; hence $|w(t)-u_*|\le|u_*|e^{-\initscale^2p(1-p)t}$ (zero time if
-$p=\frac12$). After Stage A, $f_t-f_A=\initscale v_c+(\initscale v_s-u_*)c_t+gv_rM_t$ and $|gv_rM_t|\le|gv_r|=|\alpha|$, which gives the
-last claim while $0\le\alpha\le\alpha_B$. In Stage B, $\beta=0$ and $\frac{d\alpha}{dt}=-\operatorname{sign}(a)g\,\partial L/\partial v_r$. By
+$p=\frac12$). After Stage A, $f_t-f_A=\initscale v_c+(\initscale v_s-u_*)c_t+gv_rM_t$ and $|gv_rM_t|\le|gv_r|=|\nu|$, which gives the
+last claim while $0\le\nu\le\nu_B$. In Stage B, $\beta=0$ and $\frac{d\nu}{dt}=-\operatorname{sign}(a)g\,\partial L/\partial v_r$. By
 \cref{lem:R-identity} with $\Psi=M_t$ and \cref{lem:R-coeff},
 \[
- \frac{d\alpha}{dt}=g^2\bigl(2p(1-p)\mu_M-\operatorname{sign}(a)r_B\bigr),\qquad |r_B|\le\tfrac14\varrho\le\frac{0.025\,p(1-p)|a|}{n^2},
+ \frac{d\nu}{dt}=g^2\bigl(2p(1-p)\mu_M-\operatorname{sign}(a)r_B\bigr),\qquad |r_B|\le\tfrac14\varrho\le\frac{0.025\,p(1-p)|a|}{n^2},
 \]
-so $\frac{d\alpha}{dt}\ge0.65\,g^2p(1-p)|a|/n^2$ while $0\le\alpha\le\alpha_B$, and $T_B\le\alpha_Bn^2/(0.65g^2p(1-p)|a|)\le0.08g^{-2}$.
+so $\frac{d\nu}{dt}\ge0.65\,g^2p(1-p)|a|/n^2$ while $0\le\nu\le\nu_B$, and $T_B\le\nu_Bn^2/(0.65g^2p(1-p)|a|)\le0.08g^{-2}$.
 \end{proof}
 
 \paragraph{Routing coordinates.} Write $b=\frac12(\beta_n+\beta_0)$, $\Delta=\beta_n-\beta_0$, and let
@@ -1527,7 +1542,7 @@ attention outside $\{$own position, current letter$\}$, over prompts and $t\ge2$
 \label{lem:R-field}
 During Stage C, for every $\beta\in\mathcal K$:
 (a) $p_0,p_{\mathrm{cur}}\ge1/(3.1n)$ for every prompt, every $t\ge2$ and every $|u|\le|a|$;
-(b) $\frac{db}{dt}\ge0.42\,p(1-p)\alpha_B|a|\,\E[p_0p_O]/n$;
+(b) $\frac{db}{dt}\ge0.42\,p(1-p)\nu_B|a|\,\E[p_0p_O]/n$;
 (c) $\frac{d\beta_\delta}{dt}\le0$ for every $\delta\notin\{0,n\}$;
 (d) $\frac{d\Delta}{dt}<0$ if $\Delta=1$ and $\frac{d\Delta}{dt}>0$ if $\Delta=-1$;
 (e) $\E[p_0p_O]\ge0.21\,\Lambda(\beta)/n^2$.
@@ -1539,19 +1554,19 @@ $Z/e^{\beta_0}\le1+e^{1.1}+(n-1)e^{0.7}\le3.1n$, and likewise $Z/e^{u+\beta_n}\l
 For the rest, $\frac{d\beta_\bullet}{dt}=-\partial L/\partial\beta_\bullet=gv_r\E\bigl[y_t\operatorname{sigmoid}(-y_tf_t)\,\Psi_\bullet\bigr]$ with
 $\Psi_\bullet=\partial M_t/\partial\beta_\bullet$. Since $|f_t-f_A|\le\varrho$ (\cref{lem:R-AB}) and $\operatorname{sigmoid}$ is $\frac14$-Lipschitz,
 \cref{lem:R-identity} gives $\frac{d\beta_\bullet}{dt}=gv_r\bigl(2p(1-p)\widehat{\Psi_\bullet}-r_\bullet\bigr)$ with $|r_\bullet|\le\frac14\varrho\,\E|\Psi_\bullet|$, and
-$gv_r\widehat{\Psi_\bullet}=\alpha_B|a|\langle\partial_u\Psi_\bullet\rangle$ by \cref{eq:R-hat}. Note $\varrho=0.1p(1-p)|a|/n^2\le0.05p(1-p)|a|/n$.
+$gv_r\widehat{\Psi_\bullet}=\nu_B|a|\langle\partial_u\Psi_\bullet\rangle$ by \cref{eq:R-hat}. Note $\varrho=0.1p(1-p)|a|/n^2\le0.05p(1-p)|a|/n$.
 (b) $\Psi_n+\Psi_0=-p_0p_O$ and $\partial_u(-p_0p_O)=2p_0p_Op_{\mathrm{cur}}$ by \cref{eq:R-derivs}, so with (a)
 \[
- \frac{db}{dt}\ge2p(1-p)\alpha_B|a|\langle p_0p_Op_{\mathrm{cur}}\rangle-\tfrac18\alpha_B\varrho\,\E[p_0p_O]
- \ge\alpha_B\E[p_0p_O]\Bigl(\frac{2e^{-0.4}}{3.1}-\frac{0.05}8\Bigr)\frac{p(1-p)|a|}n.
+ \frac{db}{dt}\ge2p(1-p)\nu_B|a|\langle p_0p_Op_{\mathrm{cur}}\rangle-\tfrac18\nu_B\varrho\,\E[p_0p_O]
+ \ge\nu_B\E[p_0p_O]\Bigl(\frac{2e^{-0.4}}{3.1}-\frac{0.05}8\Bigr)\frac{p(1-p)|a|}n.
 \]
 (c) $\partial_u(p_0p_\delta)=-2p_0p_\delta p_{\mathrm{cur}}$, so
-$\frac{d\beta_\delta}{dt}\le\alpha_B\E[p_0p_\delta](-\frac{4e^{-0.4}}{3.1}+\frac{0.05}4)\frac{p(1-p)|a|}n\le0$.
+$\frac{d\beta_\delta}{dt}\le\nu_B\E[p_0p_\delta](-\frac{4e^{-0.4}}{3.1}+\frac{0.05}4)\frac{p(1-p)|a|}n\le0$.
 (d) $\Psi_n-\Psi_0=p_0(p_{\mathrm{cur}}+M_t)\le2p_0$ and $\partial_u(\Psi_n-\Psi_0)=2p_0p_{\mathrm{cur}}(p_0-p_{\mathrm{cur}})$. At $\Delta=1$,
 $p_{\mathrm{cur}}/p_0=e^{u+1}\ge e^{0.9}$ for all $|u|\le|a|$, so $p_0-p_{\mathrm{cur}}\le-0.59p_{\mathrm{cur}}$ and, by (a),
 \begin{align*}
- \frac{d\Delta}{dt}&\le-2p(1-p)\alpha_B|a|\,\langle1.18\,p_0p_{\mathrm{cur}}^2\rangle+\tfrac12\alpha_B\varrho\,\E[p_0]\\
- &\le\alpha_B\E[p_0]\Bigl(-\frac{2.36e^{-0.2}}{9.61}+\frac{0.1}2\Bigr)\frac{p(1-p)|a|}{n^2}<0.
+ \frac{d\Delta}{dt}&\le-2p(1-p)\nu_B|a|\,\langle1.18\,p_0p_{\mathrm{cur}}^2\rangle+\tfrac12\nu_B\varrho\,\E[p_0]\\
+ &\le\nu_B\E[p_0]\Bigl(-\frac{2.36e^{-0.2}}{9.61}+\frac{0.1}2\Bigr)\frac{p(1-p)|a|}{n^2}<0.
 \end{align*}
 The case $\Delta=-1$ is symmetric, with $p_0/p_{\mathrm{cur}}\ge e^{0.9}$.
 (e) Let $\Lambda$ be attained at some $t^*$. All prompts at $t^*$ have $p_O\ge e^{-4|a|}\Lambda$, position $t^*$ has weight
@@ -1574,10 +1589,24 @@ At $t=0$, $\beta=0$ lies in $\mathcal K$ with $|\Delta|<1$. Let $\tau$ be the fi
 through $|\Delta|=1$, which \cref{lem:R-field}(d) forbids, because $\Delta$ would reach $\pm1$ with $\frac{d\Delta}{dt}$ pointing inward.
 Hence $\tau$ does not occur. On $\mathcal K$ with $\beta_\delta\le0$, $Z\ge e^{\beta_0}\ge e^{b-1/2}$ gives
 $\Lambda\le(n-1)e^{0.1}e^{1/2}e^{-b}\le1.83ne^{-b}$, so Stage C ends once $b\ge\log(1.83n/\epsilon)$. Before then $\Lambda>\epsilon$, and
-\cref{lem:R-field}(b,e) give $\frac{db}{dt}\ge0.0882\,p(1-p)\alpha_B|a|\epsilon/n^3=0.00441\,p^2(1-p)^2a^2\epsilon/n^5$, which
+\cref{lem:R-field}(b,e) give $\frac{db}{dt}\ge0.0882\,p(1-p)\nu_B|a|\epsilon/n^3=0.00441\,p^2(1-p)^2a^2\epsilon/n^5$, which
 gives the bound on $T_C$. Finally, adding the other letters' weight $O$ to the numerator and denominator of $\widetilde M_t$ changes
 it by at most $O/Z=p_O\le\epsilon$.
 \end{proof}
+
+\paragraph{Stage D constants.} The final readout stage uses
+\begin{equation}
+ \begin{gathered}
+ C_0=2\log\frac{10}{\pi_0},\qquad
+ \overline T_D=\frac{5(2+9C_0)^2}{\pi_0 g^2a^2},\qquad
+ y=\frac{625}{\pi_0g^2a^2},\\
+ T'=\bigl(64y\log^2(64y)\bigr)^2,\qquad
+ B=\max\bigl(C_0,2\log(1+T')\bigr):
+ \end{gathered}
+ \label{eq:R-Dconst}
+\end{equation}
+$\overline T_D$ bounds the burn-in, $T'$ is the time after which a second convexity argument certifies the margins, and $B$
+sets $\epsilon$ so that leakage cannot overturn a margin before $T'$.
 
 \begin{lemma}[Stage D]
 \label{lem:R-D}
@@ -1591,7 +1620,7 @@ Then $T_D\le\overline T_D$, every prediction has positive margin at every time $
 $|d|\ge|a|\operatorname{sigmoid}'(1.1)\ge0.18|a|$ by $|\Delta|\le1$. By \cref{lem:R-features}, $f^\star_t=(M_t-m_0)/d=c_tm_t+(M_t-\widetilde M_t)/d$, so
 $y_tf^\star_t\ge1-\epsilon/|d|\ge\frac12$; and $|gv^\star_c|=\initscale|A_V|m_0/|d|\le1/|d|$. The loss is convex in $v$, so for every comparator $u$,
 $L(v(t))\le L(u)+\|v(0)-u\|^2/(2t)$ and $\|v(t)-u\|^2\le\|v(0)-u\|^2+2tL(u)$; for $u=Cv^\star$, $L(u)\le e^{-C/2}$. With $u=C_0v^\star$,
-$L(u)\le0.1\pi_0$, so $L(v(t))\le0.2\pi_0$ for $t\ge T_D$. At the start of Stage D, $|g|\|v(0)\|\le\initscale|u_*|+\alpha\le2$, so
+$L(u)\le0.1\pi_0$, so $L(v(t))\le0.2\pi_0$ for $t\ge T_D$. At the start of Stage D, $|g|\|v(0)\|\le\initscale|u_*|+\nu\le2$, so
 \[
  T_D\le\frac{5(2+1.5C_0/|d|)^2}{\pi_0g^2}
  \le\frac{5(2+9C_0)^2}{\pi_0g^2a^2}=\overline T_D.
@@ -1691,6 +1720,9 @@ therefore depend on $\beta$ and the readout only, and with a uniform start the b
 
 \begin{remark}[Scope]
 \label{rem:routing-scope}
+\Cref{thm:routing} does not assert polynomial-time entry into the certified region $\{\Lstep<\pimin/4\}$ of \cref{lem:basin},
+whose threshold $\pimin$ is exponentially small in $n$; with the routing fixed instead of learned, only Stage D is needed
+(\cref{prop:fixed-routing}).
 The step guarantee trains $\beta$ in a stage of its own; the plateau of \cref{cor:routing-outcome}(a) holds $\beta$ at zero, and
 part (b) is degenerate because the gate head cannot read the letters at the answer position. At $\initscale=0.02$ and
 $p=\frac14$ ($\mixrate=\frac12$) and $d_{\mathrm h}=1$ the bound on $T$, dominated by $T_C$, exceeds $\mixrate^{-n}$ unless $n>134$; with
