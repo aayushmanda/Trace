@@ -1341,7 +1341,9 @@ Fan-in-scaled Gaussian weights, embeddings of variance $1/d_{\mathrm{res}}$ and 
 are multiplied by $\initscale=0.3$; relative biases and readout start at zero.
 Full-batch gradient descent (step size $2$, $4{,}096$ training prompts) trains query/key maps, relative biases and
 readout; embeddings, values and MLPs stay fixed. A run solves when all state predictions on $16{,}384$ held-out prompts
-have positive margins. Of $17$ runs, $16$ solve; the remaining $n=12$ run reaches $99.95\%$ by $300$k updates.
+have positive margins. Of $17$ runs, $16$ solve; the remaining $n=12$ run reaches $99.95\%$ by $300$k updates. The outcome baseline uses the same
+initialization, trained subset, step size and data with only the final count supervised (\texttt{--format outcome}); no run
+solves within $300$k updates.
 Code: \path{handcoded/step_reach_twoblock.py}; per-run measurements are in \texttt{CHECKS.md}.
 
 \begin{conjecture}[Joint gradient flow learns the routing]

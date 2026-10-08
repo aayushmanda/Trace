@@ -343,7 +343,8 @@ degree-$0$ and $1$ part that the theory says it can reach, and nothing beyond it
 
 \paragraph{Learning the routing jointly.} Training the scores, the relative bias and the readout jointly from a fan-in
 random initialization ($\initscale=0.3$), every held-out count prediction becomes correct in $16$ of $17$ runs; the
-remaining run reaches $99.95\%$ (\cref{tab:reach}). The median solve time grows from $44$k updates at $n=6$ to $237$k at
+remaining run reaches $99.95\%$ (\cref{tab:reach}); outcome training under the same protocol and seeds solves none of $17$
+runs within $300$k updates and stays at chance for $n\ge8$. The median solve time grows from $44$k updates at $n=6$ to $237$k at
 $n=16$, where a factor $\mixrate^{-n}$ would grow $1{,}024$-fold. AdamW-trained step models at $n=16$ ($K=3$) also enter
 the certified region of their training-set loss (\cref{lem:basin}), while outcome models stay about $10^4$ times
 above its threshold (\cref{app:certificate}).
@@ -354,13 +355,18 @@ above its threshold (\cref{app:certificate}).
 \toprule
 & $n=6$ & $n=8$ & $n=12$ & $n=16$\\
 \midrule
-solved runs & $5/5$ & $5/5$ & $4/5$ & $2/2$\\
-updates to solve, median (range) & $44$k ($41$--$78$k) & $61$k ($46$--$99$k) & $77$k ($42$--$103$k) & $237$k ($208$--$266$k)\\
+step: solved runs & $5/5$ & $5/5$ & $4/5$ & $2/2$\\
+step: updates to solve, median (range) & $44$k ($41$--$78$k) & $61$k ($46$--$99$k) & $77$k ($42$--$103$k) & $237$k ($208$--$266$k)\\
+\midrule
+outcome: solved runs at $300$k & $0/5$ & $0/5$ & $0/5$ & $0/2$\\
+outcome: held-out answer accuracy & $50$--$94\%$ & $50$--$55\%$ & $50\%$ & $50$--$51\%$\\
 \bottomrule
 \end{tabular}
-\caption{\textbf{Joint step training of the routing solves the task in most runs.} Two-block Transformer
+\caption{\textbf{Joint step training of the routing solves the task in most runs; outcome training under the same
+protocol solves none.} Two-block Transformer
 of \cref{ass:arch}, counting modulo $2$ with $p=\frac14$, training only the scores, the relative bias and the readout by
-full-batch gradient descent (step size $2$) from $\initscale=0.3$; a run is solved when every held-out count prediction is correct.}
+full-batch gradient descent (step size $2$) from $\initscale=0.3$, same seeds for both formats; a run is solved when every
+held-out prediction is correct.}
 \label{tab:reach}
 \end{table}
 
