@@ -101,8 +101,9 @@ variance a displayed count leaves to the next letter (\cref{eq:local-variation})
 $\mixrate=0.5$ at $K=2$ and $0.66$ at $K=3$.
 
 \paragraph{Formats.} Both formats see the same prompt. The \emph{outcome loss} $\Lout$ is the cross-entropy of the final
-count; the \emph{step loss} $\Lstep$ is the teacher-forced cross-entropy of the running counts, and $\Lstep^{\ge2}$
-averages over $t\ge2$ (\cref{def:losses}).
+count; the \emph{step loss} $\Lstep$ is the teacher-forced cross-entropy of the transitions $s_{t-1},w_t\mapsto s_t$ for
+$t\ge2$; the first prediction is a boundary case whose previous count sits in the prompt (\cref{def:losses}). Experiments
+supervise every running count unless stated otherwise.
 
 \paragraph{Model.} A causal Transformer with two blocks of softmax heads and ReLU MLPs, a relative position bias
 initialized at zero, no LayerNorm, arbitrary widths and a linear readout (\cref{ass:arch}), initialized at
@@ -180,7 +181,7 @@ functional with the rule signal as target.
 \label{thm:separation}
 Under \cref{ass:arch,ass:init,ass:task} with a uniform start, for all $n\ge2$ and $\theta\in\initball$:
 \begin{enumerate}[label=(\roman*),leftmargin=*,itemsep=0pt,topsep=2pt]
-\item if $\initscale\le c\mixrate$, then $\|\nabla\Lstep^{\ge2}(\theta)\|\ge c\,\initscale\mixrate$ while
+\item if $\initscale\le c\mixrate$, then $\|\nabla\Lstep(\theta)\|\ge c\,\initscale\mixrate$ while
 $\|\nabla\Lout(\theta)\|\le C\initscale(\initscale^2+\mixrate^n)$;
 \item if $\initscale\le c$ and attention uses the full causal prefix, then $\|\nabla\rulecredit(\theta)\|\le C\initscale^6/n$, and if
 moreover $p<\frac12$, for a fan-in random initialization this is attained up to polynomial factors in the widths with high
@@ -234,7 +235,7 @@ two are balanced, and every prediction $s_t$, $t\ge2$, is correct with margin at
 \end{proposition}
 
 For $\zeta>0$, the \emph{gate region} $\mathcal G_\zeta$ is the set of parameters at which the attention outside
-$\{$own position, current letter$\}$ is at most $\zeta$, $|\beta_n-\beta_0|\le1$, and every prediction of $\Lstep^{\ge2}$ has
+$\{$own position, current letter$\}$ is at most $\zeta$, $|\beta_n-\beta_0|\le1$, and every prediction of $\Lstep$ has
 positive margin; it contains $\theta^\star_{\mathrm{gate}}$ (\cref{app:routing}).
 
 \begin{theorem}[Step training learns its routing]
@@ -242,8 +243,8 @@ positive margin; it contains $\theta^\star_{\mathrm{gate}}$ (\cref{app:routing})
 Consider counting modulo~$2$ with a fixed query of probability $p\in(0,1)$ and the two-block Transformer with the gate
 head, started from the small structured initialization of \cref{app:routing}, which supplies a weak count$\times$letter
 pathway but zero readout and relative bias. There is $\initscale_\star$ with $1/\initscale_\star\le C_p\sqrt w$ such that, for
-$0<\initscale\le\initscale_\star$, staged block-coordinate gradient flow on $\Lstep^{\ge2}$ enters $\mathcal G_\zeta$ by a time
-$T\le\mathrm{poly}(n,d_{\mathrm h},\initscale^{-1},(p(1-p))^{-1})$, stays in it at every later time, and drives $\Lstep^{\ge2}$ to
+$0<\initscale\le\initscale_\star$, staged block-coordinate gradient flow on $\Lstep$ enters $\mathcal G_\zeta$ by a time
+$T\le\mathrm{poly}(n,d_{\mathrm h},\initscale^{-1},(p(1-p))^{-1})$, stays in it at every later time, and drives $\Lstep$ to
 zero.
 \end{theorem}
 
@@ -410,7 +411,7 @@ shallow shortcut Transformers; our outcome executor is such a shortcut, and the 
 
 In one Transformer architecture that holds exact counting solutions for both formats, outcome training provably stays
 near chance for time exponential in the number of letters, while staged gradient flow on the step loss from a small structured initialization
-provably learns its routing and drives $\Lstep^{\ge2}$ to zero, with positive margins after polynomial optimization time. The reason is where the credit lies: every hidden letter costs the answer a factor $\mixrate$, while a running count
+provably learns its routing and drives $\Lstep$ to zero, with positive margins after polynomial optimization time. The reason is where the credit lies: every hidden letter costs the answer a factor $\mixrate$, while a running count
 pays $1-\mixrate^2$ once.
 
 \paragraph{Limitations.} \Cref{thm:main,thm:separation,thm:outcome-end} assume small initialization, full-batch gradient

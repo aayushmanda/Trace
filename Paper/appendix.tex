@@ -12,9 +12,13 @@ This section states the definitions and assumptions that the main text summarize
 \label{def:losses}
 Let $\bm z_t(\theta)\in\R^K$ be the state logits at the position that predicts $s_t$, and $\bm z_\theta$
 those at the answer position. The \emph{outcome loss} is $\Lout(\theta)=\E[-\log\softmax(\bm z_\theta)_y]$.
-The \emph{step loss} is the teacher-forced loss
-$\Lstep(\theta)=\frac1n\sum_{t=1}^n\E[-\log\softmax(\bm z_t(\theta))_{s_t}]$; $\Lstep^{\ge2}$ averages
-over $t=2,\ldots,n$ only.
+Write $\ell_t(\theta)=\E[-\log\softmax(\bm z_t(\theta))_{s_t}]$. The first state prediction is a boundary case: the previous
+count $s_0$ sits in the prompt rather than at the predicting position. The \emph{step loss} is therefore the teacher-forced
+transition loss
+\[
+ \Lstep(\theta)=\frac1{n-1}\sum_{t=2}^n\ell_t(\theta),
+\]
+and $\Lstep^{\mathrm{all}}(\theta)=\frac1n\sum_{t=1}^n\ell_t(\theta)$ also includes $t=1$.
 \end{definition}
 
 \begin{definition}[Degree]
@@ -232,7 +236,7 @@ Write (A1)--(A4) for \cref{ass:arch,ass:init,ass:task,ass:gd}, and (A3$'$) for a
 All initialization bounds below hold on the larger ball of radius $2\ballradius\initscale$: its relative radius is
 at most $\min(1/4,\varsigma/2)$. Constants depend only on $a_0,\varsigma,K$ and the numbers of blocks and heads.
 The only width-dependent smallness threshold is $\initscale_0=c\min(1,1/N_b)$.
-The state-credit loss is $\Lstep^{\ge2}$; formatting and final-answer positions are excluded.
+The step results use $\Lstep$, which excludes the first state prediction, formatting and final-answer positions.
 Unless stated otherwise, a fixed query and start count are understood.
 
 \begin{remark}[The bias condition]
@@ -658,15 +662,16 @@ cross-entropy of the gold token. Let $\pimin=\min_i\pi_i$. The \emph{certified r
 $\basin(\mathcal L)=\{\theta:\mathcal L(\theta)<\tfrac{\pimin}{4}\}$; it is not a basin of attraction in the dynamical sense, but gradient flow never leaves it
 (\cref{lem:basin}).
 \end{definition}
-For $\Lstep$ the items are the pairs $(P,t)$ of a prompt and a state position, with
-$\pi_{(P,t)}=\pi_P/n$, where $\pi_P$ is the probability of prompt $P$; for $\Lout$ there is one item per prompt.
+For $\Lstep$ the items are the pairs $(P,t)$ of a prompt and a state position $t\ge2$, with
+$\pi_{(P,t)}=\pi_P/(n-1)$, where $\pi_P$ is the probability of prompt $P$; $\Lstep^{\mathrm{all}}$ also includes $t=1$, with
+$\pi_{(P,t)}=\pi_P/n$; for $\Lout$ there is one item per prompt.
 
 \begin{lemma}[Executors lie in a certified region from which gradient flow converges]
 \label{lem:basin}
 \label{thm:basin}
 Let $\mathcal L$ be a supervised loss with logits as in \cref{ass:arch}.
 \begin{enumerate}[label=(\roman*),leftmargin=*,itemsep=0pt,topsep=2pt]
-\item For the executors of \cref{prop:represent} and $\mathcal L\in\{\Lstep,\Lstep^{\mathrm{full}},\Lout\}$ of the matching format,
+\item For the executors of \cref{prop:represent} and $\mathcal L\in\{\Lstep,\Lstep^{\mathrm{all}},\Lout\}$ of the matching format,
 replacing the readout $V^\star$ by $aV^\star$ with $a$ large enough gives a point of the open set $\basin(\mathcal L)$.
 \item Let $\theta(t)$, $t\ge t_0$, follow gradient flow $\frac{d\theta}{dt}=-P\nabla \mathcal L(\theta)$ on a parameter subset that contains the
 readout $V$, with $\mathcal L$ continuously differentiable along the trajectory, and suppose $\theta(t_0)\in\basin(\mathcal L)$. Let $\mathcal L_0=\mathcal L(\theta(t_0))$,
@@ -708,7 +713,7 @@ $a>\frac{1}{\execmargin}\log\frac{4(\Ktokens-1)}{\pimin}$ places it in the open 
 \end{lemma}
 
 The executors of \cref{prop:represent} have margin $\execmargin>19$ at every supervised position, so (iii) places suitably
-rescaled executors in $\basin(\mathcal L)$ for $\Lstep$, $\Lstep^{\mathrm{full}}$ and $\Lout$.
+rescaled executors in $\basin(\mathcal L)$ for $\Lstep$, $\Lstep^{\mathrm{all}}$ and $\Lout$.
 
 \begin{proof}
 (i) Since $\pi_i\ell_i\le\mathcal L<\tfrac{\pimin}{4}\le\tfrac{\pi_i}{4}$, we have $\ell_i<\frac14$ and $q_i=e^{-\ell_i}>\frac12$. Also
@@ -1054,7 +1059,7 @@ Use $\E[\bm e_{s_t}-\bm u]=0$ and define, only in this proof, the count cross-co
 \]
 Then
 \[
- \dpd{\Lstep^{\ge2}}{V}=-\E\bigl[(\bm e_{s_t}-\bm u)h_i^{(0)\top}\bigr]+O(\initscale^2)
+ \dpd{\Lstep}{V}=-\E\bigl[(\bm e_{s_t}-\bm u)h_i^{(0)\top}\bigr]+O(\initscale^2)
  =-\bm\Gamma E_{\mathrm{val}}+O(\initscale^2).
 \]
 By (A2), $E_{\mathrm{val}}$ has full row rank and
@@ -1062,7 +1067,7 @@ $\varsigma_{\min}(E_{\mathrm{val}})\ge\initscale\varsigma/2$ on $\initball$.
 In the nonconstant count modes, $\bm\Gamma$ has singular values $|1-p+p e^{2\pi\mathrm i j/K}|/K$, so its largest is $\mixrate/K$.
 For $\initscale\le\mixrate\varsigma/(4KC)$, this gives
 \[
- \Bigl\|\dpd{\Lstep^{\ge2}}{\theta}\Bigr\|\ge\Bigl\|\dpd{\Lstep^{\ge2}}{V}\Bigr\|_F\ge\|\bm\Gamma E_{\mathrm{val}}\|_F-C\initscale^2\ge\frac{\initscale\mixrate\varsigma}{4K}.
+ \Bigl\|\dpd{\Lstep}{\theta}\Bigr\|\ge\Bigl\|\dpd{\Lstep}{V}\Bigr\|_F\ge\|\bm\Gamma E_{\mathrm{val}}\|_F-C\initscale^2\ge\frac{\initscale\mixrate\varsigma}{4K}.
 \]
 For the outcome bound, \cref{lem:gradient-split,prop:network,lem:score-sum} give, on $\initball$ and for $\initscale\le c\mixrate$,
 $\nabla\Lout=\E[(\Jz)^\top(\hat y-\bm u)]-\nabla\outcredit$ with $\sup\|\Jz\|_F\le C\initscale$,
@@ -1232,7 +1237,9 @@ Seeds & $42$--$44$ ($42$--$51$ at $n=16$) & three or five & $2001$--$2003$\\
 \bottomrule
 \end{tabular}}
 \end{center}
-Paired formats share initialization, prompts, batches, optimizer and budget.
+Paired formats share initialization, prompts, batches, optimizer and budget. The theory uses the transition loss $\Lstep$
+($t\ge2$); the step-format runs here supervise the whole continuation (every running count, the answer marker ``:'', the answer and EOS), and the
+restricted joint-training runs of \cref{tab:reach} supervise every running count ($\Lstep^{\mathrm{all}}$).
 Only the supervised continuation differs.
 We score greedy decoding on held-out prompts.
 Letter tasks use four letters; first-occurrence words contain the query.
@@ -1246,7 +1253,7 @@ Their spread does not capture data variability.
 
 \emph{Setting.} These runs satisfy (A1)--(A4) and give \cref{fig:theory-measurement}(a) and \cref{tab:matched}: $K=2$, two blocks of width
 $16$ with three heads of dimension $8$ and MLP width $16$, $|\tilde b_m|\ge1$, two letters with match probability $\frac14$
-($\mixrate=\frac12$, exact up to $n=14$), full-batch float64 gradients, step objective $\Lstep^{\ge2}$.
+($\mixrate=\frac12$, exact up to $n=14$), full-batch float64 gradients, step objective $\Lstep$.
 
 \emph{Exit-time runs} start from a zero readout; \emph{credit measurements} keep a nonzero readout (\cref{rem:zero-readout}).
 
@@ -1501,7 +1508,7 @@ Code: \path{handcoded/step_reach_twoblock.py}; per-run measurements are in \text
 \label{conj:reach}
 Under \cref{ass:arch,ass:task} with full-prefix attention, let $\theta_0$ be the fan-in-scaled random initialization of
 \cref{rem:end-width} with a zero relative bias. For every $n$ and $\failprob$, with probability at least $1-\failprob$, simultaneous
-gradient flow on $\Lstep$ over the scores, the relative bias and the readout reaches positive margin on every state prediction
+gradient flow on $\Lstep^{\mathrm{all}}$ over the scores, the relative bias and the readout reaches positive margin on every state prediction
 within time $\mathrm{poly}(n,1/\initscale,\log(1/\failprob))$.
 \end{conjecture}
 \Cref{tab:reach} tests a finite-step version of this conjecture.
@@ -1511,8 +1518,8 @@ within time $\mathrm{poly}(n,1/\initscale,\log(1/\failprob))$.
 
 \begin{restated}{\Cref{thm:routing}}
 For counting modulo~$2$ with the gate head, started from the small structured initialization below, staged block-coordinate
-gradient flow on $\Lstep^{\ge2}$ enters $\mathcal G_\zeta$ by a time $T\le\mathrm{poly}(n,d_{\mathrm h},\initscale^{-1},(p(1-p))^{-1})$,
-stays in it at every later time, and drives $\Lstep^{\ge2}$ to zero, for every $0<\initscale\le\initscale_\star$ with
+gradient flow on $\Lstep$ enters $\mathcal G_\zeta$ by a time $T\le\mathrm{poly}(n,d_{\mathrm h},\initscale^{-1},(p(1-p))^{-1})$,
+stays in it at every later time, and drives $\Lstep$ to zero, for every $0<\initscale\le\initscale_\star$ with
 $1/\initscale_\star\le C_p\sqrt w$.
 \end{restated}
 
@@ -1598,7 +1605,7 @@ Replace the key seed $W_K\hat e_\ell=\initscale A_K\hat e_{1}$ by $W_K\hat e_{0}
 both letters share. Then, for every $\beta$ and every readout:
 \begin{enumerate}[label=(\roman*),leftmargin=*,itemsep=2pt,topsep=2pt]
 \item $f_t$ is a function of $c_t$ alone;
-\item $\Lstep^{\ge2}\ge-p\log p-(1-p)\log(1-p)$, and for each displayed count one of the two letter values has nonpositive margin;
+\item $\Lstep\ge-p\log p-(1-p)\log(1-p)$, and for each displayed count one of the two letter values has nonpositive margin;
 \item $M_{cm}=0$, so at the prior the gate-readout gradient of \cref{lem:R-identity}(b) vanishes.
 \end{enumerate}
 The staged schedule, and any training of $\beta$ and the readout, therefore stays at or above the count-only prior.
@@ -1683,7 +1690,7 @@ Let $n\ge2$, $|a|\le0.1$ and $\beta=0$. Then $M_{cm}=\operatorname{sign}(a)\mu_M
 For $|a|\le0.1$, $Z=e^u+R\in[1+0.904n,1.61n]$, so $\partial_uM_t=e^u/Z^2\ge0.34/n^2$; apply \cref{eq:R-hat}.
 \end{proof}
 
-\paragraph{Schedule.} Every stage is gradient flow $\frac{d\theta}{dt}=-P_k\nabla\Lstep^{\ge2}(\theta)$, where $P_k$ projects onto the
+\paragraph{Schedule.} Every stage is gradient flow $\frac{d\theta}{dt}=-P_k\nabla\Lstep(\theta)$, where $P_k$ projects onto the
 block trained in stage $k$ and all other parameters are frozen; each of the first three stages ends at a stopping time.
 Two scales matter: the gate-readout level and the leakage tolerance,
 \[
@@ -1853,7 +1860,7 @@ at most $\frac OZ=\omega_{\mathrm{oth}}\le\zeta$.
 Write $\widetilde M_t=m_0+d\,c_tm_t$. Then $|d|\ge0.18|a|$ and $\operatorname{sign}d=\operatorname{sign}a$, and the readout $v^\star$ with
 $gv^\star_r=\frac1d$, $\initscale v^\star_c=-\frac{m_0}{d}$ and $v^\star_s=0$ has margin at least $\frac12$ on every prompt and every
 $t\ge2$, with $|g|\|v^\star\|\le\frac{1.5}{|d|}$. Measuring time from the start of Stage D, there is $T_D\le\overline T_D$ (defined in
-\cref{eq:R-Dconst}) such that every prediction has positive margin at every time $t\ge T_D$, and $\Lstep^{\ge2}\to0$.
+\cref{eq:R-Dconst}) such that every prediction has positive margin at every time $t\ge T_D$, and $\Lstep\to0$.
 \end{lemma}
 
 \begin{proof}
@@ -1920,7 +1927,7 @@ $\frac{4\log^2(2\sqrt t)}{\sqrt t}\le\frac1{R_D}$. The left side decreases in $t
 $\log(2\sqrt{T'})\le2\log(64R_D)$, so the condition holds at $T'$ and hence for all $t\ge T'$. The two bounds on $\mathcal L(v(t))$ contradict each other.
 
 \emph{Convergence.} Every margin is therefore positive at every $t\ge T_D$, and $\limsup_t\mathcal L(v(t))\le e^{-C/2}$ for every $C$,
-so $\Lstep^{\ge2}\to0$.
+so $\Lstep\to0$.
 \end{proof}
 
 \begin{proof}[Proof of \cref{thm:routing}]
@@ -1931,7 +1938,7 @@ Let $T=T_A+T_B+T_C+T_D$.
 \[
  |\Delta|\le1,\qquad |M_t-\widetilde M_t|\le\zeta,
 \]
-so \cref{lem:R-D} gives positive margins at every time $t\ge T$ and $\Lstep^{\ge2}\to0$.
+so \cref{lem:R-D} gives positive margins at every time $t\ge T$ and $\Lstep\to0$.
 
 \emph{Persistence.} Stage D freezes $\beta$, so the leakage stays at most $\zeta$ and $|\Delta|\le1$; the trajectory is in
 $\mathcal G_\zeta$ at every $t\ge T$.
@@ -1956,7 +1963,7 @@ $T\le\mathrm{poly}(n,d_{\mathrm h},\initscale^{-1},(p(1-p))^{-1})$.
 \label{cor:fixed-route}
 With the initialization of \cref{thm:routing} but a fixed two-site mask exposing the displayed count and the current
 letter, readout gradient flow from zero reaches positive margins on every transition after the first in time
-$O_p(d_{\mathrm h}\initscale^{-12})$ and drives $\Lstep^{\ge2}$ to zero.
+$O_p(d_{\mathrm h}\initscale^{-12})$ and drives $\Lstep$ to zero.
 \end{proposition}
 
 \begin{proof}[Proof of \cref{prop:fixed-routing}]
@@ -1982,7 +1989,7 @@ so $\mathcal L(v(t))<\pi_0\log2$ once
 A nonpositive margin would contribute at least $\pi_0\log2$ to the loss, a contradiction.
 
 \emph{Convergence.} Since the loss does not increase along the flow, every margin stays positive thereafter, and comparing with
-$Cv^\star$ for every $C$ in the convex-flow bound gives $\Lstep^{\ge2}\to0$.
+$Cv^\star$ for every $C$ in the convex-flow bound gives $\Lstep\to0$.
 \end{proof}
 
 \begin{lemma}[Masked heads]
