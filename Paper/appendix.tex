@@ -486,14 +486,16 @@ The same identities bound the absolute sums at zero scores.
 For block $\ell$, let $H_{\ell,k}$, $\Psi_{\ell,k}$ and $Z_k$ bound the normalized $\xi$-derivatives of $h_i^\ell$, $\psi^\ell_{ij}$ and $\bm z_i$;
 let $S_{\ell,k}$ bound those of $\xi\psi^\ell$, $U_{\ell,k}$ those of an attention row in $\ell_1$ norm, and $B_{\ell,k}$ those of a head
 output. The normalized derivative bounds close under the following recursion. The affine block form and the softmax calculus give, with $U_{\ell,0}=1$, $H_{0,k}=0$ for $k\ge1$, and $a_r\ge1$ in the compositions,
-\begin{align*}
- \Psi_{\ell,k}&\le C\initscale^2\sum_{a+b=k}H_{\ell-1,a}H_{\ell-1,b},
- &S_{\ell,k}&\le\Psi_{\ell,k}+\Psi_{\ell,k-1},\\
- U_{\ell,k}&\le\sum_{j=1}^k2^j\sum_{a_1+\cdots+a_j=k}\prod_rS_{\ell,a_r},
- &B_{\ell,k}&\le C\initscale\sum_{a+c=k}U_{\ell,a}H_{\ell-1,c},\\
- H_{\ell,k}&\le C\bigl(H_{\ell-1,k}+B_{\ell,k}\bigr),
- &Z_k&\le C\initscale H_{2,k}.
-\end{align*}
+\[
+ \begin{aligned}
+ \Psi_{\ell,k}&\le C\initscale^2\sum_{a+b=k}H_{\ell-1,a}H_{\ell-1,b},\\
+ S_{\ell,k}&\le\Psi_{\ell,k}+\Psi_{\ell,k-1},\\
+ U_{\ell,k}&\le\sum_{j=1}^k2^j\sum_{a_1+\cdots+a_j=k}\prod_{r=1}^jS_{\ell,a_r},\\
+ B_{\ell,k}&\le C\initscale\sum_{a+c=k}U_{\ell,a}H_{\ell-1,c},\\
+ H_{\ell,k}&\le C\bigl(H_{\ell-1,k}+B_{\ell,k}\bigr),\\
+ Z_k&\le C\initscale H_{2,k}.
+ \end{aligned}
+\]
 With $b=C\initscale^4$, block $1$ gives
 \[
  U_{1,k}\le b^k,\qquad B_{1,k}+H_{1,k}\le C\initscale^2b^k,
