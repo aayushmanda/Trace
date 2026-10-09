@@ -15,10 +15,9 @@ __pycache__/
 *.ckpt
 *.safetensors
 
-# --- paper build output and local proof checks --------------------------------
+# --- paper build output and local notes --------------------------------
 /Paper/build/
 /Paper/*.log
-/handcoded/theory_checks/
 CHECKS.md
 docs/*.md
 
