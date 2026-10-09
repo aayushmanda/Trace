@@ -23,6 +23,9 @@ ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cp
 ap.add_argument("--out", default=None)
 ap.add_argument("--max_nfev", type=int, default=60000, help="cap on Stage C right-hand-side evaluations")
 ap.add_argument("--nuisance_keys", nargs="*", default=None, help="restrict the B/C nuisance to these blocks")
+ap.add_argument("--joint_steps", type=int, default=20000, help="joint_gd / joint_adam: number of updates")
+ap.add_argument("--joint_lr", type=float, default=1.0, help="joint_gd: step size; joint_adam: Adam learning rate")
+ap.add_argument("--joint_log", type=int, default=200, help="joint runs: evaluate every this many updates")
 args = ap.parse_args()
 torch.set_default_dtype(torch.float64)
 dev = torch.device(args.device)
@@ -321,6 +324,53 @@ def run_step(n, start, rho, seed, C):
     return rec
 
 
+def run_joint(n, start, rho, seed):
+    """Joint step training of every parameter from start C (sqrt(1-rho) seed + sqrt(rho) fan-in draw), no stages.
+
+    Full readout over the residual stream, initialized at zero; loss L_step over t >= 2 (logistic, K = 2).
+    joint_gd is full-batch gradient descent with step joint_lr; joint_adam is Adam with learning rate joint_lr.
+    Logs the loss, the smallest margin over every prompt and position, the gate-head leakage and |beta|_inf;
+    solved_at is the first evaluated update at which every margin is positive.
+    """
+    ids, pos, y, w = data(n, "step")
+    th, signs = init(n, "C", rho, seed)
+    th["readout"] = torch.zeros(D, device=dev)
+    trained = [k for k in th if k != "v"]
+    for k in trained:
+        th[k].requires_grad_(True)
+    T = n - 1
+    W8 = w[:, None] / T
+    opt = torch.optim.Adam([th[k] for k in trained], lr=args.joint_lr) if start == "joint_adam" else None
+    log, solved_at = [], None
+    for step in range(args.joint_steps + 1):
+        h, att = forward(th, ids, n)
+        f = h[:, pos] @ th["readout"]
+        m = y * f
+        lossv = (W8 * torch.nn.functional.softplus(-m)).sum()
+        if step % args.joint_log == 0 or step == args.joint_steps:
+            with torch.no_grad():
+                st = attention_stats(att[:, pos], n)
+                minm = m.min().item()
+                if solved_at is None and minm > 0:
+                    solved_at = step
+                log.append(dict(step=step, loss=lossv.item(), min_margin=minm, leak_max=st["leak_max"],
+                                att_current=st["att_current"], att_own=st["att_own"],
+                                beta_inf=th["beta"].abs().max().item()))
+        if opt is not None:
+            opt.zero_grad(set_to_none=True)
+            lossv.backward()
+            opt.step()
+        else:
+            for k in trained:
+                th[k].grad = None
+            lossv.backward()
+            with torch.no_grad():
+                for k in trained:
+                    th[k] -= args.joint_lr * th[k].grad
+    return dict(n=n, start=start, rho=rho, seed=seed, sigma=sig, p=p, lr=args.joint_lr, steps=args.joint_steps,
+                signs=signs, solved_at=solved_at, log=log)
+
+
 def run_outcome(n, start, rho, seed):
     ids, pos, y, w = data(n, "outcome")
     th, signs = init(n, "B", rho, seed)                                    # rho = 0 is the scaffold
@@ -328,6 +378,8 @@ def run_outcome(n, start, rho, seed):
     th0 = {k: t.clone() for k, t in th.items()}
     if start == "outcome_gd":
         trained = [k for k in th if k not in ("beta", "v")]
+    elif start == "outcome_all":                                           # every parameter, relative bias included
+        trained = [k for k in th if k != "v"]
     else:
         trained = ["beta", "readout"]
     for k in trained:
@@ -342,7 +394,8 @@ def run_outcome(n, start, rho, seed):
                 dist = math.sqrt(sum(((th[k] - th0[k]) ** 2).sum().item() for k in trained))
                 log.append(dict(step=step, loss_minus_log2=lossv.item() - math.log(2),
                                 acc=(w * (((y[:, 0] * f) > 0) + .5 * (f == 0))).sum().item(),
-                                logit_spread=(f.max() - f.min()).item(), dist_over_sigma=dist / sig))
+                                logit_spread=(f.max() - f.min()).item(), dist_over_sigma=dist / sig,
+                                beta_inf=th["beta"].abs().max().item(), t=step * args.outcome_lr))
         for k in trained:
             th[k].grad = None
         lossv.backward()
@@ -357,17 +410,28 @@ results = []
 for n in args.n:
     C = constants(n)
     for start in args.start:
-        for rho in (args.rho if start in ("B", "C", "outcome_gd") else [0.0]):
+        for rho in (args.rho if start in ("B", "C", "outcome_gd", "outcome_all", "joint_gd", "joint_adam") else [0.0]):
             for seed in args.seeds:
                 t0 = time.time()
-                rec = run_outcome(n, start, rho, seed) if start.startswith("outcome") else run_step(n, start, rho, seed, C)
+                if start.startswith("outcome"):
+                    rec = run_outcome(n, start, rho, seed)
+                elif start.startswith("joint"):
+                    rec = run_joint(n, start, rho, seed)
+                else:
+                    rec = run_step(n, start, rho, seed, C)
                 rec["seconds"] = time.time() - t0
                 results.append(rec)
                 if start.startswith("outcome"):
                     last = rec["log"][-1]
                     print(f"n={n} {start} rho={rho} seed={seed} acc={last['acc']:.4f} loss-log2={last['loss_minus_log2']:.2e} "
-                          f"spread={last['logit_spread']:.2e} dist/sigma={last['dist_over_sigma']:.3f} ({rec['seconds']:.0f}s)",
+                          f"spread={last['logit_spread']:.2e} dist/sigma={last['dist_over_sigma']:.3f} "
+                          f"|beta|_inf={last['beta_inf']:.2e} ({rec['seconds']:.0f}s)",
                           flush=True)
+                elif start.startswith("joint"):
+                    last = rec["log"][-1]
+                    print(f"n={n} {start} rho={rho} seed={seed} solved_at={rec['solved_at']} loss={last['loss']:.3e} "
+                          f"min_margin={last['min_margin']:+.3e} leak={last['leak_max']:.2e} cur={last['att_current']:.3f} "
+                          f"|beta|_inf={last['beta_inf']:.2f} ({rec['seconds']:.0f}s)", flush=True)
                 else:
                     print(f"n={n} {start} rho={rho} seed={seed} cur={rec['att_current']:.3f} own={rec['att_own']:.3f} "
                           f"leak={rec['leak_max']:.2e}/{C['eps']:.1e} Delta={rec['Delta']:+.3f} align={rec['align']:.3f} "

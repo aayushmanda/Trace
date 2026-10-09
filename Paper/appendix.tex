@@ -65,12 +65,12 @@ position bias held at its zero initialization.
 \begin{remark}[Norms and the relative bias]
 \label{rem:norms}
 Parameters carry the Euclidean norm of the vectorized parameters (Frobenius on
-each block). In \cref{thm:main,thm:separation,thm:outcome-end} the relative bias is fixed at zero,
-which is what $\beta=0$ in $\initball$ and \cref{ass:gd} encode; the proofs of \cref{app:mainproofs} treat the zero-score
-attention as uniform and do not cover a trained bias. Accordingly, in these theorems and in \cref{app:mainproofs}, $\theta$
-denotes the parameters other than $\beta$: the Jacobian $\Jz$, the gradients $\nabla\mathcal L$ and $\nabla\cred$, and the degree
-spectra $J_r$ are taken with respect to these parameters only, with no derivative in $\beta$. Only \cref{thm:routing}, \cref{tab:reach} and \cref{conj:reach}
-train it. The in-regime runs of \cref{app:exp-regime} have no relative bias.
+each block). In \cref{thm:main,thm:separation} the relative bias is fixed at zero, which is what $\beta=0$ in $\initball$ and
+\cref{ass:gd} encode, and $\theta$ denotes the parameters other than $\beta$: the Jacobian $\Jz$, the gradients $\nabla\mathcal L$ and
+$\nabla\cred$, and the degree spectra $J_r$ are taken with respect to these parameters only. The step-credit bounds use uniform
+zero-score attention through \cref{prop:network}(iv) and do not cover a trained bias. \Cref{thm:outcome-end} allows the bias to be
+trained: its proof uses only the logit bounds, which hold for every $\beta$ (\cref{lem:bias-uniform}). \Cref{thm:routing}, \cref{tab:reach}
+and \cref{conj:reach} also train it. The in-regime runs of \cref{app:exp-regime} have no relative bias.
 \end{remark}
 
 \paragraph{Constants and widths.} On $\initball$, no ReLU unit changes sign (\cref{app:network}). Constants $c,C>0$ depend only on $a_0$, $\embconst$, $K$
@@ -689,6 +689,47 @@ $|b_m|\ge\initscale/2$ and $\sigma_{\min}(E_{\mathrm{val}})\ge\initscale\embcons
 independent of $n$ and $\initscale$. A zero readout in $\tilde\theta$ is admissible: (A2) constrains the MLP biases
 and the value-token embeddings, not the readout, and a zero block only lowers the norms in those bounds.
 
+\paragraph{A trained relative bias.} Write $\vartheta$ for all parameters other than the relative bias $\beta$, and let
+$\widehat{\mathcal B}_{\initscale}'=\{\theta:\|\vartheta-\vartheta_0\|\le2\ballradius\initscale\}$, with $\beta$ unrestricted.
+
+\begin{lemma}[Outcome bounds are uniform in the relative bias]
+\label{lem:bias-uniform}
+Assume (A1)--(A3) with $\initscale\le\initscale_0$. On $\widehat{\mathcal B}_{\initscale}'$, with constants that do not depend on $\beta$:
+\begin{enumerate}[label=(\alph*),leftmargin=*,itemsep=1pt,topsep=2pt]
+\item the logit bounds of \cref{prop:network}(i)--(iii), and those of \cref{prop:score-degree} for $\bm z^{[k]}$ and $\bm z^{\mathrm{rem},k_0}$, hold;
+\item if $\initscale\le c\mixrate$, then $|\outcredit(\theta)|\le C_2\initscale^2\mixrate^n$;
+\item the conclusions of \cref{lem:end-smooth} hold for unit directions in all parameters, $\beta$ included.
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+Fix $\beta$. The score expansion scales only the content scores, so every attention row is $\softmax(\xi\psi_{i\cdot}+\beta_{i-\cdot})$
+over its visible sites, and $\beta$ enters only as an input-independent offset of each row. We check each place where the
+proofs of \cref{prop:network,prop:score-degree,lem:score-sum,lem:end-smooth} use the attention rows.
+
+\emph{Zero scores.} At $\xi=0$ each row is $\bm\omega^{(0)}_{i\cdot}=\softmax(\beta_{i-\cdot})$, a probability vector that does not depend on
+the input. The formulas of part~(iii) hold with each average $\tfrac1{m_j}\sum_{l\le j}$ replaced by $\sum_{l\le j}\omega^{(0)}_{jl}$, so the
+zero-score network is affine in the inputs and the input counts $d(\cdot)$ are unchanged. The one-score correction becomes
+$\sum_{j\le i}\omega^{(0)}_{ij}\bigl(\psi_{ij}(0)-\E_{\bm\omega^{(0)}_{i\cdot}}[\psi_{i\cdot}(0)]\bigr)W_Vh_j(0)$, with the same factors and the
+same size $O(\initscale^7)$.
+
+\emph{Derivatives in $\xi$.} The bias has no $\xi$-dependence, so $(\xi\psi+\beta)_k=\xi\psi_k+\psi_{k-1}$ for $k\ge1$ and
+$S_{\ell,k}\le\Psi_{\ell,k}+\Psi_{\ell,k-1}$ as before. \Cref{eq:softmax-avg} holds at every base point, and $U_{\ell,0}=1$ is the $\ell_1$
+norm of a row, so the derivative recursion and its solution are unchanged.
+
+\emph{Averages.} Part~(i), the absolute-sum bounds and the fixed ReLU pattern use only that each row is nonnegative with $\ell_1$ norm
+one: a convex combination satisfies $\bigl\|\sum_j\omega_j\prod_rF_r(j)\bigr\|_{\mathrm{abs}}\le\prod_r\max_j\|F_r(j)\|_{\mathrm{abs}}$, and
+$|(W_{\mathrm{in}}h)_m|\le C\initscale^2<|b_m|$ whatever the weights. The sum over letters in the zero-score bound of
+\cref{prop:score-degree}(i) is a sum of row weights, at most one per block. This proves~(a). The uniform weights $1/m_j$ are used
+only in the positional weights of \cref{prop:network}(iv), which serve the step credit of \cref{thm:separation} and are not needed here.
+
+\emph{Credit and smoothness.} The bound on $\outcredit$ in \cref{lem:score-sum} uses only \cref{lem:target-contraction} and the logit bounds
+of \cref{prop:score-degree}, so (a) gives (b). For (c), a unit direction with $\beta$-component $v_\beta$ perturbs each score row by
+$\nu=v_\beta$ with $\|\nu\|_\infty\le1$; by \cref{eq:softmax-avg} with $k=1,2$ an attention row then has profile $(1,C,C)$ in $\ell_1$ norm. A head
+output averages value vectors $W_Vh=O(\initscale^2)$, so its profile stays $(C\initscale^2,C\initscale,C)$, and the rest of the proof of
+\cref{lem:end-smooth} is unchanged.
+\end{proof}
+
 \begin{lemma}[Smoothness near initialization]
 \label{lem:end-smooth}
 Assume (A1) and (A2) with $\initscale\le\initscale_0$. There is $C_1$, independent of $n$, $\initscale$ and the widths, such that
@@ -756,26 +797,28 @@ the cross-entropy is $\ell=\log K+\KL(\bm u\|\hat y)-\langle\bm z,\bm e_y-\bm u\
 \end{equation}
 
 \begin{proof}[Proof of \cref{thm:outcome-end}]
-\emph{Loss floor.} By \cref{lem:score-sum}, valid on $\initball'$ for $\initscale\le c\mixrate$, $|\outcredit(\theta)|\le C_2\initscale^2\mixrate^n$
-there. Since $\KL\ge0$, \cref{eq:lo-identity} gives
+\emph{Loss floor.} By \cref{lem:bias-uniform}(b), $|\outcredit(\theta)|\le C_2\initscale^2\mixrate^n$ on $\widehat{\mathcal B}_{\initscale}'$ for
+$\initscale\le c\mixrate$, whatever $\beta$. Since $\KL\ge0$, \cref{eq:lo-identity} gives
 \begin{equation}
- \Lout(\theta)\ge\log K-C_2\initscale^2\mixrate^n,\qquad\theta\in\initball'.
+ \Lout(\theta)\ge\log K-C_2\initscale^2\mixrate^n,\qquad\theta\in\widehat{\mathcal B}_{\initscale}'.
  \label{eq:lo-floor}
 \end{equation}
 
-\emph{Energy bound.} On $\initball'$, $\Lout$ is smooth (\cref{lem:end-smooth}), so the flow is well defined. Let
-$\tau:=\inf\{t:\theta(t)\notin\initball\}$. For $t\le\tau$,
+\emph{Energy bound.} On $\widehat{\mathcal B}_{\initscale}'$, $\Lout$ is smooth in all parameters (\cref{lem:end-smooth,lem:bias-uniform}(c)), so
+the flow is well defined between the switching times of $P(t)$ and continuous across them. Let
+$\tau:=\inf\{t:\|\theta(t)-\theta_0\|>\ballradius\initscale\}$, the norm including $\beta$; this ball lies in $\widehat{\mathcal B}_{\initscale}'$.
+For $t\le\tau$, at every time where $P$ is constant,
 \[
- \frac{d\Lout}{dt}=-\|P\nabla\Lout\|^2,
+ \frac{d\Lout}{dt}=-\|P(t)\nabla\Lout\|^2=-\Bigl\|\frac{d\theta}{dt}\Bigr\|^2,
  \qquad\text{so}\qquad
- \int_0^t\|P\nabla\Lout\|^2\,ds=\Lout(\theta_0)-\Lout(\theta(t))\le C_2\initscale^2\mixrate^n,
+ \int_0^t\Bigl\|\frac{d\theta}{ds}\Bigr\|^2ds=\Lout(\theta_0)-\Lout(\theta(t))\le C_2\initscale^2\mixrate^n,
 \]
 because $\Lout(\theta_0)=\log K$ at a zero readout. By Cauchy--Schwarz,
 \[
- \|\theta(t)-\theta_0\|^2\le\Bigl(\int_0^t\|P\nabla\Lout\|\,ds\Bigr)^2\le t\,C_2\initscale^2\mixrate^n .
+ \|\theta(t)-\theta_0\|^2\le\Bigl(\int_0^t\Bigl\|\frac{d\theta}{ds}\Bigr\|\,ds\Bigr)^2\le t\,C_2\initscale^2\mixrate^n .
 \]
 
-\emph{Slow escape.} At $t=\tau$ the trajectory is on the boundary of $\initball$, so
+\emph{Slow escape.} At $t=\tau$ the trajectory is on the boundary of this ball, so
 \[
  \ballradius^2\initscale^2\le\tau\,C_2\initscale^2\mixrate^n
  \quad\Longrightarrow\quad
@@ -804,7 +847,7 @@ part~(i) uses $\hat y-\bm u=O(\initscale^2)$, which is exact at $\theta_0$, and 
 
 \begin{remark}[Gradient descent]
 \label{rem:flow}
-For full-batch gradient descent $\theta_{j+1}=\theta_j-\stepsize P\nabla\Lout(\theta_j)$ with $\stepsize\le\stepsize_0:=\min(1,\ballradius)/C_1$,
+For full-batch gradient descent $\theta_{j+1}=\theta_j-\stepsize P_j\nabla\Lout(\theta_j)$, with any block projections $P_j$, with $\stepsize\le\stepsize_0:=\min(1,\ballradius)/C_1$,
 where $C_1$ is the constant of \cref{lem:end-smooth}, each step stays in $\initball'$ and the descent lemma replaces the energy identity;
 the same argument gives the conclusions of \cref{thm:outcome-end} for every $j$ with $j\stepsize\le\tfrac{\ballradius^2}{2C_2}\mixrate^{-n}$.
 \end{remark}
@@ -2202,7 +2245,7 @@ nonpositive. This gives (ii).
 \label{cor:routing-outcome}
 Take the architecture of \cref{thm:routing}, with any fixed mask for the gate head at the answer position, and let
 $\mixrate$ be as in \cref{eq:lambda}. From the structured initialization, or from it plus any perturbation with zero readout under which
-\cref{ass:init} still holds, gradient flow on $\Lout$ with $\beta$ held at zero obeys the plateau bound of \cref{thm:outcome-end}
+\cref{ass:init} still holds, gradient flow on $\Lout$ under any block schedule, the relative bias included, obeys the plateau bound of \cref{thm:outcome-end}
 for $\mixrate>0$ and $\initscale\le\min(\initscale_\star,c\mixrate)$.
 \end{corollary}
 
@@ -2211,12 +2254,15 @@ The structured initialization satisfies \cref{ass:init} with $a_0=\sqrt K$, $\em
 admissible perturbation; the readout is zero. A fixed mask is allowed by \cref{ass:arch}: each attention row is still a
 softmax over its visible sites, zero-score attention is still uniform over them, and a mask can only lower the numbers of
 scores and sites, so the arguments of \cref{prop:score-degree}, \cref{prop:network}(i)--(iii), \cref{lem:score-sum,lem:end-smooth}
-and \cref{thm:outcome-end} apply unchanged.
+and \cref{thm:outcome-end} apply unchanged, and \cref{lem:bias-uniform} covers a trained bias.
 \end{proof}
 
 \begin{remark}[Scope]
 \label{rem:routing-scope}
-The step guarantee trains $\beta$ in a stage of its own, while the plateau of \cref{cor:routing-outcome} holds $\beta$ at zero.
+The plateau of \cref{cor:routing-outcome} covers every block schedule, including full joint flow and the staged schedule of
+\cref{thm:routing} itself: from the same seed and under that schedule, step training enters $\mathcal G_\zeta$ in polynomial time while
+outcome training stays near chance for time $c\mixrate^{-n}$. The blocks trained by that schedule do not contain an outcome executor,
+so the informative outcome comparison is full joint flow.
 At $K=2$, $\initscale=0.02$, $p=\tfrac14$ ($\mixrate=\tfrac12$) and $d_{\mathrm h}=1$ the bound on $T$, dominated by $T_C$, exceeds
 $\mixrate^{-n}$ unless $n>138$; with $\initscale=\min(\initscale_\star,c\mixrate)$, which does not depend on $n$ at fixed width $w$, the separation is
 $\mathrm{poly}(n,d_{\mathrm h},w)$ against $c\mixrate^{-n}$ for each fixed $K$. The result covers transitions $t\ge2$, since the first

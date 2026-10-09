@@ -56,7 +56,7 @@ its signal sits at degree two with no exponential horizon penalty. The two causa
 \item \textbf{Credit is resolved by degree} (\cref{sec:credit}). The gradient of any loss pairs each degree of the
 target with the same degree of the Jacobian. Outcome interaction credit decays like $\mixrate^n$; the upper bound and leading coefficient of step credit
 for the counting rule carry no such factor (\cref{thm:main,thm:separation}).
-\item \textbf{Outcome training plateaus} (\cref{thm:outcome-end}). From a zero readout and with the relative bias fixed, gradient flow stays near chance
+\item \textbf{Outcome training plateaus} (\cref{thm:outcome-end}). From a zero readout, gradient flow stays near chance under any block schedule, the relative bias included,
 for time $\Omega(\mixrate^{-n})$, in a Transformer wide enough to hold the outcome executor.
 \item \textbf{Step training learns its routing} (\cref{thm:routing}). From a small structured initialization, staged
 gradient flow on the step loss reaches an exact gate solution in polynomial time and keeps it.
@@ -248,25 +248,26 @@ Credit describes the signal near initialization. We next ask whether it controls
 
 \begin{theorem}[Exponential-time outcome plateau near small initialization]
 \label{thm:outcome-end}
-Under \cref{ass:arch,ass:init,ass:task,ass:gd} with a zero initial readout, consider gradient flow
-$\tfrac{d\theta}{dt}=-P\nabla\Lout(\theta)$ on any parameter subset that excludes the relative bias. For all $n\ge2$,
-$\initscale\le c\mixrate$ and $0\le t\le c\mixrate^{-n}$:
+Under \cref{ass:arch,ass:init,ass:task} with a zero initial readout, let $P(t)$ be, at each time, the orthogonal projection onto a set
+of trainable parameter blocks, piecewise constant in $t$; the blocks may include the relative bias. Consider gradient flow
+$\tfrac{d\theta}{dt}=-P(t)\nabla\Lout(\theta)$; full joint flow ($P\equiv I$) and the staged schedule of \cref{thm:routing} are special cases.
+For all $n\ge2$, $\initscale\le c\mixrate$ and $0\le t\le c\mixrate^{-n}$, with constants that do not depend on the schedule:
 \begin{enumerate}[label=(\roman*),leftmargin=*,itemsep=0pt,topsep=2pt]
-\item \emph{(locality)} the trajectory stays in the initialization ball, $\theta(t)\in\initball$;
+\item \emph{(locality)} $\|\theta(t)-\theta_0\|\le\ballradius\initscale$, the relative bias included in the norm;
 \item \emph{(loss)} $\Lout(\theta(t))\ge\log K-C\initscale^2\mixrate^n$;
 \item \emph{(correct-answer probability)} $\E\bigl[\softmax(\bm z_{\theta(t)})_y\bigr]\le\frac1K+C\initscale\mixrate^{n/2}$.
 \end{enumerate}
 \end{theorem}
 The theorem bounds the length of the plateau; it does not assert that outcome training never converges.
 
-\emph{Proof idea.} Along the flow,
+\emph{Proof idea.} Along the flow, for any schedule,
 \[
- \frac{d\Lout}{dt}=-\|P\nabla\Lout\|^2,
+ \frac{d\Lout}{dt}=-\|P(t)\nabla\Lout\|^2,
  \qquad\text{so}\qquad
  \|\theta(t)-\theta_0\|^2\le t\,\bigl(\Lout(\theta_0)-\Lout(\theta(t))\bigr).
 \]
-On $\initball$ the outcome loss cannot fall by more than $C\initscale^2\mixrate^n$ (\cref{lem:score-sum}), so the trajectory
-cannot travel far, and leaving the ball takes time of order $\mixrate^{-n}$ (\cref{app:end}).
+Near $\theta_0$ the outcome loss cannot fall by more than $C\initscale^2\mixrate^n$ (\cref{lem:score-sum}), whatever the relative bias
+(\cref{lem:bias-uniform}), so the trajectory cannot travel far, and leaving the ball takes time of order $\mixrate^{-n}$ (\cref{app:end}).
 
 \subsection{Step: amplify an interaction into learned routing}
 A running count needs one routing decision: read the displayed count and the current letter.
@@ -358,9 +359,10 @@ zero.
 The local identity is related to the parity analysis of \citet{kim2024parity}; here the computation is learned rather than built into the nonlinearity.
 
 \paragraph{What the comparison matches.} With the same architecture, mask, seed and $\initscale\le\min(\initscale_\star,c\mixrate)$,
-outcome flow plateaus for time $c\mixrate^{-n}$ (\cref{cor:routing-outcome}). The protocols still differ beyond the loss: the step
-guarantee schedules the blocks and trains $\beta$, while the plateau holds $\beta$ at zero; a separation under one shared protocol is
-not proved. The experiments below test joint finite-step training.
+outcome flow plateaus for time $c\mixrate^{-n}$ under every block schedule, the relative bias included: full joint flow and the staged
+schedule of \cref{thm:routing} alike (\cref{cor:routing-outcome}). What remains asymmetric is the positive side: \cref{thm:routing}
+proves step success for the staged schedule, not for joint flow (\cref{conj:reach}). The experiments below test joint finite-step
+training.
 
 % ===================================================================
 % Keep experiment floats from interrupting the routing argument above.
@@ -514,7 +516,7 @@ and the counting and transfer experiments generally favor step supervision.
 
 \subsection{What remains open}
 Routing discovery under simultaneous gradient flow from random initialization remains open (\cref{conj:reach}): a nonzero
-degree-$6$ coefficient does not show that joint flow amplifies it into routing. Outcome training that learns the bias is not covered.
+degree-$6$ coefficient does not show that joint flow amplifies it into routing.
 
 \Cref{thm:main,thm:separation} are bounds near small initialization with a fixed ReLU pattern, so the MLPs act affinely;
 \cref{thm:outcome-end} adds full-batch gradient flow. AdamW experiments leave this regime (\cref{rem:two-block-bias}), and the routing experiments use much
