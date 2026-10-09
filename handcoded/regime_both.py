@@ -8,8 +8,11 @@ letters and the loss is a weighted sum over 2^n words and both start states.
   L_O: cross-entropy of the answer at the ':' position.
   L_S: cross-entropy of s_2..s_n under teacher forcing, averaged over t.
 Each update moves the parameters by 1e-3 * sigma * ||theta~||; the training time is the sum of
-the step sizes. Reports ||dL/dtheta(theta_0)|| / sigma and the time T(0.1) to move
-0.1 * sigma * ||theta~||.
+the step sizes. Reports ||dL/dtheta(theta_0)|| / sigma and the times T(r) to move r * sigma * ||theta~||, for
+r = 0.1 and for the radius r_0 sigma of Theorem 3's ball B_eps (r_0 = min(1/8, c_emb/4), c_emb the smallest singular
+value of the value-token embeddings of theta~), i.e. r = r_0 / ||theta~||. At every update it also compares the sign
+of every ReLU pre-activation, on every input and position, with its sign at theta_0 (relu_flips: the largest number
+of flipped units seen up to each exit).
     uv run python handcoded/regime_both.py [sigma ...]
 REGIME_ZERO_READOUT=1 zeroes the readout of theta~ (Theorem 3); other tensors are unchanged.
 REGIME_STEP sets the update length in units of sigma*||theta~|| (default 1e-3).
@@ -56,7 +59,7 @@ def data(n):
                 step_ids=step_ids.to(dev), step_tgt=states[:, 1:].to(dev))
 
 
-def residual(p, ids, want_signs=False):
+def residual(p, ids, want_signs=False, signs=None):
     T = ids.shape[1]
     x = p["wte"][ids] + p["wpe"][:T]
     future = torch.ones(T, T, dtype=torch.bool, device=ids.device).triu(1)
@@ -68,6 +71,8 @@ def residual(p, ids, want_signs=False):
         att = (q @ k.transpose(-1, -2) / math.sqrt(Dh)).masked_fill(future, -math.inf)
         x = x + (att.softmax(-1) @ v).sum(1)
         pre = x @ p[f"{b}.mi"].T + p[f"{b}.mb"]
+        if signs is not None:
+            signs.append(pre.detach() > 0)
         if want_signs:
             on = pre > 0
             switching += int((on.flatten(0, 1).any(0) != on.flatten(0, 1).all(0)).sum())
@@ -75,19 +80,29 @@ def residual(p, ids, want_signs=False):
     return (x, switching) if want_signs else x
 
 
-def loss(p, d, mode, n, chunk=1 << 15):
-    tot = 0.0
+def loss(p, d, mode, n, chunk=1 << 15, ref=None):
+    """Weighted cross-entropy. With ref (a list), also compares every ReLU sign with ref: an empty list is filled with
+    the current signs, and the return value is then (loss, number of pre-activations whose sign differs from ref)."""
+    tot, flips, k = 0.0, 0, 0
     for i in range(0, len(d["prob"]), chunk):
         w = d["prob"][i:i + chunk]
+        signs = [] if ref is not None else None
         if mode == "outcome":
-            z = residual(p, d["out_ids"][i:i + chunk])[:, -1] @ p["R"].T
+            z = residual(p, d["out_ids"][i:i + chunk], signs=signs)[:, -1] @ p["R"].T
             ce = torch.nn.functional.cross_entropy(z, d["out_tgt"][i:i + chunk], reduction="none")
         else:                                            # positions n+3..2n+1 hold s_1..s_{n-1}, predict s_2..s_n
-            z = residual(p, d["step_ids"][i:i + chunk])[:, n + 3:] @ p["R"].T
+            z = residual(p, d["step_ids"][i:i + chunk], signs=signs)[:, n + 3:] @ p["R"].T
             ce = torch.nn.functional.cross_entropy(z.flatten(0, 1), d["step_tgt"][i:i + chunk].flatten(),
                                                    reduction="none").view(len(w), -1).mean(1)
         tot = tot + (w * ce).sum()
-    return tot
+        if ref is not None:
+            for s_ in signs:
+                if len(ref) <= k:
+                    ref.append(s_)
+                else:
+                    flips += int((s_ != ref[k]).sum())
+                k += 1
+    return (tot, flips) if ref is not None else tot
 
 
 def switching(p, d, mode):
@@ -95,14 +110,24 @@ def switching(p, d, mode):
         return residual(p, d["out_ids" if mode == "outcome" else "step_ids"][: 1 << 15], True)[1]
 
 
-def run(n, sigma, mode, tilde, eps=0.1, max_steps=20000, step_len=1e-3):
+def ball_radius(tilde):
+    """Theorem 3's ball radius r_0 = min(1/8, c_emb/4), in units of sigma * ||theta~||."""
+    c_emb = float(torch.linalg.svdvals(tilde["wte"][A:A + K]).min())
+    norm0 = math.sqrt(sum(float((v ** 2).sum()) for v in tilde.values()))
+    return min(1 / 8, c_emb / 4) / norm0
+
+
+def run(n, sigma, mode, tilde, eps=0.1, max_steps=20000, step_len=1e-3, radii=None):
     d = data(n)
     norm0 = math.sqrt(sum(float((v ** 2).sum()) for v in tilde.values()))
     p = {k: (sigma * v).clone().requires_grad_() for k, v in tilde.items()}
     theta0 = {k: v.detach().clone() for k, v in p.items()}
-    L0, t, rec = None, 0.0, dict(n=n, sigma=sigma, mode=mode, switch_start=switching(p, d, mode))
+    radii = sorted(set(radii or []) | {eps})
+    ref, max_flips = [], 0
+    L0, t, rec = None, 0.0, dict(n=n, sigma=sigma, mode=mode, switch_start=switching(p, d, mode), T_r={}, relu_flips={})
     for step in range(max_steps):
-        L = loss(p, d, mode, n)
+        L, flips = loss(p, d, mode, n, ref=ref)
+        max_flips = max(max_flips, flips)
         grads = torch.autograd.grad(L, list(p.values()))
         gn = math.sqrt(sum(float((g ** 2).sum()) for g in grads))
         if step == 0:
@@ -113,6 +138,11 @@ def run(n, sigma, mode, tilde, eps=0.1, max_steps=20000, step_len=1e-3):
                 v -= dt * g_
         t += dt
         dist = math.sqrt(sum(float(((p[k] - theta0[k]) ** 2).sum()) for k in p)) / (sigma * norm0)
+        for r in radii:
+            if dist >= r and r not in rec["T_r"]:
+                with torch.no_grad():
+                    max_flips = max(max_flips, loss(p, d, mode, n, ref=ref)[1])   # signs at the exit point itself
+                rec["T_r"][r], rec["relu_flips"][r] = t, max_flips
         if dist >= eps:
             with torch.no_grad():
                 L1 = float(loss(p, d, mode, n))
@@ -134,7 +164,8 @@ if __name__ == "__main__":
     for sigma in sigmas:
         for n in [int(x) for x in os.environ.get("REGIME_N", "4,6,8,10,12,14,16").split(",")]:
             for mode in ("step", "outcome"):
-                r = run(n, sigma, mode, tilde, step_len=step_len, max_steps=int(20000 * 1e-3 / step_len))
+                r = run(n, sigma, mode, tilde, step_len=step_len, max_steps=int(20000 * 1e-3 / step_len),
+                        radii=[ball_radius(tilde)])
                 r["seed"] = seed
                 r["zero_readout"] = zero_readout
                 r["step_len"] = step_len
@@ -143,5 +174,7 @@ if __name__ == "__main__":
                 print(f"sigma={sigma} n={n:2d} {mode:8s} grad/sigma={r['grad0_over_sigma']:.3e}  T(0.1)={r.get('T', float('nan')):.3e}"
                       f"  grad/(sigma(sigma^2+delta_n))={r['grad0_over_sigma'] / (sigma ** 2 + delta):.3e}"
                       f"  T*(sigma^2+delta_n)={r.get('T', float('nan')) * (sigma ** 2 + delta):.2f}"
-                      f"  switching {r['switch_start']}->{r.get('switch_end')}", flush=True)
+                      f"  switching {r['switch_start']}->{r.get('switch_end')}"
+                      f"  T(r) {{{', '.join(f'{k:.2e}: {v:.3e}' for k, v in r['T_r'].items())}}}"
+                      f"  relu flips {r['relu_flips']}", flush=True)
                 json.dump(res, open(os.environ.get("REGIME_OUT", "results/theorem_regime/both.json"), "w"))

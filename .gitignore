@@ -18,6 +18,7 @@ __pycache__/
 # --- paper build output and local notes --------------------------------
 /Paper/build/
 /Paper/*.log
+/handcoded/experiments/
 CHECKS.md
 docs/*.md
 
