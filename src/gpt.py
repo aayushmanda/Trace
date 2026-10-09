@@ -104,25 +104,12 @@ class GPTModel(nn.Module):
         return logits, loss
 
     @torch.no_grad()
-    def generate(self, idx, max_new_tokens, stop_id=None, greedy=True, temperature=1.0, top_k=None):
-        # Intentionally eager: compiling this loop recaptures a graph per new length.
+    def generate(self, idx, max_new_tokens, stop_id=None):
+        """Greedy decoding; stops once every row has emitted stop_id."""
         for _ in range(max_new_tokens):
-            idx_cond = idx[:, -self.block_size:]
-            logits, _ = self(idx_cond)
-            logits = logits[:, -1, :]
-            if greedy:
-                idx_next = torch.argmax(logits, dim=-1, keepdim=True)
-            else:
-                logits = logits / max(temperature, 1e-8)
-                if top_k is not None:
-                    values, _ = torch.topk(logits, min(top_k, logits.size(-1)))
-                    logits = logits.masked_fill(logits < values[:, [-1]], float("-inf"))
-                idx_next = torch.multinomial(F.softmax(logits, dim=-1), num_samples=1)
+            logits, _ = self(idx[:, -self.block_size:])
+            idx_next = torch.argmax(logits[:, -1, :], dim=-1, keepdim=True)
             idx = torch.cat((idx, idx_next), dim=1)
             if stop_id is not None and (idx_next == stop_id).all():
                 break
         return idx
-
-
-def count_parameters(model):
-    return sum(p.numel() for p in model.parameters() if p.requires_grad)

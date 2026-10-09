@@ -20,7 +20,7 @@
 \item {\bf Limitations}
     \item[] Question: Does the paper discuss the limitations of the work performed by the authors?
     \item[] Answer: \answerYes{}
-    \item[] Justification: The Limitations paragraph of \cref{sec:conclusion} states that \cref{thm:main,thm:separation,thm:outcome-end} assume small initialization, full-batch gradient descent and a fixed ReLU pattern (linearized MLPs) that the AdamW runs leave; that \cref{thm:routing} uses a small structured initialization and a staged schedule that trains the relative bias while the matching outcome plateau holds it fixed; that the separation is asymptotic; that joint training is a conjecture (\cref{conj:reach}); and that some experiments, including five-object BIG-Bench Hard, do not follow the $\mixrate^n$ ordering.
+    \item[] Justification: ``What remains open'' in \cref{sec:conclusion} states that \cref{thm:main,thm:separation} are bounds near small initialization with a fixed ReLU pattern (linearized MLPs) and that \cref{thm:outcome-end} adds full-batch gradient flow, a regime the AdamW runs leave; \cref{sec:reach} and \cref{rem:routing-scope} state that \cref{thm:routing} uses a small structured initialization and a staged schedule that trains the relative bias, while the matching outcome plateau holds it at zero; that the separation is asymptotic; that joint training is a conjecture (\cref{conj:reach}); and that some experiments, including five-object BIG-Bench Hard, do not follow the $\mixrate^n$ ordering.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper has no limitation while the answer \answerNo{} means that the paper has limitations, but those are not discussed in the paper. 
@@ -36,7 +36,7 @@
 \item {\bf Theory assumptions and proofs}
     \item[] Question: For each theoretical result, does the paper provide the full set of assumptions and a complete (and correct) proof?
     \item[] Answer: \answerYes{}
-    \item[] Justification: \Cref{app:formal} states every assumption (\cref{ass:arch,ass:init,ass:task,ass:gd}); each theorem names the assumptions it uses. Full proofs are in \cref{app:architectures,app:mainproofs,app:routing}, and \cref{app:verify} checks each proved bound against an exact computation.
+    \item[] Justification: \Cref{app:formal} states every assumption (\cref{ass:arch,ass:init,ass:task,ass:gd}); \cref{thm:main,thm:separation,thm:outcome-end} name the assumptions they use, and \cref{prop:represent,prop:gate,thm:routing} state their setting directly, with the seed and schedule of \cref{app:routing}. Full proofs are in \cref{app:architectures,app:mainproofs,app:routing}, and \cref{app:verify} checks the scalings of \cref{prop:score-degree,lem:leading,thm:separation} and the executors of \cref{prop:represent} by exact computation.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not include theoretical results. 

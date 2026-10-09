@@ -1,4 +1,4 @@
-"""python -m src supervision | reliability | lora"""
+"""python -m src supervision | lora | shuffled"""
 import sys
 from pathlib import Path
 
@@ -7,11 +7,11 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 HELP = """
-  python -m src supervision --config configs/experiments/e1_five_condition.yaml
-  python -m src reliability --task boolean_circuit_8 --rhos 0.8 --seeds 2001
+  python -m src supervision --config configs/experiments/boolean8_gpt.yaml
+  python -m src supervision --config configs/experiments/register16_gpt.yaml
   python -m src lora --config configs/experiments/lora_transfer.yaml
-  python -m src align --help
-  python -m src shuffled spectrum --K 3 5 7 --n 3 5 10
+  python -m src shuffled train --K 3 --condition process --seed 2001 --out results/shuffled/bbh/bbh_K3_process.json
+  python -m src shuffled zeroshot --out results/shuffled/zeroshot_qwen05.json
 """
 
 
@@ -24,25 +24,14 @@ def main(argv=None):
         return 0
     if cmd == "supervision":
         from src.runs import supervision_main as run
-        run(rest)
-        return 0
-    if cmd == "reliability":
-        from src.runs import reliability_main as run
-        run(rest)
-        return 0
-    if cmd == "lora":
+    elif cmd == "lora":
         from src.lora import main as run
-        run(rest)
-        return 0
-    if cmd == "shuffled":
+    elif cmd == "shuffled":
         from src.shuffled import main as run
-        run(rest)
-        return 0
-    if cmd == "align":
-        from src.runs import align_main as run
-        run(rest)
-        return 0
-    raise SystemExit(f"unknown command {cmd!r}. {HELP}")
+    else:
+        raise SystemExit(f"unknown command {cmd!r}. {HELP}")
+    run(rest)
+    return 0
 
 
 if __name__ == "__main__":

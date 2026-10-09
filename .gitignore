@@ -40,9 +40,5 @@ training_dynamics.mp4
 # --- scratch -----------------------------------------------------------------
 /archive
 /results
-
-
-
-# Include the archived notebook trajectory linked by the paper artifact.
-!docs/assets/training_dynamics.mp4
+CHECKS.md
 
