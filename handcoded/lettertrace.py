@@ -1,38 +1,8 @@
-"""
-Process vs outcome supervision on letter tasks, one file, only torch.
-
-A prompt is a start value s0, a query letter q and a word of n letters.
-    count: s_t = (s_{t-1} + [w_t == q]) mod m      every step is a permutation (A2)
-    first: s_t = index of the first q in w_1..w_t   absorbing once found (breaks A2)
-Process supervision trains on s_1..s_n, outcome supervision on s_n only. Both exact
-solutions are written by hand into ONE architecture, a random theta_0 in that
-architecture is trained under each loss, and everything is scored by greedy
-free-running generation on held-out words.
-
-    python handcoded/lettertrace.py task=count word_len=12 mod=2 steps=8000
-    python handcoded/lettertrace.py task=first word_len=12 steps=8000
-    python handcoded/lettertrace.py task=count rho=0.5 corrupt=shift mod=3
-    python handcoded/lettertrace.py modes=outcome steps=32000 save_every=1000 save_dir=ckpt/n8_long
-    python handcoded/lettertrace.py save_every=500 save_dir=ckpt/n8
-
-Import configure, make_corpus, init_theta, handcoded_params, train_mode, and
-generate from this file.
-
-Rows (both formats share the prompt  s0 q w_1 .. w_n SEP):
-    outcome:  s0 q w_1 .. w_n SEP  : s_n EOS
-    process:  s0 q w_1 .. w_n SEP  s_1 .. s_n : s_n EOS
-Both models see the same prompt; process writes the intermediate states before the answer.
-(layout=stream, which interleaves letters and states, s0 q w_1 s_1 .. w_n s_n : s_n EOS,
-is kept as an ablation; there the letters are fed in during evaluation.)
-Block 0 of every solution marks each letter with [w_t == q]. Block 1 either steps once
-per emitted value (process) or reads all n marks at the answer (outcome).
-"""
 import ast
 import math
 import os
 import random
 import sys
-
 import torch
 from torch.nn import functional as F
 from tqdm.auto import tqdm

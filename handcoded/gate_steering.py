@@ -1,34 +1,3 @@
-"""Steering into the gate solution: Theorem 4 (thm:routing): the structured seed, a nuisance ladder, controls and mode connectivity.
-
-Two-block Transformer of Assumption 1 (two heads per block, ReLU MLPs, no LayerNorm), with block-2 head 0 the
-segment-masked gate head carrying the relative bias beta. Counting modulo 2 over two letters (q with probability p),
-exact population over all letter patterns and both start counts. Step layout: BOS w_1..w_n s_0 s_1..s_{n-1}; the
-position n+t holds s_{t-1} and predicts s_t; L_step^{>=2} supervises t >= 2. Outcome layout: BOS w_1..w_n s_0 ANS.
-
-Starts
-  A            the structured seed of the routing appendix (signs A_Q, A_K, A_V drawn from the seed)
-  B            A plus frozen fan-in nuisance rho * N(0, sigma^2 / fan-in) on every weight and embedding block
-  C            sqrt(1-rho) * scaffold + sqrt(rho) * fan-in draw (the seed is progressively replaced)
-  random_seed  gate-head query, key and value replaced by random matrices of the same Frobenius norm
-  prev_offset  A with beta initialized at 2 on the previous letter's offset (a wrong-position routing seed)
-  l0_seed      key reads the letter-presence direction e_0 instead of the match direction (Lemma wrong-seed)
-  sign_flip    A with the query sign flipped, so the gate strength a changes sign
-  outcome_gd      outcome loss, gradient descent on every parameter except beta (Corollary routing-outcome (a))
-  outcome_staged  outcome loss, gradient descent on beta and the readout only (Corollary routing-outcome (b))
-
-Schedule (routing appendix, staged block-coordinate gradient flow): A the count readout (v_c, v_s) at the prior (the limit of its
-flow, reached by Newton); B gradient flow on v_r until alpha = sign(a) g v_r reaches alpha_B = 0.01 p (1-p) |a| / n^2;
-C gradient flow on beta, through the full model, until the attention outside {own position, current letter} is at most
-zeta = 0.01 |a| / (sqrt(K) B);
-D gradient flow on (v_c, v_s, v_r), discretized by implicit Euler steps on a 5% geometric time grid. Stages B and C are
-integrated with LSODA and capped at 100 times their proved time bounds; a start that never meets a stopping rule fails there.
-
-Logged per run: attention on the current letter and on the own position, leakage (largest attention outside the two),
-Delta = beta_n - beta_0, alignment of beta with beta_gate*, Stage D flow time to positive margins, whether training
-is in the gate region G_eps, minimum margin and loss, and the straight path to a rescaled theta*_gate.
-
-Usage: python handcoded/gate_steering.py --n 6 8 --start A B --rho 0 0.1 --seeds 0 1 --out results/gate_steering/x.json
-"""
 import argparse
 import itertools
 import json

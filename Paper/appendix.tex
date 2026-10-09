@@ -67,7 +67,9 @@ position bias held at its zero initialization.
 Parameters carry the Euclidean norm of the vectorized parameters (Frobenius on
 each block). In \cref{thm:main,thm:separation,thm:outcome-end} the relative bias is fixed at zero,
 which is what $\beta=0$ in $\initball$ and \cref{ass:gd} encode; the proofs of \cref{app:mainproofs} treat the zero-score
-attention as uniform and do not cover a trained bias. Only \cref{thm:routing}, \cref{tab:reach} and \cref{conj:reach}
+attention as uniform and do not cover a trained bias. Accordingly, in these theorems and in \cref{app:mainproofs}, $\theta$
+denotes the parameters other than $\beta$: the Jacobian $\Jz$, the gradients $\nabla\mathcal L$ and $\nabla\cred$, and the degree
+spectra $J_r$ are taken with respect to these parameters only, with no derivative in $\beta$. Only \cref{thm:routing}, \cref{tab:reach} and \cref{conj:reach}
 train it. The in-regime runs of \cref{app:exp-regime} have no relative bias.
 \end{remark}
 
@@ -1117,18 +1119,25 @@ For GPT-2L and LoRA, seeds change only initialization, so their spread does not 
 \subsection{Controlled test of the theorem regime}
 \label{app:exp-regime}
 \label{app:regime}
-\paragraph{Purpose and setup.} These runs satisfy (A1)--(A4) and test exponential outcome escape and step rule credit with polynomial horizon cost.
+\paragraph{Purpose and setup.} These runs approximate the regime of (A1)--(A4): the architecture, task and initialization conditions are enforced where
+they can be checked numerically, and gradient flow is approximated by refined full-batch updates. They test exponential outcome
+escape and step rule credit with polynomial horizon cost. The compact widths below test the gradient and exit mechanism only;
+exact executors are certified by \cref{prop:represent} in the wider architecture, not at these widths.
 We use $K=2$, two blocks of width $16$, three heads of dimension $8$, MLP width $16$, $|\tilde b_m|\ge1$,
 and two letters with match probability $\tfrac14$ ($\mixrate=\tfrac12$). Gradients are exact over all words through $n=14$,
 in full-batch float64, with step objective $\Lstep$. Exit-time runs start from a zero readout; credit measurements retain a
 nonzero readout (\cref{rem:zero-readout}).
 
 Each update moves the parameters by $10^{-3}\initscale\|\tilde\theta\|$.
-The exit time $\traintime(r)$ is the accumulated step size when $\|\theta_j-\theta_0\|=r\initscale\|\tilde\theta\|$.
-Halving or quartering the update changes $\traintime(0.1)$ by less than $1\%$, and no ReLU switches, supporting the gradient-flow approximation.
+The exit time $\traintime(r)$ is the accumulated step size when $\|\theta_j-\theta_0\|=r\initscale\|\tilde\theta\|$. We report it at
+$r=0.1$ and at the radius $\ballradius\initscale$ of the ball $\initball$ in \cref{thm:outcome-end}, $r=\ballradius/\|\tilde\theta\|\approx1.8\times10^{-3}$
+($\ballradius=\tfrac18$ and $\|\tilde\theta\|\approx70$ for all three draws); $\traintime(0.1)$ is therefore a displacement time well outside $\initball$.
+Halving or quartering the update changes $\traintime(0.1)$ by less than $1\%$. At every update before either exit, no ReLU pre-activation
+changes sign from its value at $\theta_0$, on any input or position, so the fixed activation pattern of the analysis holds along the trajectory.
 
-\paragraph{Exit times.} \Cref{fig:theory-measurement}a and \cref{tab:exit-times} show outcome escape growing approximately as
-$\mixrate^{-n}$, while step escape remains nearly constant. Here $\initscale=0.002$; the fast step exit reflects fitting the count-only prior.
+\paragraph{Exit times.} \Cref{fig:theory-measurement}a and \cref{tab:exit-times} show outcome escape growing at least as fast as
+$\mixrate^{-n}$ at both radii, while step escape remains nearly constant. Here $\initscale=0.002$; the fast step exit reflects fitting the
+count-only prior.
 
 \begin{table}[H]
 \centering\small
@@ -1136,11 +1145,15 @@ $\mixrate^{-n}$, while step escape remains nearly constant. Here $\initscale=0.0
 \toprule
 & $n=4$ & $6$ & $8$ & $10$ & $12$ & $14$\\
 \midrule
-outcome $\traintime(0.1)$, $\initscale=0.002$, three draws & $0.9$--$1.5\mathrm{e}4$ & $0.5$--$0.8\mathrm{e}5$ & $2.3$--$3.8\mathrm{e}5$ & $1.0$--$1.8\mathrm{e}6$ & $4.7$--$7.8\mathrm{e}6$ & $2.2$--$3.8\mathrm{e}7$\\
-step $\traintime(0.1)$, $\initscale=0.002$, three draws & \multicolumn{6}{c}{$4.18$--$5.55$ at every $n$}\\
+outcome, exit from $\initball$ ($r=\ballradius/\|\tilde\theta\|$) & $3.2$--$7.5\mathrm{e}2$ & $1.6$--$3.8\mathrm{e}3$ & $0.8$--$1.8\mathrm{e}4$ & $3.6$--$8.6\mathrm{e}4$ & $1.5$--$3.6\mathrm{e}5$ & $0.7$--$1.8\mathrm{e}6$\\
+step, exit from $\initball$ & \multicolumn{6}{c}{$0.11$--$0.17$ at every $n$}\\
+\midrule
+outcome $\traintime(0.1)$ & $0.9$--$1.5\mathrm{e}4$ & $0.5$--$0.8\mathrm{e}5$ & $2.3$--$3.8\mathrm{e}5$ & $1.0$--$1.8\mathrm{e}6$ & $4.7$--$7.8\mathrm{e}6$ & $2.2$--$3.8\mathrm{e}7$\\
+step $\traintime(0.1)$ & \multicolumn{6}{c}{$4.18$--$5.55$ at every $n$}\\
 \bottomrule
 \end{tabular}}
-\caption{\textbf{Outcome escape grows exponentially while step escape stays nearly constant.} Ranges are over three draws.}
+\caption{\textbf{Outcome escape grows exponentially while step escape stays nearly constant.} $\initscale=0.002$, zero readout;
+ranges are over three draws.}
 \label{tab:exit-times}
 \end{table}\needspace{17\baselineskip}
 \paragraph{Gradient decomposition.} Rule credit has polynomial horizon cost; outcome interaction credit has exponential cost.
@@ -2215,7 +2228,7 @@ prediction has no count at its own position.
 % TODO before submission: confirm the anonymous repository URL.
 \paragraph{Code.} Code, configurations, seeds, reproduction commands, numerical proof checks and per-run measurements are available at
 \url{https://anonymous.4open.science/r/trace}. The accompanying code repository provides an exact implementation of the executors,
-checks of the staged gradient flow, and instructions for reproducing every experiment.
+a numerical realization of the staged schedule, and instructions for reproducing every experiment.
 
 \paragraph{Compute and data.} Runs use one NVIDIA A100 80GB GPU: about one minute per $8$k counting updates and fifteen minutes per
 $800$-update LoRA run; exploratory runs used more compute than reported. Data are synthetic; the accompanying code repository also

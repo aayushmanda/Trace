@@ -254,7 +254,7 @@ $\initscale\le c\mixrate$ and $0\le t\le c\mixrate^{-n}$:
 \begin{enumerate}[label=(\roman*),leftmargin=*,itemsep=0pt,topsep=2pt]
 \item \emph{(locality)} the trajectory stays in the initialization ball, $\theta(t)\in\initball$;
 \item \emph{(loss)} $\Lout(\theta(t))\ge\log K-C\initscale^2\mixrate^n$;
-\item \emph{(accuracy)} $\E\bigl[\softmax(\bm z_{\theta(t)})_y\bigr]\le\frac1K+C\initscale\mixrate^{n/2}$.
+\item \emph{(correct-answer probability)} $\E\bigl[\softmax(\bm z_{\theta(t)})_y\bigr]\le\frac1K+C\initscale\mixrate^{n/2}$.
 \end{enumerate}
 \end{theorem}
 The theorem bounds the length of the plateau; it does not assert that outcome training never converges.
@@ -377,16 +377,18 @@ protocols are in \cref{app:experiments}.
 \centering
 \includegraphics[width=\linewidth]{figures/main_theory_measurement.pdf}
 \caption{\textbf{Outcome escape is slow; outcome training learns the low-degree prior and little else.}
-(a)~Zero-readout counting, $K=2$, $\mixrate=0.5$, $\initscale=0.002$: median exit time and interquartile band over three draws; the dashed $\mixrate^{-n}$ guide is anchored at $n=4$. The step exit reflects fitting the count-only prior, not learning the rule.
+(a)~Zero-readout counting, $K=2$, $\mixrate=0.5$, $\initscale=0.002$: median time to a displacement of $0.1\initscale\|\tilde\theta\|$ and interquartile band over three draws; the dashed $\mixrate^{-n}$ guide is anchored at $n=4$. The step exit reflects fitting the count-only prior, not learning the rule.
 (b)~Outcome exact accuracy after $8$k AdamW updates in $20$ horizon--alphabet cells: means and seed ranges over three seeds; the green curve is the state-only prior $(1+\mixrate^n)/2$, and gray is chance.
 (c)~The same accuracies minus the prior. Correlations use cell means.}
 \label{fig:theory-measurement}
 \label{fig:lambda-grid}
 \end{figure}
 
-\paragraph{Does outcome escape exponentially slowly?} Inside the theorems' assumptions, with full-batch gradient descent in float64 and no ReLU unit switching, the
-outcome exit time from the initialization ball grows at least as fast as $\mixrate^{-n}$ while the step exit time stays
-constant (\cref{fig:theory-measurement}a), because the step loss can leave the ball by fitting the count-only prior; halving the update length changes the exit time by less than $1\%$. At
+\paragraph{Does outcome escape exponentially slowly?} In a compact model built to approximate the theorems' assumptions, with full-batch gradient descent
+in float64 and no ReLU sign change on any input along the trajectory, the outcome exit time grows at least as fast as $\mixrate^{-n}$, both from the
+ball $\initball$ of \cref{thm:outcome-end} and at a displacement of $0.1\initscale\|\tilde\theta\|$, while the step exit time stays
+constant (\cref{fig:theory-measurement}a, \cref{tab:exit-times}), because the step loss can leave the ball by fitting the count-only prior;
+halving the update length changes the exit time by less than $1\%$. At
 initialization, $99.6\%$ of the Jacobian's energy is at degree~$0$ (\cref{fig:overview}c), and the answer-dependent
 gradient decays by a fitted $0.48$--$0.51$ per letter at $\mixrate=0.5$ over three seeds (\cref{tab:spectrum}).
 

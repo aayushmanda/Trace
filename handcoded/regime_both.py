@@ -1,22 +1,3 @@
-"""Both losses inside the regime of Theorem 3 (outcome plateau), at horizons where the horizon term binds.
-
-Assumptions (A1)-(A4): two blocks at fixed widths (16, three heads, MLP width 16), K = 2 value
-logits, theta_0 = sigma * theta_tilde with every MLP bias |b~| >= 1, full-batch gradient descent
-on the exact loss. To reach n = 16 exactly, the alphabet has two letters, the query letter with
-probability 1/4, so the moves are i.i.d. with the same contraction lambda = 1/2 as four uniform
-letters and the loss is a weighted sum over 2^n words and both start states.
-  L_O: cross-entropy of the answer at the ':' position.
-  L_S: cross-entropy of s_2..s_n under teacher forcing, averaged over t.
-Each update moves the parameters by 1e-3 * sigma * ||theta~||; the training time is the sum of
-the step sizes. Reports ||dL/dtheta(theta_0)|| / sigma and the times T(r) to move r * sigma * ||theta~||, for
-r = 0.1 and for the radius r_0 sigma of Theorem 3's ball B_eps (r_0 = min(1/8, c_emb/4), c_emb the smallest singular
-value of the value-token embeddings of theta~), i.e. r = r_0 / ||theta~||. At every update it also compares the sign
-of every ReLU pre-activation, on every input and position, with its sign at theta_0 (relu_flips: the largest number
-of flipped units seen up to each exit).
-    uv run python handcoded/regime_both.py [sigma ...]
-REGIME_ZERO_READOUT=1 zeroes the readout of theta~ (Theorem 3); other tensors are unchanged.
-REGIME_STEP sets the update length in units of sigma*||theta~|| (default 1e-3).
-"""
 import itertools
 import json
 import math
@@ -164,8 +145,10 @@ if __name__ == "__main__":
     for sigma in sigmas:
         for n in [int(x) for x in os.environ.get("REGIME_N", "4,6,8,10,12,14,16").split(",")]:
             for mode in ("step", "outcome"):
-                r = run(n, sigma, mode, tilde, step_len=step_len, max_steps=int(20000 * 1e-3 / step_len),
-                        radii=[ball_radius(tilde)])
+                # REGIME_STOP=ball stops at the radius of B_eps instead of r = 0.1 (to refine the small-radius exit time).
+                stop = ball_radius(tilde) if os.environ.get("REGIME_STOP") == "ball" else 0.1
+                r = run(n, sigma, mode, tilde, eps=stop, step_len=step_len,
+                        max_steps=int(20000 * 1e-3 / step_len), radii=[ball_radius(tilde)])
                 r["seed"] = seed
                 r["zero_readout"] = zero_readout
                 r["step_len"] = step_len
