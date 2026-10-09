@@ -1132,7 +1132,9 @@ Each update moves the parameters by $10^{-3}\initscale\|\tilde\theta\|$.
 The exit time $\traintime(r)$ is the accumulated step size when $\|\theta_j-\theta_0\|=r\initscale\|\tilde\theta\|$. We report it at
 $r=0.1$ and at the radius $\ballradius\initscale$ of the ball $\initball$ in \cref{thm:outcome-end}, $r=\ballradius/\|\tilde\theta\|\approx1.8\times10^{-3}$
 ($\ballradius=\tfrac18$ and $\|\tilde\theta\|\approx70$ for all three draws); $\traintime(0.1)$ is therefore a displacement time well outside $\initball$.
-Halving or quartering the update changes $\traintime(0.1)$ by less than $1\%$. At every update before either exit, no ReLU pre-activation
+Halving or quartering the update changes $\traintime(0.1)$ by less than $1\%$. The exit from $\initball$ is a much shorter distance, so
+it is integrated with updates of $10^{-6}\initscale\|\tilde\theta\|$, about $1{,}800$ updates to the boundary; updates of $10^{-5}$ change it by
+less than $0.5\%$. At every update before either exit, no ReLU pre-activation
 changes sign from its value at $\theta_0$, on any input or position, so the fixed activation pattern of the analysis holds along the trajectory.
 
 \paragraph{Exit times.} \Cref{fig:theory-measurement}a and \cref{tab:exit-times} show outcome escape growing at least as fast as
@@ -1145,8 +1147,8 @@ count-only prior.
 \toprule
 & $n=4$ & $6$ & $8$ & $10$ & $12$ & $14$\\
 \midrule
-outcome, exit from $\initball$ ($r=\ballradius/\|\tilde\theta\|$) & $3.2$--$7.5\mathrm{e}2$ & $1.6$--$3.8\mathrm{e}3$ & $0.8$--$1.8\mathrm{e}4$ & $3.6$--$8.6\mathrm{e}4$ & $1.5$--$3.6\mathrm{e}5$ & $0.7$--$1.8\mathrm{e}6$\\
-step, exit from $\initball$ & \multicolumn{6}{c}{$0.11$--$0.17$ at every $n$}\\
+outcome, exit from $\initball$ ($r=\ballradius/\|\tilde\theta\|$) & $2.8$--$6.8\mathrm{e}2$ & $1.4$--$3.4\mathrm{e}3$ & $0.7$--$1.6\mathrm{e}4$ & $3.2$--$8.2\mathrm{e}4$ & $1.5$--$3.5\mathrm{e}5$ & $0.7$--$1.8\mathrm{e}6$\\
+step, exit from $\initball$ & \multicolumn{6}{c}{$0.10$--$0.16$ at every $n$}\\
 \midrule
 outcome $\traintime(0.1)$ & $0.9$--$1.5\mathrm{e}4$ & $0.5$--$0.8\mathrm{e}5$ & $2.3$--$3.8\mathrm{e}5$ & $1.0$--$1.8\mathrm{e}6$ & $4.7$--$7.8\mathrm{e}6$ & $2.2$--$3.8\mathrm{e}7$\\
 step $\traintime(0.1)$ & \multicolumn{6}{c}{$4.18$--$5.55$ at every $n$}\\
