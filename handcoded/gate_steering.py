@@ -1,4 +1,4 @@
-"""Steering into the gate solution: Theorem 4's seeded scaffold, a nuisance ladder, controls and mode connectivity.
+"""Steering into the gate solution: Theorem 4 (thm:routing): the structured seed, a nuisance ladder, controls and mode connectivity.
 
 Two-block Transformer of Assumption 1 (two heads per block, ReLU MLPs, no LayerNorm), with block-2 head 0 the
 segment-masked gate head carrying the relative bias beta. Counting modulo 2 over two letters (q with probability p),
@@ -6,7 +6,7 @@ exact population over all letter patterns and both start counts. Step layout: BO
 position n+t holds s_{t-1} and predicts s_t; L_step^{>=2} supervises t >= 2. Outcome layout: BOS w_1..w_n s_0 ANS.
 
 Starts
-  A            the scaffold of Appendix G (signs A_Q, A_K, A_V drawn from the seed)
+  A            the structured seed of the routing appendix (signs A_Q, A_K, A_V drawn from the seed)
   B            A plus frozen fan-in nuisance rho * N(0, sigma^2 / fan-in) on every weight and embedding block
   C            sqrt(1-rho) * scaffold + sqrt(rho) * fan-in draw (the seed is progressively replaced)
   random_seed  gate-head query, key and value replaced by random matrices of the same Frobenius norm
@@ -16,9 +16,10 @@ Starts
   outcome_gd      outcome loss, gradient descent on every parameter except beta (Corollary routing-outcome (a))
   outcome_staged  outcome loss, gradient descent on beta and the readout only (Corollary routing-outcome (b))
 
-Schedule (Appendix G, staged block-coordinate gradient flow): A the count readout (v_c, v_s) at the prior (the limit of its
-flow, reached by Newton); B gradient flow on v_r until alpha = sign(a) g v_r reaches alpha_B = 0.05 p (1-p) |a| / n^2;
-C gradient flow on beta, through the full model, until the attention outside {own position, current letter} is at most eps;
+Schedule (routing appendix, staged block-coordinate gradient flow): A the count readout (v_c, v_s) at the prior (the limit of its
+flow, reached by Newton); B gradient flow on v_r until alpha = sign(a) g v_r reaches alpha_B = 0.01 p (1-p) |a| / n^2;
+C gradient flow on beta, through the full model, until the attention outside {own position, current letter} is at most
+zeta = 0.01 |a| / (sqrt(K) B);
 D gradient flow on (v_c, v_s, v_r), discretized by implicit Euler steps on a 5% geometric time grid. Stages B and C are
 integrated with LSODA and capped at 100 times their proved time bounds; a start that never meets a stopping rule fails there.
 
@@ -67,21 +68,25 @@ def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
 
-def constants(n):
-    """Scaffold constants of Appendix G for |a| = sigma^4 / sqrt(d_h); mu's by exact enumeration at beta = 0."""
+def constants(n, K=2):
+    """Constants of the staged routing proof (eq:R-Dconst) for |a| = sigma^4 / sqrt(d_h), g = sigma^2, K = 2."""
     a, g = sig**4 / math.sqrt(DH), sig**2
-    pi0, ustar = min(p, 1 - p) / 2, math.log((1 - p) / p)
-    C0 = 2 * math.log(10 / pi0)
-    TD_bar = 5 * (2 + 9 * C0)**2 / (pi0 * g * g * a * a)
-    y = 625 / (pi0 * g * g * a * a)
-    log_Tp = 2 * (math.log(64 * y) + 2 * math.log(math.log(64 * y)))
-    B = max(C0, 2 * (log_Tp + math.log1p(math.exp(-log_Tp))))
-    eps = .015 * a / B
-    bstar = math.log(2.1 * n / eps)
+    pi0, ustar = min(p, 1 - p) / K, math.log((1 - p) / p)
+    alpha_B = .01 * p * (1 - p) * a / n**2
+    ell_p, L_A = math.log(1 / min(p, 1 - p)), math.log(4 * K / alpha_B**2)
+    N_A = 3 * math.sqrt(K) * math.sqrt(2 * ell_p**2 + K * L_A**2)
+    Nbar, Nbar0 = 7.84 * math.sqrt(K) / a, 1 + sig * N_A + K * alpha_B
+    C_D = 2 * math.log(10 * (K - 1) / pi0)
+    TD_bar = 5 * (Nbar0 + C_D * Nbar)**2 / (pi0 * g * g)
+    R_D = 4.3 * math.sqrt(K - 1) * (Nbar0**2 + Nbar**2) / (pi0 * g * g)
+    L_D = math.log(100 * (K - 1) * R_D)
+    log_Tp = 2 * math.log(100 * R_D * L_D**2)
+    B = max(C_D, 2 * (math.log(K - 1) + log_Tp + math.log1p(math.exp(-log_Tp))), Nbar0 + 1.5)
+    eps = .01 * a / (math.sqrt(K) * B)                   # the leakage level zeta
+    bstar = math.log(1.83 * n / eps)                     # Stage C ends once (beta_n + beta_0) / 2 reaches this
     alpha = p * (1 - p) * a / (60 * n * bstar)
-    alpha_B = .05 * p * (1 - p) * a / n**2
-    TB_bound = .08 / (g * g)
-    TC_bound = 227 * n**5 * math.log(1.83 * n / eps) / (p**2 * (1 - p)**2 * a * a * eps)
+    TB_bound = .011 * K / (g * g)
+    TC_bound = 1134 * n**5 * math.log(1.83 * n / eps) / (p**2 * (1 - p)**2 * a * a * eps)
     # mu_M = hat M and mu_cur = hat Psi_cur at beta = 0, a > 0: condition on (c, m_t), average the other letters.
     others = np.array(list(itertools.product([1., -1.], repeat=n - 1)))
     wo = np.prod(np.where(others < 0, p, 1 - p), 1)
@@ -91,7 +96,7 @@ def constants(n):
         muM += c * m * np.dot(wo, 1 - 1 / Z) / 4
         mucur += c * m * np.dot(wo, math.exp(a * c * m) / Z**2) / 4
     small = dict(a_le=a <= .1, ab=a * bstar <= .008, sig_u=sig * (1 + abs(ustar)) <= 1)
-    return dict(a=a, g=g, pi0=pi0, ustar=ustar, C0=C0, TD_bar=TD_bar, B=B, eps=eps, bstar=bstar, alpha=alpha,
+    return dict(a=a, g=g, pi0=pi0, ustar=ustar, C_D=C_D, TD_bar=TD_bar, B=B, eps=eps, bstar=bstar, alpha=alpha,
                 alpha_B=alpha_B, TB_bound=TB_bound, TC_bound=TC_bound,
                 muM=muM, mucur=mucur, etaB=alpha / (2 * p * (1 - p) * g * g * muM),
                 etaC=bstar / (2 * p * (1 - p) * alpha * mucur), smallness=small)

@@ -5,7 +5,7 @@ e^{-x} has decreasing terms, so consecutive partial sums bracket it, and e^x = (
 larger x. Logarithms are avoided by exponentiating both sides. Each check is a strict comparison
 of rational bounds, so a pass is a proof of the inequality, not a floating-point test. Bounds that
 must hold for every n >= 2 are reduced to n = 2 by a monotonicity check printed alongside.
-    python3 handcoded/routing_constants.py
+    python3 handcoded/theory_checks/routing_constants.py
 """
 from fractions import Fraction as F
 

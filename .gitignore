@@ -5,40 +5,23 @@ __pycache__/
 .ipynb_checkpoints/
 .pytest_cache/
 .ruff_cache/
-/ckpt
-
-# --- docs -------------------------------------------------------
-docs/*.md
-
 
 # --- run artifacts we do not ship --------------------------------------------
-wandb/
-dataset_cache/
-checkpoints/
+/ckpt
+/logs/
+/results
+/run.log
 *.pt
 *.ckpt
 *.safetensors
-/logs/
-/future_work
-# Root training log. GitHub rejects blobs over 100 MB; this file exceeded that.
-/run.log
-# LaTeX auxiliary logs.
+
+# --- paper build output and local proof checks --------------------------------
+/Paper/build/
 /Paper/*.log
-
-
-# --- large media (regenerate with experiments/make_training_dynamics.py) -----
-training_dynamics.html
-training_dynamics.mp4
-
-# --- the manuscript lives outside the code artifact --------------------------
-
+/handcoded/theory_checks/
+CHECKS.md
+docs/*.md
 
 # --- editor ------------------------------------------------------------------
 .vscode/
 .DS_Store
-
-# --- scratch -----------------------------------------------------------------
-/archive
-/results
-CHECKS.md
-

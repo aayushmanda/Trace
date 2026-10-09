@@ -55,7 +55,11 @@ for K in (3, 5, 7):
     held = {shuffled.prompt(e, K) for e in real}
     tr = shuffled.corpus(K, K, 12000, seed=501, exclude=held, scenes=scenes)
     te = shuffled.corpus(K, K, 300, seed=101, exclude=held | {shuffled.prompt(e, K) for e in tr}, scenes=scenes)
-    comp = lambda xs, k: [shuffled.completion(e, K, shuffled.gold_states(e, K), k) for e in xs]  # noqa: E731
+    import inspect
+    if "every_k" in inspect.signature(shuffled.completion).parameters:  # before the trim
+        comp = lambda xs, k: [shuffled.completion(e, K, shuffled.gold_states(e, K), k) for e in xs]  # noqa: E731
+    else:
+        comp = lambda xs, k: [shuffled.completion(e, K, bool(k)) for e in xs]  # noqa: E731
     out[f"bbh_K{K}"] = dict(real=h([[shuffled.prompt(e, K), shuffled.answer(e, K)] for e in real]),
                            train=h([shuffled.prompt(e, K) for e in tr]), test=h([shuffled.prompt(e, K) for e in te]),
                            out_completion=h(comp(tr, 0)), step_completion=h(comp(tr, 1)))

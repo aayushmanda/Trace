@@ -9,8 +9,10 @@ letter axes. Reports, at theta_0 = sigma * theta~,
     step rule credit             as in rule_credit.py
 and their exponents in sigma. The matched comparison of the outcome interaction credit with the
 rule credit is the one the two-site argument predicts: both need one attention score.
-    uv run python handcoded/interaction_credit.py
+    uv run python handcoded/theory_checks/interaction_credit.py
 """
+import sys
+sys.path.insert(0, str(__import__('pathlib').Path(__file__).resolve().parents[1]))  # handcoded/
 import json
 import math
 import os

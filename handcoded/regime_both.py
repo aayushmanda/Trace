@@ -1,4 +1,4 @@
-"""Both losses inside the regime of Theorems 3 and 4, at horizons where the horizon term binds.
+"""Both losses inside the regime of Theorem 3 (outcome plateau), at horizons where the horizon term binds.
 
 Assumptions (A1)-(A4): two blocks at fixed widths (16, three heads, MLP width 16), K = 2 value
 logits, theta_0 = sigma * theta_tilde with every MLP bias |b~| >= 1, full-batch gradient descent

@@ -1,156 +1,47 @@
-# How to run Trace (paper experiments)
+# How to run
 
-Audience: research engineer reproducing the paper's results. From the repo root. Training prints tqdm progress bars; set `TRACE_TQDM=0` to silence them.
+Python 3.12+, from the repo root. `uv sync` creates `.venv` from `uv.lock`. Training shows tqdm bars; `TRACE_TQDM=0`
+silences them. On a shared machine, pick a GPU with `CUDA_VISIBLE_DEVICES`. All outputs go to `results/`, which is not
+tracked.
 
-## Environment
-
-Python 3.12+. From the repo root:
-
-```bash
-uv sync
-uv run python handcoded/lettertrace.py task=count word_len=6 mod=2 steps=8000
-```
-
-`uv sync` writes `.venv` from `uv.lock`. Later commands in this file are `uv run python ...`, or the same command after `source .venv/bin/activate`.
-
-This box: 4× A100 80GB, shared with other users. Prefer **GPU 2 or 3** when 0/1 are occupied. Do not kill other jobs.
+## Counting (handcoded/)
 
 ```bash
-export CUDA_VISIBLE_DEVICES=2   # then --device cuda:0
-# or
-uv run python -m src <command> --device cuda:2
+# Step and outcome training from one random initialization, plus the two exact executors (count modulo K).
+uv run python handcoded/lettertrace.py task=count word_len=16 mod=2 steps=8000
+uv run python handcoded/lettertrace.py task=first word_len=12 steps=8000          # first-occurrence control
+uv run python handcoded/lettertrace.py task=count word_len=1000 handcoded_only=True # executors at n = 1000
+
+# Outcome plateau (Theorem 3): exit time tau(0.1) from the initialization ball, n = 4..16, zero readout.
+REGIME_ZERO_READOUT=1 uv run python handcoded/regime_both.py 0.002
+
+# Staged step learning (Theorem 4): structured seed A, Stages A-D, gate region and final margin.
+uv run python handcoded/gate_steering.py --n 4 6 8 --start A --seeds 0 1 2 --out results/gate_steering/main.json
 ```
 
-Compile is off by default in every shipped config (`compile: false`). Do not turn it on for these runs.
+`lettertrace.py` takes `key=value` settings; the defaults and their meaning are at the top of the file.
 
----
-
-## Two stacks
-
-**GPT** — character-token Transformer (`src.gpt.GPTModel`). Boolean circuits, the register machine, and the state machine. This is the stack behind the Boolean and register tables. Tiny synthetic-token model; not a HuggingFace LM.
-
-**Pretrained LoRA** — rank-8 Peft on `AutoModelForCausalLM` (`python -m src lora`). Same Boolean-circuit serialization as GPT, but a real HF tokenizer. Default backbone is SmolLM2-135M; this is the only place a HuggingFace model id is swappable.
-
-**Handcoded** — the counting Transformer in `handcoded/lettertrace.py`. One architecture, process loss and outcome loss, plus the two programs written into the weights by hand. Spectra, figures, and probes live in the same folder.
-
-Entry point for the GPT and LoRA runs: `python -m src <command>`.
-
----
-
-## Table 1: five-condition supervision comparison
+## Beyond counting (src/)
 
 ```bash
-# Smoke (seconds, not a paper number):
-python -m src supervision --config configs/experiments/e1_five_condition.yaml
+# Boolean-8 and the register machine on the character-token GPT (GPT-2L).
+uv run python -m src supervision --config configs/experiments/boolean8_gpt.yaml
+uv run python -m src supervision --config configs/experiments/register16_gpt.yaml
 
-# Table 1 itself, with every seed's row preserved:
-python -m src supervision --config configs/experiments/e1_five_condition_rerun.yaml
+# Rank-8 LoRA on Boolean-8: SmolLM2-135M, then Qwen2.5-0.5B, then the 8x outcome budget.
+uv run python -m src lora --config configs/experiments/lora_transfer.yaml
+uv run python -m src lora --config configs/experiments/lora_transfer.yaml --model Qwen/Qwen2.5-0.5B \
+    --output results/paper/qwen05/main.csv --run-dir results/paper/qwen05/artifacts
+uv run python -m src lora --config configs/experiments/lora_transfer.yaml --model Qwen/Qwen2.5-0.5B \
+    --conditions outcome --steps 6400 --output results/paper/qwen05/outcome_6400.csv \
+    --run-dir results/paper/qwen05/artifacts_outcome_6400
+
+# BIG-Bench Hard tracking shuffled objects, Qwen2.5-0.5B LoRA (K = 3, 5, 7; seeds 2001-2003).
+uv run python -m src shuffled zeroshot --out results/shuffled/zeroshot_qwen05.json
+for K in 3 5 7; do for c in outcome process; do for s in 2001 2002 2003; do
+  uv run python -m src shuffled train --K $K --condition $c --seed $s --out results/shuffled/bbh/bbh_K${K}_${c}_s${s}.json
+done; done; done
 ```
 
-`e1_five_condition_rerun.yaml` promotes the pilot config's frozen settings unchanged: `boolean_circuit_8`, five conditions (outcome / answer_first / filler / process / corrupted), seeds 2001–2005, 8000 steps, train 20000 / val 1000, batch 128, embedding 128 / 4 heads / 2 layers. Output: `results/paper/e1_five_condition_rerun/table1_rerun.csv` (one row per seed × condition) plus a sibling `_persist.json`.
-
----
-
-## Boolean reliability
-
-Counting figures come from `handcoded/lettertrace.py`. The Boolean-8 sweep is the character-token model.
-
-`rho` is the probability a training example gets a valid trace; the terminal answer stays correct regardless. Metrics: `answer_accuracy` (rollout), `exact_trace_accuracy` (full trace), `trace_step_accuracy` (per-step correctness on the free-running trace). Each run writes a CSV and a sibling `*_persist.json`.
-
-```bash
-# Smoke:
-python -m src reliability --task boolean_circuit_2 --rhos 0.8 --seeds 2001 \
-  --checkpoints 2 --train-size 32 --val-size 8 --batch-size 8 \
-  --output results/smoke.csv --device cpu
-
-# Canonical protocol (GPU hours; use a fresh output path for a rerun):
-TRACE_COMPILE=0 python -m src reliability \
-  --task boolean_circuit_8 \
-  --rhos 0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0 \
-  --seeds 2001 2002 2003 2004 2005 --checkpoints 8000 \
-  --train-size 20000 --val-size 1000 \
-  --train-seed 501 --val-seed 101 --ratio-seed 777 --batch-seed 12345 \
-  --batch-size 128 --eval-batch-size 128 --include-outcome --no-compile \
-  --embedding 128 --heads 4 --layers 2 --dropout 0 \
-  --lr 0.0003 --weight-decay 0 --grad-clip 1 --bf16 \
-  --output results/paper/boolean_reliability_canonical_rerun.csv \
-  --device cuda
-```
-
-The saved Boolean-8 sweep is `results/paper/boolean_reliability_canonical.csv`: 60 rows, clean-process accuracy 82.20±6.76%, close to the five-condition result 82.00±7.69%. Replication keeps the four data/assignment/minibatch seeds fixed. The runner refuses to overwrite an existing CSV, so the command above uses a separate rerun path. The earlier 100k sweep is archival only.
-
-The compilation robustness check uses the same command with `TRACE_COMPILE=1`, `--compile` instead of `--no-compile`, and a fresh output path such as `results/paper/boolean_reliability_compile_rerun.csv`. Its archived source is `results/my_reliability_sweep_comp.csv` (clean endpoint 82.86±7.17%); it supports the appendix robustness note while the eager sweep remains canonical.
-
-**Depth × reliability** (does the reliability frontier predicted by Proposition 8 move with composition depth `D`?): rerun the same command for `--task boolean_circuit_{2,4,8}` with `--rhos 0.5 0.7 0.8 0.9 1.0 --seeds 2001 2002 2003 --checkpoints 8000`, output under `results/paper/depth_reliability/boolean_circuit_{D}.csv`.
-
----
-
-## Pretrained LoRA (SmolLM2-135M)
-
-```bash
-python -m src lora --help
-python -m src lora --config configs/experiments/lora_transfer.yaml
-```
-
-Trains outcome / answer-first / process-`rho` completions on a rank-8 LoRA adapter and reports free-generation accuracy (answer, exact trace, exact state rollout), plus a 16-way local-state scorer on the same HF tokenizer. Startup aborts if `encode(prefix)+encode(state) != encode(prefix+state)` at the `>` boundary — common on some BPE/SentencePiece tokenizers unless special tokens are mapped.
-
-**Can swap the backbone.** Pass another `AutoModelForCausalLM` id with `--model` (e.g. `Qwen/Qwen2.5-0.5B`). Do not download a large checkpoint unless intended; the default 135M run is the paper setting. Output: `results/paper/smollm/smollm_trace.csv`, with raw per-seed generations, adapters, and local-margin CSVs archived under `results/paper/smollm/artifacts/`.
-
-**Cannot swap into GPT.** Do not pass a HF model id into `supervision`/`reliability`; those are the tiny synthetic-token `GPTModel`, not `AutoModelForCausalLM`.
-
----
-
-## Gradient alignment
-
-```bash
-python -m src align --help
-```
-
-Cosine between the Boolean-8 local transition gradient and the process and outcome gradients.
-
----
-
-## Counting notebook
-
-Open `handcoded/lettertrace_train.ipynb` with the `.venv` kernel from `uv sync`. It trains process and outcome from one initialization and writes `handcoded/animations/lettertrace_train.gif`. Pin a free GPU in the first cell. Do not use GPU 1.
-
-Counting from the command line, and the spectrum of a saved checkpoint:
-
-```bash
-uv run python handcoded/lettertrace.py task=count word_len=8 mod=2 save_every=500 save_dir=ckpt/n8
-uv run python handcoded/spectrum.py task=count word_len=8 mod=2 site=answer ckpt=ckpt/n8/<name>.pt out=logs/<name>.json
-uv run python handcoded/figures.py spectra logs/*.json
-```
-
----
-
-## Exact letter spectra (plateau bound and every-2 tables)
-
-Exact Efron–Stein split of the logit Jacobian over all 4^8 words, from random-direction JVPs (no fit). `site=answer` gives W_r, H_1/W and the plateau-bound terms for an outcome checkpoint; `site=every_k` gives the window-degree shares for an every-k run.
-
-```bash
-uv run python handcoded/exact_spectrum.py site=answer dirs=16 ckpt=ckpt/n8_block_s42/s42_outcome_step1000.pt
-uv run python handcoded/lettertrace.py task=count word_len=8 mod=2 every_k=2 modes=process steps=8000 seed=42 save_every=500 eval_every=500 save_dir=ckpt/n8_block_k2 tag=s42
-uv run python handcoded/exact_spectrum.py site=every_k dirs=4 ckpt=ckpt/n8_block_k2/s42_process_step5000.pt
-uv run python handcoded/exact_spectrum.py site=answer dirs=16 init_std=0.1 init_seed=42   # step 0, no ckpt: initialization-scale sweep
-```
-
-Exact degree split of the Qwen2.5-0.5B LoRA Jacobian at initialization on BIG-Bench Hard three-object tracking (full Jacobian on the 6^3 move grid, no estimator; about 10 min per seed on one A100):
-
-```bash
-for s in 2001 2002 2003; do
-  uv run python handcoded/bbh_lora_spectrum.py contexts=10 seed=$s out=results/paper/bbh_lora_spectrum/s$s.json
-done
-```
-
----
-
-## Outputs
-
-| What | Path |
-|---|---|
-| Table 1 rerun | `results/paper/e1_five_condition_rerun/table1_rerun.csv` |
-| Reliability sweeps (Figures 1-2 / Table 3) | `results/reliability_sweeps/` |
-| Depth × reliability | `results/paper/depth_reliability/` |
-| LoRA adaptation study | `results/paper/smollm/` |
-| `Paper/` | The manuscript |
+`data/bbh/` holds the official BIG-Bench Hard items, unchanged. Training items are generated from their scenes and
+item pools; the real items are held out for testing.

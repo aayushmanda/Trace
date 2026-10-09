@@ -8,8 +8,10 @@ displayed state and the current move. Reports the norms of
     rule credit    || d/dtheta E <z_i, e_{s_t} - Tbar^T e_{s_{t-1}}> ||
     outcome credit || d/dtheta E <z, e_y - u> ||
 and their exponents in sigma.
-    uv run python handcoded/rule_credit.py
+    uv run python handcoded/theory_checks/rule_credit.py
 """
+import sys
+sys.path.insert(0, str(__import__('pathlib').Path(__file__).resolve().parents[1]))  # handcoded/
 import json
 import math
 import os

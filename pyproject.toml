@@ -5,24 +5,13 @@ description = "Process versus outcome supervision for state tracking."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "accelerate>=1.14.0",
-    "matplotlib>=3.11.1",
     "numpy>=2.4.4",
-    "nvitop>=1.7.1",
-    "pandas>=3.0.5",
     "peft>=0.20.0",
-    "pydantic>=2.13.4",
-    "safetensors>=0.8.0",
+    "pyyaml>=6.0",
     "scipy>=1.17.1",
-    "sentencepiece>=0.2.2",
     "torch>=2.13.0",
     "tqdm>=4.70.0",
     "transformers>=5.16.1",
-    "wandb>=0.28.2",
-    "pyyaml>=6.0",
-    "nnsight==0.7.0",
-    "seaborn>=0.13.2",
-    "numba>=0.67.0",
 ]
 
 [dependency-groups]
@@ -39,7 +28,3 @@ extend-exclude = ["results", "Paper", ".venv", "*.ipynb"]
 [tool.ruff.lint]
 select = ["E", "F"]
 ignore = ["E501", "E402", "E701", "E702", "E731", "E741"]
-
-[tool.ruff.lint.per-file-ignores]
-"handcoded/handcoded_utils.py" = ["F403", "F401"]
-"src/*.py" = ["F401", "F403"]

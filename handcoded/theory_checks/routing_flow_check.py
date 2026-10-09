@@ -1,6 +1,6 @@
 """Numerical check of the gradient-flow version of the staged routing theorem (Appendix G).
 
-    python3 handcoded/routing_flow_check.py
+    python3 handcoded/theory_checks/routing_flow_check.py
 
 Reduced model of Lemma R-features, exact population over all letter patterns and both start counts:
 f_t = sigma v_c + sigma v_s c_t + g v_r M_t, with M_t the gate head's attention mass on the letters.

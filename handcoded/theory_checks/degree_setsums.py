@@ -7,9 +7,11 @@ letter set S; ||J_S||^2 is estimated with random parameter directions.
 The degree-resolved credit bound is  credit_r <= lambda^{n-r} T_r,  and the paper proves
 T_r <= C sigma^2 kappa^{r-1} with kappa = C1 sigma^2 for two blocks (exponent 2r in sigma).
 Measured exponents for two blocks: 2, 6, 7, 11, 12 at r = 1..5 (sigma in 0.03..0.05).
-    uv run python handcoded/degree_setsums.py 6 0.03 0.04 0.05
-    uv run python handcoded/degree_setsums.py [n]
+    uv run python handcoded/theory_checks/degree_setsums.py 6 0.03 0.04 0.05
+    uv run python handcoded/theory_checks/degree_setsums.py [n]
 """
+import sys
+sys.path.insert(0, str(__import__('pathlib').Path(__file__).resolve().parents[1]))  # handcoded/
 import itertools
 import math
 import sys

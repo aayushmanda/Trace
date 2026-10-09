@@ -16,8 +16,7 @@ free-running generation on held-out words.
     python handcoded/lettertrace.py save_every=500 save_dir=ckpt/n8
 
 Import configure, make_corpus, init_theta, handcoded_params, train_mode, and
-generate from this file. handcoded/lettertrace_train.ipynb trains both losses
-from one initialization and replays them against the two handcoded programs.
+generate from this file.
 
 Rows (both formats share the prompt  s0 q w_1 .. w_n SEP):
     outcome:  s0 q w_1 .. w_n SEP  : s_n EOS

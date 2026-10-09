@@ -6,8 +6,10 @@ over all 4^n words, both start states and, for the random query, all four query 
 rule credit is || d/dtheta E_t E <z_t, e_{s_t} - Tbar^T e_{s_{t-1}}> || as in rule_credit.py.
 With a fixed query the leading coefficient is of order 1/n; averaging over a uniform query
 cancels it, leaving order 1/n^2.
-    uv run python handcoded/rule_credit_query.py
+    uv run python handcoded/theory_checks/rule_credit_query.py
 """
+import sys
+sys.path.insert(0, str(__import__('pathlib').Path(__file__).resolve().parents[1]))  # handcoded/
 import itertools
 import json
 import math

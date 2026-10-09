@@ -8,6 +8,8 @@ position predicting s_t (m = n + 2 + t positions in view)
 with w_k = (chi(k - 1) - chi(k)) / K, averaged over t = 2..n.
     uv run python rule_credit_structured.py
 """
+import sys
+sys.path.insert(0, str(__import__('pathlib').Path(__file__).resolve().parents[1]))  # handcoded/
 import math
 
 import torch

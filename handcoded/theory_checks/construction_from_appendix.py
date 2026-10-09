@@ -2,13 +2,14 @@
 without calling any construction helper of lettertrace.py, and check that every tensor
 equals handcoded_params() entry for entry.
 
-    uv run python handcoded/construction_from_appendix.py
+    uv run python handcoded/theory_checks/construction_from_appendix.py
 """
+import sys
+sys.path.insert(0, str(__import__('pathlib').Path(__file__).resolve().parents[1]))  # handcoded/
 import sys
 
 import torch
 
-sys.path.insert(0, "handcoded")
 import lettertrace as L
 
 
