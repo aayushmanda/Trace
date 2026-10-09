@@ -19,7 +19,7 @@ echo "before: $(du -sh --exclude=.venv . | cut -f1)"
 # --- handcoded/: keep the three paper scripts and the local theory checks -----
 for p in handcoded/*; do
   case "$(basename "$p")" in
-    lettertrace.py|regime_both.py|gate_steering.py|theory_checks) ;;
+    __init__.py|lettertrace.py|lettertrace_train.ipynb|regime_both.py|gate_steering.py|theory_checks) ;;
     *) del "$p" ;;
   esac
 done

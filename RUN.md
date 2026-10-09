@@ -20,6 +20,8 @@ uv run python handcoded/gate_steering.py --n 4 6 8 --start A --seeds 0 1 2 --out
 ```
 
 `lettertrace.py` takes `key=value` settings; the defaults and their meaning are at the top of the file.
+`handcoded/lettertrace_train.ipynb` trains both losses from one initialization and animates them against the executors
+(run it from the repo root; it writes to `handcoded/animations/`).
 
 ## Beyond counting (src/)
 
