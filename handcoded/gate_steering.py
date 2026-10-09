@@ -304,7 +304,6 @@ def run_step(n, start, rho, seed, C):
     margin = lambda vv: float(np.min(yy * (Xn @ vv)))
     d = .5 * math.tanh(a_signed / 2)
     vstar = np.array([-1 / (2 * d * sig), 0., 1 / (g_signed * d)])
-    scale = np.abs(vstar) + 1
     # Implicit Euler (proximal) steps on a geometric time grid: v_{k+1} = argmin L(v) + |v - v_k|^2 / (2 h_k),
     # solved by Newton; unconditionally stable, monotone in the loss, time resolution r - 1 = 5%.
     t_max, r = 100 * C["TD_bar"], 1.05

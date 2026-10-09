@@ -24,6 +24,14 @@ for p in handcoded/*; do
   esac
 done
 
+# --- handcoded/theory_checks/: keep the three merged checks ------------------
+for p in handcoded/theory_checks/*; do
+  case "$(basename "$p")" in
+    credit_checks.py|routing_checks.py|executor_check.py) ;;
+    *) del "$p" ;;
+  esac
+done
+
 # --- now gitignored: stop tracking, keep the files on disk ---------------------
 git rm -r -q --cached --ignore-unmatch -- Paper/build handcoded/theory_checks >/dev/null
 
