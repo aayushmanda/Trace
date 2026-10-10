@@ -1,0 +1,138 @@
+\section{Architecture estimates with complete derivation}
+\label{app:network}
+
+\begin{proposition}[Bounds for the score expansion]
+\label{prop:network}
+Assume (A1)--(A2). Uniformly on $\initball$, at every position and input, with $\bm x_i$ the token-plus-position vector,
+$\partial_vF=\frac{d}{ds}F(\bm\theta+sv)|_{s=0}$, and $\|F\|_{\mathrm{abs}}$ the sum of the monomial norm bounds before cancellation:
+\begin{enumerate}[label=(\roman*),leftmargin=*,itemsep=1pt,topsep=2pt]
+\item with input-independent offsets $\bm O^1=\bm o_1$, $\bm O^2=\bm o_1+\bm o_2$: $\bm h_i^\ell=\bm x_i+\bm O^\ell+O(\initscale^2)$, $|\psi_{il}|\le C\initscale^4$,
+$\|\bm z_i\|\le C\initscale^2$, $\|\partial_v\bm z_i\|\le C\initscale\|v\|$;
+\item for $k\ge1$, $u\in[0,1]$ and $\|v\|=1$,
+\[
+ \frac{1}{k!}\Bigl\|\frac{d^k\bm z_i}{du^k}\Bigr\|\le C\initscale^3(C_0\initscale^4)^k,\qquad
+ \frac{1}{k!}\Bigl\|\partial_v\frac{d^k\bm z_i}{du^k}\Bigr\|\le C\initscale^2(C_0\initscale^4)^k;
+\]
+the same holds for the absolute sums at $u=0$, for $\bm h^2_i$ with one power of $\initscale$ fewer, and for the Taylor remainder with $k=k_0+1$;
+\item the zero-score network is affine in the inputs; its transported logit terms have tangent $O(\initscale^2)$, and direct-input and
+input-free terms have tangent $O(\initscale)$; an order-$k$ coefficient contains at most $2k+1$ inputs; a one-score logit term has size
+$O(\initscale^7)$ and tangent $O(\initscale^6)$;
+\item with full-prefix attention, the terms of the order-$k$ coefficients at $u=0$ that contain an earlier input $\bm x_l$, $l<i$, obey the
+bounds of (ii) multiplied by
+\begin{equation}
+ \kappa_{l,i}=\frac{1}{m_i}\Bigl(1+\sum_{l<j\le i}\frac{1}{m_j}\Bigr),\qquad m_i=i+1,
+ \label{eq:dilution}
+\end{equation}
+after enlarging $C_0$.
+\end{enumerate}
+The constants do not depend on $n$, the widths or $k$.
+\end{proposition}
+
+\begin{proof}
+For a network quantity $F$ let $F^{[k]}(u)=\frac{1}{k!}\frac{d^kF}{du^k}(u)$, so that $\bm z^{[k]}=\bm z^{[k]}(0)$, and write $\|F^{[k]}\|$ for its supremum over
+inputs, positions and $u\in[0,1]$ (the $\ell_1$ norm for attention rows).
+
+\emph{(i).} $|b_m|\ge\frac{\initscale}{2}>C\initscale^2\ge|(\mathbf W_{\mathrm{in}}\bm h)_m|$, so one activation matrix $\mathbf D_{\mathrm{act}}$ serves every input and every $u$, and
+\[
+ \bm h_i^\ell=\mathbf M_\ell\bigl(\bm h_i^{\ell-1}+\bm a_i^\ell\bigr)+\bm o_\ell,\qquad \mathbf M_\ell=\mathbf I+\mathbf W^\ell_{\mathrm{out}}\mathbf D_{\mathrm{act}}\mathbf W^\ell_{\mathrm{in}},\qquad \bm o_\ell=\mathbf W^\ell_{\mathrm{out}}\mathbf D_{\mathrm{act}}\bm b^\ell,
+\]
+with $\bm a_i^\ell=\sum_{\mathrm{heads}}\sum_{j\le i}\omega_{ij}\mathbf W_V\bm h^{\ell-1}_j$ and $\omega_{i\cdot}=\softmax(u\psi_{i\cdot})$. Then
+\[
+ \|\mathbf M_\ell-\mathbf I\|\le C\initscale^2,\qquad \|\bm o_\ell\|\le2a_0N_b\initscale^2\le a_0\initscale,\qquad \|\partial_v\bm o_\ell\|\le(a_0+2N_b)\initscale\le C,
+\]
+and $\|\omega_{i\cdot}\|_1=1$. Induction over the two blocks gives (i).
+
+\emph{Softmax calculus.} For $\omega=\softmax(s)$, $\E_\omega[f]=\sum_j\omega_jf_j$ and a direction $\bm\nu$,
+\[
+ \tfrac{d}{dt}\omega_j(s+t\bm\nu)\big|_0=\omega_j(\nu_j-\E_\omega[\bm\nu]),\qquad
+ \tfrac{d}{dt}\E_{\omega(s+t\bm\nu)}[f]\big|_0=\E_\omega[\bm\nu f]-\E_\omega[\bm\nu]\E_\omega[f].
+\]
+After $k$ derivatives each term has at most $k+1$ averages and each direction once; the absolute coefficient sums obey $a_{k+1}\le2(k+1)a_k$,
+$a_0=1$. By duality,
+\begin{equation}
+ \bigl\|D^k\omega(s)[\bm\nu_1,\ldots,\bm\nu_k]\bigr\|_1\le2^kk!\prod_a\|\bm\nu_a\|_\infty .
+ \label{eq:softmax-avg}
+\end{equation}
+Normalized derivatives of products are convolutions; those of compositions sum over the $\binom{k-1}{j-1}$ compositions of $k$ into $j$
+positive parts. Hence
+\[
+ \tfrac{1}{j!}\|F^{(j)}\|\le Ac^j,\ \ \|h^{[k]}\|\le ab^k\quad\implies\quad\|(F\circ h)^{[k]}\|\le Aca\,b^k(1+ca)^{k-1}.
+\]
+
+\emph{(ii), values.} With $\|\bm\omega^{\ell,[0]}\|_1=1$, $\|\bm h^{0,[k]}\|=0$ for $k\ge1$, and $a_r\ge1$ in the compositions,
+\begin{alignat*}{2}
+ \|\psi^{\ell,[k]}\|&\le C\initscale^2\textstyle\sum_{a+b=k}\|\bm h^{\ell-1,[a]}\|\,\|\bm h^{\ell-1,[b]}\| &\qquad& \why{score is a product}\\
+ \|(u\psi^\ell)^{[k]}\|&\le\|\psi^{\ell,[k]}\|+\|\psi^{\ell,[k-1]}\| && \why{$(u\psi)^{[k]}=u\psi^{[k]}+\psi^{[k-1]}$}\\
+ \|\bm\omega^{\ell,[k]}\|_1&\le\textstyle\sum_{j=1}^k2^j\sum_{a_1+\cdots+a_j=k}\prod_r\|(u\psi^\ell)^{[a_r]}\| && \why{composition, \cref{eq:softmax-avg}}\\
+ \|\bm a^{\ell,[k]}\|&\le C\initscale\textstyle\sum_{a+c=k}\|\bm\omega^{\ell,[a]}\|_1\,\|\bm h^{\ell-1,[c]}\| && \why{head output is a product}\\
+ \|\bm h^{\ell,[k]}\|&\le C\bigl(\|\bm h^{\ell-1,[k]}\|+\|\bm a^{\ell,[k]}\|\bigr) && \why{affine block}\\
+ \|\bm z^{[k]}\|&\le C\initscale\,\|\bm h^{2,[k]}\| && \why{readout}
+\end{alignat*}
+With $b=C\initscale^4$, block $1$ gives $\|\bm\omega^{1,[k]}\|_1\le b^k$ and $\|\bm a^{1,[k]}\|+\|\bm h^{1,[k]}\|\le C\initscale^2b^k$. Then $\|\psi^{2,[0]}\|\le C\initscale^4$,
+$\|\psi^{2,[k]}\|\le C\initscale^5(k+1)b^k$ for $k\ge1$, and $\|(u\psi^2)^{[k]}\|\le C(2b)^k$, so
+\begin{gather*}
+ \|\bm\omega^{2,[k]}\|_1\le C\sum_{j=1}^k\binom{k-1}{j-1}C^j(2b)^k\le C(Cb)^k,\\
+ \|\bm a^{2,[k]}\|+\|\bm h^{2,[k]}\|\le C\initscale^2(Cb)^k,\qquad \|\bm z^{[k]}\|\le C\initscale^3(C_0\initscale^4)^k .
+\end{gather*}
+
+\emph{(ii), tangents, remainders, absolute sums.} Differentiating along $v$ replaces one factor of each product by its tangent, or one
+$(u\psi)^{[a]}$ in a softmax term, or adds $D^{j+1}\omega[\partial_v(u\psi)^{[0]},\ldots]$. With $\|\partial_v\bm h^{0,[0]}\|=O(1)$, $\|\partial_v\psi^{\ell,[0]}\|=O(\initscale^3)$
+and $j+1\le2^k$ absorbed into $C_0^k$,
+\begin{gather*}
+ \|\partial_v\bm\omega^{\ell,[k]}\|_1\le C\initscale^{-1}(C_0\initscale^4)^k,\qquad \|\partial_v\bm a^{\ell,[k]}\|+\|\partial_v\bm h^{\ell,[k]}\|\le C\initscale(C_0\initscale^4)^k,\\
+ \|\partial_v\bm z^{[k]}\|\le C\initscale^2(C_0\initscale^4)^k .
+\end{gather*}
+The integral remainder is bounded by the supremum of the next normalized derivative. At $u=0$,
+$\|m^{-1}\sum_j\prod_rF_r(j)\|_{\mathrm{abs}}\le\prod_r\max_j\|F_r(j)\|_{\mathrm{abs}}$, and an order-$k$ monomial has $O(k+1)$ parameter and input
+occurrences, so differentiating its norm bound costs at most $\frac{C(k+1)}{\initscale}\le \frac{C2^k}{\initscale}$.
+
+\emph{(iii).} At zero scores the network is affine in the inputs:
+\begin{gather*}
+ \bm h^1_j=\mathbf M_1\Bigl(\bm x_j+\frac{1}{m_j}\sum_{l\le j}\mathbf W^1_V\bm x_l\Bigr)+\bm o_1,\\
+ \bm z^{[0]}_i=\mathbf V\Bigl[\mathbf M_2\Bigl(\bm h^1_i+\frac{1}{m_i}\sum_{j\le i}\mathbf W^2_V\bm h^1_j\Bigr)+\bm o_2\Bigr].
+\end{gather*}
+Transported terms contain $\mathbf V$, $\mathbf W_V$ and some $\bm x_j$, so their tangent is $O(\initscale^2)$; direct-input and input-free terms have tangent $O(\initscale)$.
+With $d(F)$ the number of input occurrences in $F$,
+\begin{alignat*}{2}
+ d(\bm h^{\ell,[a]})&\le2a+1 &\qquad& \why{induction on $\ell$}\\
+ d(\psi^{\ell,[b]})&\le2b+2 && \why{score is a product of two residuals}\\
+ d\bigl((u\psi)^{[a]}\bigr)&\le2a && \why{$(u\psi)^{[a]}=\psi^{[a-1]}$}\\
+ d(\text{order-$k$ head term})&\le2a_1+\cdots+2a_j+2c+1=2k+1 && \why{$a_1+\cdots+a_j+c=k$}
+\end{alignat*}
+and affine MLPs and parameter derivatives add none. The one-score correction is
+\[
+ \frac{1}{m_i}\sum_{j\le i}\bigl(\psi_{ij}(0)-\bar\psi_i(0)\bigr)\mathbf W_V\bm h_j(0),\qquad \bar\psi_i(0)=\frac{1}{m_i}\sum_{l\le i}\psi_{il}(0);
+\]
+its logit terms contain $\mathbf V,\mathbf W_V,\mathbf W_Q,\mathbf W_K$ and three residual inputs, so they have size $O(\initscale^7)$ and tangent $O(\initscale^6)$.
+
+\emph{(iv).} Fix $l<i$; (iv) concerns the coefficients at $u=0$ and their tangents. Replace $\bm x_l$ by $\chi\bm x_l$. A monomial containing $\bm x_l$
+exactly $d\ge1$ times carries $\chi^d$, so
+\[
+ \sum_{\term\ni\bm x_l}\|\term\|_{\mathrm{abs}}\le\frac{d}{d\chi}\Bigl(\sum_{\term}\|\term\|_{\mathrm{abs}}\Bigr)\Big|_{\chi=1},
+\]
+a tangent along an input direction, which obeys the product and composition rules above. Call $I^{(\ell)}_j$ a weight of position $j$ if every
+marked order-$k$ coefficient of $\bm h^\ell_j$ (absolute sum and tangent) is at most $I^{(\ell)}_j$ times the unmarked bound of (ii); then
+$I^{(0)}_j=\mathbf 1[j=l]$. At $u=0$, $\omega_{jj'}=\frac{1}{m_j}$, and each term of a $u$-derivative of $\omega_{jj'}$ is $\omega_{jj'}$ times score entries and
+$\E_\omega$-averages, so each entry of an order-$a$ row coefficient is at most $\frac{1}{m_j}$ times the bound \cref{eq:softmax-avg}, which stays
+valid with one $\|\bm\nu\|_\infty$ replaced by $\E_\omega|\bm\nu|$. A marked factor of the head output at $j$ contributes:
+\[
+\begin{array}{@{}lll@{}}
+ \text{Marked factor} & \text{Weight} & \text{Reason}\\[2pt]
+ \text{value at }j'\le j & \frac{1}{m_j}I^{(\ell-1)}_{j'} & \text{entrywise row bound}\\[2pt]
+ \text{key at }j'\le j & \frac{2}{m_j}I^{(\ell-1)}_{j'} & \E_\omega|\bm\nu|=\frac{|\nu_{j'}|}{m_j}\\[2pt]
+ \text{query at }j & I^{(\ell-1)}_j & \text{all score entries}
+\end{array}
+\]
+With the residual path and $\|\mathbf M_\ell\|\le2$,
+\begin{equation}
+ I^{(\ell)}_j\le C\Bigl(I^{(\ell-1)}_j+\frac{1}{m_j}\sum_{j'\le j}I^{(\ell-1)}_{j'}\Bigr).
+ \label{eq:weight-rec}
+\end{equation}
+Unrolling, for $i>l$,
+\begin{alignat*}{2}
+ I^{(1)}_j&\le C\bigl(\mathbf 1[j=l]+\frac{\mathbf 1[j>l]}{m_j}\bigr) &\qquad& \why{causality, \cref{eq:weight-rec}}\\
+ I^{(2)}_i&\le C\Bigl(\frac{C}{m_i}+\frac{1}{m_i}\Bigl(C+\sum_{l<j\le i}\frac{C}{m_j}\Bigr)\Bigr)\le C\kappa_{l,i} && \why{\cref{eq:weight-rec}, \cref{eq:dilution}}
+\end{alignat*}
+The readout and parameter tangents do not move positions.
+\end{proof}
+

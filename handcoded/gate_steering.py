@@ -23,6 +23,8 @@ ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cp
 ap.add_argument("--out", default=None)
 ap.add_argument("--max_nfev", type=int, default=60000, help="cap on Stage C right-hand-side evaluations")
 ap.add_argument("--nuisance_keys", nargs="*", default=None, help="restrict the B/C nuisance to these blocks")
+ap.add_argument("--zero_base", action="store_true",
+                help="start C from all-zero parameters: only the blocks in --nuisance_keys (default: all) get the fan-in draw")
 ap.add_argument("--joint_steps", type=int, default=20000, help="joint_gd / joint_adam: number of updates")
 ap.add_argument("--joint_lr", type=float, default=1.0, help="joint_gd: step size; joint_adam: Adam learning rate")
 ap.add_argument("--joint_log", type=int, default=200, help="joint runs: evaluate every this many updates")
@@ -119,9 +121,12 @@ def init(n, start, rho, seed):
             th[key][0] = sig * r / r.norm()
     if start == "prev_offset":
         th["beta"][n + 1] = 2.0
+    if args.zero_base:                                                     # all-zero start; perturbation below
+        th = {k: torch.zeros_like(t) for k, t in th.items()}
     if start in ("B", "C"):
         fan = dict(wte=(D,), wpe=(D,), **{f"{k}{b}": (D,) for k in "qkv" for b in range(2)},
-                   **{f"in{b}": (D,) for b in range(2)}, **{f"out{b}": (W,) for b in range(2)})
+                   **{f"in{b}": (D,) for b in range(2)}, **{f"out{b}": (W,) for b in range(2)},
+                   **({f"b{b}": (1,) for b in range(2)} if args.zero_base else {}))
         if args.nuisance_keys:
             fan = {k: fan[k] for k in args.nuisance_keys}
         for key, (fi,) in fan.items():
@@ -331,6 +336,10 @@ def run_joint(n, start, rho, seed):
     joint_gd is full-batch gradient descent with step joint_lr; joint_adam is Adam with learning rate joint_lr.
     Logs the loss, the smallest margin over every prompt and position, the gate-head leakage and |beta|_inf;
     solved_at is the first evaluated update at which every margin is positive.
+    At each evaluation it also splits L_step = L_prior - Phi_rule (K = 2: y_t = (-1)^{s_t}, logits (f/2, -f/2)):
+    Phi_rule = E_t E[(y_t - (1-2p) y_{t-1}) f_t / 2], the rule credit, and L_prior = L_step + Phi_rule, the loss against the
+    count-only predictor. It logs Phi_rule, ||grad Phi_rule|| and the interference ratio
+    <grad Phi_rule, grad L_prior> / ||grad Phi_rule||^2, so that d Phi_rule / dt = ||grad Phi_rule||^2 (1 - ratio) under gradient flow.
     """
     ids, pos, y, w = data(n, "step")
     th, signs = init(n, "C", rho, seed)
@@ -340,6 +349,8 @@ def run_joint(n, start, rho, seed):
         th[k].requires_grad_(True)
     T = n - 1
     W8 = w[:, None] / T
+    y_prev = (1 - 2 * ids[:, pos]).double()                               # displayed s_{t-1} sits at each predicting position
+    params = [th[k] for k in trained]
     opt = torch.optim.Adam([th[k] for k in trained], lr=args.joint_lr) if start == "joint_adam" else None
     log, solved_at = [], None
     for step in range(args.joint_steps + 1):
@@ -353,9 +364,17 @@ def run_joint(n, start, rho, seed):
                 minm = m.min().item()
                 if solved_at is None and minm > 0:
                     solved_at = step
+            phi = (W8 * (y - (1 - 2 * p) * y_prev) * f / 2).sum()
+            g_phi = torch.autograd.grad(phi, params, retain_graph=True)
+            g_prior = torch.autograd.grad(lossv + phi, params, retain_graph=True)
+            gp2 = sum(float((a * a).sum()) for a in g_phi)
+            dot = sum(float((a * b).sum()) for a, b in zip(g_phi, g_prior))
+            with torch.no_grad():
                 log.append(dict(step=step, loss=lossv.item(), min_margin=minm, leak_max=st["leak_max"],
                                 att_current=st["att_current"], att_own=st["att_own"],
-                                beta_inf=th["beta"].abs().max().item()))
+                                beta_inf=th["beta"].abs().max().item(), phi_rule=phi.item(),
+                                grad_phi=math.sqrt(gp2), interference=dot / gp2 if gp2 > 0 else float("nan"),
+                                qkv_norm=math.sqrt(sum(float((th[f"{m}{b}"] ** 2).sum()) for m in "qkv" for b in range(2)))))
         if opt is not None:
             opt.zero_grad(set_to_none=True)
             lossv.backward()

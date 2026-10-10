@@ -15,7 +15,14 @@ uv run python handcoded/lettertrace.py task=count word_len=1000 handcoded_only=T
 # Outcome plateau (Theorem 3): exit time tau(0.1) from the initialization ball, n = 4..16, zero readout.
 REGIME_ZERO_READOUT=1 uv run python handcoded/regime_both.py 0.002
 
-# Staged step learning (Theorem 4): structured seed A, Stages A-D, gate region and final margin.
+# Step learning for the gate head (Theorem 4): joint gradient flow from randomly scaled hand-coded directions.
+uv run python handcoded/joint_gate.py --n 4 6 8 --eps 0.3 0.2 0.1 --seeds 0 1 2 --out results/joint_gate/main.json
+# Theorem 4 audit: threshold, derivative identities and reduced flow vs the full softmax model; reduced-ODE table.
+uv run python handcoded/theory_checks/theorem4_checks.py
+uv run python handcoded/reduced_ode.py                       # K = 2 and gate readout on I - R for K = 3, 4, 6
+uv run python handcoded/reduced_ode.py --K 3 4 6 --gate full --out results/reduced_ode/runs_fullgate.json
+uv run python handcoded/make_ode_table.py   # prints the LaTeX of tab:J-ode
+# Gate head inside the full network: seeded runs.
 uv run python handcoded/gate_steering.py --n 4 6 8 --start A --seeds 0 1 2 --out results/gate_steering/main.json
 ```
 

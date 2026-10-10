@@ -14,7 +14,8 @@ from tqdm.auto import tqdm
 TASKS = ("count", "first", "shell", "first_cup", "lights", "lights_parity")
 SHELL_PAIRS = [(i, j) for i in range(5) for j in range(i + 1, 5)]
 H = 3
-_STRING_KEYS = ("device", "task", "corrupt", "layout", "save_dir", "tag", "modes", "opt")
+_STRING_KEYS = ("device", "task", "corrupt", "layout", "save_dir", "tag", "modes", "opt", "init", "seed_signs",
+                "seed_bias")
 DEFAULTS = dict(
     task="count",          # count, first, shell, first_cup, lights, lights_parity
     alphabet=4,            # A letters; P(w_t == q) = 1/A
@@ -33,6 +34,9 @@ DEFAULTS = dict(
     batch_size=256,
     lr=1e-3,
     init_std=0.02,
+    init="random",         # random | handcoded_dirs (seed the handcoded step solution's directions, see init_theta)
+    seed_signs="handcoded",  # handcoded_dirs: signs from the solution ("handcoded") or random ("random")
+    seed_bias="zero",      # handcoded_dirs: MLP biases start at zero ("zero") or are seeded like the weights ("solution")
     seed=42,
     save_every=0,          # 0 = no checkpoints; else write every this many steps
     save_dir="ckpt",
@@ -58,6 +62,8 @@ def configure(**overrides):
         g[key] = overrides[key] if key in overrides else value
     assert task in TASKS and corrupt in ("scatter", "shift", "slip") and n_blocks >= 2
     assert layout in ("stream", "block") and opt in ("adamw", "sgd", "adam")
+    assert init in ("random", "handcoded_dirs") and seed_signs in ("handcoded", "random")
+    assert seed_bias in ("zero", "solution")
     if task == "shell" or task == "first_cup":
         g["alphabet"], g["mod"] = 10, 5
     elif task == "lights":
@@ -403,8 +409,26 @@ def make_corpus():
 
 
 def init_theta():
-    """One random initialization in the shared architecture. Both losses clone it."""
-    return {k: torch.randn_like(t) * init_std for k, t in zero_params().items()}
+    """One initialization in the shared architecture. Both losses clone it.
+
+    init="random": every entry N(0, init_std^2).
+    init="handcoded_dirs": only the entries where the handcoded step solution is nonzero, each set to
+    init_std * U[1/2, 2] with the solution's sign (seed_signs="handcoded") or a random sign ("random");
+    every other entry, and the readout, is zero. The solution supplies directions, not magnitudes.
+    seed_bias="zero" starts the MLP biases at zero: the solution's negative thresholds are tuned for O(1) inputs, and
+    scaled by init_std they exceed the O(init_std^2) input terms, so every seeded unit would start, and stay, inactive.
+    """
+    if init == "random":
+        return {k: torch.randn_like(t) * init_std for k, t in zero_params().items()}
+    gen = torch.Generator().manual_seed(seed + 40_000)
+    theta = {}
+    for k, sol in process_solution().items():
+        skip = k == "readout" or (k.endswith("mlp_b") and seed_bias == "zero")
+        support = (sol != 0) & (not skip)
+        mag = init_std * (0.5 + 1.5 * torch.rand(sol.shape, generator=gen))
+        sign = torch.sign(sol) if seed_signs == "handcoded" else torch.randint(2, sol.shape, generator=gen) * 2.0 - 1
+        theta[k] = torch.where(support, sign * mag, torch.zeros_like(sol))
+    return theta
 
 
 def handcoded_params():

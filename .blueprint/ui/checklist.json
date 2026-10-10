@@ -1,0 +1,93 @@
+{
+  "version": 1,
+  "steps": [
+    {
+      "id": "setupLean/provision-elan",
+      "label": "Install Lean's toolchain manager",
+      "group": "setupLean",
+      "milestone": true,
+      "groupLabel": "Lean",
+      "status": "done",
+      "detail": "installed for this extension only",
+      "startedAt": 1791668740828,
+      "seconds": 2
+    },
+    {
+      "id": "setupLean/provision-toolchain",
+      "label": "Install Lean leanprover/lean4:v4.33.0",
+      "group": "setupLean",
+      "milestone": true,
+      "status": "done",
+      "detail": "leanprover/lean4:v4.33.0",
+      "startedAt": 1791668742956,
+      "seconds": 71
+    },
+    {
+      "id": "setup/fetch-mathlib",
+      "label": "mathlib v4.33.0",
+      "group": "setup",
+      "groupLabel": "Fetching",
+      "status": "done",
+      "detail": "fetched",
+      "startedAt": 1791668814470,
+      "seconds": 9
+    },
+    {
+      "id": "setup/fetch-arlib",
+      "label": "arlib 6262f60ad7556be62e94e87f6b5811cf299e7d94",
+      "group": "setup",
+      "status": "done",
+      "detail": "fetched",
+      "startedAt": 1791668814473,
+      "seconds": 3
+    },
+    {
+      "id": "setup/index",
+      "label": "Index what was fetched",
+      "group": "setup",
+      "status": "done",
+      "detail": "6603 declaration(s), 8311 Mathlib module(s)",
+      "startedAt": 1791668823878,
+      "seconds": 914
+    },
+    {
+      "id": "setupLook:1/look",
+      "label": "Look for a Mathlib already built here",
+      "group": "setupLook:1",
+      "series": "setupLook",
+      "groupLabel": "Looking around",
+      "status": "done",
+      "detail": "none found",
+      "startedAt": 1791669741758,
+      "seconds": 1
+    },
+    {
+      "id": "setupResolve:2/lake-0",
+      "label": "Copy mathlib v4.33.0 from this machine's sources",
+      "group": "setupResolve:2",
+      "series": "setupResolve",
+      "groupLabel": "Downloading the libraries",
+      "status": "done",
+      "detail": "not cached",
+      "startedAt": 1791669768565,
+      "seconds": 0
+    },
+    {
+      "id": "setupResolve:2/lake-1",
+      "label": "Resolve the pinned libraries",
+      "group": "setupResolve:2",
+      "series": "setupResolve",
+      "status": "running",
+      "detail": "info: mathlib: cloning https://github.com/leanprover-community/mathlib4.git",
+      "startedAt": 1791669768604
+    },
+    {
+      "id": "setupResolve:2/lake-2",
+      "label": "Fetch the build cache, shared across every project",
+      "group": "setupResolve:2",
+      "series": "setupResolve",
+      "status": "pending"
+    }
+  ],
+  "notes": {}
+}

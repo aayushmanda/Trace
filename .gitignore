@@ -16,7 +16,7 @@ __pycache__/
 *.safetensors
 
 # --- paper build output and local notes --------------------------------
-/Paper/build/
+
 /Paper/*.log
 /handcoded/experiments/
 CHECKS.md
