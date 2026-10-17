@@ -1,0 +1,20 @@
+/home/hariguru/aayus/trace/handcoded/theory_checks/theorem4_checks.py:181: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:822.)
+  if abs(float(Lfull) - L_red(c, g, a, p)) > 1e-12:
+PASS  A. eps* implies all 31 inequalities on 250 (p, d_h, gap) cases
+PASS  D. sigma'(h*+1) >= k0, sigma(-h*-1) >= p/e, sigma(h*-1) >= (1-p)/e
+PASS  D. sigma'(1) >= 1/6
+PASS  D. (log 2)^2/32 >= 1/70
+PASS  D. 860160 log 2 <= 6e5,  3*4*16*64*... : 12288 = 3*4*16*64
+PASS  D. 12288*70 = 860160 and 12288*8 = 98304
+PASS  D. 23*38 = 874 and 874*8192 <= 7.2e6
+PASS  D. 41/8*384 = 1968 <= 2048, 2048*6144 <= 1.3e7
+PASS  D. 330/(45 e) <= 4
+PASS  B. dL/dc, dL/dg, dL/da match finite differences (2500 points)
+PASS  B. |d2L/dh dDelta| <= min(1/8, kappa/2)
+PASS  B. |dL/dc - L0'(h)| <= |Delta|/8
+PASS  B. (dL/dc)^2 + (dL/dg)^2 >= tanh^2(a/2)(err0^2+err1^2)/3
+PASS  C. full-model gradient stays circulant (symmetry lemma)
+PASS  C. full-model loss and flow equal the reduced (c, g, a) system (200 points)
+
+0 failure(s)

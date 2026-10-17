@@ -1,0 +1,16 @@
+
+\begin{lemma}[One-letter binary loss identity]
+\label{lem:binary-loss-mixture}
+Let $K=2$, $0<p<1/2$, $\lambda=1-2p$, $\ell(x)=\log(1+e^{-x})$, and let $f_\theta(S,C_n)$ be any differentiable
+predictor of the start sign $S$ and the last letter $C_n$. Define
+$L_{\mathrm{step}}=\E\,\ell(SC_nf_\theta)$, $L_{\mathrm{out}}=\E\,\ell(S\prod_{j\le n}C_j\,f_\theta)$ and
+$L_{\mathrm{sym}}=\frac12\E[\ell(f_\theta)+\ell(-f_\theta)]$. Then \cref{eq:binary-loss-mixture} holds, and so does its gradient.
+\end{lemma}
+\begin{proof}
+The hidden product $\prod_{j<n}C_j$ is independent of $(S,C_n)$ and equals $\pm1$ with probability
+$(1\pm\lambda^{n-1})/2$. Conditioning on it,
+$L_{\mathrm{out}}=\frac{1+\lambda^{n-1}}2L_{\mathrm{step}}+\frac{1-\lambda^{n-1}}2\E\,\ell(-SC_nf_\theta)$.
+The two signed losses sum to $2L_{\mathrm{sym}}$, which gives the identity. Differentiation commutes with these finite expectations.
+\end{proof}
+The identity concerns this restricted predictor; a count-reading path is outside it, which is why
+\cref{thm:matched} needs its own proof.

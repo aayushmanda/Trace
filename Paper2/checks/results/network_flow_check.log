@@ -1,0 +1,32 @@
+kappa=+1 eps=0.03   correlation  network     133.0528  reduced     133.0528  rel diff 1.7e-11
+kappa=+1 eps=0.03   ce           network     140.9470  reduced     140.9470  rel diff 1.3e-11
+kappa=+1 eps=0.01   correlation  network     176.8959  reduced     176.8959  rel diff 1.5e-11
+kappa=+1 eps=0.01   ce           network     184.7933  reduced     184.7933  rel diff 6.4e-12
+kappa=+1 eps=0.003  correlation  network     225.0397  reduced     225.0397  rel diff 1.3e-11
+kappa=+1 eps=0.003  ce           network     232.9374  reduced     232.9374  rel diff 1.5e-11
+kappa=+0 eps=0.03   correlation  network    1379.9556  reduced    1379.9556  rel diff 9.6e-12
+kappa=+0 eps=0.03   ce           network    1406.8463  reduced    1406.8463  rel diff 5.1e-12
+kappa=+0 eps=0.01   correlation  network    4316.4119  reduced    4316.4119  rel diff 1.0e-10
+kappa=+0 eps=0.01   ce           network    4351.2138  reduced    4351.2138  rel diff 1.6e-11
+kappa=+0 eps=0.003  correlation  network   14655.1044  reduced   14655.1044  rel diff 1.9e-09
+kappa=+0 eps=0.003  ce           network   14698.6502  reduced   14698.6502  rel diff 4.3e-10
+causal N= 8 clean       eps=0.03  network      81.3352  reduced      81.3352  rel diff 1.9e-11
+causal N= 8 clean       eps=0.01  network     107.7945  reduced     107.7945  rel diff 1.9e-11
+causal N= 8 independent eps=0.03  network     135.5587  reduced     135.5587  rel diff 1.6e-11
+causal N= 8 independent eps=0.01  network     179.6575  reduced     179.6575  rel diff 1.3e-11
+causal N= 8 cancelling  eps=0.03  network    1393.2021  reduced    1393.2021  rel diff 1.1e-12
+causal N= 8 cancelling  eps=0.01  network    4347.8514  reduced    4347.8514  rel diff 2.3e-13
+causal N=16 clean       eps=0.03  network     156.1300  reduced     156.1300  rel diff 2.0e-11
+causal N=16 clean       eps=0.01  network     207.8757  reduced     207.8757  rel diff 1.9e-11
+causal N=16 independent eps=0.03  network     260.2167  reduced     260.2167  rel diff 1.6e-11
+causal N=16 independent eps=0.01  network     346.4595  reduced     346.4595  rel diff 2.0e-11
+causal N=16 cancelling  eps=0.03  network    2708.0020  reduced    2708.0020  rel diff 3.0e-12
+causal N=16 cancelling  eps=0.01  network    8482.5941  reduced    8482.5941  rel diff 1.3e-11
+{
+  "runs": 12,
+  "max_rel_diff": 1.913805376435445e-09,
+  "max_symmetry_drift": 4.574118861455645e-14,
+  "causal_runs": 12,
+  "causal_max_rel_diff": 1.9856175169951532e-11,
+  "causal_max_symmetry_drift": 1.865174681370263e-14
+}

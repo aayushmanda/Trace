@@ -1,0 +1,127 @@
+% !TEX root = main.tex
+% Independent distractor biases (Corollary D.1) and Gaussian scalar perturbations. Input from sections/clean_routing.tex.
+% Restored in full from archive/backups/before_editorial_compression (previously cited from the archival supplement).
+\subsubsection{Independent distractor biases and Gaussian scalar perturbations}
+\label{app:CR-independent}
+
+The shared penalty in part (ii) can be replaced by independent Euclidean bias parameters.
+The next argument distinguishes a lower mobility bound, which controls the potential,
+from an upper bound, which controls the adverse first-crossing term.
+Throughout, $\alpha=\initscale^2$ and $\kappa=\initscale^2v^2$ are the count and gate-readout mobilities of the clean flow, and
+$\Psi(B)=B+2e^B/m$ is the routing potential of \cref{eq:CR-potential}.
+
+\begin{corollary}[Independent Euclidean distractor biases]
+\label{cor:CR-independent}
+Replace each distractor score $-B$ by $-B_j$, train every $B_j$ independently by ordinary Euclidean gradient flow,
+and initialize $B_j(0)\in[0,1]$. Keep the other hypotheses of part (ii).
+Define
+\[
+ \mathcal D=\sum_{j=1}^m e^{-B_j},\qquad B_{\mathrm{eff}}=\log(m/\mathcal D).
+\]
+For $0<\initscale\le\widehat\initscale(1/m,\min\{1,e/m\})$, the same time bound \cref{eq:CR-time} gives
+entry into $x\ge x_\star$, $\mathcal D\le1$, retention until $L\le z$, and persistent positive margins on every binary transition.
+In particular the biases need not start equal or remain equal, and the $\initscale^{-4}$ polynomial rate is retained.
+\end{corollary}
+\begin{proof}
+\emph{Variable-mobility estimates.}
+In the clean binary flow above, replace the constant $\nu$ by a regular time-varying mobility $\nu(t)$.
+Suppose $0<\nu_-\le\nu(t)\le\nu_+\le1$ up to every putative first zero of $J$ and throughout any initial interval with $J\ge0$.
+Keep $c_0=g_0=0$, $B_0\in[0,1]$ and the aligned scalar initialization.
+Here $m$ may be any real denominator reference at least one: only $\mathcal D=me^{-B}$ and $\mathcal D_0\le m$ enter the proof,
+so its use need not equal an integer number of sites.
+The following sufficient scale retains the time bound \cref{eq:CR-time}:
+\begin{equation}
+ \begin{aligned}
+ 0<\initscale\le\widehat\initscale(\nu_-,\nu_+):=\min\Biggl\{&\frac12,
+ \frac{\sqrt{\nu_-/\nu_+}}{2(m+2)},
+ \left(\frac{\nu_-}{16(\log m+2)}\right)^{1/4},\\
+ &\frac1{8e^{x_\star}\sqrt{d_{\mathrm h}}(m+2)(\log(4x_\star\sqrt{d_{\mathrm h}})+4)}\Biggr\}.
+ \end{aligned}
+ \label{eq:CR-variable-scale}
+\end{equation}
+For global existence assume the mobility remains positive, at most one, and the vector field is locally regular.
+
+The alignment and error bounds of \cref{lem:CR-align} do not require constant mobility.
+On an initial interval with $J\ge0$, $\dot g\ge0$, $\dot B\ge0$, and
+\[
+ \dot \Psi\ge\nu(t)\frac{g\dot g}{\kappa}\ge\nu_-\frac{g\dot g}{\kappa}.
+\]
+Integration gives $\Psi(B(t))\ge \Psi(B_0)+\nu_-g^2/(2\kappa)$, and the calculation of \cref{eq:CR-budget} gives
+\begin{equation}
+ \nu_-g^2\mathcal D^2\le\kappa(m+2)^2,\qquad
+ \nu(t)g^2\mathcal D^2\le\frac{\nu_+}{\nu_-}\kappa(m+2)^2.
+ \label{eq:CR-variable-budget}
+\end{equation}
+At a first zero of $J$, the differentiated identity in \cref{lem:CR-monotone} uses $\nu(t)$ without any $\dot\nu$ term.
+The count term minus the adverse routing term is at least
+\[
+ \frac{E_1\Delta r(\sigma_0+\sigma_1)}{r_0}
+ \left[\alpha-\frac{\nu_+}{\nu_-}\kappa(m+2)^2r_0r_1\right]
+ \ge\frac{3\alpha E_1\Delta r(\sigma_0+\sigma_1)}{4r_0}>0,
+\]
+since $r_0r_1\le1/4$ and \cref{eq:CR-variable-scale} implies
+$(\nu_+/\nu_-)v^2(m+2)^2\le1$.
+The other terms have the same nonnegative signs as before, so $J>0$ persists on the same initial intervals.
+The estimates for the readout floor and growth to $x=x_\star$ use only $\mathcal D\le m$, monotonicity, and the unchanged readout and query/key equations.
+After $x=x_\star$, while $\mathcal D>1$ the new potential gives
+\[
+ g^2\le\frac{2\kappa}{\nu_-}(\log m+2)\le\frac12.
+\]
+The same lower bound $\dot g\ge\kappa p/[8(m+2)]$ forces $\mathcal D\le1$ within the same additional time.
+The loss-descent bound and $|\dot g|\le\kappa$ then give completion and retention within $T_F\initscale^{-4}$.
+These are all places where mobility enters the proof, so \cref{eq:CR-time} remains valid.
+For existence, whiten the constant readout metrics and keep the raw query/key factors. The routing coordinate has speed squared
+$\nu(t)^2L_B^2\le\nu(t)L_B^2$, so the loss-energy bound still excludes finite-time escape.
+
+\emph{Independent-bias reduction.}
+
+Put $t_j=e^{-B_j}$, $S_2=\sum_jt_j^2$ and
+$\mathcal F_{\mathrm{bias}}=g(E_0r_0^2-E_1r_1^2)=\partial_{\mathcal D} L$.
+Because the loss depends on the biases only through $\mathcal D$,
+\begin{equation}
+ \dot B_j=t_j\mathcal F_{\mathrm{bias}},\quad \dot{\mathcal D}=-S_2\mathcal F_{\mathrm{bias}},\quad
+ \dot B_{\mathrm{eff}}=\nu_{\mathrm{eff}}\mathcal D\mathcal F_{\mathrm{bias}},\quad
+ \nu_{\mathrm{eff}}=\frac{S_2}{\mathcal D^2}\in[1/m,1].
+ \label{eq:CR-independent-flow}
+\end{equation}
+Thus the equations for $c,g,x,B_{\mathrm{eff}}$ are exactly the clean equations with variable mobility.
+Moreover $B_{\mathrm{eff}}(0)\in[0,1]$.
+A sharper upper bound follows from an additional exact identity:
+\[
+ \frac{d}{dt}e^{B_j}=\mathcal F_{\mathrm{bias}},\qquad
+ e^{B_j(t)}=e^{B_j(0)}+\int_0^t\mathcal F_{\mathrm{bias}}(s)\,ds.
+\]
+On any initial interval with $J\ge0$, $\mathcal F_{\mathrm{bias}}\ge0$.
+Since all initial $e^{B_j}$ lie in $[1,e]$, their ratio, and hence the ratio of the largest to smallest $t_j$, is at most $e$ on that interval.
+Therefore $\nu_{\mathrm{eff}}\le\max_jt_j/\mathcal D\le e/m$, as well as $\nu_{\mathrm{eff}}\le1$.
+The bounds also hold at a putative first zero of $J$ by continuity, so the variable-mobility estimates above apply with
+$\nu_-=1/m$, $\nu_+=\min\{1,e/m\}$.
+Using only the unconditional bound $\nu_+\le1$ would also work, but would require the more conservative scale
+$\widehat\initscale(1/m,1)$.
+Global existence follows from the smooth raw Euclidean flow on all $B_j$ and its nonnegative loss-energy identity.
+\end{proof}
+
+\begin{remark}[Gaussian scalar perturbations within the clean family]
+\label{cor:CR-scalar-Gaussian}
+Let $\epsilon_{\mathrm{gate}}>0$ scale the structured embeddings and set
+$q_0=\epsilon_{\mathrm{gate}}+Z_q$, $k_0=-\epsilon_{\mathrm{gate}}+Z_k$,
+$v=\epsilon_{\mathrm{gate}}+Z_v$, with Gaussian variances at most $s^2/d$;
+$v$ is fixed thereafter. Give distractor $j$ score $\xi_j-B_j$ with fixed
+Gaussian $\xi_j$ of variance at most $\tau^2$ and $B_j(0)=0$.
+For $0<\eta<1$, put $z_\eta=\sqrt{2\log(2(m+3)/\eta)}$,
+$r=\tau z_\eta$ and $M=me^r$. If $r\le1/2$,
+$\epsilon_{\mathrm{gate}}\ge2sz_\eta/\sqrt d$, and
+$\epsilon_{\mathrm{gate}}\le\widehat\initscale(1/m,\min\{1,e/m\})$
+in \cref{eq:CR-variable-scale} evaluated with denominator reference $M$,
+the same basin-entry, retention and positive-margin guarantee holds with
+probability at least $1-\eta$ and time \cref{eq:CR-time} at this scale/reference.
+Indeed, a Gaussian tail union bound places scalar magnitudes in
+$[\epsilon_{\mathrm{gate}}/2,3\epsilon_{\mathrm{gate}}/2]$ with $q_0k_0<0$
+and gives $|\xi_j|\le r$. For $\widetilde B_j=B_j-\xi_j$,
+$B_{\mathrm{eff}}=\log(M/\sum_j e^{-\widetilde B_j})$ starts in $[0,2r]$;
+the reciprocal-shift argument in the proof of \cref{cor:CR-independent}
+gives mobility in $[1/m,\min\{1,e/m\}]$. Its variable-mobility proof then
+applies with reference $M\le\sqrt e\,m$. No independence assumption is
+needed for the Gaussian union bound.
+\end{remark}
+

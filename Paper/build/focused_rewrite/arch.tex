@@ -1,0 +1,9 @@
+\paragraph{Overall architecture.}\label{ass:arch}
+Each of two residual blocks has three causal softmax-attention heads and a ReLU MLP. There is no LayerNorm. A head may use a fixed input-independent causal submask. With $h_i^0=E(\mathrm{token}_i)+P_i$, each block computes
+\begin{align}
+\bar h_i^\ell&=h_i^{\ell-1}+\sum_{a=1}^3\sum_{j\in\mathcal M_a(i)}\omega_{ij}^{\ell,a} W_V^{\ell,a}h_j^{\ell-1},\nonumber\\
+\omega_{ij}^{\ell,a}&=\softmax_{j\in\mathcal M_a(i)}\left(\frac{(W_Q^{\ell,a}h_i^{\ell-1})^\top W_K^{\ell,a}h_j^{\ell-1}}{\sqrt{d_{\mathrm h}}}+\beta_{i-j}^{\ell,a}\right),\label{eq:block}\\
+h_i^\ell&=\bar h_i^\ell+W_{\mathrm{out}}^\ell\relu(W_{\mathrm{in}}^\ell\bar h_i^\ell+b^\ell),\qquad z_i=Vh_i^2.\nonumber
+\end{align}
+The value map includes the map back to the residual stream. The executor construction in \cref{app:architectures} specifies every register and nonzero tensor. At fixed $K,|\Sigma|$, head dimension, residual width, and MLP width are $\Theta(n)$.
+

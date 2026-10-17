@@ -1,0 +1,70 @@
+\subsection{From initialization to routing and prediction}
+\label{app:flow-proof}
+\begin{proof}[Proof of \cref{lem:invariant}]
+\proofstep{(a) Balanced trajectory.}
+Under $\Dlaw{\kappa}$, $\E[x_N\bar w]=-\rho$ (\cref{lem:credit}), so
+$\E[y b v]=\gamma[\alpha(q)-(1-\alpha(q))\rho]=\gamma \phi(q)$. Therefore
+\begin{align}
+ \mathcal L&=-\frac{\gamma}{2}r_1r_2\phi(q),\notag\\
+ \ddt{r_1}&=\frac{\gamma}{2}r_2\phi,&\ddt{r_2}&=\frac{\gamma}{2}r_1\phi,\label{eq:four-scalar-flow}\\
+ \ddt{q_s}&=\frac{\gamma}{2}r_1r_2\phi'(q),&
+ \ddt{q_d}&=-\frac{\gamma}{2}r_1r_2\phi'(q).\notag
+\end{align}
+The initialization in \cref{eq:initialization} and uniqueness imply
+\begin{align*}
+ \frac{d}{dt}(r_1-r_2)&=-\frac{\gamma}{2}\phi(q)(r_1-r_2),&(r_1-r_2)(0)&=0,\\
+ \frac{d}{dt}(q_s+q_d)&=0,&(q_s+q_d)(0)&=0.
+\end{align*}
+Consequently $r_1=r_2=r$, $q_s=-q_d=\tfrac{q}{2}$, and
+\begin{equation}
+ r(t)=\varepsilon\exp\left(\frac{\gamma}{2}\int_0^t \phi(q(v))\,dv\right)>0,\qquad
+ \ddt{q}=\gamma r^2\phi'(q)>0.
+ \label{eq:balanced-flow}
+\end{equation}
+For finite $t$, $|\phi|\le1$, $\phi'(q)\le\tfrac{1+\rho}{4}$ give
+\[
+ \varepsilon e^{-\frac{\gamma t}{2}}\le r(t)\le \varepsilon e^{\frac{\gamma t}{2}},\qquad
+ q(t)\le\frac{\gamma(1+\rho)\varepsilon^2}{4}\int_0^t e^{\gamma v}\,dv<\infty.
+\]
+These bounds exclude finite-time escape of the derived smooth vector field.
+\proofstep{(b) Conserved quantity.}
+Set $\alpha_0=\tfrac{\rho}{1+\rho}$ for this calculation only. Then
+\begin{align}
+ \dv{\alpha(q)}{q}&=\alpha(q)(1-\alpha(q)),&
+ \frac{\phi(q)}{\phi'(q)}&=\frac{\alpha(q)-\alpha_0}{\alpha(q)(1-\alpha(q))},\notag\\
+ F(q)&=\int_{\tfrac{1}{N}}^{\alpha(q)}\frac{\alpha-\alpha_0}{\alpha^2(1-\alpha)^2}\,d\alpha.\label{eq:primitive}
+\end{align}
+\begin{align*}
+ \frac{d}{dt}(r^2-F(q))
+ &=\gamma r^2\phi-\frac{\phi}{\phi'(q)}\gamma r^2\phi'(q)
+ &&\text{(chain rule)},\\
+ &=0 &&\text{(cancellation)}.
+\end{align*}
+At initialization $F(0)=0$; hence $r(t)^2=\varepsilon^2+F(q(t))$.
+\proofstep{(c) Hitting time.}
+If $\varepsilon^2+F>0$ on $[0,b]$, compactness gives
+\[
+ \min_{0\le q\le b}\gamma(\varepsilon^2+F(q))\phi'(q)>0.
+\]
+Thus the increasing score gap reaches $b$ in finite time and
+\begin{equation}
+ T(b)=\int_0^b\frac{dq}{\gamma(\varepsilon^2+F(q))\phi'(q)}.
+ \label{eq:hitting-quadrature}
+\end{equation}
+Taking $b=q_1$ proves \cref{eq:time}.
+\proofstep{(d) Gate validity and prediction.}
+Since $\alpha_0\ge0$,
+\begin{align*}
+ \dv{F(q)}{q}&\le\frac{1}{1-\alpha(q)}=1+\frac{e^q}{N-1},\\
+ F(q)&\le q+\frac{e^q-1}{N-1}
+ <\log(N-1)+1+e\qquad(0\le q\le q_1+1).
+\end{align*}
+Therefore \cref{eq:gate-bound} gives $|r_1v|\le r<2B$ throughout this interval.
+For $\kappa\in\{0,1\}$, $\phi(q)\ge0$ and $F(q)\ge0$ for $q\ge0$; part (c) gives $T(q_1+1)<\infty$.
+At $q>q_1$,
+\[
+ x_N v=\alpha(q)+(1-\alpha(q))x_N\bar w\ge2\alpha(q)-1>0,
+ \qquad \operatorname{sign}(z)=b x_N.
+\]
+Thus the network reaches the Bayes predictor in finite time and retains it through the stopping gap $q_1+1$.\qedhere
+\end{proof}

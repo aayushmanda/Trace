@@ -1,0 +1,646 @@
+{
+  "readingProvenance": "reader-agent",
+  "informalStatement": "Setting. Fix K ≥ 2, a finite alphabet Σ with a probability distribution μ on it, a query letter w* ∈ Σ with p := μ(w*) ∈ (0,1), a start count s0 ∈ Z_K and a horizon n ≥ 1 (n ≥ 2 in part (ii)). Letters w = (w_1,…,w_n) are i.i.d. μ; b_t = 1[w_t = w*]; the answer is s_n = s0 + Σ_t b_t (mod K); y = e_{s_n} ∈ R^K, u = (1/K)·1, G := y − u. All expectations E are over the letters only (s0 and w* fixed). λ := |1 − p + p·exp(2πi/K)| = max_{1≤j<K} |1 − p + p·exp(2πij/K)|, which lies in [0,1).\n\nPart (i) (architecture-free). For every S ⊆ {1,…,n}, every finite index type ι, and every H : Σ^n → R^{K×ι} that depends only on (w_t)_{t∈S} (i.e. H(w) = H(w') whenever w_t = w'_t for all t ∈ S): ‖E[Hᵀ G]‖₂ ≤ λ^{n−|S|} · (E‖H‖_F²)^{1/2}. (Square-integrability is automatic for a finite alphabet.)\n\nPart (ii). There exist constants c₀, c, C > 0 depending only on a0, c_emb, K and the number of heads per block (NOT on n, the widths d_res, d_h, w, the alphabet Σ, μ, p, s0, w*, the bias-norm bound N_b, the submasks, or ε) such that the following holds. Let θ̃ be any parameter vector of the two-block, no-LayerNorm, causal softmax-attention + ReLU-MLP Transformer of Assumption A1 (learned token and position embeddings, per-head W_Q, W_K ∈ R^{d_h×d_res}, W_V ∈ R^{d_res×d_res}, per-block MLP W_in ∈ R^{w×d_res}, b_in ∈ R^w, W_out ∈ R^{d_res×w}, readout V ∈ R^{K×d_res}; fixed nonempty causal per-head submasks allowed; relative position bias fixed at 0 and excluded from the parameters) such that every weight matrix and embedding block of θ̃ has operator norm ≤ a0, the value-token embeddings have smallest singular value ≥ c_emb > 0, every MLP bias coordinate satisfies |b̃_m| ≥ 1 and each MLP bias vector has Euclidean norm ≤ N_b. Let 0 < ε ≤ c₀·min(1, 1/N_b), θ0 := ε·θ̃, r0 := min(1/8, c_emb/4), and θ any parameter with ‖θ − θ0‖ ≤ r0·ε (Euclidean norm of the vectorized parameters, Frobenius per block). Let z_θ(w) ∈ R^K be the state (value-token) logits at the answer position (the ':' position n+3 of the prompt s0, w*, w_1,…,w_n, SEP, ':'), and z^{[0]}_θ(w) the same logits computed by the network in which every attention score in both blocks is multiplied by ζ = 0 (uniform attention over each head's visible set, composed through both blocks). Define the outcome credit OC(θ) := ‖∇_θ E[⟨z_θ, G⟩]‖ = ‖E[(∂z_θ/∂θ)ᵀ G]‖ and the score-mediated credit SC(θ) := ‖∇_θ E[⟨z_θ − z^{[0]}_θ, G⟩]‖ = ‖E[(∂z_θ/∂θ − ∂z^{[0]}_θ/∂θ)ᵀ G]‖. Then for every n ≥ 2:\n  (ii-a) if ε² ≤ c·λ, then SC(θ) ≤ C·ε⁶·λ^{n−3} (an integer power; at n = 2 this is λ^{−1}, well defined because ε > 0 and ε² ≤ cλ force λ > 0);\n  (ii-b) if ε ≤ c·λ, then OC(θ) ≤ C·ε·λ^n.",
+  "vocabulary": [
+    {
+      "name": "TaskParams / counting task",
+      "description": "K ≥ 2 states Z_K; finite alphabet Σ with law μ (PMF); query letter w* with p = μ(w*) ∈ (0,1); start count s0 ∈ ZMod K (fixed); horizon n. Letters are i.i.d. μ. b_t = 1[w_t = w*], s_t = s_{t−1} + b_t mod K, answer s_n. Source: def:task (body.tex:78), ass:task (appendix.tex:55).",
+      "leanSketch": "structure Task where\n  K : ℕ\n  hK : 2 ≤ K\n  Sym : Type\n  [fin : Fintype Sym] [dec : DecidableEq Sym]\n  μ : PMF Sym\n  wstar : Sym\n  s0 : ZMod K\n\ndef Task.p (T : Task) : ℝ := (T.μ T.wstar).toReal\ndef Task.answer (T : Task) {n} (w : Fin n → T.Sym) : ZMod T.K :=\n  T.s0 + ∑ t, (if w t = T.wstar then 1 else 0)"
+    },
+    {
+      "name": "letterLaw / expectation over letters",
+      "description": "Product law of n i.i.d. letters; E[f] = Σ_{w : Fin n → Σ} (∏_t μ(w_t)) · f(w). Finite sum because Σ is finite; no measure theory needed.",
+      "leanSketch": "def letterWeight (T : Task) {n} (w : Fin n → T.Sym) : ℝ := ∏ t, (T.μ (w t)).toReal\ndef Ex (T : Task) {n} {E} [AddCommGroup E] [Module ℝ E] (f : (Fin n → T.Sym) → E) : E :=\n  ∑ w, letterWeight T w • f w"
+    },
+    {
+      "name": "targetSignal G = y − u",
+      "description": "y = one-hot of the answer s_n in R^K, u = (1/K)·1; G(w) = y(w) − u. ‖G‖ ≤ 1.",
+      "leanSketch": "def G (T : Task) {n} (w : Fin n → T.Sym) : EuclideanSpace ℝ (ZMod T.K) :=\n  fun a => (if a = T.answer w then 1 else 0) - 1 / T.K"
+    },
+    {
+      "name": "mixrate λ",
+      "description": "λ = |1 − p + p·e^{2πi/K}| (def:lambda, body.tex:89, eq:lambda). The paper also writes it as max_{1≤j<K}|ρ_j| with ρ_j = 1 − p + p α^j, α = e^{2πi/K}; equality of the two forms is a proof obligation (|ρ_j|² = 1 − 2p(1−p)(1 − cos(2πj/K))). 0 ≤ λ < 1 for K ≥ 2, p ∈ (0,1); λ = 0 is possible (K = 2, p = 1/2).",
+      "leanSketch": "noncomputable def mixrate (K : ℕ) (p : ℝ) : ℝ :=\n  ‖(1 - p : ℂ) + p * Complex.exp (2 * Real.pi * Complex.I / K)‖"
+    },
+    {
+      "name": "dependsOnlyOn S",
+      "description": "A function of the letters reads only the letters in S ⊆ Fin n: equal on letter sequences agreeing on S. Equivalent to F_S-measurability for finite Σ.",
+      "leanSketch": "def DependsOnlyOn {n α β} (S : Finset (Fin n)) (H : (Fin n → α) → β) : Prop :=\n  ∀ w w', (∀ t ∈ S, w t = w' t) → H w = H w'"
+    },
+    {
+      "name": "L2 norm of a matrix-valued feature",
+      "description": "‖H‖_{L²} = (E‖H‖_F²)^{1/2}; H has K rows and an arbitrary finite column index ι. E[Hᵀ G] ∈ R^ι with the Euclidean norm.",
+      "leanSketch": "def l2Norm (T : Task) {n ι} [Fintype ι] (H : (Fin n → T.Sym) → Matrix (ZMod T.K) ι ℝ) : ℝ :=\n  Real.sqrt (Ex T fun w => ∑ a, ∑ i, (H w a i)^2)"
+    },
+    {
+      "name": "Arch (architecture shape)",
+      "description": "Widths d_res, d_h, w (MLP), number of heads per block nH, two blocks, vocabulary = Σ ⊕ ZMod K ⊕ {SEP, ':', EOS}, sequence length L = n+4 for the outcome prompt, and a fixed per-(block, head, position i) visible set vis ⊆ {0,…,i}, nonempty (full prefix by default). Constants must not depend on any of these except nH.",
+      "leanSketch": "structure Arch (T : Task) (n : ℕ) where\n  dres dh w nH : ℕ\n  vis : Fin 2 → Fin nH → (i : Fin (n+4)) → Finset (Fin (n+4))\n  vis_causal : ∀ l h i j, j ∈ vis l h i → j ≤ i\n  vis_nonempty : ∀ l h i, (vis l h i).Nonempty"
+    },
+    {
+      "name": "Params (θ, excluding the relative bias)",
+      "description": "Token embedding E_tok : vocab → R^{d_res}, position embedding E_pos : Fin L → R^{d_res}; per block ℓ ∈ {1,2} and head h: W_Q, W_K : R^{d_h × d_res}, W_V : R^{d_res × d_res} (no separate output projection — follows the appendix display at appendix.tex:95); per block MLP W_in : R^{w×d_res}, b_in : R^w, W_out : R^{d_res×w} (no output bias); readout V : R^{K × d_res} (only the K value-token rows; other vocabulary rows never enter z). The relative bias β is fixed at 0 for this theorem and is omitted from θ (rem:norms, appendix.tex:76-81). Parameter space is a Euclidean space over the disjoint union of all block indices, so ‖θ‖ is the Euclidean norm of the vectorization (Frobenius per block).",
+      "leanSketch": "-- index type of all scalar parameters, then\nabbrev Params (A : Arch T n) := EuclideanSpace ℝ (ParamIdx A)\n-- with accessor functions Params.Wq ℓ h : Matrix (Fin dh) (Fin dres) ℝ, etc."
+    },
+    {
+      "name": "forward (with score scale ζ)",
+      "description": "x_i = E_tok(token_i) + E_pos(i). Block ℓ: ψ^{ℓ,h}_{ij} = (1/√d_h)(W_Q h_i)ᵀ(W_K h_j); ω_{i·} = softmax_{j ∈ vis(i)}(ζ ψ_{ij}); h_i ← h_i + Σ_h Σ_{j∈vis(i)} ω_{ij} W_V h_j; then h_i ← h_i + W_out ReLU(W_in h_i + b_in). Logits z = V h_{n+3}^{(2)} ∈ R^K. z_θ = forward ζ=1; z^{[0]}_θ = forward ζ=0 (block-2 residuals are those of the ζ=0 block-1 network: the composed network, not frozen scores; appendix.tex:298-306, direct_proofs/conditional_outcome.tex:29).",
+      "leanSketch": "noncomputable def logits (A : Arch T n) (ζ : ℝ) (θ : Params A) (w : Fin n → T.Sym) : EuclideanSpace ℝ (ZMod T.K)"
+    },
+    {
+      "name": "outcomePrompt",
+      "description": "Token sequence of length n+4: position 0 = value token s0, 1 = query w*, 1+t = w_t (t = 1..n), n+2 = SEP, n+3 = ':' (answer position, predicts s_n). Layout from appendix.tex:107-115. Only the letter positions are random.",
+      "leanSketch": "def outcomePrompt (T : Task) {n} (w : Fin n → T.Sym) : Fin (n+4) → Vocab T"
+    },
+    {
+      "name": "credit functionals",
+      "description": "Φ_ξ(θ) = E⟨z_θ, ξ⟩, credit = ‖∇_θ Φ_ξ‖ = ‖E[(∂z_θ/∂θ)ᵀ ξ]‖ (def:credit, body.tex:165). Outcome credit: ξ = G. Score-mediated credit: ‖E[J_scoreᵀ G]‖ with J_score = ∂z_θ/∂θ − ∂z^{[0]}_θ/∂θ, equivalently ‖∇_θ E⟨z_θ − z^{[0]}_θ, G⟩‖ (appendix.tex:26-30).",
+      "leanSketch": "noncomputable def outcomeCredit A θ : ℝ :=\n  ‖fderiv ℝ (fun θ' => Ex T fun w => inner (logits A 1 θ' w) (G T w)) θ‖\nnoncomputable def scoreCredit A θ : ℝ :=\n  ‖fderiv ℝ (fun θ' => Ex T fun w => inner (logits A 1 θ' w - logits A 0 θ' w) (G T w)) θ‖"
+    },
+    {
+      "name": "InitHyp (Assumption A2)",
+      "description": "θ̃ satisfies: operator norm of every weight matrix and embedding block ≤ a0 (token embedding as a d_res×|vocab| matrix, position embedding as d_res×L, W_Q, W_K, W_V, W_in, W_out, V); value-token embedding block has σ_min ≥ c_emb > 0; every MLP bias coordinate |b̃_m| ≥ 1; each MLP bias vector ‖b̃‖ ≤ N_b. θ0 = ε θ̃ with 0 < ε ≤ c₀ min(1, 1/N_b).",
+      "leanSketch": "structure InitHyp (A : Arch T n) (θt : Params A) (a0 cemb Nb : ℝ) : Prop"
+    },
+    {
+      "name": "initBall B_ε",
+      "description": "{θ : ‖θ − ε θ̃‖ ≤ r0 ε}, r0 = min(1/8, c_emb/4); β = 0 is built in by omitting β.",
+      "leanSketch": "def initBall A θt ε cemb := Metric.closedBall (ε • θt) (min (1/8) (cemb/4) * ε)"
+    }
+  ],
+  "quantity": {
+    "name": "Outcome credit and score-mediated credit at the answer position",
+    "description": "OC(θ) = ‖∇_θ E[⟨z_θ, y − u⟩]‖ and SC(θ) = ‖∇_θ E[⟨z_θ − z^{[0]}_θ, y − u⟩]‖, expectations over the n i.i.d. letters with start count and query fixed, gradients with respect to all parameters except the (zero) relative bias. Part (i) is about the scalar ‖E[Hᵀ(y − u)]‖ for an arbitrary S-local feature H.",
+    "crossCheck": "Lemma gradient-split (appendix.tex:237): ∇_θ L_out = E[Jᵀ(p − u)] − ∇_θ Φ_out, where L_out = E[−log softmax(z_θ)_y]. A sanity lemma `fderiv (Ex ⟨z, G⟩) = Ex (adjoint(fderiv z) G)` (finite sum, linearity of fderiv) ties the fderiv-based definition to the paper's E[Jᵀξ] form. For λ: check mixrate 2 p = |1 − 2p| (appendix.tex:253) as a test."
+  },
+  "algorithm": {
+    "present": false,
+    "name": "none (statement about a fixed parametric map, its Jacobian and an expectation)",
+    "returns": [],
+    "transcriptionNotes": [
+      "There is no algorithm whose output or cost is bounded. The only 'procedure' is the deterministic Transformer forward pass, which Model must define as a function (with the score-scale ζ as an extra real argument). The algorithmTranscript below records that forward pass for whoever writes the model file; it is not a program with costs.",
+      "No sampling occurs inside the network; the randomness is only the data law (i.i.d. letters), handled as a finite weighted sum."
+    ],
+    "randomized": false
+  },
+  "paperEvidence": {
+    "targetLocation": "Paper/body.tex:191-199 (thm:main), proof at Paper/appendix.tex:530-536",
+    "conventionsRead": [
+      "Paper/body.tex:78-96 def:task and def:lambda (λ = |1 − p + p e^{2πi/K}|)",
+      "Paper/body.tex:117-128 formats, model summary, constants c, C independent of widths, n, ε",
+      "Paper/body.tex:163-189 'Fix the start count', def:credit, eq:credit-degree, ζ-expansion paragraph defining score-mediated credit",
+      "Paper/appendix.tex:11-30 def:losses, Φ_out = Φ_{y−u}, u = K^{-1}1, J_score = J_z − J^{[0]}",
+      "Paper/appendix.tex:34-65 ass:arch, ass:init, ass:task, constants paragraph (c, C depend only on a0, c_emb, K, numbers of blocks and heads)",
+      "Paper/appendix.tex:76-81 rem:norms: Euclidean norm of vectorized params; β fixed at 0 and excluded from θ in thm:main",
+      "Paper/appendix.tex:89-115 forward-pass display (1/√d_h score scaling, single W_V per head, MLP without output bias) and token/position layout of the outcome prompt (':' at n+3 predicts s_n)",
+      "Paper/appendix.tex:227-230 conventions: query and start fixed; bounds also on the doubled ball"
+    ],
+    "proofSectionsRead": [
+      "Paper/appendix.tex:237-248 lem:gradient-split",
+      "Paper/appendix.tex:250-293 contraction paragraph, lem:target-contraction and its proof, sharpness remark",
+      "Paper/appendix.tex:295-489 score expansion eq:score-split, prop:score-degree, prop:network and proofs",
+      "Paper/appendix.tex:491-536 lem:score-sum, its proof, the c-choice remark at line 528, proof of thm:main",
+      "Paper/direct_proofs/conditional_outcome.tex:1-107 (alternate, more explicit write-up of the same lemmas; clarifies the ζ-scaled network is the composed network and that remainder/zero-order bounds need ε ≤ 1)"
+    ],
+    "omittedOrMissingSources": [
+      "The excerpt omitted def:lambda (λ's definition), def:credit, def:losses, rem:norms (β excluded from θ; Euclidean parameter norm), the forward-pass display and prompt layout, eq:score-split (definition of J^{[0]}), prop:network, and the constants paragraph; all were read from the sources.",
+      "The paper never says whether the alphabet is finite; finiteness is implied by learned token embeddings.",
+      "The paper never states ε > 0 or λ > 0 in thm:main; lem:score-sum assumes both."
+    ]
+  },
+  "canonicalTarget": {
+    "statement": "thm:main parts (i) and (ii) exactly as in informalStatement: (i) the conditional-contraction credit bound ‖E[Hᵀ(y−u)]‖ ≤ λ^{n−|S|}‖H‖_{L²} for S-local H; (ii-a) score-mediated credit ≤ Cε⁶λ^{n−3} when ε² ≤ cλ; (ii-b) outcome credit ≤ Cελ^n when ε ≤ cλ; with fixed start count and query, θ ∈ B_ε, β = 0, and constants uniform in n, widths, alphabet, p.",
+    "source": "Paper/body.tex:191-199; proof Paper/appendix.tex:530-536 via lem:target-contraction (appendix.tex:264) and lem:score-sum (appendix.tex:494)",
+    "nonGoals": [
+      "The bound |Φ_out(θ)| ≤ Cε²λ^n of eq:thm1-full (in lem:score-sum, not in thm:main).",
+      "The identity/bound eq:horizon itself is a lemma for (i), not a separate headline claim.",
+      "Averaging over the start state and query (lem:score-sum last sentence).",
+      "Sharpness of the exponent n − |S| (rem:tight).",
+      "thm:separation, thm:outcome-end, thm:joint, prop:represent (exact executors), lem:bias-uniform (trained relative bias).",
+      "The claim that fan-in initialization satisfies A2 w.h.p. (appendix.tex:61-65).",
+      "Any training dynamics (ass:gd is not a hypothesis of thm:main)."
+    ]
+  },
+  "algorithmTranscript": {
+    "source": "No algorithm listing. Forward pass described at Paper/appendix.tex:89-97 (display), ass:arch (appendix.tex:34-41), prompt layout appendix.tex:107-115, ζ-scaling at appendix.tex:298-306.",
+    "steps": [
+      {
+        "label": "embed",
+        "paperText": "learned token and position embeddings",
+        "meaning": "h^0_i = E_tok(tok_i) + E_pos(i) for positions i = 0..n+3 of the outcome prompt.",
+        "requiredInModel": true
+      },
+      {
+        "label": "attention (block ℓ)",
+        "paperText": "h_i ← h_i + Σ_{h} Σ_{j≤i} softmax_{j≤i}((1/√d_h)(W_Q h_i)ᵀ W_K h_j) W_V h_j",
+        "meaning": "Per head, scores ψ_ij = (1/√d_h)⟨W_Q h_i, W_K h_j⟩ multiplied by ζ, softmax over the head's visible set vis(i) ⊆ {0..i} (full prefix by default), residual add of Σ_heads Σ_j ω_ij W_V h_j. Relative bias β = 0 (omitted).",
+        "requiredInModel": true
+      },
+      {
+        "label": "MLP (block ℓ)",
+        "paperText": "h_i ← h_i + W_out ReLU(W_in h_i + b_in)",
+        "meaning": "Residual ReLU MLP with input bias only; no LayerNorm anywhere.",
+        "requiredInModel": true
+      },
+      {
+        "label": "readout",
+        "paperText": "logits_i = V h_i; z_θ the state logits at the answer position",
+        "meaning": "z_θ = V h^2_{n+3} restricted to the K value-token rows.",
+        "requiredInModel": true
+      },
+      {
+        "label": "score scaling",
+        "paperText": "let z(ζ) be the network with every score ψ_il, in both blocks, replaced by ζψ_il",
+        "meaning": "ζ is a real argument of the forward pass; z^{[0]} = forward at ζ = 0, which is the composed network (block-2 scores computed from ζ=0 block-1 residuals, then scaled by 0).",
+        "requiredInModel": true
+      }
+    ],
+    "parameters": [
+      {
+        "name": "K",
+        "paperMeaning": "modulus / number of states",
+        "constraints": [
+          "K ≥ 2"
+        ]
+      },
+      {
+        "name": "n",
+        "paperMeaning": "number of letters",
+        "constraints": [
+          "n ≥ 2 for part (ii); any n ≥ 0 for part (i)"
+        ]
+      },
+      {
+        "name": "p, μ, Σ, w*",
+        "paperMeaning": "letter law on a finite alphabet, query letter, p = μ(w*)",
+        "constraints": [
+          "p ∈ (0,1)",
+          "Σ finite"
+        ]
+      },
+      {
+        "name": "d_res, d_h, w, nH",
+        "paperMeaning": "residual, head, MLP widths; heads per block",
+        "constraints": [
+          "arbitrary positive; constants may depend on nH but not on widths"
+        ]
+      },
+      {
+        "name": "a0, c_emb, N_b",
+        "paperMeaning": "operator-norm bound, value-embedding σ_min lower bound, MLP bias-norm bound for θ̃",
+        "constraints": [
+          "a0 > 0, c_emb > 0, N_b ≥ 1 implied by |b̃_m| ≥ 1 (if w ≥ 1)"
+        ]
+      },
+      {
+        "name": "ε",
+        "paperMeaning": "initialization scale",
+        "constraints": [
+          "0 < ε ≤ c₀ min(1, 1/N_b)",
+          "ε² ≤ cλ for (ii-a)",
+          "ε ≤ cλ for (ii-b)"
+        ]
+      },
+      {
+        "name": "θ",
+        "paperMeaning": "parameters (β excluded)",
+        "constraints": [
+          "‖θ − εθ̃‖ ≤ min(1/8, c_emb/4)·ε"
+        ]
+      }
+    ],
+    "returns": {
+      "paperText": "z_θ, the state logits at the answer position",
+      "leanMeaning": "logits A ζ θ w : EuclideanSpace ℝ (ZMod K); the theorem uses ζ ∈ {0,1} and the fderiv in θ of the letter-expectation of ⟨logits, G⟩."
+    },
+    "randomness": [
+      {
+        "paperText": "letters w_1,…,w_n drawn i.i.d. from an alphabet in which w* has probability p; start count fixed",
+        "scope": "other",
+        "leanMeaning": "Data law only: E is the finite sum over Fin n → Σ weighted by ∏ μ(w_t). The network itself is deterministic."
+      }
+    ],
+    "omissionsOrChoices": [
+      {
+        "paperItem": "relative position bias β",
+        "decision": "omit from the model; equivalent to β = 0 fixed and excluded from θ",
+        "reason": "rem:norms says in thm:main β is fixed at 0 and θ denotes the other parameters",
+        "downstreamRisk": "None for thm:main; a later thm:outcome-end formalization would need β back."
+      },
+      {
+        "paperItem": "output vocabulary rows of V other than the K value tokens",
+        "decision": "V : Matrix (ZMod K) (Fin dres) ℝ",
+        "reason": "z_θ is the K state logits (def:losses); other rows contribute zero Jacobian columns and do not change any credit norm",
+        "downstreamRisk": "Low: Euclidean norm of the gradient is unchanged by adding parameters with zero gradient."
+      },
+      {
+        "paperItem": "positions beyond n+3 (step row, EOS)",
+        "decision": "sequence length n+4, position table of n+4 rows",
+        "reason": "causal attention: positions > n+3 never affect the answer logits",
+        "downstreamRisk": "Low; norm bound a0 on a truncated position table is implied by the bound on the full table."
+      },
+      {
+        "paperItem": "value/output projection",
+        "decision": "single W_V ∈ R^{d_res×d_res} per head, no W_O",
+        "reason": "appendix.tex:95 display and prop:network transported-term counting ('contain V, W_V and some x_j', tangent O(ε²)) both assume one value matrix",
+        "downstreamRisk": "Adding W_O would change ε-powers (each head output gains a factor ε) and so change the proof, not the stated bounds' truth direction; flag at handoff."
+      },
+      {
+        "paperItem": "score normalisation 1/√d_h",
+        "decision": "include it",
+        "reason": "appendix.tex:95 display",
+        "downstreamRisk": "Without it the score bound |ψ| ≤ Cε⁴ still holds via operator norms (‖W_Q‖‖W_K‖ ≤ a0²ε²), so constants are unaffected; harmless either way."
+      }
+    ]
+  },
+  "claimLedger": [
+    {
+      "claim": "(i) For all S ⊆ [n] and every H depending only on letters in S: ‖E[Hᵀ(y − u)]‖ ≤ λ^{n−|S|}‖H‖_{L²}.",
+      "source": "Paper/body.tex:195, eq:credit-degree body.tex:178; proof lem:target-contraction appendix.tex:264-290",
+      "target": "Model/Theorem",
+      "kind": "correctness",
+      "canFail": false
+    },
+    {
+      "claim": "(ii-a) n ≥ 2, ε² ≤ cλ, θ ∈ B_ε ⇒ ‖E[J_scoreᵀ(y − u)]‖ ≤ Cε⁶λ^{n−3}.",
+      "source": "Paper/body.tex:196; lem:score-sum appendix.tex:497-499",
+      "target": "Model/Theorem",
+      "kind": "other",
+      "canFail": false
+    },
+    {
+      "claim": "(ii-b) n ≥ 2, ε ≤ cλ, θ ∈ B_ε ⇒ ‖∇_θ Φ_out(θ)‖ ≤ Cελ^n.",
+      "source": "Paper/body.tex:196-197; eq:thm1-full appendix.tex:502-505",
+      "target": "Model/Theorem",
+      "kind": "other",
+      "canFail": false
+    },
+    {
+      "claim": "Constants c₀, c, C depend only on a0, c_emb, K, number of heads (blocks fixed at 2).",
+      "source": "Paper/appendix.tex:60-61, 227-228; body.tex:127-128",
+      "target": "Model/Theorem",
+      "kind": "other",
+      "canFail": false
+    },
+    {
+      "claim": "eq:horizon: ‖E[G | F_S]‖² = (1/K)Σ_{j=1}^{K−1}|ρ_j|^{2(n−|S|)} ≤ (1 − 1/K)λ^{2(n−|S|)} (pointwise in the conditioning letters).",
+      "source": "Paper/appendix.tex:267-270",
+      "target": "Analysis",
+      "kind": "correctness",
+      "canFail": false
+    },
+    {
+      "claim": "prop:score-degree: ζ-Taylor decomposition of J_z into J^{[0]} (≤ 1 letter per term), J^{[k]} (≤ 2k+1 letters, total Cε²(C_att ε⁴)^k) and remainder; fixed ReLU pattern on B_ε.",
+      "source": "Paper/appendix.tex:308-319, 325-489",
+      "target": "Analysis",
+      "kind": "other",
+      "canFail": false
+    },
+    {
+      "claim": "Credit equals gradient of the credit functional: ∇_θ E⟨z_θ, ξ⟩ = E[J_zᵀ ξ].",
+      "source": "Paper/body.tex:167-168; appendix.tex:242",
+      "target": "Interface",
+      "kind": "other",
+      "canFail": false
+    }
+  ],
+  "hypothesisLedger": [
+    {
+      "hypothesis": "K ≥ 2",
+      "source": "ass:task appendix.tex:57",
+      "verdict": "required",
+      "downstream": "Model/Theorem",
+      "why": "Gives λ < 1 (with p ∈ (0,1)); needed for the geometric-sum and ε ≤ λ steps. Part (i) alone holds for K ≥ 1."
+    },
+    {
+      "hypothesis": "p ∈ (0,1) (query letter has probability strictly between 0 and 1)",
+      "source": "def:task body.tex:80-81",
+      "verdict": "required",
+      "downstream": "Model/Theorem",
+      "why": "Ensures λ < 1. Part (i) holds for every p ∈ [0,1]; keeping the hypothesis is harmless."
+    },
+    {
+      "hypothesis": "Start count s0 and query w* fixed (expectation over letters only)",
+      "source": "body.tex:163, 193; appendix.tex:227",
+      "verdict": "required",
+      "downstream": "Model/Theorem",
+      "why": "Letters independent and prompt otherwise deterministic; the conditioning argument and the 'reads no letter' term rely on it."
+    },
+    {
+      "hypothesis": "Architecture A1 (two blocks, softmax heads, ReLU MLPs, no LayerNorm, linear readout, optional fixed causal submasks)",
+      "source": "ass:arch appendix.tex:34-41",
+      "verdict": "required",
+      "downstream": "Model/Program",
+      "why": "Defines z_θ. Encoded in the model definition, not as a Prop hypothesis."
+    },
+    {
+      "hypothesis": "β = 0 (relative bias fixed at zero, excluded from θ)",
+      "source": "ass:init neighbourhood appendix.tex:51; rem:norms appendix.tex:76-79",
+      "verdict": "discharge-internally",
+      "downstream": "Model/Program",
+      "why": "Built in by omitting β from the model."
+    },
+    {
+      "hypothesis": "Init A2 on θ̃: operator norms ≤ a0; value-token embedding σ_min ≥ c_emb; |b̃_m| ≥ 1; ‖b̃‖ ≤ N_b",
+      "source": "ass:init appendix.tex:45-48",
+      "verdict": "required",
+      "downstream": "Model/Theorem",
+      "why": "|b̃_m| ≥ 1 fixes the ReLU pattern on the ball; operator-norm bounds drive every ε-power. σ_min ≥ c_emb enters thm:main only through r0 = min(1/8, c_emb/4); it is otherwise unused here but must be kept because B_ε is defined with it."
+    },
+    {
+      "hypothesis": "0 < ε ≤ c₀ min(1, 1/N_b)",
+      "source": "ass:init appendix.tex:45; lem:score-sum appendix.tex:496",
+      "verdict": "required",
+      "downstream": "Model/Theorem",
+      "why": "ε ≤ c₀/N_b keeps the MLP offset o_ℓ = O(ε) and the ReLU pattern fixed; ε > 0 is implicit in thm:main but required (ε = 0 makes θ0 = 0 where pre-activations are exactly 0 and the ReLU is non-differentiable; also gives λ > 0 via ε² ≤ cλ)."
+    },
+    {
+      "hypothesis": "θ ∈ B_ε: ‖θ − εθ̃‖ ≤ min(1/8, c_emb/4)·ε",
+      "source": "ass:init appendix.tex:50-52; body.tex:196",
+      "verdict": "required",
+      "downstream": "Model/Theorem",
+      "why": "All bounds are local."
+    },
+    {
+      "hypothesis": "n ≥ 2 (part ii)",
+      "source": "body.tex:196",
+      "verdict": "required",
+      "downstream": "Model/Theorem",
+      "why": "k0 = ⌈(n−1)/2⌉ ≥ 1; stated by the paper. (The bounds plausibly extend to n = 1 but the paper does not claim it.)"
+    },
+    {
+      "hypothesis": "ε² ≤ cλ (ii-a); ε ≤ cλ (ii-b)",
+      "source": "body.tex:196-197; appendix.tex:528-535",
+      "verdict": "required",
+      "downstream": "Model/Theorem",
+      "why": "Gives C_att ε⁴ ≤ λ²/2 (geometric decay of the score series) and ε ≤ λ (collapsing the three-term bound)."
+    },
+    {
+      "hypothesis": "Square-integrability of H (part i)",
+      "source": "body.tex:195",
+      "verdict": "unnecessary",
+      "downstream": "Model/Theorem",
+      "why": "Automatic for a finite alphabet (finite sum)."
+    },
+    {
+      "hypothesis": "Training assumption A4 (gradient flow)",
+      "source": "ass:gd appendix.tex:69-74",
+      "verdict": "unnecessary",
+      "downstream": "Handoff",
+      "why": "thm:main cites only A1-A3; A4 is only relevant via its 'β held at zero', which is already built in."
+    }
+  ],
+  "modelingChoices": [
+    {
+      "item": "Finite alphabet with a PMF; expectation as a finite weighted sum",
+      "decision": "Σ : Fintype, μ : PMF Σ; E f = Σ_w ∏_t μ(w_t) f(w)",
+      "classification": "acceptable",
+      "reason": "Learned token embeddings presuppose a finite vocabulary; avoids measure theory and makes square-integrability trivial.",
+      "downstreamRisk": "Part (i) is stated by the paper for general square-integrable H; on a finite space this is the full generality."
+    },
+    {
+      "item": "'depends only on letters in S' formalised as agreement on S implies equal values",
+      "decision": "DependsOnlyOn S H",
+      "classification": "acceptable",
+      "reason": "Equivalent to F_S-measurability on a finite product space with full support; with zero-probability letters it is slightly stronger than a.s. measurability, which only weakens nothing in the conclusion (the hypothesis is stronger, theorem weaker by a null-set technicality).",
+      "downstreamRisk": "If μ has zero-mass letters, the paper's F_S-measurable class is the same (σ-algebra measurability, not a.s.), so no gap."
+    },
+    {
+      "item": "Credits defined via fderiv of the scalar credit functional",
+      "decision": "OC = ‖fderiv ℝ (θ ↦ E⟨z_θ, G⟩) θ‖, SC = ‖fderiv ℝ (θ ↦ E⟨z_θ − z^{[0]}_θ, G⟩) θ‖",
+      "classification": "modeling-note",
+      "reason": "Equals ‖E[Jᵀ G]‖ by linearity when z is differentiable; operator norm of a functional on EuclideanSpace equals the Euclidean norm of its gradient.",
+      "downstreamRisk": "Mathlib's fderiv is 0 at non-differentiable points, which would make the bound vacuous there; a proof obligation must show differentiability on B_ε (fixed ReLU pattern) or the theorem should state DifferentiableAt as a conjunct so the bound is not trivially satisfied."
+    },
+    {
+      "item": "Relative bias β omitted",
+      "decision": "No β in Params",
+      "classification": "acceptable",
+      "reason": "rem:norms: in thm:main β is fixed at 0 and excluded from θ and from the Jacobian.",
+      "downstreamRisk": "None for this theorem."
+    },
+    {
+      "item": "Readout restricted to K value-token rows; sequence truncated at n+4 positions",
+      "decision": "V : R^{K×d_res}; positions Fin (n+4)",
+      "classification": "acceptable",
+      "reason": "Other rows/positions have zero effect on z_θ (causality; z is the state logits).",
+      "downstreamRisk": "Low."
+    },
+    {
+      "item": "Single W_V per head (no output projection); score scale 1/√d_h; MLP without output bias",
+      "decision": "Follow appendix.tex:95-96 literally",
+      "classification": "modeling-note",
+      "reason": "ass:arch does not pin these; the explicit display does, and prop:network's ε-power counting assumes them.",
+      "downstreamRisk": "A W_O would alter the power counting; handoff should note the chosen architecture."
+    },
+    {
+      "item": "Per-head fixed causal submasks",
+      "decision": "Arch carries vis sets, required nonempty and ⊆ prefix; constants uniform in them",
+      "classification": "modeling-note",
+      "reason": "ass:arch allows submasks; thm:main uses only prop:network(i)-(iii), which hold with masks. Paper does not say masks are nonempty, but softmax over an empty set is undefined.",
+      "downstreamRisk": "Could specialise to full prefix to simplify, at the cost of generality the paper claims; recommend keeping masks."
+    },
+    {
+      "item": "Constants and the threshold c of ε0 are existential",
+      "decision": "∀ a0 cemb K nH, ∃ c₀ c C > 0, ∀ n widths Σ μ masks θ̃ Nb ε θ, …",
+      "classification": "modeling-note",
+      "reason": "'ε0 := c min(1, 1/N_b)' and the theorem's c, C are 'for suitable constants'. A single c vs separate c's are equivalent by taking minima.",
+      "downstreamRisk": "Quantifier order must put the constants before n, widths, alphabet, p, N_b, masks; putting them after would make the theorem near-trivial."
+    },
+    {
+      "item": "λ^{n−3} at n = 2",
+      "decision": "Use zpow (λ ^ ((n:ℤ) − 3)) or the equivalent λ³·SC ≤ Cε⁶λ^n",
+      "classification": "modeling-note",
+      "reason": "Negative exponent at n = 2; λ > 0 follows from ε > 0 and ε² ≤ cλ.",
+      "downstreamRisk": "With ℕ subtraction n − 3 = 0 at n = 2, the bound would become Cε⁶, which is a different (stronger) claim — must not be used."
+    },
+    {
+      "item": "Prompt layout",
+      "decision": "s0@0, w*@1, w_t@(1+t), SEP@(n+2), ':'@(n+3); answer logits at n+3",
+      "classification": "acceptable",
+      "reason": "appendix.tex:107-115. The proof only uses that non-letter tokens are fixed and the answer position is fixed.",
+      "downstreamRisk": "Low."
+    },
+    {
+      "item": "ReLU differentiability",
+      "decision": "Prove the activation pattern is constant on a neighbourhood of every θ ∈ B_ε (the paper proves it on the doubled ball), so z is smooth there",
+      "classification": "proof-obligation",
+      "reason": "Needed for fderiv to be the real Jacobian.",
+      "downstreamRisk": "If closedBall boundary points were not interior to a constant-pattern region, fderiv could be 0 there; the doubled-ball claim (appendix.tex:229-230) covers it."
+    }
+  ],
+  "downstreamContract": {
+    "program": [
+      "Define the deterministic forward map logits (A : Arch) (ζ : ℝ) (θ : Params A) (w : Fin n → Σ) : EuclideanSpace ℝ (ZMod K) for the two-block, no-LayerNorm, causal softmax Transformer with per-head W_Q, W_K (d_h×d_res), W_V (d_res×d_res), scores (1/√d_h)⟨W_Q h_i, W_K h_j⟩ scaled by ζ, softmax over a fixed nonempty causal visible set, residual ReLU MLP W_out ReLU(W_in h + b_in), readout V (K×d_res), evaluated at position n+3 of the outcome prompt.",
+      "ζ must scale the scores in both blocks inside the composed computation (block-2 scores computed from the ζ-network's block-1 residuals).",
+      "No relative bias; Params is a EuclideanSpace over a Fintype index so ‖·‖ is the vectorized Euclidean norm.",
+      "Task: Fintype alphabet, PMF μ, query w*, s0 : ZMod K; answer = s0 + #{t : w_t = w*} mod K; G = onehot(answer) − (1/K)1; expectation = finite weighted sum."
+    ],
+    "pseudocode": [
+      "May present the forward pass with ζ hidden (ζ = 1) and z^{[0]} as 'uniform attention'; must state that z^{[0]} is the composed ζ = 0 network.",
+      "May present masks as 'full prefix by default'."
+    ],
+    "theorem": [
+      "One theorem with two parts (or two theorems sharing the setting): part (i) architecture-free: ∀ S H, DependsOnlyOn S H → ‖Ex (fun w => (H w)ᵀ *ᵥ G w)‖ ≤ mixrate K p ^ (n − S.card) * l2Norm H.",
+      "Part (ii): ∀ a0 cemb (K) nH, ∃ c₀ c C > 0, ∀ n ≥ 2, ∀ Task with that K and p ∈ (0,1), ∀ Arch with nH heads (any widths, masks), ∀ θ̃ Nb with InitHyp θ̃ a0 cemb Nb, ∀ ε, 0 < ε → ε ≤ c₀ * min 1 (1/Nb) → ∀ θ ∈ closedBall (ε • θ̃) (min (1/8) (cemb/4) * ε) → (ε^2 ≤ c * λ → scoreCredit θ ≤ C * ε^6 * λ ^ ((n:ℤ) − 3)) ∧ (ε ≤ c * λ → outcomeCredit θ ≤ C * ε * λ ^ n).",
+      "Constants must be quantified before n, widths, alphabet, μ, p, s0, w*, Nb, masks, θ̃, ε, θ.",
+      "Do not use ℕ subtraction for n − 3. Optionally add DifferentiableAt conjuncts so the fderiv bound is not vacuous."
+    ],
+    "handoff": [
+      "Check quantifier order of constants (uniform in n, widths, N_b, p, alphabet).",
+      "Check λ is |1 − p + p e^{2πi/K}| and the exponent n − 3 is an integer power.",
+      "Check z^{[0]} is the ζ = 0 composed network, and that both credits exclude β.",
+      "Check part (i) uses the Euclidean norm on E[Hᵀ G] and the Frobenius L² norm on H.",
+      "Report that ε > 0 was added (implicit in the paper) and that eq:thm1-full's |Φ_out| bound is a non-goal."
+    ]
+  },
+  "headline": {
+    "shape": "Deterministic inequality theorem (no algorithm, no probability monad): (i) ∀ S-local H, ‖E[Hᵀ(y−u)]‖ ≤ λ^{n−|S|}‖H‖_{L²}; (ii) ∃ c₀ c C > 0 uniform in n/widths/alphabet such that ∀ n ≥ 2, ∀ admissible θ̃, ε ∈ (0, c₀ min(1,1/N_b)], θ ∈ B_ε: ε² ≤ cλ → scoreCredit ≤ Cε⁶λ^{n−3}, and ε ≤ cλ → outcomeCredit ≤ Cελ^n. Expectations are finite sums over the letter law.",
+    "claims": [
+      {
+        "claim": "(i) conditional-contraction credit bound for S-local features",
+        "canFail": false,
+        "resourceBound": false,
+        "note": "Deterministic inequality about an expectation; no failure probability."
+      },
+      {
+        "claim": "(ii-a) score-mediated credit ≤ Cε⁶λ^{n−3}",
+        "canFail": false,
+        "resourceBound": false,
+        "note": "Bound on a gradient norm, not on cost."
+      },
+      {
+        "claim": "(ii-b) outcome credit ≤ Cελ^n",
+        "canFail": false,
+        "resourceBound": false,
+        "note": "Bound on a gradient norm, not on cost."
+      }
+    ]
+  },
+  "hypotheses": [
+    {
+      "hypothesis": "K ≥ 2 and p ∈ (0,1)",
+      "verdict": "required",
+      "why": "λ < 1 used in summation and in ε ≤ λ; stated in def:task / ass:task."
+    },
+    {
+      "hypothesis": "Start count and query fixed; letters i.i.d.",
+      "verdict": "required",
+      "why": "Basis of the conditioning argument."
+    },
+    {
+      "hypothesis": "β = 0",
+      "verdict": "discharge-internally",
+      "why": "Omit β from the model."
+    },
+    {
+      "hypothesis": "θ̃ satisfies A2 (op-norm ≤ a0, σ_min(value embeddings) ≥ c_emb, |b̃_m| ≥ 1, ‖b̃‖ ≤ N_b)",
+      "verdict": "required",
+      "why": "Fixes ReLU pattern and the ε-power bounds; c_emb sets r0."
+    },
+    {
+      "hypothesis": "0 < ε ≤ c₀ min(1, 1/N_b)",
+      "verdict": "required",
+      "why": "ε > 0 is implicit in the paper but needed (differentiability at θ0 = 0 fails, λ^{−1} at n = 2)."
+    },
+    {
+      "hypothesis": "θ ∈ B_ε",
+      "verdict": "required",
+      "why": "Local result."
+    },
+    {
+      "hypothesis": "n ≥ 2 (part ii)",
+      "verdict": "required",
+      "why": "Stated; k0 ≥ 1."
+    },
+    {
+      "hypothesis": "ε² ≤ cλ (ii-a), ε ≤ cλ (ii-b)",
+      "verdict": "required",
+      "why": "Geometric decay C_att ε⁴ ≤ λ²/2 and collapse to one term."
+    },
+    {
+      "hypothesis": "H square-integrable",
+      "verdict": "unnecessary",
+      "why": "Finite alphabet."
+    },
+    {
+      "hypothesis": "Nonempty visible sets for masked heads",
+      "verdict": "required",
+      "why": "Softmax over an empty set is undefined; implicit in the paper."
+    }
+  ],
+  "ambiguities": [
+    "ε > 0 is not stated in thm:main (lem:score-sum assumes it). At ε = 0, θ0 = 0, all MLP pre-activations are exactly 0 and the ReLU is not differentiable; add 0 < ε.",
+    "λ can be 0 (K = 2, p = 1/2) and at n = 2 the bound uses λ^{−1}. With ε > 0 the hypothesis ε² ≤ cλ forces λ > 0, so the statement is well defined once ε > 0 is added; Lean must use an integer power, not ℕ subtraction.",
+    "Quantifier order / dependence of constants: the paper says c, C depend only on a0, c_emb, K and the number of blocks and heads; the c inside ε0 = c min(1,1/N_b) is also an existential constant. The Lean statement must fix these before n, widths, N_b, alphabet, p.",
+    "Architecture details not pinned in ass:arch: whether heads have an output projection W_O, whether scores carry 1/√d_h, whether MLPs have an output bias. The appendix display (appendix.tex:95-96) fixes: no W_O, 1/√d_h, no output bias. Adopted.",
+    "'Every weight matrix and embedding block … operator norm ≤ a0': unclear whether the readout V counts as a weight matrix (assumed yes) and how embedding blocks are shaped (token embedding as d_res×|vocab|, position embedding as d_res×L, assumed).",
+    "z^{[0]} / J^{[0]}: defined by multiplying every score by ζ in both blocks of the composed network; J^{[0]} = ∂_θ z(0). The body paragraph is informal; appendix eq:score-split and direct_proofs/conditional_outcome.tex:29 fix the composed reading.",
+    "Part (i) norm conventions: E[Hᵀ G] uses the Euclidean norm, ‖H‖_{L²} uses Frobenius (lem:target-contraction). H has K rows and arbitrary column count.",
+    "The alphabet is never stated to be finite; finiteness is assumed (learned token embeddings).",
+    "Submasks are allowed by ass:arch but their visible sets are not required to be nonempty; we require nonempty.",
+    "Differentiability: the credit is a gradient; the theorem implicitly needs z_θ differentiable at θ ∈ B_ε (fixed ReLU pattern on the doubled ball, appendix.tex:229-230)."
+  ],
+  "ambiguityLedger": [
+    {
+      "kind": "statement-decision",
+      "text": "Add hypothesis 0 < ε (implicit in the paper; present in lem:score-sum).",
+      "affects": "Model/Theorem part (ii)",
+      "downstream": "Theorem statement; mention at handoff."
+    },
+    {
+      "kind": "statement-decision",
+      "text": "State the (ii-a) bound with λ ^ ((n:ℤ) − 3) (zpow) or as λ³·SC ≤ Cε⁶λ^n; never ℕ subtraction.",
+      "affects": "Model/Theorem part (ii-a)",
+      "downstream": "Theorem statement."
+    },
+    {
+      "kind": "statement-decision",
+      "text": "Constants c₀ (in ε0), c, C existential, chosen after a0, c_emb, K, nH and before everything else.",
+      "affects": "Model/Theorem",
+      "downstream": "Theorem statement; handoff check."
+    },
+    {
+      "kind": "modeling-note",
+      "text": "Architecture fixed per appendix.tex:95-96: single W_V per head (d_res×d_res), 1/√d_h score scaling, MLP with input bias only, no LayerNorm, readout V : K×d_res, β omitted.",
+      "affects": "Model/Program",
+      "downstream": "Program file comment."
+    },
+    {
+      "kind": "proof-obligation",
+      "text": "ReLU pattern is constant on a neighbourhood of B_ε for all inputs and all ζ ∈ [0,1] (|b_m| ≥ (3/4)ε > Cε² ≥ |(W_in h)_m|), hence z is differentiable and fderiv is the Jacobian.",
+      "affects": "Analysis",
+      "downstream": "Lemma feeding both credits."
+    },
+    {
+      "kind": "proof-obligation",
+      "text": "max_{1≤j<K} |1 − p + p α^j| = |1 − p + p α| (|ρ_j|² = 1 − 2p(1−p)(1 − cos 2πj/K)); needed for |ρ_j| ≤ λ in part (i).",
+      "affects": "Analysis (part i)",
+      "downstream": "Lemma on mixrate."
+    },
+    {
+      "kind": "proof-obligation",
+      "text": "prop:score-degree / prop:network are the bulk of part (ii) (ζ-Taylor expansion, letter-support counting ≤ 2k+1, absolute-sum bounds Cε²(C_att ε⁴)^k uniform in n and widths). These are same-paper lemmas, not priors.",
+      "affects": "Analysis",
+      "downstream": "Decomposition pass."
+    },
+    {
+      "kind": "handoff-risk",
+      "text": "The fderiv-based credit is vacuously small at non-differentiable points; handoff must confirm differentiability is proved (or stated) so the bound is not trivially satisfied.",
+      "affects": "Handoff",
+      "downstream": "Handoff check."
+    },
+    {
+      "kind": "modeling-note",
+      "text": "Finite alphabet and finite-sum expectation; square-integrability dropped as automatic.",
+      "affects": "Model/Program, part (i)",
+      "downstream": "Program file comment."
+    },
+    {
+      "kind": "handoff-risk",
+      "text": "Constant independence from p and the alphabet is not listed explicitly in the paper's constant list but follows from it (constants depend only on a0, c_emb, K, blocks, heads); handoff should confirm the Lean constants are not allowed to depend on p, μ, Σ, N_b or widths.",
+      "affects": "Handoff",
+      "downstream": "Handoff check."
+    }
+  ]
+}

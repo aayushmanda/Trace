@@ -1,0 +1,247 @@
+% !TEX root = ../main.tex
+% Minimal aligned chain; all four trained maps use their matrix Frobenius metric.
+\section{Structured transitions and learned attention routing}
+\label{app:aligned-transformer}
+The supplied-routing proof proceeds in three steps.
+The exact matrix reduction identifies the effective gate and its induced metric.
+A nonvanishing gate contrast then gives loss descent and persistent transition margins.
+
+
+\subsection{Model, seed and exact features}
+\label{app:aligned-seed}
+Fix the query letter and use a uniform start. The counting law and averaged transition loss are those of \cref{def:task,def:losses}.
+Take orthonormal residual directions $e_{\mathrm{base}},e_{\mathrm{letter}},e_s^{\mathrm{count}},
+e_s^{\mathrm{gate}}$, and a unit head direction $e_{\mathrm{head}}$.
+For the standard basis $e_s$ of $\R^K$, the cyclic shift satisfies $R e_s=e_{s+1}$. Set
+\[
+\begin{aligned}
+ E(s)&=\varepsilon e_s^{\mathrm{count}},\\
+ E(\text{query letter})&=\varepsilon(e_{\mathrm{base}}-e_{\mathrm{letter}}),\qquad
+ E(\text{other letters})=\varepsilon(e_{\mathrm{base}}+e_{\mathrm{letter}}),\\
+ P_Q&=\sum_s e_{\mathrm{head}}(e_s^{\mathrm{count}})^\top,\qquad
+ P_K=e_{\mathrm{head}}e_{\mathrm{letter}}^\top,\qquad
+ P_V=\sum_s e_s^{\mathrm{gate}}(e_s^{\mathrm{count}})^\top.
+\end{aligned}
+\]
+Only head 1 of block 2 has nonzero maps:
+$W_Q=qP_Q$, $W_K=kP_K$, $W_V=vP_V$. At the displayed state $s_{t-1}$,
+its fixed mask admits that state and the current letter, for $t\ge2$.
+Relative biases are fixed at zero.
+All other embeddings, position embeddings, heads and MLP weights are zero;
+MLP biases are fixed at $\pm\varepsilon$.
+The trainable readout blocks are $U$ on the count register and
+$W=w_{\mathrm{gate}}(I-R)$ on the gate register. Initialize
+\[
+ U=0,\quad w_{\mathrm{gate}}=0,\qquad
+ \varepsilon/2\le |q_0|,|k_0|,|v|\le2\varepsilon,
+ \qquad q_0k_0(1-2p)<0.
+\]
+The value map, embeddings, MLPs and remaining heads are fixed.
+
+\paragraph{Actual matrix metric.}
+Train $(U,W,W_Q,W_K)$ by orthogonally projected Euclidean gradient flow onto
+these fixed matrix subspaces. The induced metric is
+\begin{equation}
+ \|\mathrm dU\|_F^2+2K\,(\mathrm dw_{\mathrm{gate}})^2+K\,(\mathrm dq)^2+(\mathrm dk)^2,
+ \label{eq:aligned-metric}
+\end{equation}
+since $\|I-R\|_F^2=2K$, $\|P_Q\|_F^2=K$ and $\|P_K\|_F^2=1$.
+In particular $\frac{dq}{dt}=-\frac1K\frac{\partial L}{\partial q}$.
+
+\begin{lemma}[Exact structured reduction]
+\label{lem:aligned-reduction}
+Let $x_t=e_{s_{t-1}}$, $a=\varepsilon^2qk/\sqrt{d_h}$, and
+$r_b=(1+e^{(-1)^ba})^{-1}$. Then
+\[
+ z_t=\varepsilon Ux_t+\varepsilon v r_{b_t}Wx_t.
+\]
+Along process flow, $U=\sum_j u_jR^j$, and $u_j=u_{\mathrm{back}}$ for $j\ge2$.
+For $N=K-2$, define
+\[
+ c=\varepsilon(u_0-u_1),\qquad g=2\varepsilon v w_{\mathrm{gate}},\qquad
+ s=\varepsilon\bigl((u_0+u_1)/2-u_{\mathrm{back}}\bigr),
+\]
+with $s=0$ when $K=2$. Put $m_b=(-1)^b(c+gr_b)$ and
+\begin{equation}
+ F(m,s)=\log(1+e^{-m}+Ne^{-s-m/2}),\qquad
+ L=(1-p)F(m_0,s)+pF(m_1,s).
+ \label{eq:aligned-loss}
+\end{equation}
+The target logit is $s+m_b/2$, the other transition logit is $s-m_b/2$, and
+all $N$ background logits are zero, after a common shift. The exact flow is
+\begin{equation}
+\begin{aligned}
+ \frac{dc}{dt}&=-\frac{2\varepsilon^2}{K}\frac{\partial L}{\partial c},&
+ \frac{dg}{dt}&=-\frac{2\varepsilon^2v^2}{K}\frac{\partial L}{\partial g},\\
+ \frac{ds}{dt}&=-\frac{\varepsilon^2}{2N}\frac{\partial L}{\partial s}\quad(N>0),&
+ \frac{da}{dt}&=-\frac{\varepsilon^4}{d_h}
+       \left(q^2+\frac{k^2}{K}\right)\frac{\partial L}{\partial a},\\
+ \frac{dq}{dt}&=-\frac{\varepsilon^2k}{K\sqrt{d_h}}\frac{\partial L}{\partial a},&
+ \frac{dk}{dt}&=-\frac{\varepsilon^2q}{\sqrt{d_h}}\frac{\partial L}{\partial a}.
+\end{aligned}
+\label{eq:aligned-flow}
+\end{equation}
+\end{lemma}
+\begin{proof}
+At the displayed state, the query is $\varepsilon q e_{\mathrm{head}}$;
+the state key is zero and the current-letter key is
+$(-1)^{b_t}\varepsilon k e_{\mathrm{head}}$.
+The only nonzero value is the state's $\varepsilon v e_{s_{t-1}}^{\mathrm{gate}}$.
+This gives the exact features. A cyclic relabeling of states preserves the loss,
+is an isometry of \cref{eq:aligned-metric}, and fixes the zero readouts.
+Uniqueness therefore preserves $R^{-1}UR=U$. Permuting background offsets
+likewise preserves their equality.
+For a circulant count readout, $\|U\|_F^2=K\sum_j u_j^2$.
+After a common shift its two transition logits and the remaining logits give
+\cref{eq:aligned-loss}. Differentiating with the metric
+\cref{eq:aligned-metric} gives \cref{eq:aligned-flow}.
+The flow exists at every finite time: the $c,g,s$ derivatives are bounded,
+$|\partial L/\partial a|\le|g|/4$, and the $q,k$ equations admit a finite
+Gr\"onwall bound on each finite interval. Smooth continuation then gives a global
+solution \citep[Corollary~2.15]{teschl2012ode}. Frozen blocks remain unchanged.
+\end{proof}
+
+\subsection{Alignment and the gate floor}
+By swapping the two transition roles, $p>1/2$ reduces isometrically to
+$p<1/2$: replace $(c,g,a,p)$ by $(-c,-g,-a,1-p)$, using
+$(u_0,u_1,w_{\mathrm{gate}},q,k)\mapsto(u_1,u_0,-w_{\mathrm{gate}},-q,k)$ in the matrices.
+It therefore suffices to prove the theorem with $p<1/2$ and $a_0<0$.
+Define the following quantities only for this proof:
+\[
+\begin{aligned}
+ e_b&=-\pi_b\frac{\partial F}{\partial m}(m_b,s),
+ &\pi_0&=1-p,\quad\pi_1=p,\qquad e=e_0+e_1,\\
+ d&=r_1-r_0=\tanh(a/2),
+ &h&=c+g/2,\qquad B=g-v^2c/2.
+\end{aligned}
+\]
+Here $e_b$ is the weighted prediction error, $d$ the gate contrast, $h$ the
+state-only margin and $B$ a balance quantity. Direct differentiation gives
+\begin{equation}
+\begin{aligned}
+ \frac{\partial L}{\partial c}&=e_1-e_0,&
+ \frac{\partial L}{\partial g}&=\frac12\left(\frac{\partial L}{\partial c}+de\right),&
+ \frac{\partial L}{\partial a}&=g\frac{e^a}{(1+e^a)^2}e,\\
+ \frac{dB}{dt}&=-\frac{\varepsilon^2v^2}{K}de,&
+ (1+v^2/4)g&=B+v^2h/2,\\
+ \frac{dh}{dt}&=-\frac{2\varepsilon^2}{K}(1+v^2/4)\frac{\partial L}{\partial c}
+                -\frac{\varepsilon^2v^2}{2K}de.
+\end{aligned}
+\label{eq:aligned-identities}
+\end{equation}
+
+\begin{lemma}[Aligned score does not collapse]
+\label{lem:aligned-invariant}
+For the aligned zero-readout seed and $0<\varepsilon\le1/2$,
+\[
+ g(t)\ge0,\qquad a(t)\le a_0<0,\qquad
+ |d(t)|\ge\tanh(|a_0|/2)\ge\frac{\varepsilon^4}{16\sqrt{d_h}}
+ \quad(t\ge0).
+\]
+\end{lemma}
+\begin{proof}
+Work until a first possible exit from $a<0$. There $d<0$ and $e>0$,
+so $B$ is nondecreasing from zero. At $h=0$, $m_0=m_1$ and
+$\partial L/\partial c=(2p-1)(-\partial F/\partial m)<0$;
+\cref{eq:aligned-identities} gives $dh/dt>0$. Thus $h\ge0$.
+The balance identity gives $g\ge0$, and \cref{eq:aligned-flow} gives $da/dt\le0$.
+A finite exit through $a=0$ is impossible since $a\le a_0<0$.
+Finally $\varepsilon^4/(4\sqrt{d_h})\le|a_0|\le1/4$ and
+$\tanh(x)\ge x/2$ for $0\le x\le1$, proving the gate floor.
+\end{proof}
+
+\subsection{Descent and persistent margins}
+\begin{lemma}[Descent from a fixed gate contrast]
+\label{lem:aligned-descent}
+In the aligned flow,
+\[
+ \frac{dL}{dt}\le
+ -\frac{\varepsilon^{12}}{1536K d_h}(e_0^2+e_1^2).
+\]
+Let $p_{\min}=\min(p,1-p)$ and $L_{\mathrm{target}}=p_{\min}\log2/2$.
+The flow reaches $L\le L_{\mathrm{target}}$ by
+\begin{equation}
+ T\le\frac{410112K d_h\log K}{p_{\min}^2\varepsilon^{12}}.
+ \label{eq:aligned-time}
+\end{equation}
+All transition predictions then have persistent positive margins, and
+\begin{equation}
+ L(t)\le\frac{49152K d_h}{\varepsilon^{12}(t-T)}\quad(t>T).
+ \label{eq:aligned-asymptotic}
+\end{equation}
+\end{lemma}
+\begin{proof}
+The map from errors to the two readout derivatives has matrix
+\[
+ C=\begin{pmatrix}-1&1\\-r_0&r_1\end{pmatrix},\qquad
+ |\det C|=|d|,\qquad \|C\|_F\le\sqrt3.
+\]
+Its smallest singular value is at least $|d|/\sqrt3$.
+Loss descent under \cref{eq:aligned-flow}, $v^2\le1$ and the gate floor give
+\[
+\begin{aligned}
+ \frac{dL}{dt}
+ &\le-\frac{2\varepsilon^2v^2}{K}
+ \left[\left|\frac{\partial L}{\partial c}\right|^2+
+       \left|\frac{\partial L}{\partial g}\right|^2\right]\\
+ &\le-\frac{2\varepsilon^2v^2d^2}{3K}(e_0^2+e_1^2)
+ \le-\frac{\varepsilon^{12}}{1536K d_h}(e_0^2+e_1^2).
+\end{aligned}
+\]
+If $P_b$ is the target probability, direct differentiation of $F$ gives
+\[
+ -\frac{\partial F}{\partial m}
+ =\frac{e^{-m}+Ne^{-s-m/2}/2}{1+e^{-m}+Ne^{-s-m/2}}
+ \ge\frac{1-P_b}{2}.
+\]
+If some $P_b<1/2$, then $e_b\ge p_{\min}/4$.
+Otherwise $-\log P_b\le2(1-P_b)$, so $L\le4(e_0+e_1)$ and
+$e_0^2+e_1^2\ge L^2/32$.
+Consequently, while $L>L_{\mathrm{target}}$,
+\[
+ e_0^2+e_1^2\ge
+ \min\left\{\frac{p_{\min}^2}{16},\frac{p_{\min}^2(\log2)^2}{128}\right\}
+ \ge\frac{p_{\min}^2}{267}.
+\]
+Integrate from $L(0)=\log K$ to obtain \cref{eq:aligned-time}.
+At and after this time, loss descent and $\pi_b\ge p_{\min}$ imply
+$-\log P_b\le(\log2)/2<\log2$. Thus $P_b>1/2$ and every target beats every rival.
+The bound $dL/dt\le-\varepsilon^{12}L^2/(49152K d_h)$ now holds permanently.
+Integrating $\frac{d(1/L)}{dt}$ gives \cref{eq:aligned-asymptotic} and $L\to0$.
+\end{proof}
+
+\subsection{Outcome comparison and scope}
+\begin{proof}[Proof of \cref{thm:aligned-transformer}(i)]
+The preceding lemmas prove process convergence and its time bound.
+At the seed, the normalized query, key and value operator norms are at most
+$2\sqrt K,2,2$ respectively. For an alphabet of $A$ letters, the normalized
+embedding operator norm is at most $\sqrt{2A+K}$, and the count-embedding
+smallest singular value is $1$. The remaining weights are zero; normalized
+bias magnitudes are $1$ and each bias-vector norm is $\sqrt w$.
+Thus the initialization satisfies \cref{ass:init} with deterministic envelopes,
+provided $\varepsilon$ meets the smallness hypotheses of \cref{thm:outcome-end}.
+The restricted matrix flow is an orthogonal projection in the original matrix space.
+Its energy identity is
+\[
+ \frac{dL}{dt}=-\left\|\frac{d(U,W,W_Q,W_K)}{dt}\right\|_F^2.
+\]
+The proof of \cref{thm:outcome-end} uses only orthogonality and this identity.
+Its unchanged loss-floor and energy argument therefore applies to these fixed
+linear matrix subspaces as well, proving the matched outcome plateau.
+At executor widths $d_h,w=\Theta(n)$, choose $\varepsilon=c_0n^{-1/2}$ with
+$c_0$ small enough for these initialization envelopes. For fixed $K,p,A$,
+\cref{eq:aligned-time} is $O(n^7)$, while the outcome horizon is exponential.
+The polynomial and exponential horizons overlap for all sufficiently large $n$.
+\end{proof}
+
+The exact executors of \cref{prop:represent} belong to the ambient Transformer
+architecture, before imposing this trained-family restriction.
+In the outcome format the colon embedding is zero. Block 1 and the MLPs add zero,
+so the gate query there is zero and its scores are uniform for every $q,k$.
+The fixed value map reads only count tokens, and the only such token before the
+outcome answer is $s_0$. Hence this restricted outcome predictor has no letter
+dependence and cannot express the exact outcome executor.
+The matched bounds are a restricted-flow comparison, not a matched separation
+in a trainable class containing both exact programs. The broader negative theorem
+allows more trainable blocks; the two-path family supplies the separate same-family
+expressibility and permanent-trapping results.

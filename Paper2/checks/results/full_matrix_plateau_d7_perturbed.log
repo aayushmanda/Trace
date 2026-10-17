@@ -1,0 +1,15 @@
+kappa=1.0 step 0 clock [0.5, 0.5, 0.5, 0.5, 0.5, 0.5] exited [nan, nan, nan, nan, nan, nan]
+{'dres': 7, 'perturbed': True, 'kappa': 1.0, 'eps': 0.03, 'exit_time': 22.5, 'censored_at': 22.5, 'loss_drop_at_exit': 4.642238727481374e-05, 'max_corr_inside': 0.00013752528875787706, 'corr_over_eps3': 5.0935292132547065}
+{'dres': 7, 'perturbed': True, 'kappa': 1.0, 'eps': 0.02, 'exit_time': 23.0, 'censored_at': 23.0, 'loss_drop_at_exit': 2.101966411272027e-05, 'max_corr_inside': 6.107443562843777e-05, 'corr_over_eps3': 7.63430445355472}
+{'dres': 7, 'perturbed': True, 'kappa': 1.0, 'eps': 0.01, 'exit_time': 23.0, 'censored_at': 23.0, 'loss_drop_at_exit': 5.187329572664545e-06, 'max_corr_inside': 1.5206987165390884e-05, 'corr_over_eps3': 15.206987165390881}
+{'dres': 7, 'perturbed': True, 'kappa': 1.0, 'eps': 0.005, 'exit_time': 23.0, 'censored_at': 23.0, 'loss_drop_at_exit': 1.3114188606166977e-06, 'max_corr_inside': 3.827466413805731e-06, 'corr_over_eps3': 30.619731310445843}
+{'dres': 7, 'perturbed': True, 'kappa': 1.0, 'eps': 0.003, 'exit_time': 23.0, 'censored_at': 23.0, 'loss_drop_at_exit': 4.716231419843453e-07, 'max_corr_inside': 1.3786421365971548e-06, 'corr_over_eps3': 51.0608198739687}
+{'dres': 7, 'perturbed': True, 'kappa': 1.0, 'eps': 0.002, 'exit_time': 23.0, 'censored_at': 23.0, 'loss_drop_at_exit': 2.1005729167189457e-07, 'max_corr_inside': 6.123057464340111e-07, 'corr_over_eps3': 76.53821830425139}
+kappa=0.0 step 0 clock [0.5, 0.5, 0.5, 0.5, 0.5, 0.5] exited [nan, nan, nan, nan, nan, nan]
+kappa=0.0 step 20000 clock [672.0, 1106.5, 2507.5, 4504.5, 7320.5, 10000.5] exited [672.0, 1106.5, 2507.5, 4504.5, 7320.5, nan]
+{'dres': 7, 'perturbed': True, 'kappa': 0.0, 'eps': 0.03, 'exit_time': 672.0, 'censored_at': 672.0, 'loss_drop_at_exit': 1.3519880547319119e-06, 'max_corr_inside': 2.690967720411313e-06, 'corr_over_eps3': 0.09966547112634494}
+{'dres': 7, 'perturbed': True, 'kappa': 0.0, 'eps': 0.02, 'exit_time': 1106.5, 'censored_at': 1106.5, 'loss_drop_at_exit': 4.029873996724831e-07, 'max_corr_inside': 8.040821880751369e-07, 'corr_over_eps3': 0.1005102735093921}
+{'dres': 7, 'perturbed': True, 'kappa': 0.0, 'eps': 0.01, 'exit_time': 2507.5, 'censored_at': 2507.5, 'loss_drop_at_exit': 4.176331613869877e-08, 'max_corr_inside': 8.286188644324043e-08, 'corr_over_eps3': 0.08286188644324041}
+{'dres': 7, 'perturbed': True, 'kappa': 0.0, 'eps': 0.005, 'exit_time': 4504.5, 'censored_at': 4504.5, 'loss_drop_at_exit': 6.303751298730731e-09, 'max_corr_inside': 1.2527694353203069e-08, 'corr_over_eps3': 0.10022155482562453}
+{'dres': 7, 'perturbed': True, 'kappa': 0.0, 'eps': 0.003, 'exit_time': 7320.5, 'censored_at': 7320.5, 'loss_drop_at_exit': 1.3101829621220418e-09, 'max_corr_inside': 2.6096490911243898e-09, 'corr_over_eps3': 0.09665367004164406}
+{'dres': 7, 'perturbed': True, 'kappa': 0.0, 'eps': 0.002, 'exit_time': 13184.0, 'censored_at': 13184.0, 'loss_drop_at_exit': 3.3230462825883933e-10, 'max_corr_inside': 6.497947838386424e-10, 'corr_over_eps3': 0.08122434797983029}

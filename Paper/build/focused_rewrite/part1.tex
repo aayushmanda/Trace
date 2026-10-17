@@ -1,0 +1,40 @@
+\begin{abstract}
+Can intermediate supervision teach a recurring transition quickly when final-answer supervision supplies exponentially weak credit? We study modular counting in a concrete two-block causal softmax-attention/ReLU Transformer, trained by unrestricted population gradient flow on every parameter from one random seed: small Gaussian weights plus a weak deterministic perturbation, with a zero readout. We prove that outcome supervision stays near this seed, with expected correct-answer probability within $O(\varepsilon\lambda^{n/2})$ of $1/K$, for $\Omega(\lambda^{-n})$ time, with high probability over the seed. For process supervision we prove a conditional result: if the full gradient keeps an inverse-polynomial alignment with some polynomial-norm direction until the loss is small, then flow reaches process loss $\xi\log 2/(n+3)$ in polynomial time, and greedy decoding then produces the entire running-count continuation on a fresh prompt with probability at least $1-\xi$. A readout-separability condition on the evolving hidden features implies this alignment. Proving the alignment from the random seed is left open; we state the measurements that test it. Explicit constructions realize both complete programs in the architecture. Counting measurements and pretrained Qwen2.5-0.5B LoRA experiments support the qualitative mechanism; a five-object BIG-Bench Hard reversal limits its empirical scope.
+\end{abstract}
+
+\section{Introduction}
+A final answer can conceal many repeated state updates. A running trace exposes those updates as local prediction problems. The question is whether this changes optimization time within the same Transformer, rather than merely changing what the architecture can represent. We study counting modulo $K$: each independent letter either keeps the state or advances it by one. The answer space stays fixed as the computation grows.
+
+We fix one architecture, one random initialization and the full parameter set, and train every tensor by population gradient flow. Only the objective and its teacher-forced continuation change. Nothing is frozen, tied, or supplied by hand: the seed is a small Gaussian draw plus a weak deterministic perturbation that does not itself count. Our results are
+\begin{equation}\label{eq:headline}
+\boxed{T_{\mathrm{out}}=\Omega(\lambda^{-n})\ \text{(proved)},\qquad T_{\mathrm{proc}}=\mathrm{poly}(n)\ \text{(conditional on persistent gradient alignment)}.}
+\end{equation}
+$T_{\mathrm{out}}$ is a lower bound on the duration of an initial plateau, measured by displacement, cross-entropy, and expected probability assigned to the correct answer. It is not a lower bound for reaching arbitrary accuracy, and it says nothing about permanent failure. $T_{\mathrm{proc}}$ is an upper bound on the time after which greedy decoding produces the complete process continuation on all but a $\xi$ fraction of prompts.
+
+The outcome mechanism has two stages. First, a feature that reads $k$ of $n$ independent letters sees answer-dependent correlation attenuated by $\lambda^{n-k}$. Second, a score expansion of the actual Transformer decomposes its logits into terms with controlled letter support and scale; the resulting local loss floor bounds gradient-flow displacement over an exponential time interval. A random-matrix lemma shows that the Gaussian seed lies in the regime where these estimates hold.
+
+The process result separates what is proved from what is assumed. Its convergence argument is complete: a lower bound on the alignment of the full gradient with a bounded direction gives a quadratic decay of the loss, and a first-error argument turns small teacher-forced loss into exact free-running generation. The assumption is that this alignment persists along the unrestricted trajectory. We reduce it to a measurable property of the evolving hidden features, explain why the displayed state makes it plausible, and leave its proof from the random seed open.
+
+Explicit finite-score two-block executors realize direct final counts and full running traces at linear width. The evidence has distinct roles. Small-initialization counting runs measure displacement times and their dependence on horizon. Other counting runs measure actual rule learning. Pretrained Qwen LoRA experiments test qualitative transfer to Boolean circuits and object tracking, including a case where outcome supervision performs better. None of those results proves either bound.
+
+\section{Modular counting and Transformer setup}\label{sec:setup}\label{sec:setting}
+\begin{definition}[Task and contraction]\label{def:task}\label{def:lambda}
+Fix $K\ge2$, a finite alphabet $\Sigma$, and a query letter $w^\star$ with probability $p\in(0,1)$. Independently sample $s_0$ uniformly from $\mathbb Z_K$ and letters $w_1,\ldots,w_n$. Put $b_t=\mathbf1[w_t=w^\star]$ and
+\begin{equation}
+s_t=s_{t-1}+b_t\pmod K,\qquad y=s_n,\qquad
+\lambda=\max_{1\le j<K}|1-p+p e^{2\pi\mathrm i j/K}|.
+\label{eq:lambda}
+\end{equation}
+For $p\ne1/2$, $0<\lambda<1$. In the binary case $\lambda=|1-2p|$.
+\end{definition}
+The prompt displays $s_0$, the query, and all letters. Outcome format predicts only the final count. Process format appends the running states $s_1,\ldots,s_n$, a colon, the final count and EOS, a continuation of $M=n+3$ tokens $y_1,\ldots,y_M$; training uses gold previous tokens.
+
+\begin{definition}[Population objectives]\label{def:losses}
+With $z_{\mathrm{ans}}(\theta)$ the outcome-answer logits and $p_\theta(\cdot\mid P,y_{<m})$ the next-token distribution of the process format, define
+\begin{equation}\label{eq:objectives}
+\Lout=\E[-\log\softmax(z_{\mathrm{ans}})_y],\qquad
+\Lproc=\frac1M\sum_{m=1}^M\E\bigl[-\log p_\theta(y_m\mid P,y_{<m})\bigr].
+\end{equation}
+$\Lproc$ covers every continuation token, including the first state and the formatting tokens.
+\end{definition}
+

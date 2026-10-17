@@ -1,0 +1,108 @@
+/home/hariguru/aayus/trace/Paper/research/gate_network/run.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:822.)
+  return np.concatenate([-gU.flatten().numpy(), [-float(gw) / nIR, -float(gq), -float(gk)]]), float(L), m
+/home/hariguru/aayus/trace/Paper/research/gate_network/run.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:822.)
+  return np.concatenate([-gU.flatten().numpy(), [-float(gw) / nIR, -float(gq), -float(gk)]]), float(L), m
+/home/hariguru/aayus/trace/Paper/research/gate_network/run.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:822.)
+  return np.concatenate([-gU.flatten().numpy(), [-float(gw) / nIR, -float(gq), -float(gk)]]), float(L), m
+/home/hariguru/aayus/trace/Paper/research/gate_network/run.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:822.)
+  return np.concatenate([-gU.flatten().numpy(), [-float(gw) / nIR, -float(gq), -float(gk)]]), float(L), m
+/home/hariguru/aayus/trace/Paper/research/gate_network/run.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:822.)
+  return np.concatenate([-gU.flatten().numpy(), [-float(gw) / nIR, -float(gq), -float(gk)]]), float(L), m
+/home/hariguru/aayus/trace/Paper/research/gate_network/run.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:822.)
+  return np.concatenate([-gU.flatten().numpy(), [-float(gw) / nIR, -float(gq), -float(gk)]]), float(L), m
+/home/hariguru/aayus/trace/Paper/research/gate_network/run.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:822.)
+  return np.concatenate([-gU.flatten().numpy(), [-float(gw) / nIR, -float(gq), -float(gk)]]), float(L), m
+/home/hariguru/aayus/trace/Paper/research/gate_network/run.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:822.)
+  return np.concatenate([-gU.flatten().numpy(), [-float(gw) / nIR, -float(gq), -float(gk)]]), float(L), m
+/home/hariguru/aayus/trace/Paper/research/gate_network/run.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:822.)
+  return np.concatenate([-gU.flatten().numpy(), [-float(gw) / nIR, -float(gq), -float(gk)]]), float(L), m
+/home/hariguru/aayus/trace/Paper/research/gate_network/run.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:822.)
+  return np.concatenate([-gU.flatten().numpy(), [-float(gw) / nIR, -float(gq), -float(gk)]]), float(L), m
+/home/hariguru/aayus/trace/Paper/research/gate_network/run.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:822.)
+  return np.concatenate([-gU.flatten().numpy(), [-float(gw) / nIR, -float(gq), -float(gk)]]), float(L), m
+/home/hariguru/aayus/trace/Paper/research/gate_network/run.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:822.)
+  return np.concatenate([-gU.flatten().numpy(), [-float(gw) / nIR, -float(gq), -float(gk)]]), float(L), m
+/home/hariguru/aayus/trace/Paper/research/gate_network/run.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:822.)
+  return np.concatenate([-gU.flatten().numpy(), [-float(gw) / nIR, -float(gq), -float(gk)]]), float(L), m
+/home/hariguru/aayus/trace/Paper/research/gate_network/run.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:822.)
+  return np.concatenate([-gU.flatten().numpy(), [-float(gw) / nIR, -float(gq), -float(gk)]]), float(L), m
+/home/hariguru/aayus/trace/Paper/research/gate_network/run.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:822.)
+  return np.concatenate([-gU.flatten().numpy(), [-float(gw) / nIR, -float(gq), -float(gk)]]), float(L), m
+/home/hariguru/aayus/trace/Paper/research/gate_network/run.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:822.)
+  return np.concatenate([-gU.flatten().numpy(), [-float(gw) / nIR, -float(gq), -float(gk)]]), float(L), m
+/home/hariguru/aayus/trace/Paper/research/gate_network/run.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:822.)
+  return np.concatenate([-gU.flatten().numpy(), [-float(gw) / nIR, -float(gq), -float(gk)]]), float(L), m
+/home/hariguru/aayus/trace/Paper/research/gate_network/run.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:822.)
+  return np.concatenate([-gU.flatten().numpy(), [-float(gw) / nIR, -float(gq), -float(gk)]]), float(L), m
+/home/hariguru/aayus/trace/Paper/research/gate_network/run.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:822.)
+  return np.concatenate([-gU.flatten().numpy(), [-float(gw) / nIR, -float(gq), -float(gk)]]), float(L), m
+/home/hariguru/aayus/trace/Paper/research/gate_network/run.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:822.)
+  return np.concatenate([-gU.flatten().numpy(), [-float(gw) / nIR, -float(gq), -float(gk)]]), float(L), m
+/home/hariguru/aayus/trace/Paper/research/gate_network/run.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:822.)
+  return np.concatenate([-gU.flatten().numpy(), [-float(gw) / nIR, -float(gq), -float(gk)]]), float(L), m
+/home/hariguru/aayus/trace/Paper/research/gate_network/run.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:822.)
+  return np.concatenate([-gU.flatten().numpy(), [-float(gw) / nIR, -float(gq), -float(gk)]]), float(L), m
+/home/hariguru/aayus/trace/Paper/research/gate_network/run.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:822.)
+  return np.concatenate([-gU.flatten().numpy(), [-float(gw) / nIR, -float(gq), -float(gk)]]), float(L), m
+/home/hariguru/aayus/trace/Paper/research/gate_network/run.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:822.)
+  return np.concatenate([-gU.flatten().numpy(), [-float(gw) / nIR, -float(gq), -float(gk)]]), float(L), m
+/home/hariguru/aayus/trace/Paper/research/gate_network/run.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:822.)
+  return np.concatenate([-gU.flatten().numpy(), [-float(gw) / nIR, -float(gq), -float(gk)]]), float(L), m
+/home/hariguru/aayus/trace/Paper/research/gate_network/run.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:822.)
+  return np.concatenate([-gU.flatten().numpy(), [-float(gw) / nIR, -float(gq), -float(gk)]]), float(L), m
+/home/hariguru/aayus/trace/Paper/research/gate_network/run.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:822.)
+  return np.concatenate([-gU.flatten().numpy(), [-float(gw) / nIR, -float(gq), -float(gk)]]), float(L), m
+p=0.1 eps=0.3 aligned                   full-network solve time 30650.65733881804
+p=0.1 eps=0.3 misaligned                full-network solve time 41234.29255631379
+p=0.1 eps=0.3 misaligned near-balanced  full-network solve time 65306.901169407036
+p=0.1 eps=0.2 aligned                   full-network solve time 169041.3994316004
+p=0.1 eps=0.2 misaligned                full-network solve time 221303.47777402922
+p=0.1 eps=0.2 misaligned near-balanced  full-network solve time 339229.94509513536
+p=0.1 eps=0.1 aligned                   full-network solve time 3106199.5918995626
+p=0.1 eps=0.1 misaligned                full-network solve time 3930864.7754230774
+p=0.1 eps=0.1 misaligned near-balanced  full-network solve time 5783166.706892809
+p=0.25 eps=0.3 aligned                   full-network solve time 15553.758447102164
+p=0.25 eps=0.3 misaligned                full-network solve time 26321.459291036917
+p=0.25 eps=0.3 misaligned near-balanced  full-network solve time 52523.88094359885
+p=0.25 eps=0.2 aligned                   full-network solve time 90722.31833276624
+p=0.25 eps=0.2 misaligned                full-network solve time 142088.83344514325
+p=0.25 eps=0.2 misaligned near-balanced  full-network solve time 260827.53435207167
+p=0.25 eps=0.1 aligned                   full-network solve time 1808797.43316398
+p=0.25 eps=0.1 misaligned                full-network solve time 2604906.470437645
+p=0.25 eps=0.1 misaligned near-balanced  full-network solve time 4402177.695937237
+p=0.75 eps=0.3 aligned                   full-network solve time 15553.758447656464
+p=0.75 eps=0.3 misaligned                full-network solve time 26321.459292505588
+p=0.75 eps=0.3 misaligned near-balanced  full-network solve time 52523.88099772696
+p=0.75 eps=0.2 aligned                   full-network solve time 90722.31832853377
+p=0.75 eps=0.2 misaligned                full-network solve time 142088.8334438699
+p=0.75 eps=0.2 misaligned near-balanced  full-network solve time 260827.53442857537
+p=0.75 eps=0.1 aligned                   full-network solve time 1808797.432780709
+p=0.75 eps=0.1 misaligned                full-network solve time 2604906.4682887015
+p=0.75 eps=0.1 misaligned near-balanced  full-network solve time 4402177.695405636

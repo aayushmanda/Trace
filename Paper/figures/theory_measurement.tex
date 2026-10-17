@@ -1,23 +1,11 @@
-%% Figure 3 (pgfplots). Data: results/theorem_regime/both_zero_seed[0-2].json (sigma = 0.002; median and interquartile band over
-%% three draws) and results/paper/lambda_grid (20 cells x 3 seeds; cell means with full seed ranges). Spearman rho on cell means.
+%% Figure 4 (pgfplots). Data: results/paper/lambda_grid (20 cells x 3 seeds; cell means with full seed ranges). Spearman rho on cell means.
 \definecolor{stepc}{HTML}{0072B2}\definecolor{outc}{HTML}{D55E00}\definecolor{theoc}{HTML}{009E73}
 \definecolor{mutedc}{HTML}{6E6E6E}\definecolor{errc}{HTML}{EDB79C}
 \begin{tikzpicture}
 \pgfplotsset{every axis/.style={width=0.4\linewidth, height=4.9cm, axis line style={black!80}, tick style={black!80},
   tick label style={font=\footnotesize}, label style={font=\small}, title style={font=\small, at={(0,1)}, anchor=south west, xshift=-2pt},
   axis x line*=bottom, axis y line*=left}, every axis plot/.append style={line width=1pt}}
-\begin{semilogyaxis}[name=pa, title={\textbf{(a)} Plateau duration}, xlabel={Horizon $n$}, ylabel={Displacement time $\tau(0.1)$},
-  xmin=3.6, xmax=14.4, xtick={4,8,14}, ymin=3, ymax=1e8, ytick={1e1,1e3,1e5,1e7}, ymajorgrids, major grid style={black!12}]
-  \addplot[draw=none, fill=outc, fill opacity=0.18, forget plot] coordinates {(4,10638.7) (6,53401.7) (8,257804) (10,1.17632e+06) (12,5.46642e+06) (14,2.47378e+07) (14,3.29507e+07) (12,6.99489e+06) (10,1.54461e+06) (8,332934) (6,68528) (4,13708.5)};
-  \addplot[draw=none, fill=stepc, fill opacity=0.18, forget plot] coordinates {(4,4.2576) (6,4.25798) (8,4.25824) (10,4.25841) (12,4.25855) (14,4.25866) (14,4.94345) (12,4.94354) (10,4.94365) (8,4.9438) (6,4.94399) (4,4.9443)};
-  \addplot[outc, mark=*, mark size=1.8pt] coordinates {(4,12013.4) (6,60575.1) (8,290310) (10,1.30468e+06) (12,6.1887e+06) (14,2.74812e+07)};
-  \addplot[stepc, mark=square*, mark size=1.7pt] coordinates {(4,4.33272) (6,4.3327) (8,4.33268) (10,4.33266) (12,4.33266) (14,4.33265)};
-  \addplot[theoc, dashed, line width=0.9pt] coordinates {(4,12013.4) (6,48053.5) (8,192214) (10,768856) (12,3.07542e+06) (14,1.23017e+07)};
-  \node[anchor=west, font=\footnotesize, text=outc] at (axis cs:4,4e6) {Outcome};
-  \node[anchor=north east, font=\footnotesize, text=theoc] at (axis cs:14,1.538e+06) {$\mixrate^{-n}$};
-  \node[anchor=south, font=\footnotesize, text=stepc] at (axis cs:10,13) {Step};
-\end{semilogyaxis}
-\begin{semilogxaxis}[name=pb, at={(pa.east)}, anchor=west, xshift=1.75cm, title={\textbf{(b)} Answer bias},
+\begin{semilogxaxis}[name=pb, title={\textbf{(a)} Answer bias},
   xlabel={Remaining bias $\mixrate^n$}, ylabel={Outcome accuracy (\%)}, xmin=1e-5, xmax=0.8, xtick={1e-5,1e-3,1e-1},
   ymin=0, ymax=103, ytick={0,50,100}, ymajorgrids, major grid style={black!12}]
   \addplot[mutedc, densely dashed, line width=0.8pt, domain=1e-5:0.8, samples=2] {50};
@@ -28,7 +16,7 @@
   \node[anchor=north west, font=\footnotesize, text=theoc] at (rel axis cs:0.03,0.8) {State-only prior};
   \node[anchor=north west, font=\scriptsize, text=mutedc] at (rel axis cs:0.03,0.46) {Chance};
 \end{semilogxaxis}
-\begin{semilogxaxis}[name=pc, at={(pb.east)}, anchor=west, xshift=1.75cm, title={\textbf{(c)} Above the prior},
+\begin{semilogxaxis}[name=pc, at={(pb.east)}, anchor=west, xshift=1.75cm, title={\textbf{(b)} Above the prior},
   xlabel={Remaining bias $\mixrate^n$}, ylabel={Above prior (points)}, xmin=1e-5, xmax=0.8, xtick={1e-5,1e-3,1e-1},
   ymin=-25, ymax=25, ytick={-20,0,20}, ymajorgrids, major grid style={black!12}]
   \addplot[theoc, dashed, line width=1pt, domain=1e-5:0.8, samples=2] {0};

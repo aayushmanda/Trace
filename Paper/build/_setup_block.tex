@@ -1,0 +1,57 @@
+\label{app:setup}
+The main text specializes to $K=2$. Here we state the general definitions; every result of
+\cref{sec:outcome,sec:step} is proved below for counting modulo any $K\ge2$.
+
+\begin{table}[H]
+\centering\small
+\caption{Notation used in the main text. Constants $c,C>0$ depend only on the architecture constants of
+\cref{ass:arch,ass:init} (namely $a_0$, $\embconst$, $\attconst$, $\ballradius$), never on $n$, $\varepsilon$ or $\lambda$.}
+\label{tab:notation}
+\begin{tabular}{@{}ll@{}}
+\toprule
+Symbol & Meaning\\
+\midrule
+$n$, $p$ & number of letters; probability of the query letter\\
+$s_t$, $b_t$ & running count after $t$ letters; indicator that letter $t$ is the query letter\\
+$S$, $C_t$ & $(-1)^{s_0}$ and $(-1)^{b_t}$ (binary case)\\
+$\lambda$ & contraction coefficient, $1-2p$ for $K=2$ (\cref{def:lambda})\\
+$\varepsilon$ & initialization scale\\
+$\Lout$, $\Lstep$ & outcome and teacher-forced step cross-entropy (\cref{def:losses})\\
+$a,g,q,k,v_i,w_i,d_i,b_i$ & parameters of the two-path family \cref{eq:two-path-model}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{definition}[Counting modulo $K$]
+\label{def:task}
+A prompt has a start count $s_0$, uniform on $\mathbb Z_K$, and letters $w_1,\ldots,w_n$ drawn i.i.d.\ from an alphabet
+in which a fixed query letter $w^\star$ has probability $p\in(0,1)$. With $b_t=\mathbf 1[w_t=w^\star]$,
+$s_t=s_{t-1}+b_t\pmod K$, and the answer is $y=s_n$.
+\end{definition}
+
+\begin{definition}[Contraction coefficient]
+\label{def:lambda}
+\begin{equation}
+ \mixrate=\max_{1\le j<K}\bigl|1-p+p\,e^{2\pi\mathrm ij/K}\bigr|=\bigl|1-p+p\,e^{2\pi\mathrm i/K}\bigr|.
+ \label{eq:lambda}
+\end{equation}
+\end{definition}
+For $K=2$, $\mixrate=|1-2p|$. In general $\mixrate$ is the maximal correlation of consecutive counts
+\citep{witsenhausen1975sequences,raginsky2016strong}.
+
+\begin{definition}[Credit]
+\label{def:credit}
+For a target signal $\bm\xi\in\R^K$ and logits $\bm z_{\bm\theta}\in\R^K$, let $\cred_{\bm\xi}(\bm\theta)=\E[\langle\bm z_{\bm\theta},\bm\xi\rangle]$.
+The \emph{credit} for $\bm\xi$ is $\|\nabla_{\bm\theta}\cred_{\bm\xi}\|=\bigl\|\E\bigl[(\Jz)^\top\bm\xi\bigr]\bigr\|$.
+For $K=2$ and $\bm\xi=\bm y-\bm u$ this is half the scalar credit of \cref{sec:outcome}, written with the logit
+difference $z_{\bm\theta}$ and the sign label $(-1)^{s_n}$.
+\end{definition}
+
+With the state-only predictor $\bm q_s=(1-p)\bm e_s+p\,\bm e_{s+1}$, the \emph{rule signal}
+$\bm g_t=\bm e_{s_t}-\bm q_{s_{t-1}}=(b_t-p)(\bm e_{s_{t-1}+1}-\bm e_{s_{t-1}})$ satisfies, on centred vectors,
+\begin{equation}
+ \operatorname{Cov}(\bm g_t)\succeq\frac{1-\mixrate^2}{K}\,I .
+ \label{eq:local-variation}
+\end{equation}
+For $K=2$, in sign form, this is the signal $S_{t-1}(C_t-\lambda)$ of variance $1-\lambda^2$ used in \cref{sec:step}.
+

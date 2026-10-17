@@ -1,0 +1,13 @@
+{
+  "pages": 28,
+  "principal_learning_theorems": 1,
+  "main_executor_propositions": 1,
+  "undefined_references": 0,
+  "undefined_citations": 0,
+  "overfull_boxes": 0,
+  "enumerated_prompts": 31635,
+  "verified_predictions": 363654,
+  "minimum_executor_margin": 19.99955586125985,
+  "original_gradient_check_failures": 0,
+  "training_rerun": false
+}

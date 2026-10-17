@@ -1,0 +1,48 @@
+% ===================================================================
+\section{Full-matrix training: a cross-entropy plateau}
+\label{sec:fullmatrix}
+\Cref{thm:separation} trains four tied scalars. Could a network whose every matrix entry trains escape the cancellation by learning other features,
+other value maps or other attention patterns? Near the structured initialization it cannot. The proof needs no invariant manifold:
+it combines the distributional cancellation of \cref{lem:matched} with a loss-floor and energy argument.
+
+\paragraph{The full-matrix network.} Keep the embeddings and type mask of \cref{sec:architecture} fixed, and make every remaining entry trainable:
+query and key $Q,K\in\mathbb R^{d\times7}$, value $V\in\mathbb R^{d_v\times7}$, output $O\in\mathbb R^{7\times d_v}$, MLP weights $U\in\mathbb R^{m\times7}$, bias $\bm a\in\mathbb R^m$,
+and $D\in\mathbb R^{7\times m}$, and readout $\bm c\in\mathbb R^7$, with $d,d_v\ge1$ and $m\ge4$. The logit is
+\[
+ z_W=\bm c^\top\bigl[\bm g_b+D\relu(U\bm g_b+\bm a)\bigr],\qquad
+ \bm g_b=\bm h_q^{(0)}+O\sum_{j=1}^N\alpha_jV\bm h_j^{(0)},\qquad
+ \bm\alpha=\softmax\bigl((Q\bm h_q^{(0)})^\top K\bm h_j^{(0)}\bigr)_j .
+\]
+Let $W_0$ be the matrices of \cref{eq:attention-matrices,eq:mlp-matrices} at $\bm\theta(0)$, padded with zeros, with readout $\bm c=\bm e_7$; nothing is tied afterwards.
+Training follows $\dot W\in-\partial\mathcal L_{\mathrm{ce}}(W)$, the Clarke subgradient flow, which is ordinary gradient flow wherever the loss is differentiable.
+
+\begin{mainresult}
+\begin{theorem}[Full-matrix cross-entropy plateau]
+\label{thm:fullmatrix}
+Under $\Dlaw0$, let $B\ge1$, $C_B=110(B+2)$ and $0<\varepsilon\le\tfrac{1}{10}$.
+\begin{enumerate}[label=(\roman*),leftmargin=*,itemsep=2pt,topsep=2pt]
+\item \emph{Weak credit near initialization.} Every $W$ with $\|W-W_0\|_F\le\varepsilon$ has
+$|\E[Yz_W]|\le\gamma C_B\varepsilon^3$ and therefore $\mathcal L_{\mathrm{ce}}(W)\ge\log2-\tfrac12\gamma C_B\varepsilon^3$.
+\item \emph{Plateau.} From $W(0)=W_0$, for all $0\le t<\tfrac{1}{C_B\varepsilon}$,
+\[
+ \|W(t)-W_0\|_F<\varepsilon,\qquad \mathcal L_{\mathrm{ce}}(W(t))\ge\log2-\tfrac12\gamma C_B\varepsilon^3 .
+\]
+Reaching any loss below $\log2-\delta$ with $\delta>\tfrac12\gamma C_B\varepsilon^3$ therefore takes time at least $\tfrac{1}{C_B\varepsilon}$.
+\item \emph{Perturbed starts.} There is $L_B$ depending only on $B$ such that the same holds, with exit time at least $\tfrac{1}{4(C_B+(1+L_B)^2)\varepsilon}$,
+from every $W(0)$ with $\|W(0)-W_0\|_F\le\varepsilon^{3/2}$.
+\end{enumerate}
+\end{theorem}
+\end{mainresult}
+
+\paragraph{Why the plateau holds.} At uniform attention the network sees only the instruction and the average embedding, which under $\Dlaw0$ is independent of the source, so
+its logit has zero correlation with the label, whatever its other weights are (\cref{lem:matched}). Near $W_0$ attention can depart from uniform only by $O(\varepsilon)$,
+and its dependence on the instruction, which the label needs, only by $O(\varepsilon^2)$: the key starts at zero and the query does not read the instruction.
+Every path from attention to the logit passes through a product that starts at zero or at $O(\varepsilon)$, giving $|\E[Yz_W]|=O(\varepsilon^3)$.
+Cross-entropy equals $\log2-\tfrac12\E[Yz]+\E\log\cosh\tfrac{z}{2}$, so the loss cannot fall by more than $O(\varepsilon^3)$ inside the ball, and the energy identity
+$\|W(t)-W_0\|_F^2\le t\,[\mathcal L(W_0)-\mathcal L(W(t))]$ turns that into an exit time of order $\tfrac{1}{\varepsilon}$ (\cref{app:fullmatrix}).
+
+\paragraph{What it does not say.} The theorem is a lower bound for the cancelled law only. It does not give the exact $\Theta(\tfrac{N}{\varepsilon})$ routing time,
+the conserved quantity or the failure barrier for full matrices, and it does not prove that the independent law escapes fast; the
+experiments in \cref{sec:numerics} compare the two. It covers the structured start and perturbations of size $\varepsilon^{3/2}$, not perturbations of fixed size
+or fully random initialization. A loss near $\log2$ also does not by itself mean chance accuracy.
+

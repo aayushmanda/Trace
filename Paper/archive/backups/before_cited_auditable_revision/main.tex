@@ -1,0 +1,212 @@
+\documentclass{article}
+% For LaTeX2e
+% Anonymous double-blind submission copy: no package option (adds required
+% reviewer line numbers and the "Submitted to..." footer, keeps anonymity).
+\usepackage{neurips_2026}
+% After acceptance, switch to the camera-ready copy with real author names:
+%     \usepackage[final]{neurips_2026}
+% For a de-anonymized arXiv preprint instead, with real author names:
+%     \usepackage[preprint]{neurips_2026}
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{xcolor}         % colors
+\usepackage{subcaption}
+
+\title{Where the Credit Is: Why Running Counts Teach What Final Counts Miss}
+
+\author{%
+    Anonymous Author(s)\\
+    Anonymous Institution
+}
+
+% Commands
+% !TEX root = main.tex
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Packages, theorem environments, macros.
+% Loaded by main.tex after hyperref.  Load cleveref after amsthm and before
+% declaring theorem environments so it records each environment type.
+% main.tex already loads: hyperref, url, booktabs,
+% amsfonts, nicefrac, microtype, xcolor, subcaption.  Everything else the
+% section files need is loaded here.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{amsmath,amssymb,amsthm,mathtools,bm}
+% Full-size fractions in displays; compact fractions inline and in scripts.
+\let\originaltfrac\tfrac
+\renewcommand{\tfrac}[2]{\mathchoice{\dfrac{#1}{#2}}{\originaltfrac{#1}{#2}}{\originaltfrac{#1}{#2}}{\originaltfrac{#1}{#2}}}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,decorations.pathreplacing,calc}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage{colortbl}
+\usepackage{xspace}
+% Pseudocode floats for the hand-constructed executors in appendix A.
+% Loaded before cleveref so that cleveref records the algorithm float type.
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{needspace}
+\usepackage[capitalize,noabbrev]{cleveref}
+\crefname{algorithm}{Algorithm}{Algorithms}
+\Crefname{algorithm}{Algorithm}{Algorithms}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Theorem environments.  One shared counter, so that Theorem 1, Lemma 2,
+% Proposition 3 ... read in document order, as in the reference papers.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Independent counters, so the two headline theorems read as Theorem 1 and
+% Theorem 2 rather than inheriting the definition/proposition numbering.
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\newtheorem{assumption}{Assumption}
+\crefname{assumption}{Assumption}{Assumptions}
+\Crefname{assumption}{Assumption}{Assumptions}
+% The appendix extension is referenced before its environments are declared.
+\crefname{lrtheorem}{Theorem}{Theorems}
+\Crefname{lrtheorem}{Theorem}{Theorems}
+\crefname{lrlemma}{Lemma}{Lemmas}
+\Crefname{lrlemma}{Lemma}{Lemmas}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+% Restatement of a main-text result at the head of its appendix proof.
+\newenvironment{restated}[1]{\par\medskip\noindent\textbf{#1 (restated).}\ \itshape\ignorespaces}{\par\medskip}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Math macros
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\E}{\mathbb E}
+\newcommand{\R}{\mathbb R}
+\newcommand{\one}{\mathbf 1}
+\newcommand{\KL}{D_{\mathrm{KL}}}
+\newcommand{\softmax}{\operatorname{softmax}}
+\newcommand{\relu}{\operatorname{ReLU}}
+\newcommand{\ip}[2]{\left\langle #1,#2\right\rangle}
+\newcommand{\norm}[2][2]{\left\lVert #2\right\rVert_{#1}}
+\newcommand{\define}{\triangleq}
+\newcommand{\pd}[2]{\mathchoice{\frac{\partial #1}{\partial #2}}{\tfrac{\partial #1}{\partial #2}}{\partial #1/\partial #2}{\partial #1/\partial #2}}
+\newcommand{\dpd}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\dd}[2]{\mathchoice{\frac{\mathrm d #1}{\mathrm d #2}}{\tfrac{\mathrm d #1}{\mathrm d #2}}{\mathrm d #1/\mathrm d #2}{\mathrm d #1/\mathrm d #2}}
+\newcommand{\why}[1]{\text{\small(#1)}}
+\newcommand{\ddt}[1]{\mathchoice{\frac{\mathrm d #1}{\mathrm d t}}{\tfrac{\mathrm d #1}{\mathrm d t}}{\mathrm d #1/\mathrm d t}{\mathrm d #1/\mathrm d t}}
+% Shared mathematical notation. Change a symbol here, not in the section files.
+% Auxiliary symbols are defined where used; there is no separate notation dictionary.
+\newcommand{\Lout}{\mathcal L_{\mathrm{out}}}
+\newcommand{\Lstep}{\mathcal L_{\mathrm{step}}}
+\newcommand{\cred}{\Phi}
+\newcommand{\outcredit}{\cred_{\mathrm{out}}}
+\newcommand{\rulecredit}{\cred_{\mathrm{rule}}}
+\newcommand{\thout}{\bm\theta^\star_{\mathrm{out}}}
+\newcommand{\thstep}{\bm\theta^\star_{\mathrm{step}}}
+\newcommand{\initscale}{\varepsilon}
+\newcommand{\ballradius}{r_0}
+\newcommand{\failprob}{\delta}
+\newcommand{\stepsize}{\eta}
+\newcommand{\mixrate}{\lambda}
+\newcommand{\initball}{\mathcal B_{\initscale}}
+\newcommand{\traintime}{\tau}
+\newcommand{\basin}{\mathcal U}
+\newcommand{\items}{\mathcal I}
+\newcommand{\pimin}{\pi_{\min}}
+\newcommand{\margin}{\gamma}
+\newcommand{\execmargin}{\margin^\star}
+\newcommand{\rulemargin}{\gamma_{\mathrm{rule}}}
+% Scalar query/key balance in the supplied-routing model.
+\newcommand{\qkbalance}{\Delta_{qk}}
+\newcommand{\embconst}{c_{\mathrm{emb}}}
+\newcommand{\entryidx}{j_0}
+\newcommand{\Ktokens}{K_{\mathrm{tokens}}}
+\newcommand{\attconst}{C_{\mathrm{att}}}
+\newcommand{\Jz}{\mathchoice{\frac{\partial\bm z_{\bm\theta}}{\partial\bm\theta}}{\tfrac{\partial\bm z_{\bm\theta}}{\partial\bm\theta}}{\partial\bm z_{\bm\theta}/\partial\bm\theta}{\partial\bm z_{\bm\theta}/\partial\bm\theta}}
+\newcommand{\term}{\mathsf t}
+\newcommand{\proofstep}[1]{\par\smallskip\noindent\textbf{#1}\enspace}
+% Mean with standard deviation as a subscript, e.g. \msd{82.2}{6.8} -> 82.2_{+-6.8}.
+\newcommand{\msd}[2]{#1_{\scriptscriptstyle\pm#2}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Figure/table helpers
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \paperfig degrades to a visible placeholder box when the PDF is not yet in
+% figures/, so the document always compiles.
+\newcommand{\paperfig}[2][]{%
+  \IfFileExists{#2}{\includegraphics[#1]{#2}}{%
+    \fbox{\parbox[c][2.6cm][c]{0.86\linewidth}{\centering Figure placeholder: \texttt{\detokenize{#2}}}}}}
+
+\definecolor{lightmauve}{rgb}{0.7,0.7,.9}
+\definecolor{royalazure}{rgb}{0.0,0.22,0.66}
+\newcommand{\tabemph}[1]{\cellcolor{lightmauve!30}\textcolor{black!50!royalazure}{#1}}
+% Shrink a box to the text width only when it is wider.
+\newsavebox{\fitbox}
+\newcommand{\fitwidth}[1]{\sbox{\fitbox}{#1}\ifdim\wd\fitbox>\linewidth\resizebox{\linewidth}{!}{\usebox{\fitbox}}\else\usebox{\fitbox}\fi}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Draft notes.  Delete or redefine to \relax before submission.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\todonote}[1]{{\color{orange}[#1]}}
+
+
+% Link colours in the ICLR conference style: red for internal cross-references
+% (equations, sections, theorems), green for citations, magenta for URLs.
+\definecolor{reflink}{rgb}{0.78,0.11,0.11}
+\definecolor{citelink}{rgb}{0.07,0.52,0.32}
+\definecolor{urllink}{rgb}{0.80,0.10,0.56}
+\hypersetup{
+    colorlinks,
+    linkcolor=reflink,
+    citecolor=citelink,
+    urlcolor=urllink
+}
+
+\begin{document}
+\maketitle
+% Keep natural equation and heading spacing on pages containing large floats.
+\raggedbottom
+
+\input{body}            % abstract through conclusion
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Bibliography
+\bibliographystyle{plainnat}
+\bibliography{main}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% APPENDIX (appendix.tex): A formal setup; B executor construction; C proofs of Theorems 1-3,
+% with numerical checks; D proof of Theorem 4 and its outcome corollary; E experimental details,
+% including joint routing runs; F reproducibility.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\appendix
+% Appendix layout: paragraph spacing and room around displays, so proofs are easier to read.
+\setlength{\parskip}{0.5\baselineskip plus 2pt minus 1pt}
+\setlength{\abovedisplayskip}{10pt plus 2pt minus 2pt}\setlength{\belowdisplayskip}{10pt plus 2pt minus 2pt}
+\setlength{\jot}{4pt}
+\counterwithin{theorem}{section}
+\counterwithin{lemma}{section}
+\counterwithin{proposition}{section}
+\counterwithin{corollary}{section}
+\counterwithin{definition}{section}
+\counterwithin{remark}{section}
+\raggedbottom
+\setlength{\parskip}{2pt plus 1pt minus 1pt}
+\setlength{\abovedisplayskip}{8pt plus 2pt minus 2pt}
+\setlength{\belowdisplayskip}{8pt plus 2pt minus 2pt}
+\setlist[itemize]{itemsep=2pt,topsep=3pt}
+\setlist[enumerate]{itemsep=2pt,topsep=3pt}
+
+\input{appendix}
+
+\clearpage
+% \input{checklist}  % re-enable before submission
+
+\end{document}

@@ -1,0 +1,13 @@
+\paragraph{A. Unseen letters contract outcome credit.}
+Let $\xi=e_y-\mathbf1/K$. Fix the query and $s_0$. For $S\subseteq[n]$, Fourier conditioning gives
+\begin{equation}\label{eq:credit-degree}
+\|\E[H^\top\xi]\|\le\lambda^{n-|S|}\|H\|_{L^2}
+\end{equation}
+for every square-integrable matrix $H$ measurable in $w_S$. Each omitted Bernoulli increment multiplies the $j$th Fourier mode by $1-p+p e^{2\pi\mathrm i j/K}$. \Cref{lem:target-contraction} proves the exact conditional norm identity.
+
+Inside a fixed-ReLU neighborhood, scale every content attention score by $\zeta$ and Taylor expand at $\zeta=0$. A term of score order $k$ reads at most $2k+1$ letters. Its Jacobian has absolute-sum bound $C\varepsilon^2(C_{\mathrm{att}}\varepsilon^4)^k$ for $k\ge1$. The zero-order network is affine in individual inputs. These are estimates for \cref{eq:block}; they follow from the softmax derivative recursion and two-block composition, not from replacing the Transformer by a low-degree predictor. Summing \cref{eq:credit-degree} with a bounded Taylor remainder yields
+\[
+|\E\langle z,\xi\rangle|\le C_2\varepsilon^2\lambda^n.
+\]
+The complete parameter-scale, support and remainder arguments are in \cref{app:outcome}.
+

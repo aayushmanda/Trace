@@ -1,0 +1,604 @@
+{
+  "schema": "tex2lean.checkpoint/1",
+  "slug": "thm-main-14o4fct",
+  "createdAt": "2026-10-10T22:17:31.771Z",
+  "updatedAt": "2026-10-11T02:50:54.159Z",
+  "state": "paused",
+  "paper": "Paper/main.tex",
+  "target": {
+    "key": "label:thm:main",
+    "id": "t5",
+    "title": "Unseen letters erase outcome credit",
+    "label": "thm:main",
+    "location": "Paper/body.tex:191",
+    "paperDigest": "da6ca7c7b024"
+  },
+  "config": {
+    "leanProjectPath": "lean",
+    "outputDirectory": ".blueprint",
+    "agentCount": 3
+  },
+  "recovery": {
+    "budget": 5,
+    "attempts": {},
+    "diagnostics": {}
+  },
+  "proofCycles": {
+    "granted": 64,
+    "spent": 2
+  },
+  "completed": [
+    {
+      "id": "restatement",
+      "label": "Read the theorem statement",
+      "at": "2026-10-10T22:29:28.088Z"
+    },
+    {
+      "id": "preconditions",
+      "label": "Find needed assumptions",
+      "at": "2026-10-10T22:34:11.190Z"
+    },
+    {
+      "id": "paperIssues",
+      "label": "Decide paper issues",
+      "at": "2026-10-10T22:36:56.973Z"
+    },
+    {
+      "id": "filePlan",
+      "label": "Write the Lean model",
+      "at": "2026-10-10T22:49:27.348Z"
+    },
+    {
+      "id": "interfacePlan",
+      "label": "Write the analysis interface",
+      "at": "2026-10-10T22:49:30.069Z"
+    },
+    {
+      "id": "decomposition",
+      "label": "Plan the proof",
+      "at": "2026-10-10T23:02:11.697Z"
+    },
+    {
+      "id": "scaffold",
+      "label": "scaffold",
+      "at": "2026-10-10T23:13:24.193Z"
+    },
+    {
+      "id": "round:1",
+      "label": "round:1",
+      "at": "2026-10-10T23:47:06.162Z",
+      "detail": "1/3 goal(s) attempted; 1 file(s) touched; 1 commit(s)"
+    },
+    {
+      "id": "round:2",
+      "label": "round:2",
+      "at": "2026-10-11T02:50:52.686Z",
+      "detail": "0/2 goal(s) attempted; 4 file(s) touched"
+    }
+  ],
+  "partials": ".blueprint/in-progress",
+  "resume": {
+    "command": "formalize.resumeRun",
+    "args": [
+      "thm-main-14o4fct"
+    ],
+    "uri": "vscode://kuldeepmeel.tex2lean4/resume?slug=thm-main-14o4fct"
+  },
+  "handoffs": [],
+  "ledgerGeneration": 38,
+  "closeSituation": "user-pause",
+  "note": "Paused immediately, with 2 agent(s) mid-work.",
+  "next": {
+    "id": "round:3",
+    "label": "round:3"
+  },
+  "statement": {
+    "declaration": "Trace.unseen_letters_erase_outcome_credit",
+    "statement": "theorem unseen_letters_erase_outcome_credit (hprior : Prior) : (∀ {K : ℕ} [NeZero K], 2 ≤ K → ∀ {Sym : Type u} [Fintype Sym] [DecidableEq Sym] (T : Task K Sym), 0 < T.p → T.p < 1 → ∀ (n : ℕ) (S : Finset (Fin n)) {ι : Type v} [Fintype ι] (H : (Fin n → Sym) → Matrix (ZMod K) ι ℝ), DependsOn H (S : Set (Fin n)) → featureCredit T H ≤ mixrate K T.p ^ (n - S.card) * T.l2Norm H) ∧ (∀ (a0 cemb : ℝ), 0 < cemb → ∀ (K : ℕ) [NeZero K], 2 ≤ K → ∀ nH : ℕ, ∃ c₀ c C : ℝ, 0 < c₀ ∧ 0 < c ∧ 0 < C ∧ ∀ n : ℕ, 2 ≤ n → ∀ (Sym : Type u) [Fintype Sym] [DecidableEq Sym] (T : Task K Sym), 0 < T.p → T.p < 1 → ∀ (A : Arch nH n) (θt : Params Sym K A) (Nb : ℝ), InitHyp θt a0 cemb Nb → ∀ ε : ℝ, 0 < ε → ε ≤ c₀ * min 1 (1 / Nb) → ∀ θ ∈ initBall θt ε cemb, ε ^ 2 ≤ c * mixrate K T.p → DifferentiableAt ℝ (scoreFunctional T A) θ ∧ scoreCredit T A θ ≤ C * ε ^ 6 * mixrate K T.p ^ ((n : ℤ) - 3)) ∧ (∀ (a0 cemb : ℝ), 0 < cemb → ∀ (K : ℕ) [NeZero K], 2 ≤ K → ∀ nH : ℕ, ∃ c₀ c C : ℝ, 0 < c₀ ∧ 0 < c ∧ 0 < C ∧ ∀ n : ℕ, 2 ≤ n → ∀ (Sym : Type u) [Fintype Sym] [DecidableEq Sym] (T : Task K Sym), 0 < T.p → T.p < 1 → ∀ (A : Arch nH n) (θt : Params Sym K A) (Nb : ℝ), InitHyp θt a0 cemb Nb → ∀ ε : ℝ, 0 < ε → ε ≤ c₀ * min 1 (1 / Nb) → ∀ θ ∈ initBall θt ε cemb, ε ≤ c * mixrate K T.p → DifferentiableAt ℝ (outcomeFunctional T A) θ ∧ outcomeCredit T A θ ≤ C * ε * mixrate K T.p ^ n)",
+    "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"theorem\",\"118c91ce464904ae3f6b3137945ab4fbe3bfe8334e3d3b73e8ecb8f6057a59f3\",null]",
+    "assumptions": [],
+    "surface": [
+      {
+        "declaration": "Trace.Arch",
+        "statement": "structure Arch (nH n : ℕ)",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"inductive\",\"a8ae9f4b52138ad37eda222d3da8526695f1a749c7b0933f27e2dc9cf58714fa\",\"5e9d290fe3a64398c25839fa24351143f1e45e13e7aec852dd85fb60e2214ccc\"]"
+      },
+      {
+        "declaration": "Trace.Arch.dh",
+        "statement": "def Trace.Arch.dh",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"0f73b4bda9ade0fe65d722e49305aa255b0f8a841a99ada847db5be3dc18f35c\",\"83112b620e76935bd77a5b09c6bc893663de8193efc50fdebb54981adf36e323\"]"
+      },
+      {
+        "declaration": "Trace.Arch.dmlp",
+        "statement": "def Trace.Arch.dmlp",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"0f73b4bda9ade0fe65d722e49305aa255b0f8a841a99ada847db5be3dc18f35c\",\"2b385fa5105182d22f103863dc837dc72e213a4c35745be9d63ea6c080ed55f5\"]"
+      },
+      {
+        "declaration": "Trace.Arch.dres",
+        "statement": "def Trace.Arch.dres",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"0f73b4bda9ade0fe65d722e49305aa255b0f8a841a99ada847db5be3dc18f35c\",\"d8b4dd62055cbabeeb437054a726c181f1e46193a71461ccbf611d6068925ccc\"]"
+      },
+      {
+        "declaration": "Trace.Arch.mk.noConfusion",
+        "statement": "def Trace.Arch.mk.noConfusion",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"1e9500272b6d8017170ad9bebbe06d614f71bc4ae41e2d30dec7804a15144bee\",\"2df49c08af561ce07d8e93b7d5a21a9760ee63a5fe392a8d7e40b582a5be7aab\"]"
+      },
+      {
+        "declaration": "Trace.Arch.vis",
+        "statement": "def Trace.Arch.vis",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"0586492aa7efaf686d8f08da61736c65e0710739157d0e413ee3a6cdad0bcb28\",\"e634372716e1c2b4e936960568c03a62b91fbb97bd3d6bb063d7c3de4faef61c\"]"
+      },
+      {
+        "declaration": "Trace.Arch.vis_causal",
+        "statement": "theorem Trace.Arch.vis_causal",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"theorem\",\"ef199bb26ec0d3c2df605d8a477ec49036045b9129925624316aa2d67e8c8502\",null]"
+      },
+      {
+        "declaration": "Trace.Arch.vis_nonempty",
+        "statement": "theorem Trace.Arch.vis_nonempty",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"theorem\",\"841af9f5d41f9cebf8063c34d97f399ce3b89e2a70fd4b433c37b8ecbe01e968\",null]"
+      },
+      {
+        "declaration": "Trace.attnWeight",
+        "statement": "noncomputable def attnWeight {A : Arch nH n} (ζ : ℝ) (θ : Params Sym K A) (l : Fin 2) (h : Fin nH) (x : Fin (n + 4) → Fin A.dres → ℝ) (i j : Fin (n + 4)) : ℝ",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"ae774820753e9fbec1035fa49b3c6c299838eba2191e908b14f2764b5e67efaa\",\"6eb37a6b485ece0550394d9a637eed828a07ebb4b91341a3bcd2f6387627ef4f\"]"
+      },
+      {
+        "declaration": "Trace.block",
+        "statement": "noncomputable def block {A : Arch nH n} (ζ : ℝ) (θ : Params Sym K A) (l : Fin 2) (x : Fin (n + 4) → Fin A.dres → ℝ) : Fin (n + 4) → Fin A.dres → ℝ",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"b8f59ed41ad1c75e2e625fef540360c470e402618db6bf60c8b79b278a581365\",\"cca11e5b76393661224164ff3b133886fa493ec196d1a391a7fa41a8b126069e\"]"
+      },
+      {
+        "declaration": "Trace.embed",
+        "statement": "def embed (T : Task K Sym) {A : Arch nH n} (θ : Params Sym K A) (w : Fin n → Sym) : Fin (n + 4) → Fin A.dres → ℝ",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"3b86d3008ce6aeca6326a8be5d9fdef679b78a982758c97de7d6cb2963db4b35\",\"e99b52c0dbf78952b05ed9ba9cf98a46ce1adbe0c1523da92b36441a74045ff8\"]"
+      },
+      {
+        "declaration": "Trace.featureCredit",
+        "statement": "noncomputable def featureCredit (T : Task K Sym) {ι : Type v} [Fintype ι] (H : (Fin n → Sym) → Matrix (ZMod K) ι ℝ) : ℝ",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"ce2aa5ec0d72ec1755bc555e283b958c3a6408c707f5d5a9fdc7b7e5ce85fbbb\",\"3d4ef175abfc9ee0e8a355ad1c1ad57d31ce9decf7bb4bcf9c066a6164e19e33\"]"
+      },
+      {
+        "declaration": "Trace.initBall",
+        "statement": "def initBall {Sym : Type u} [Fintype Sym] {K nH n : ℕ} [NeZero K] {A : Arch nH n} (θt : Params Sym K A) (ε cemb : ℝ) : Set (Params Sym K A)",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"6c491b1f7ce84e5dcbebdae2a38cf64eb28dd4d6ff415e24fb631f20ed2eb93a\",\"11b4d378c33c6866ec1b371fe44f7347781484e65ce46d67bc99bdf56ff2b272\"]"
+      },
+      {
+        "declaration": "Trace.InitHyp",
+        "statement": "structure InitHyp {Sym : Type u} [Fintype Sym] [DecidableEq Sym] {K nH n : ℕ} [NeZero K] {A : Arch nH n} (θt : Params Sym K A) (a0 cemb Nb : ℝ) : Prop",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"inductive\",\"5b72bc1f47993baf4d35967ea728e4834f731a3094aba07b996a89fd120c082c\",\"46053beb2a3c210094b47b92e39ebd08d5a115c0f70bb1080d59a5bf8af6746b\"]"
+      },
+      {
+        "declaration": "Trace.InitHyp.bIn_ge_one",
+        "statement": "theorem Trace.InitHyp.bIn_ge_one",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"theorem\",\"b17183f7b922673090af50d0b78a838a3e023ce67575f5b0d09fff91279693c2\",null]"
+      },
+      {
+        "declaration": "Trace.InitHyp.bIn_norm_le",
+        "statement": "theorem Trace.InitHyp.bIn_norm_le",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"theorem\",\"8c0cc8ed899085f5460656c9ebb48e017502afcd1a1caa102ddb9343cdb0d554\",null]"
+      },
+      {
+        "declaration": "Trace.InitHyp.posEmb_le",
+        "statement": "theorem Trace.InitHyp.posEmb_le",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"theorem\",\"b2f9ab7ef2fd8b156c120ac02ccd03617bbdd11f3d2403073493a61d824f0397\",null]"
+      },
+      {
+        "declaration": "Trace.InitHyp.readout_le",
+        "statement": "theorem Trace.InitHyp.readout_le",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"theorem\",\"3fedb95912638b9882443e90fb542257717da778c4141458e3eda36d38c89245\",null]"
+      },
+      {
+        "declaration": "Trace.InitHyp.tokEmb_le",
+        "statement": "theorem Trace.InitHyp.tokEmb_le",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"theorem\",\"b25156b57675777097f462b25d4756095e13822293accc07464d8e491abd947c\",null]"
+      },
+      {
+        "declaration": "Trace.InitHyp.valueEmb_sigmaMin",
+        "statement": "theorem Trace.InitHyp.valueEmb_sigmaMin",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"theorem\",\"9e6d8596c671d61c489dc704ed2fe31a6c8013a874e045b468af4fdb760cd0ea\",null]"
+      },
+      {
+        "declaration": "Trace.InitHyp.wIn_le",
+        "statement": "theorem Trace.InitHyp.wIn_le",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"theorem\",\"454b2c14a62879bd4ecf7b4370eb8f2ee6dcdeb04f3286bb40c5ca4a5e074dd4\",null]"
+      },
+      {
+        "declaration": "Trace.InitHyp.wK_le",
+        "statement": "theorem Trace.InitHyp.wK_le",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"theorem\",\"943df4170e6259a24f5bc4bdd42fdd22616a4cb6076a905cfe8b3bee9859bb52\",null]"
+      },
+      {
+        "declaration": "Trace.InitHyp.wOut_le",
+        "statement": "theorem Trace.InitHyp.wOut_le",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"theorem\",\"ba831d1c98b63d4db9d77ee9e4e3497a6dbc627c46be82eaaee8e9ad8c1c8527\",null]"
+      },
+      {
+        "declaration": "Trace.InitHyp.wQ_le",
+        "statement": "theorem Trace.InitHyp.wQ_le",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"theorem\",\"752e4694f243546d602e54025469d9ddc411a16123c0170d199036c91cd8498a\",null]"
+      },
+      {
+        "declaration": "Trace.InitHyp.wV_le",
+        "statement": "theorem Trace.InitHyp.wV_le",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"theorem\",\"30ea0a60e90d7d64e9016370ca7ba8436f2604d1001806524a2c3b6e58960bb2\",null]"
+      },
+      {
+        "declaration": "Trace.logits",
+        "statement": "noncomputable def logits (T : Task K Sym) (A : Arch nH n) (ζ : ℝ) (θ : Params Sym K A) (w : Fin n → Sym) : ZMod K → ℝ",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"07680f4b3a8c7fce819d535329534fa4a9df069c0468547e6515d461d696c1bd\",\"4895d4880151a8d537d726b8f170fa8fbc051893929f511dcdd60f6f502f3221\"]"
+      },
+      {
+        "declaration": "Trace.mixrate",
+        "statement": "noncomputable def mixrate (K : ℕ) (p : ℝ) : ℝ",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"b68b7b57874427cc70e6e11629cdf073488a10aa9fe0d2596d80854b8ca91967\",\"ce38eac58acdfc87f0c2a64426b8b9a75533c32716ca5a223e959abdc1a61f29\"]"
+      },
+      {
+        "declaration": "Trace.opNorm",
+        "statement": "noncomputable def opNorm {m k : Type*} [Fintype m] [Fintype k] [DecidableEq k] (M : Matrix m k ℝ) : ℝ",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"351f873aa7c30779e0f70f4b295174ae280c20b8551bd358b1fe3bb766375ebb\",\"c64dec8075715f6c21da079b4ef5e0cdd8442745cbb69a78de89e60bfbcb196b\"]"
+      },
+      {
+        "declaration": "Trace.outcomeCredit",
+        "statement": "noncomputable def outcomeCredit (T : Task K Sym) (A : Arch nH n) (θ : Params Sym K A) : ℝ",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"99e6ee62da17365cd71b0fdd432aafa1d8c225fd09ec85075b472512312a3422\",\"59425b393faefbeeb3f695ef4820c4c562505b60cb2494d739c112b31bdba5b4\"]"
+      },
+      {
+        "declaration": "Trace.outcomeFunctional",
+        "statement": "noncomputable def outcomeFunctional (T : Task K Sym) (A : Arch nH n) (θ : Params Sym K A) : ℝ",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"99e6ee62da17365cd71b0fdd432aafa1d8c225fd09ec85075b472512312a3422\",\"0cbb1cbae18371bfbeff80eab7344ccb1b958790cf02d283744db7fc7aceeca1\"]"
+      },
+      {
+        "declaration": "Trace.ParamIdx",
+        "statement": "abbrev ParamIdx (Sym : Type u) (K : ℕ) {nH n : ℕ} (A : Arch nH n)",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"1e52a0ea7da3f824028024e2cb1ea68eb9c19e84a1d15aa1a27d70aab5eea5e6\",\"2870f08f7a4c345307e330020ac82e05373519f321bb16884208f04aa54d30a8\"]"
+      },
+      {
+        "declaration": "Trace.Params",
+        "statement": "abbrev Params (Sym : Type u) (K : ℕ) {nH n : ℕ} (A : Arch nH n)",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"1e52a0ea7da3f824028024e2cb1ea68eb9c19e84a1d15aa1a27d70aab5eea5e6\",\"d5cb17ea574c13a5d5920124577e0724f37264626bc73b933fd9fdca9cf1e4ef\"]"
+      },
+      {
+        "declaration": "Trace.Params.bIn",
+        "statement": "def bIn (l : Fin 2) : Fin A.dmlp → ℝ",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"7ea5d07f41aab2bb29c705dd46c1ea19b849e48995d7b5d3c646c166370d051f\",\"09b08fecb9dfbd778123ea04dd872aa3cfdb41d2ee402b1d59b45126b160dfbd\"]"
+      },
+      {
+        "declaration": "Trace.Params.posEmb",
+        "statement": "def posEmb : Matrix (Fin A.dres) (Fin (n + 4)) ℝ",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"6003f335f879b4d52bdeb38d773fc3b11949fb8beec7b8346215a71e0d7ee667\",\"1271710ec9f0be9c9278f948fc532225f7eb04da2bf28f45e5ecaefe494cd156\"]"
+      },
+      {
+        "declaration": "Trace.Params.readout",
+        "statement": "def readout : Matrix (ZMod K) (Fin A.dres) ℝ",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"16ef4999c5dc688d1c03e46fd2c65e10e17404f28cf77142b821f4f18ee1b5f0\",\"e5747218ea0cc6b6d2c0fe30673686243b72943948e4341513fa8b7d3c45e70e\"]"
+      },
+      {
+        "declaration": "Trace.Params.tokEmb",
+        "statement": "def tokEmb : Matrix (Fin A.dres) (Token Sym K) ℝ",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"230fbe22c454bcd9c422ebd21f1f2d6f7a0b55dbe5da06f768e17758c56fcf36\",\"404555df2565e213baf36df735a146b56fc74cd58a65aa17cdcb2934b360ea22\"]"
+      },
+      {
+        "declaration": "Trace.Params.valueEmb",
+        "statement": "def valueEmb : Matrix (Fin A.dres) (ZMod K) ℝ",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"5d274a7eb84cf5088956df5a65a0cc516b8fc8f8be6d710e3b86d11a88fb044e\",\"6fb37ff8ce3ca7a113f352ff0dd87259f6ea407a4dad1a87b64c1e69a0b8401b\"]"
+      },
+      {
+        "declaration": "Trace.Params.wIn",
+        "statement": "def wIn (l : Fin 2) : Matrix (Fin A.dmlp) (Fin A.dres) ℝ",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"6fa119cdae96efa30f3c28f73df9ba5abfbb37d6f8b3db1698b754cfc4a365d3\",\"fcbdb0c1d87aef5d7a7fbcccd7bae43ead081ca31fe8d20ff21c477da5b89f02\"]"
+      },
+      {
+        "declaration": "Trace.Params.wK",
+        "statement": "def wK (l : Fin 2) (h : Fin nH) : Matrix (Fin A.dh) (Fin A.dres) ℝ",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"f8825227943f2bba47b513e3c4a0d7191841893382b0af8b45ff2d29ef2852c5\",\"b9c70b7f452911a8261512ff8e1ba3574c385d29785a7cf19c64efd6074560e5\"]"
+      },
+      {
+        "declaration": "Trace.Params.wOut",
+        "statement": "def wOut (l : Fin 2) : Matrix (Fin A.dres) (Fin A.dmlp) ℝ",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"ef85c5ab69fe76026f652c41083b19f2b5f5c0b0270cdea911cc2df1a2f34e68\",\"5f55d17efd2fcd9a984a476b84655ef6b78bac1ee0e409797b6218cf6c07e5b5\"]"
+      },
+      {
+        "declaration": "Trace.Params.wQ",
+        "statement": "def wQ (l : Fin 2) (h : Fin nH) : Matrix (Fin A.dh) (Fin A.dres) ℝ",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"f8825227943f2bba47b513e3c4a0d7191841893382b0af8b45ff2d29ef2852c5\",\"933ecfb55c6889dabca2a8a0efc1212c3f4dcfe7f8acce9620adf924a1109f40\"]"
+      },
+      {
+        "declaration": "Trace.Params.wV",
+        "statement": "def wV (l : Fin 2) (h : Fin nH) : Matrix (Fin A.dres) (Fin A.dres) ℝ",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"361c6b2035a7baa9ba19cbc3ded4fe82cb09bd54b085b4b6304c1cf9f72c7a82\",\"368bb78d0a55783b1ef0d89b2ff60a9e6619309cc6873f6d66a3bd9068dd39d0\"]"
+      },
+      {
+        "declaration": "Trace.Prior",
+        "statement": "structure Prior : Prop",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"inductive\",\"7eb9c843b0fd71b8fd2d1fabbb34bb5e51c5767a961a5fe1323fb9a277b48cde\",\"e3160218082ba3f7b27fd288aea88ee40f42283034490ea50db8519ba349ded6\"]"
+      },
+      {
+        "declaration": "Trace.score",
+        "statement": "noncomputable def score {A : Arch nH n} (θ : Params Sym K A) (l : Fin 2) (h : Fin nH) (x : Fin (n + 4) → Fin A.dres → ℝ) (i j : Fin (n + 4)) : ℝ",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"a88baa8a42ffa14b3f1c363af2286f929e601587de637df49b8f206961db80af\",\"f3814fc7e2787ea1c0021c3cecf53c46aa0d75e7b79bdf0348a77658d2b8f796\"]"
+      },
+      {
+        "declaration": "Trace.scoreCredit",
+        "statement": "noncomputable def scoreCredit (T : Task K Sym) (A : Arch nH n) (θ : Params Sym K A) : ℝ",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"99e6ee62da17365cd71b0fdd432aafa1d8c225fd09ec85075b472512312a3422\",\"ddf5a1ed7cf2ac5ee2d088a3763345c123ce293089231fdde3cfcaf0955b5561\"]"
+      },
+      {
+        "declaration": "Trace.scoreFunctional",
+        "statement": "noncomputable def scoreFunctional (T : Task K Sym) (A : Arch nH n) (θ : Params Sym K A) : ℝ",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"99e6ee62da17365cd71b0fdd432aafa1d8c225fd09ec85075b472512312a3422\",\"5d8826c696c40ccdf780af56d7472fb4e328de8fbb99ab959450d19b2a6f9bab\"]"
+      },
+      {
+        "declaration": "Trace.Task",
+        "statement": "structure Task (K : ℕ) (Sym : Type u)",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"inductive\",\"483ef99a6a51cb70e5be0dc64a73ff5b1c2d3e855ff43ba170aed2e68bfffa10\",\"fc6eb5a088dff4378caa757b44d741857ea08c159ed2485262c3290368e43fde\"]"
+      },
+      {
+        "declaration": "Trace.Task.answer",
+        "statement": "def answer (w : Fin n → Sym) : ZMod K",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"439858d7a32b249ae48b34cdff5f22d16e41993223769fee7170d1f7323f8065\",\"5aacc8c89a2ccd0cd50d8d9e45d243aca9c93dfdd365fdcd5776a9df40279336\"]"
+      },
+      {
+        "declaration": "Trace.Task.Ex",
+        "statement": "noncomputable def Ex {E : Type v} [AddCommGroup E] [Module ℝ E] (f : (Fin n → Sym) → E) : E",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"74e980da08cba195e83e083030667abef8d14915faa363be39248536575612d0\",\"b83f3e50565ac6021ab9f1dec8085a22cf6d301c7167ce77656a2e0ddcd5392c\"]"
+      },
+      {
+        "declaration": "Trace.Task.l2Norm",
+        "statement": "noncomputable def l2Norm [NeZero K] {ι : Type v} [Fintype ι] (H : (Fin n → Sym) → Matrix (ZMod K) ι ℝ) : ℝ",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"074551ad4eb94562b262c247f886ec553987e87f24dc317d415a7f30410ae82e\",\"35cce7089318a41981233a937fd5b5255fe655743dee54b30b7568a2a171d358\"]"
+      },
+      {
+        "declaration": "Trace.Task.letterWeight",
+        "statement": "noncomputable def letterWeight (w : Fin n → Sym) : ℝ",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"de980ee1aab4c8a765cdf8ddfe385d6f0871ff758824d8ad68d8cb95d50d69b9\",\"6a28ed8eafacac998a6faa441e82c57698f06f6e5c8edd529a6918df1960574d\"]"
+      },
+      {
+        "declaration": "Trace.Task.mk.noConfusion",
+        "statement": "def Trace.Task.mk.noConfusion",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"c83fea3f52ccb7fac6b110bf0164eefaaf5172b0e5ec541439c47338952771f4\",\"de0e6a7b5fd5b5f9c8ee4d100f6cd90dd1949f365e3d2dce74a4af3678729ac9\"]"
+      },
+      {
+        "declaration": "Trace.Task.outcomePrompt",
+        "statement": "def Task.outcomePrompt {K : ℕ} {Sym : Type u} (T : Task K Sym) {n : ℕ} (w : Fin n → Sym) (i : Fin (n + 4)) : Token Sym K",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"cbfed16465933c4d0df62dc3a7ceda4abe1e50d0828709daf509bd87900c6e5b\",\"21bc0e70cfa2a19c8be2429348abd0643f62dc9880b15c6bcf803e8533bc6f2f\"]"
+      },
+      {
+        "declaration": "Trace.Task.p",
+        "statement": "noncomputable def p : ℝ",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"84a459a33a7108c91de2c61ea53cf64d43fe10e1950175f03647ba76979e08ec\",\"470fb9dd57480ff05dda7639578468f4eb9e094fc5977c0bb0a6d669cb928857\"]"
+      },
+      {
+        "declaration": "Trace.Task.s0",
+        "statement": "def Trace.Task.s0",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"9d14bc135b8f69b91b6980c43a36d50bdf31a3e00f9899f667c338d136c38c2f\",\"b3a4c1a0dace74aabbb34d69b4f7c1f87f181004bf1d4f92c4b157de540761d2\"]"
+      },
+      {
+        "declaration": "Trace.Task.targetSignal",
+        "statement": "noncomputable def targetSignal (w : Fin n → Sym) : ZMod K → ℝ",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"1fe4b4ea0cf154e5f73f3ca20f55b204406cbeaadc344af482b77669a0788e66\",\"74cea1adbd4db53b20cf997da7791c15760bc34566a5f7629e7d3e346c5948f1\"]"
+      },
+      {
+        "declaration": "Trace.Task.wstar",
+        "statement": "def Trace.Task.wstar",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"193f4607d96bfd4cb1afd132b0efa8c51213bb04faa497468bd28d2adb5c4926\",\"af60cc2e06dd6579bea326efb90290954a90a74e34b509b2aa1881ca7e07025e\"]"
+      },
+      {
+        "declaration": "Trace.Task.μ",
+        "statement": "def Trace.Task.μ",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"a1e09644dddf9385831c7c380d253aca2f59ccebe397828a69f0c40d11ee8c23\",\"6fd81e4231751cc0f361470c25661aa29d0c2178f7a25d483b6307ed75afacac\"]"
+      },
+      {
+        "declaration": "Trace.Token",
+        "statement": "abbrev Token (Sym : Type u) (K : ℕ)",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"2de7ae199fd92676b2af924da0019ac67e4d778497196ce22791dda7fdd9ba39\",\"ca6deeef48b01c8f62d884d99696528a99f8ee8d823990be4db9262a306ff229\"]"
+      },
+      {
+        "declaration": "Trace.Token.colon",
+        "statement": "def Token.colon {Sym : Type u} {K : ℕ} : Token Sym K",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"a88868457e00e3f240f378e23ce39603284110929440b31f1ae3af914a3bd27d\",\"314e1ea77c16f4f9e1659d678bc4d2b8c309e59478f5a354e6959bee5c2c4faa\"]"
+      },
+      {
+        "declaration": "Trace.Token.letter",
+        "statement": "def Token.letter {Sym : Type u} {K : ℕ} (a : Sym) : Token Sym K",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"93c5acf81866166503ed2a956d20c95f0916ed9acb1c66c9072ddd959dcd7728\",\"4a4a9f04a4e0e65d6afc5948bb0983cbd0156c254ac793c76559ed1f50c5c7e5\"]"
+      },
+      {
+        "declaration": "Trace.Token.sep",
+        "statement": "def Token.sep {Sym : Type u} {K : ℕ} : Token Sym K",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"a88868457e00e3f240f378e23ce39603284110929440b31f1ae3af914a3bd27d\",\"02abacd9eb0596114ecbcbd0c17c26c67c8b6f3a846102a967c02ddf22e59ff5\"]"
+      },
+      {
+        "declaration": "Trace.Token.value",
+        "statement": "def Token.value {Sym : Type u} {K : ℕ} (v : ZMod K) : Token Sym K",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"def\",\"bf2d4aaf4cd5b36816064658d603f154defb36d3db5048aae8dbc6e6f5d02a21\",\"5710c9f0c1ce5439a3a4dadc578c6ca7ce8439e8c08b98cfd62a461452593c99\"]"
+      },
+      {
+        "declaration": "Trace.unseen_letters_contraction",
+        "statement": "theorem unseen_letters_contraction (hprior : Prior) {K : ℕ} [NeZero K] (hK : 2 ≤ K) {Sym : Type u} [Fintype Sym] [DecidableEq Sym] (T : Task K Sym) (hp0 : 0 < T.p) (hp1 : T.p < 1) (n : ℕ) (S : Finset (Fin n)) {ι : Type v} [Fintype ι] (H : (Fin n → Sym) → Matrix (ZMod K) ι ℝ) (hH : DependsOn H (S : Set (Fin n))) : featureCredit T H ≤ mixrate K T.p ^ (n - S.card) * T.l2Norm H",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"theorem\",\"32cacf1ee9bc73ffa65d273eab031860fe448bbca4c0bcd5da970ee3887e6b06\",null]"
+      },
+      {
+        "declaration": "Trace.unseen_letters_outcome_credit",
+        "statement": "theorem unseen_letters_outcome_credit (hprior : Prior) (a0 cemb : ℝ) (hcemb : 0 < cemb) (K : ℕ) [NeZero K] (hK : 2 ≤ K) (nH : ℕ) : ∃ c₀ c C : ℝ, 0 < c₀ ∧ 0 < c ∧ 0 < C ∧ ∀ n : ℕ, 2 ≤ n → ∀ (Sym : Type u) [Fintype Sym] [DecidableEq Sym] (T : Task K Sym), 0 < T.p → T.p < 1 → ∀ (A : Arch nH n) (θt : Params Sym K A) (Nb : ℝ), InitHyp θt a0 cemb Nb → ∀ ε : ℝ, 0 < ε → ε ≤ c₀ * min 1 (1 / Nb) → ∀ θ ∈ initBall θt ε cemb, ε ≤ c * mixrate K T.p → DifferentiableAt ℝ (outcomeFunctional T A) θ ∧ outcomeCredit T A θ ≤ C * ε * mixrate K T.p ^ n",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"theorem\",\"79a6369266ba1f03bddef7a1672da9aa9ac749b9d3969d34e7a415044435ef9f\",null]"
+      },
+      {
+        "declaration": "Trace.unseen_letters_score_credit",
+        "statement": "theorem unseen_letters_score_credit (hprior : Prior) (a0 cemb : ℝ) (hcemb : 0 < cemb) (K : ℕ) [NeZero K] (hK : 2 ≤ K) (nH : ℕ) : ∃ c₀ c C : ℝ, 0 < c₀ ∧ 0 < c ∧ 0 < C ∧ ∀ n : ℕ, 2 ≤ n → ∀ (Sym : Type u) [Fintype Sym] [DecidableEq Sym] (T : Task K Sym), 0 < T.p → T.p < 1 → ∀ (A : Arch nH n) (θt : Params Sym K A) (Nb : ℝ), InitHyp θt a0 cemb Nb → ∀ ε : ℝ, 0 < ε → ε ≤ c₀ * min 1 (1 / Nb) → ∀ θ ∈ initBall θt ε cemb, ε ^ 2 ≤ c * mixrate K T.p → DifferentiableAt ℝ (scoreFunctional T A) θ ∧ scoreCredit T A θ ≤ C * ε ^ 6 * mixrate K T.p ^ ((n : ℤ) - 3)",
+        "compilerIdentity": "[\"tex2lean.declaration-identity/1\",\"theorem\",\"192080cd1ce708dc7e24c97cda79414e965536360579e0ff13017dc93ab3b27a\",null]"
+      }
+    ]
+  },
+  "modelSources": [
+    {
+      "file": "lean/Trace/Model/Prelude.lean",
+      "digest": "sha256-06fd020247ad912b5136fa6a2c82a1803492c11139ff04456736d21c5df54ad9"
+    },
+    {
+      "file": "lean/Trace/Model/Prior.lean",
+      "digest": "sha256-3ae8974e4244c302c037c92aa646c285d5f4ad93a30bc60387c35eac14933ec2"
+    },
+    {
+      "file": "lean/Trace/Model/Theorem.lean",
+      "digest": "sha256-be377a91c444e744074b0a1f560315f9e8f0e8f7e75ec317b066faa5c13f8b8a"
+    }
+  ],
+  "proofTasks": [
+    {
+      "goal": "Trace.Proof.unseenLettersContraction",
+      "file": "Trace/Analysis/Contraction.lean",
+      "identity": "[\"[\\\"tex2lean.declaration-identity/1\\\",\\\"theorem\\\",\\\"32cacf1ee9bc73ffa65d273eab031860fe448bbca4c0bcd5da970ee3887e6b06\\\",null]\",\"lean-type-v1:1f6f4dcfbc416e31257d559d1fbcb971e590880243ac3b17da42f6b03b9667fc\"]",
+      "status": "pending",
+      "attempts": 1,
+      "stalledAttempts": 0,
+      "history": [
+        {
+          "id": "1:1791675174851:Trace/Analysis/Contraction.lean",
+          "round": 1,
+          "status": "completed",
+          "summary": "`Trace.Proof.unseenLettersContraction` is proved outright, with no `sorry` and no new assumptions. `#print axioms` reports only `propext`, `Classical.choice` and `Quot.sound`. The proof follows the paper's argument for lem:target-contraction (Paper/appendix.tex:276-289) step by step.\n\n## PROVED\n- `Trace.Proof.unseenLettersContraction`, in `Trace/Analysis/Contraction.lean`. Three steps:\n  - **Tower property** (`ex_mul_eq_ex_mul_condExp`): if `f` depends only on the letters in `S`, then `E[f·g] = E[f · E[g | F_S]]`. Here `E[g | F_S](w)` is concretely the average over a fresh sample `w'` of `g` evaluated at \"`w` on `S`, `w'` off `S`\". It is proved with an involution `swapOff` that swaps the off-`S` letters between two independent samples. This avoids conditional-expectation machinery and subtype splits.\n  - **eq:horizon** (`Trace.Proof.HorizonBound.horizonBound`, new file): `∑ₐ (E[G | F_S](w) a)² ≤ (λ^{n−|S|})²` for every freezing `w` of the letters in `S`.\n  - **Cauchy–Schwarz** (`featureCredit_le_of_tower`): instead of taking a supremum over unit vectors `v`, it tests against `x = E[Hᵀ G]` itself and shows `‖x‖² ≤ λ^m ‖H‖_{L²} ‖x‖`, where `m = n − |S|`.\n- `Trace.Proof.HorizonBound.horizonBound` and every helper in `Trace/Analysis/HorizonBound.lean`.\n\n## STILL OPEN\nNothing.\n\n## ABANDONED\nNone. Two earlier ideas were dropped before being tried in Lean:\n- A step-by-step contraction argument would have needed an induction over the coordinates outside `S` to connect it to the conditional signal, and it still needs Fourier analysis for the spectral gap.\n- Splitting `Fin n → Sym` into the `S` part and the `Sᶜ` part is more awkward than the swap involution.\n\n## STATEMENT PROBLEMS\nNone. The statement has more hypotheses than it needs: `hprior`, `hK` and the strict bounds `0 < p < 1` are unused. The bound holds for all `p ∈ [0,1]` and `K ≥ 1`, and the proof only uses `hp0.le` and `hp1.le`. Lean reports this as unused-variable warnings for `hprior` and `hK`. I left them alone because the statement is fixed.\n\n**Departure from the paper:** I prove eq:horizon only in the weaker form `≤ λ^{2(n−|S|)}`. I drop the exact identity `= K⁻¹ ∑_{j≠0} |ρ_j|^{2(n−|S|)}` and the factor `(1 − 1/K)`, because the downstream bound doesn't need them. The docstring of `horizonBound` records this.\n\n## NEW LEMMAS\nIn `Trace/Analysis/HorizonBound.lean`:\n- `horizonBound` — eq:horizon, weakened form.\n- `condSignal` — the conditional signal `E[y−u | F_S]`.\n- `parseval_zmod` — Parseval on `ZMod K` with `ZMod.stdAddChar`.\n- `mode_le_mixrate` — `|1−p+p·ψ(j)| ≤ mixrate K p` for `j ≠ 0`. This is the \"λ = max over j ≠ 0\" fact. **Other agents bounding modes against `mixrate` may need it.**\n- `cos_mode_le`, `norm_sq_mode` — the trigonometry behind `mode_le_mixrate`.\n- `addChar_map_sum`, `sum_targetSignal_char`, `ex_char_answer`, `norm_ex_char_answer_le`, `transform_condSignal`, `sum_mu_char_mode`, `sum_mu_char_const`, `sum_mu_toReal`, `sum_letterWeight_complex`.\n\nIn `Trace/Analysis/Contraction.lean`:\n- `sum_letterWeight`, `letterWeight_nonneg` — the letter weights sum to 1 and are nonnegative. **Likely useful to whoever works on `ScoreCredit` and `OutcomeCredit`.**\n- `swapOff`, `swapOff_involutive`, `letterWeight_swapOff`, `ex_mul_eq_ex_mul_condExp` — the tower property.\n- `featureCredit_le_of_tower` — the Cauchy–Schwarz step.\n\n## CLAIMED FILES\nTrace/Analysis/Contraction.lean\nTrace/Analysis/HorizonBound.lean\n\n## LIBRARY\n- **Not found:**\n  - An `AddChar` lemma for \"a character of a finite sum is the product of characters\". I proved it as `addChar_map_sum`.\n  - A Parseval identity for `ZMod.stdAddChar` (proved as `parseval_zmod`).\n- **Found and used:** `AddChar.sum_mulShift`, `ZMod.isPrimitive_stdAddChar`, `ZMod.stdAddChar_apply`, `ZMod.toCircle_apply`, `AddChar.map_neg_eq_conj`, `AddChar.norm_apply`, `Fintype.prod_sum`, `Real.sum_mul_le_sqrt_mul_sqrt`, `Finset.sum_mul_sq_le_sq_mul_sq`, `EuclideanSpace.norm_eq`, `Real.cos_le_cos_of_nonneg_of_le_pi`, `Real.cos_two_pi_sub`, `Complex.exp_ofReal_mul_I_re`/`_im`, `sq_le_sq₀`.\n- **Different spelling:** `tsum_fintype` needs `(L := .unconditional _)` at this Mathlib revision.\n\n## BUILD\n- `Trace.Analysis.HorizonBound` was built through the build slot, successfully.\n- Last check, `lake env lean Trace/Analysis/Contraction.lean`: clean apart from the unused-variable warnings for `hprior` and `hK`.\n- The grep for `sorry`, `admit`, `native_decide` and `axiom` finds nothing in either file.\n- Probe files are left in `scratch/a3/`. My attempt to delete them was blocked by the `rm` guard hook, and they contain no escape hatches.\n\n```tex2lean-report-v1\n{\"schema\":\"tex2lean.agent-report/1\",\"proved\":[\"Trace.Proof.unseenLettersContraction\",\"Trace.Proof.HorizonBound.horizonBound\"],\"stillOpen\":[],\"statementProblems\":[],\"restatementRequests\":[],\"strongerModelRequests\":[],\"claimedFiles\":[\"Trace/Analysis/Contraction.lean\",\"Trace/Analysis/HorizonBound.lean\"],\"newLemmas\":[\"Trace.Proof.HorizonBound.horizonBound\",\"Trace.Proof.HorizonBound.condSignal\",\"Trace.Proof.HorizonBound.parseval_zmod\",\"Trace.Proof.HorizonBound.mode_le_mixrate\",\"Trace.Proof.HorizonBound.cos_mode_le\",\"Trace.Proof.HorizonBound.norm_sq_mode\",\"Trace.Proof.HorizonBound.addChar_map_sum\",\"Trace.Proof.HorizonBound.sum_targetSignal_char\",\"Trace.Proof.HorizonBound.ex_char_answer\",\"Trace.Proof.HorizonBound.norm_ex_char_answer_le\",\"Trace.Proof.HorizonBound.transform_condSignal\",\"Trace.Proof.HorizonBound.sum_mu_char_mode\",\"Trace.Proof.HorizonBound.sum_mu_char_const\",\"Trace.Proof.HorizonBound.sum_mu_toReal\",\"Trace.Proof.HorizonBound.sum_letterWeight_complex\",\"Trace.Proof.Contraction.sum_letterWeight\",\"Trace.Proof.Contraction.letterWeight_nonneg\",\"Trace.Proof.Contraction.swapOff\",\"Trace.Proof.Contraction.swapOff_involutive\",\"Trace.Proof.Contraction.letterWeight_swapOff\",\"Trace.Proof.Contraction.ex_mul_eq_ex_mul_condExp\",\"Trace.Proof.Contraction.featureCredit_le_of_tower\"],\"library\":[\"not found: AddChar map of a Finset sum to a product (proved as addChar_map_sum)\",\"not found: Parseval identity for ZMod.stdAddChar (proved as parseval_zmod)\",\"tsum_fintype needs (L := .unconditional _) at this revision\"],\"buildRequests\":[],\"priorProposals\":[],\"structuralRefactors\":[]}\n```",
+          "proved": [
+            "Trace.Proof.Contraction.sum_letterWeight",
+            "Trace.Proof.Contraction.letterWeight_nonneg",
+            "Trace.Proof.Contraction.swapOff_involutive",
+            "Trace.Proof.Contraction.letterWeight_swapOff",
+            "Trace.Proof.Contraction.ex_mul_eq_ex_mul_condExp",
+            "Trace.Proof.Contraction.featureCredit_le_of_tower",
+            "Trace.Proof.unseenLettersContraction"
+          ]
+        }
+      ]
+    },
+    {
+      "goal": "Trace.Proof.unseenLettersOutcomeCredit",
+      "file": "Trace/Analysis/OutcomeCredit.lean",
+      "identity": "[\"[\\\"tex2lean.declaration-identity/1\\\",\\\"theorem\\\",\\\"79a6369266ba1f03bddef7a1672da9aa9ac749b9d3969d34e7a415044435ef9f\\\",null]\",\"lean-type-v1:a949534c21b533f2267ab7e39ca79dfa9df4c47fd43cd56b90aceabf3775d98f\"]",
+      "status": "pending",
+      "attempts": 1,
+      "stalledAttempts": 1,
+      "history": [
+        {
+          "id": "1:1791675170537:Trace/Analysis/OutcomeCredit.lean",
+          "round": 1,
+          "status": "unverified",
+          "summary": "You've hit your session limit · resets 6:30am (Asia/Kolkata)",
+          "proved": []
+        }
+      ],
+      "pendingPublication": {
+        "attemptId": "1:1791675170537:Trace/Analysis/OutcomeCredit.lean",
+        "round": 1,
+        "ownedFiles": [
+          "Trace/Analysis/OutcomeCredit.lean"
+        ],
+        "baseline": [
+          {
+            "name": "Trace.Proof.unseenLettersOutcomeCredit",
+            "file": "Trace/Analysis/OutcomeCredit.lean",
+            "identity": "[\"[\\\"tex2lean.declaration-identity/1\\\",\\\"theorem\\\",\\\"79a6369266ba1f03bddef7a1672da9aa9ac749b9d3969d34e7a415044435ef9f\\\",null]\",\"lean-type-v1:a949534c21b533f2267ab7e39ca79dfa9df4c47fd43cd56b90aceabf3775d98f\"]",
+            "open": true
+          }
+        ],
+        "sources": [],
+        "stage": "capture",
+        "code": "producer-not-ready",
+        "reason": "The producer did not complete or pause for capture.",
+        "state": "review"
+      }
+    },
+    {
+      "goal": "Trace.Proof.unseenLettersScoreCredit",
+      "file": "Trace/Analysis/ScoreCredit.lean",
+      "identity": "[\"[\\\"tex2lean.declaration-identity/1\\\",\\\"theorem\\\",\\\"192080cd1ce708dc7e24c97cda79414e965536360579e0ff13017dc93ab3b27a\\\",null]\",\"lean-type-v1:a2d61e35e0ebbf1e6d8efa72ba1b7d6c37d36a0850d7fd9a40adbb9260ced3e3\"]",
+      "status": "pending",
+      "attempts": 1,
+      "stalledAttempts": 1,
+      "history": [
+        {
+          "id": "1:1791675166219:Trace/Analysis/ScoreCredit.lean",
+          "round": 1,
+          "status": "unverified",
+          "summary": "You've hit your session limit · resets 6:30am (Asia/Kolkata)",
+          "proved": []
+        }
+      ],
+      "pendingPublication": {
+        "attemptId": "1:1791675166219:Trace/Analysis/ScoreCredit.lean",
+        "round": 1,
+        "ownedFiles": [
+          "Trace/Analysis/ScoreCredit.lean"
+        ],
+        "baseline": [
+          {
+            "name": "Trace.Proof.unseenLettersScoreCredit",
+            "file": "Trace/Analysis/ScoreCredit.lean",
+            "identity": "[\"[\\\"tex2lean.declaration-identity/1\\\",\\\"theorem\\\",\\\"192080cd1ce708dc7e24c97cda79414e965536360579e0ff13017dc93ab3b27a\\\",null]\",\"lean-type-v1:a2d61e35e0ebbf1e6d8efa72ba1b7d6c37d36a0850d7fd9a40adbb9260ced3e3\"]",
+            "open": true
+          }
+        ],
+        "sources": [],
+        "stage": "capture",
+        "code": "producer-not-ready",
+        "reason": "The producer did not complete or pause for capture.",
+        "state": "review"
+      }
+    },
+    {
+      "goal": "Trace.Proof.zeroOrderCredit",
+      "file": "Trace/Analysis/ZeroOrderCredit.lean",
+      "identity": "[\"[\\\"tex2lean.declaration-identity/1\\\",\\\"theorem\\\",\\\"7c9807e64fdd08a7f4360d7dc2fb50637785f003cbf263578380ecc210d39fa1\\\",null]\",\"lean-type-v1:6f98648457a4a07277ea49f6ecfd0f8b082359f3b6e3fc0e6f578bb028960d59\"]",
+      "status": "pending",
+      "attempts": 0,
+      "stalledAttempts": 0,
+      "history": []
+    }
+  ],
+  "frontier": {
+    "savedAt": "2026-10-11T01:41:53.355Z",
+    "round": 2,
+    "sourceFingerprint": "sha256:a020ef7c605db58d9db7189356e2197c33c76e15e528ad2c5920d843fc5287b7",
+    "goals": [
+      {
+        "name": "Trace.Proof.unseenLettersScoreCredit",
+        "file": "Trace/Analysis/ScoreCredit.lean"
+      },
+      {
+        "name": "Trace.Proof.zeroOrderCredit",
+        "file": "Trace/Analysis/ZeroOrderCredit.lean"
+      }
+    ]
+  },
+  "briefs": {
+    "done": [],
+    "pending": [
+      "Trace/Analysis/ZeroOrderCredit.lean"
+    ]
+  },
+  "interrupted": {
+    "at": "2026-10-11T02:50:52.597Z",
+    "agents": [
+      {
+        "title": "Prove Trace.Proof.zeroOrderCredit",
+        "file": "Trace/Analysis/ZeroOrderCredit.lean",
+        "wrote": [
+          "Trace/Analysis/ParamNorm.lean",
+          "Trace/Analysis/ZeroOrderPattern.lean",
+          "Trace/Analysis/ZeroOrderTrack.lean",
+          "Trace/Analysis/ZeroOrderCredit.lean"
+        ]
+      },
+      {
+        "title": "Prove Trace.Proof.unseenLettersScoreCredit",
+        "file": "Trace/Analysis/ScoreCredit.lean",
+        "wrote": []
+      }
+    ],
+    "files": [
+      "Trace/Analysis/ParamNorm.lean",
+      "Trace/Analysis/ZeroOrderPattern.lean",
+      "Trace/Analysis/ZeroOrderTrack.lean",
+      "Trace/Analysis/ZeroOrderCredit.lean"
+    ]
+  }
+}

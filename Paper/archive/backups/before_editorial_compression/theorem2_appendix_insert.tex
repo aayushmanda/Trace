@@ -1,0 +1,236 @@
+% ============================================================================
+% Appendix insert: place immediately after the proof of Lemma C.8, before the
+% existing ``Proof of Theorem 2(i)'' (or after it if preferred).  Needs amsmath,
+% amssymb, amsthm; a lemma environment and proof environment must exist.
+% Also needs bibliography items for Carbery--Wright and Gaussian
+% hypercontractivity (see theorem2_references.bib).
+% ============================================================================
+
+\subsubsection*{Quantitative rule credit under Gaussian initialization}
+\label{app:t2-gaussian}
+
+We refine \cref{lem:leading} from generic nonvanishing to a quantitative
+high-probability bound.  Write
+\begin{equation}
+ F_n(\varepsilon)=
+ \left.\frac{\partial\Phi_{\mathrm{rule}}}{\partial V_{ab}}
+ \right|_{\theta=\varepsilon\widetilde\theta}
+ =\varepsilon^6P_n(\widetilde\theta)+r_n(\varepsilon),
+ \qquad
+ |r_n(\varepsilon)|\le\frac{C_{\mathrm{rem}}}{n}
+ \left(\frac{\varepsilon^7}{\varepsilon_0}+\varepsilon^{10}\right).
+ \label{eq:quant-rule-expansion}
+\end{equation}
+We may weaken this to $C_{\mathrm{rem}}(\varepsilon^7/(n\varepsilon_0)+\varepsilon^{10})$
+when using \cref{eq:t2-gaussian-epsilon}. The remainder estimate holds whenever the deterministic hypotheses of
+\cref{lem:leading} are satisfied and
+$\varepsilon\le\varepsilon_0$,
+$C_{\mathrm{att}}\varepsilon^4\le1/2$.
+
+\begin{lemma}[A square-free monomial controls Gaussian $L^2$]
+\label{lem:quant-rule-L2}
+Let $P$ be a homogeneous polynomial of degree six in independent centered
+Gaussian coordinates, and suppose the coefficient of the square-free
+monomial $X_1\cdots X_6$ is $c\ne0$, with
+$X_i\sim\mathcal N(0,\sigma_i^2)$ and $\sigma_i>0$.
+Then
+\begin{equation}
+  \|P\|_{L^2}\ge |c|\prod_{i=1}^6\sigma_i.
+  \label{eq:quant-rule-L2}
+\end{equation}
+\end{lemma}
+\begin{proof}
+Put $Y=\prod_{i=1}^6(X_i/\sigma_i)$.  Independence and centering give
+$\mathbb E Y^2=1$.  In $\mathbb E[PY]$, a nonzero contribution from a
+monomial of $P$ requires each of $X_1,\ldots,X_6$ to occur to a positive odd
+power: otherwise at least one centered Gaussian has an odd total exponent.
+Since every monomial of $P$ has total degree six, the only surviving one is
+$X_1\cdots X_6$.  Thus
+$\mathbb E[PY]=c\prod_{i=1}^6\sigma_i$.
+The claim follows by Cauchy--Schwarz.
+\end{proof}
+
+\begin{lemma}[Degree-six Gaussian anti-concentration]
+\label{lem:quant-rule-AC}
+There is an absolute constant $C_6>0$ such that, for any nonzero real
+polynomial $P$ of total degree at most six evaluated on an independent
+Gaussian vector with nondegenerate coordinate variances and every
+$0<\rho<1$,
+\begin{equation}
+ \mathbb P\!\left\{
+   |P|\ge\left(\frac{\rho}{C_6}\right)^6\|P\|_{L^2}
+ \right\}\ge 1-\rho.
+ \label{eq:quant-rule-AC}
+\end{equation}
+\end{lemma}
+\begin{proof}
+After rescaling coordinates, it suffices to work with a standard Gaussian
+vector.  The Carbery--Wright inequality for Gaussian measure gives, for a
+polynomial of degree at most six and every $t>0$,
+\begin{equation}
+ \mathbb P\{|P|\le t\}
+ \le 6C_{\mathrm{CW}}
+       \left(\frac{t}{\|P\|_{L^1}}\right)^{1/6}
+ \label{eq:quant-rule-CW}
+\end{equation}
+with a universal $C_{\mathrm{CW}}$; see
+\cite{carbery2001distributional}.
+Gaussian hypercontractivity
+\cite{janson1997gaussian} implies
+$\|P\|_{L^4}\le 3^3\|P\|_{L^2}=27\|P\|_{L^2}$.
+Interpolation gives
+\begin{equation}
+ \|P\|_{L^2}\le
+ \|P\|_{L^1}^{1/3}\|P\|_{L^4}^{2/3},
+ \qquad
+ \|P\|_{L^1}\ge 3^{-6}\|P\|_{L^2}.
+\end{equation}
+Substitution in \eqref{eq:quant-rule-CW} yields
+\begin{equation}
+ \mathbb P\{|P|\le t\}
+ \le C_6\left(\frac{t}{\|P\|_{L^2}}\right)^{1/6},
+ \qquad C_6:=\max\{1,18C_{\mathrm{CW}}\}.
+\end{equation}
+Take $t=(\rho/C_6)^6\|P\|_{L^2}$.
+\end{proof}
+
+\begin{lemma}[High-probability lower bound for the actual rule gradient]
+\label{lem:quant-rule-gradient}
+Fix $n\ge2$, $K\ge2$, $0<p<1/2$, and $0<\delta<1$.
+Assume the architecture and uniform-start task of \cref{lem:leading}, and suppose its $P_n$ is a degree-six polynomial in
+independent centered Gaussian attention/embedding entries.  Assume the six
+distinguished entries have standard deviations $\sigma_1,\ldots,\sigma_6$.
+Let $\mathcal E_{\mathrm{geom}}$ be an event, of probability at least
+$1-\delta/2$, on which the deterministic hypotheses of \cref{lem:leading} hold with
+fixed nonrandom $\varepsilon_0,C_{\mathrm{att}},C_{\mathrm{rem}}>0$.
+Define $\kappa_{p,K}$ and $A_{n,\delta}$ by
+\eqref{eq:t2-gaussian-threshold}.  If $\varepsilon$ satisfies
+\eqref{eq:t2-gaussian-epsilon}, then
+\begin{equation}
+ \mathbb P\!\left\{
+  \|\nabla_\theta\Phi_{\mathrm{rule}}
+     (\varepsilon\widetilde\theta)\|
+       \ge\tfrac12\varepsilon^6 A_{n,\delta}
+ \right\}\ge1-\delta.
+ \label{eq:quant-rule-gradient}
+\end{equation}
+\end{lemma}
+\begin{proof}
+\cref{lem:leading} gives a square-free degree-six monomial whose coefficient
+$c_n$ satisfies
+\begin{equation}
+ |c_n|\ge
+ \frac{p(1-p)\min\{1-2p,1/4\}}{3Kn\sqrt{d_h}}
+ =\frac{\kappa_{p,K}}{n\sqrt{d_h}}.
+ \label{eq:quant-rule-coeff}
+\end{equation}
+The six distinct entries, for the selected block-2 head and readout row
+$a=s^\ast+1$, are
+\[
+ \tilde E_{s^\ast,0},\quad \tilde E_{w^\star,1},\quad
+ \tilde E_{w^\star,2},\quad
+ (\tilde{\mathbf W}_Q)_{0,0},\quad
+ (\tilde{\mathbf W}_K)_{0,1},\quad
+ (\tilde{\mathbf W}_V)_{b,2}.
+\]
+They belong to different matrix entries even when their numerical indices
+coincide. The polynomial contains no readout or MLP-bias coordinate.
+By Lemma~\ref{lem:quant-rule-L2},
+$\|P_n\|_{L^2}\ge
+ \kappa_{p,K}(n\sqrt{d_h})^{-1}\prod_i\sigma_i$.
+Applying Lemma~\ref{lem:quant-rule-AC} with $\rho=\delta/2$ gives
+\begin{equation}
+ \mathbb P\{|P_n|\ge A_{n,\delta}\}\ge1-\delta/2.
+\end{equation}
+The union bound (which requires no independence between the signal and
+geometry events) gives
+\begin{equation}
+ \mathbb P\!\left(
+  \{|P_n|\ge A_{n,\delta}\}\cap\mathcal E_{\mathrm{geom}}
+ \right)\ge1-\delta.
+\end{equation}
+On this intersection, the deterministic remainder estimate
+\eqref{eq:quant-rule-expansion} and the third and fourth bounds in
+\eqref{eq:t2-gaussian-epsilon} imply
+\begin{align}
+ \frac{|r_n(\varepsilon)|}{\varepsilon^6}
+ &\le C_{\mathrm{rem}}\left(
+       \frac{\varepsilon}{n\varepsilon_0}+\varepsilon^4\right)
+ \le\frac{A_{n,\delta}}2.
+\end{align}
+Therefore
+\begin{equation}
+ \|\nabla_\theta\Phi_{\mathrm{rule}}\|
+ \ge |F_n(\varepsilon)|
+ \ge\varepsilon^6 |P_n|-|r_n(\varepsilon)|
+ \ge\tfrac12\varepsilon^6A_{n,\delta}.
+\end{equation}
+\end{proof}
+
+\paragraph{Binary specialization and scope.}
+For $K=2$ and $p=1/4$, one has $\kappa_{p,K}=1/128$;
+hence the threshold in \eqref{eq:quant-rule-gradient} is
+\begin{equation}
+ \frac{\varepsilon^6}{256n\sqrt{d_h}}
+ \biggl(\prod_{i=1}^6\sigma_i\biggr)
+ \biggl(\frac{\delta}{2C_6}\biggr)^6.
+\end{equation}
+If $n$, $d_h$, all $\sigma_i^{-1}$, $\varepsilon_0^{-1}$ and the
+uniform remainder constants are polynomially bounded in a size parameter,
+then, for inverse-polynomial $\delta$ and provided the geometry event has
+the stated probability, both an admissible $\varepsilon$ and the resulting
+positive lower bound can be inverse-polynomial in that parameter.
+The statement does not prove the requisite geometric event for arbitrary
+widths or arbitrary Gaussian scaling, nor does it show that unrestricted
+optimization dynamics amplify this gradient.
+\paragraph{An explicit Gaussian-weight geometry event.}
+\label{app:t2-gaussian-geometry}
+The conditional event can be verified for the following specified law.
+Fix all widths with $d_{\mathrm{res}}\ge\max\{K,3\}$. Draw each normalized
+matrix/embedding block $M_b\in\mathbb R^{r_b\times c_b}$ independently
+with independent entries $N(0,\tau_b^2)$, where every $\tau_b>0$ is
+specified before sampling. A zero readout may instead be fixed. Let $B$
+be the number of Gaussian blocks, and let value-token embedding rows
+have common entry standard deviation $\tau_E$. Set
+\[
+ a_0=\max_b 2\tau_b\sqrt{2[(r_b+c_b)\log9+\log(8B/\delta)]},\qquad
+ c_{\mathrm{emb}}=\frac{\delta\tau_E}{4K^{3/2}}.
+\]
+Use normalized MLP biases with $1\le|\tilde b_m|\le2$ and fix
+$N_b=2\sqrt{w_{\max}}$, where $w_{\max}$ is the largest MLP width.
+All relative biases are fixed initially at zero. Then, with probability
+at least $1-\delta/2$, every block has operator norm at most $a_0$ and
+$\sigma_{\min}(E_{\mathrm{val}})\ge c_{\mathrm{emb}}$. Thus the geometric
+conditions of \cref{ass:init} have fixed, nonrandom envelopes; choose
+$\varepsilon_0$ below its threshold and those of \cref{lem:leading}.
+The resulting $C_{\mathrm{att}},C_{\mathrm{rem}}$ are the deterministic
+constants for these envelopes, not values fitted after observing a seed.
+
+For the operator-norm assertion, take $1/4$-nets on both unit spheres,
+each of cardinality at most $9^{\mathrm{dimension}}$. The norm is at most
+twice the maximal bilinear form on these nets. Gaussian tails and a union
+bound give failure probability at most $\delta/(4B)$ for each displayed
+block bound. For embedding conditioning, let $D_i$ be the distance of
+row $i$ to the span of the other $K-1$ rows. Conditional on those rows,
+at least one orthogonal projection is $N(0,\tau_E^2)$, so
+$\Pr(D_i<t)\le\sqrt{2/\pi}\,t/\tau_E$. For any unit combination of rows,
+choose a coefficient of magnitude at least $K^{-1/2}$ and project
+orthogonally to the span of the other rows; hence
+$\sigma_{\min}(E_{\mathrm{val}})\ge\min_i D_i/\sqrt K$.
+Taking $t=\delta\tau_E/(4K)$ bounds conditioning failure by $\delta/4$.
+The two failure bounds sum to at most $\delta/2$.
+
+Fan-in Gaussian weights are covered by taking $\tau_b=c_b^{-1/2}$ and
+embedding variance $\tau_E^2=d_{\mathrm{res}}^{-1}$. This explicit witness
+still uses non-Gaussian, bounded-away-from-zero biases. It does not cover
+ordinary zero-bias or fully Gaussian-bias initialization. Nor does it
+assert that all envelope-dependent expansion constants are width-uniform.
+For the formal-regime bias law $\tilde b_m=\operatorname{sign}(Z_m)(1+|Z_m|)$
+in \nolinkurl{handcoded/regime_both.py}, with independent standard-normal
+$Z_m$ and $N_{\mathrm{bias}}$ such coordinates, instead use
+\[
+ N_b=\sqrt{w_{\max}}\left(1+\sqrt{2\log(16N_{\mathrm{bias}}/\delta)}\right),
+\]
+and replace $8B/\delta$ above by $16B/\delta$. Matrix norms, bias norms,
+and embedding conditioning then fail with total probability at most
+$\delta/8+\delta/8+\delta/4=\delta/2$.

@@ -1,0 +1,35 @@
+% !TEX root = main.tex
+\paragraph{Complete statement.}\label{app:J-full-statement}
+The supplied seed and Euclidean trained family are specified in
+\cref{app:step-supplied-routing}; its fixed-perturbation setting is in
+\cref{app:perturbed-routing}. Useful-site biases and readouts start at zero,
+and $\varepsilon/2\le|q_0|,|k_0|,|v|\le2\varepsilon$.
+\begin{restated}{Theorem 4 (complete quantitative statement)}
+\textnormal{(i) Supplied routing.} Count modulo $K\ge2$ with $n\ge2$ letters and a query of probability $p\in(0,1)$, $p\neq\tfrac{1}{2}$, and let $h^\star=|\log\tfrac{1-p}{p}|$,
+$p_{\min}=\min(p,1-p)$ and $\mathrm{gap}\in(0,1]$. Call the initialization \emph{aligned} if $q(0)k(0)(1-2p)<0$ and \emph{misaligned} otherwise.
+For $\initscale$ below the explicit threshold in \cref{app:J-constants}, and in the misaligned case
+$|\qkbalance|\ge\mathrm{gap}\,\initscale^2$ with $\qkbalance=q(0)^2-k(0)^2$, joint gradient flow on $\Lstep$ gives
+every prediction positive margin against all $K-1$ other counts at every time $t\ge T$, and $\Lstep\to0$, where, with an absolute constant $C$,
+$\gamma=\mathrm{gap}$ (misaligned) or $\gamma=1$ (aligned),
+\[
+ T\le\frac{C}{\initscale^4}\Bigl(\frac{\sqrt{d_{\mathrm h}}\,\log\frac{d_{\mathrm h}}{\initscale}}{p_{\min}\min\{1,h^\star\}\,\gamma}+\frac{K\log K}{p_{\min}^2}\Bigr).
+\]
+$T$ depends on $n$ only through $d_{\mathrm h}$ (any $d_{\mathrm h}\ge1$ is allowed).
+The scalar-magnitude probability bound is given in the proof in \cref{app:joint}.
+
+\textnormal{Fixed query--key perturbations within part (i).} In the setting of part (i) with $K=2$, $0<p<\tfrac12$ and an aligned start, replace the
+gate maps by $\mathbf W_Q=q\bm\Pi_Q+\bm\Delta_Q$ and $\mathbf W_K=k\bm\Pi_K+\bm\Delta_K$, with fixed $\bm\Delta_Q,\bm\Delta_K$,
+$\langle\bm\Delta_K,\bm\Pi_K\rangle_F=0$, $\|\bm\Delta_Q\|\le\tfrac18|q(0)|$ and $\|\bm\Delta_K\|\le\tfrac18|k(0)|$ (operator norms), and keep
+$\mathbf W_V=v\bm\Pi_V$. For $0<\initscale\le p$, the same joint flow on $(\mathbf U,\mathbf W,q,k)$ gives every transition positive margin at all
+$t\ge T$ and $\Lstep\to0$, with
+\[
+ T\le\frac{C}{\initscale^4}\Bigl(\frac{\sqrt{d_{\mathrm h}}\,\log\frac{d_{\mathrm h}}{\initscale}}{p^2\min\{1,h^\star\}}+\frac1{p^4}\Bigr).
+\]
+The proof is in \cref{app:perturbed-routing}; the radius does not depend on $\initscale$, $d_{\mathrm h}$ or $n$.
+
+\textnormal{(ii) Learned full-prefix routing.} Use the tied binary family and
+initialization of \cref{app:lr-setting}. The complete polynomial bounds on the
+fixed mobilities, the loss guarantee, and the attention floors are stated in
+\cref{eq:lr-finite-theorem} and its preceding restatement of part (ii).
+The complete proof follows in \cref{app:weak-routing-bootstrap,app:weak-routing-convergence}.
+\end{restated}

@@ -1,0 +1,43 @@
+% Conceptual figure: what uniform attention reads under the two matched laws.
+\begin{tikzpicture}[>=Stealth, font=\small,
+  src/.style={rectangle, rounded corners=2pt, draw=royalazure!80!black, fill=royalazure!14, minimum width=9mm, minimum height=6mm, inner sep=1pt},
+  dec/.style={rectangle, rounded corners=2pt, draw=black!45, fill=black!5, minimum width=9mm, minimum height=6mm, inner sep=1pt},
+  anti/.style={rectangle, rounded corners=2pt, draw=red!70!black, fill=red!10, minimum width=9mm, minimum height=6mm, inner sep=1pt},
+  qry/.style={rectangle, rounded corners=2pt, draw=orange!80!black, fill=orange!14, minimum width=9mm, minimum height=6mm, inner sep=1pt}]
+
+% (a) independent decoys
+\begin{scope}
+  \node[font=\small\bfseries, anchor=west] at (-0.2,2.25) {(a) independent law $\mathcal D_1$};
+  \node[dec] (d1a) at (0,1.2) {$x_1$};
+  \node[dec] (d2a) at (1.15,1.2) {$x_2$};
+  \node at (2.15,1.2) {$\cdots$};
+  \node[dec] (d3a) at (3.15,1.2) {$x_{N-1}$};
+  \node[src] (sa) at (4.45,1.2) {$x_N$};
+  \node[qry] (qa) at (2.2,-0.55) {$b\ \to\ y$};
+  \foreach \d in {d1a,d2a,d3a} { \draw[->, black!45] (\d.south) -- (qa.north); }
+  \draw[->, thick, royalazure] (sa.south) -- (qa.north);
+  \node[font=\scriptsize, align=center, text=black!70] at (2.2,-1.45)
+     {decoys independent of $x_N$:\quad $\E[y b\,x_j]=0$};
+  \node[font=\scriptsize, align=center, text=royalazure] at (2.2,-2.05)
+     {rule credit at uniform attention $=\frac{\gamma}{N}\cdot 1$};
+\end{scope}
+
+% (b) one anti-copy at a random position
+\begin{scope}[shift={(7.2,0)}]
+  \node[font=\small\bfseries, anchor=west] at (-0.2,2.25) {(b) anti-copy law $\mathcal D_0$};
+  \node[dec] (d1b) at (0,1.2) {$x_1$};
+  \node[anti] (d2b) at (1.15,1.2) {$-x_N$};
+  \node at (2.15,1.2) {$\cdots$};
+  \node[dec] (d3b) at (3.15,1.2) {$x_{N-1}$};
+  \node[src] (sb) at (4.45,1.2) {$x_N$};
+  \node[qry] (qb) at (2.2,-0.55) {$b\ \to\ y$};
+  \foreach \d in {d1b,d3b} { \draw[->, black!45] (\d.south) -- (qb.north); }
+  \draw[->, red!70!black] (d2b.south) -- (qb.north);
+  \draw[->, thick, royalazure] (sb.south) -- (qb.north);
+  \node[font=\scriptsize, text=red!70!black] at (1.15,1.75) {random position};
+  \node[font=\scriptsize, align=center, text=black!70] at (2.2,-1.45)
+     {each decoy: $\E[y b\,x_j]=-\frac{\gamma}{N-1}$;\quad multiset $\{x_j\}$ independent of $x_N$};
+  \node[font=\scriptsize, align=center, text=red!70!black] at (2.2,-2.05)
+     {rule credit at uniform attention $=\frac{\gamma}{N}\bigl(1-(N-1)\cdot\frac{1}{N-1}\bigr)=0$};
+\end{scope}
+\end{tikzpicture}

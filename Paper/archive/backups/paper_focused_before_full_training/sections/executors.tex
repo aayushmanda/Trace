@@ -1,0 +1,114 @@
+\section{Exact two-block executors}
+\label{app:architectures}
+
+This section proves \cref{prop:represent}. An implementation of the construction is in the accompanying code repository.
+
+\paragraph{Architecture.}
+\label{app:construction}
+\label{app:model}
+Each block has three heads with $d_{\mathrm h}=2n+6$ (the number of positions) and one ReLU MLP of width $\max\{|\Sigma|,3K(n+1),2n+1\}$;
+there is no LayerNorm:
+\begin{align*}
+ \bm h_i&\leftarrow \bm h_i+\sum_{h=1}^{3}\sum_{j\le i}\operatorname{softmax}_{j\le i}\Bigl(\tfrac{1}{\sqrt{d_{\mathrm h}}}(\mathbf W^{(h)}_Q\bm h_i)^{\!\top}\mathbf W^{(h)}_K\bm h_j\Bigr)\mathbf W^{(h)}_V\bm h_j,\\
+ \bm h_i&\leftarrow \bm h_i+\mathbf W_{\mathrm{out}}\relu(\mathbf W_{\mathrm{in}}\bm h_i+\bm b_{\mathrm{in}}),\qquad \mathrm{logits}_i=\mathbf V\,\bm h_i .
+\end{align*}
+
+\paragraph{Registers.} The residual stream is the concatenation of one-hot registers
+\[
+ \underbrace{\reg{tl}}_{|\Sigma|}\ \underbrace{\reg{tv}}_{K}\ \underbrace{\reg{pos}}_{d_{\mathrm h}}\ \underbrace{\reg{qry}}_{|\Sigma|}\ \underbrace{\reg{match}}_{1}\
+ \underbrace{\reg{prev}}_{K}\ \underbrace{\reg{mt}}_{1}\ \underbrace{\reg{cnt}}_{1}\ \underbrace{\reg{s0}}_{K}\ \underbrace{\reg{out}}_{K},
+ \qquad d_{\mathrm{res}}=2|\Sigma|+4K+d_{\mathrm h}+3 .
+\]
+$\reg r[a]$ is coordinate $a$ of register $\reg r$, and $\mathbf E_{\reg a\leftarrow\reg b}$ copies $\reg b$ into $\reg a$.
+
+\paragraph{Layout.} Token ids: letters $0,\ldots,|\Sigma|-1$, value $v\mapsto|\Sigma|+v$, then SEP, ``:'', EOS. Positions ($0$-indexed):
+\[
+\begin{array}{ll}
+ \text{prompt} & s_0@0,\quad w^\star@1,\quad w_t@(1+t),\quad \mathrm{SEP}@(n+2)\\
+ \text{step row} & s_t@(n+2+t),\quad ``{:}"@(2n+3),\quad s_n@(2n+4)\\
+ \text{outcome row} & ``{:}"@(n+3),\quad s_n@(n+4)
+\end{array}
+\]
+Position $i$ predicts the token at $i+1$: $n+1+t$ predicts $s_t$, and $n+3$ predicts $s_n$ in the outcome row.
+
+\paragraph{Programs.} State arithmetic is modulo $K$.
+\begin{center}\small
+\fitwidth{\begin{tabular}{@{}lll@{}}
+\toprule
+ & step executor & outcome executor\\
+\midrule
+block 1, head 1 & \multicolumn{2}{l}{$\reg{qry}\leftarrow$ the query, at every letter}\\
+block 1, MLP & \multicolumn{2}{l}{$\reg{match}\leftarrow b_t$}\\
+block 2, head 1 & $\reg{prev}\leftarrow\widetilde s_{t-1}$ & $\reg{cnt}\leftarrow$ mean of $\reg{match}$ over the letters\\
+block 2, head 2 & $\reg{mt}\leftarrow\reg{match}$ of letter $t$ & $\reg{s0}\leftarrow s_0$\\
+block 2, head 3 & copy the last displayed count to the answer position & ---\\
+block 2, MLP & $\reg{out}\leftarrow\mathrm{lookup}(\reg{prev},\reg{mt})$ & $\reg{out}\leftarrow\mathrm{lookup}(\reg{s0},\reg{cnt})$\\
+\bottomrule
+\end{tabular}}
+\end{center}
+
+\paragraph{Route and average.} Let $\Omega_n=\max\{16,3\log(8(n+3))\}$, $C_Q=\Omega_n\sqrt{d_{\mathrm h}}$, and let $\mathrm{src}(i)\subseteq\{0,\ldots,i\}$ be the source set
+of position $i$ (a fallback $\{f\}$ where none is listed). Set
+\begin{equation}
+ \begin{gathered}
+ (\mathbf W_K)_{j,\reg{pos}[j]}=1,\qquad (\mathbf W_Q)_{j,\reg{pos}[i]}=C_Q\ \ (j\in\mathrm{src}(i)),\\
+ \tfrac{1}{\sqrt{d_{\mathrm h}}}(\mathbf W_Q\bm h_i)^\top \mathbf W_K\bm h_j=\Omega_n\,[j\in\mathrm{src}(i)] .
+ \end{gathered}
+ \label{eq:route}
+\end{equation}
+With $\mathbf W_V=\mathbf E_{\reg a\leftarrow\reg b}$, the head writes into $\reg a$ the average of $\reg b$ over $\mathrm{src}(i)$, up to the leak bounded below; $|\mathrm{src}(i)|=1$ is a
+route and $|\mathrm{src}(i)|>1$ an average. A fallback $f>i$ gives uniform attention at a position with no supervised prediction.
+
+\paragraph{Explicit source sets and embeddings.}
+Token embeddings write the letter one-hot into $\reg{tl}$ and count one-hot into $\reg{tv}$; format embeddings are zero. Position embeddings write $e_i$ into $\reg{pos}$. All other initial registers vanish. Block 1 head 1 routes $1+t$ to $1$ for $1\le t\le n$ (fallback $0$), writing $\reg{tl}$ into $\reg{qry}$. Its other heads are zero. In the step executor, block 2 head 1 routes $n+2$ to $0$ and $n+1+t$ to itself for $2\le t\le n$, with fallback $1$, writing $\reg{tv}$ into $\reg{prev}$. Head 2 routes $n+1+t$ to $1+t$ for $1\le t\le n$, with fallback $0$, writing $\reg{match}$ into $\reg{mt}$. Head 3 routes $2n+3$ to $2n+2$, with fallback $1$, writing $\reg{tv}$ into $\reg{out}$. In the outcome executor, head 1 routes $n+3$ to $\{2,\ldots,n+1\}$ (fallback $0$), writing $n\reg{match}$ into $\reg{cnt}$; head 2 routes $n+3$ to $0$ (fallback $1$), writing $\reg{tv}$ into $\reg{s0}$; head 3 is zero. The step readout puts format weight $20$ on positions $2n+2$ for colon and $2n+4$ for EOS; the outcome readout uses positions $n+2$ and $n+4$. All masks are full causal masks. Unused tensor entries are zero.
+
+\paragraph{Lookup.} For a count $s$ and a bit $b\in\{0,1\}$, use one unit per pair $(s',b')$ with
+\[
+ \mathrm{pre}_{s'b'}=[s=s']+[b=b']-\tfrac{3}{2}=\begin{cases}\tfrac{1}{2}&(s',b')=(s,b),\\\le-\tfrac{1}{2}&\text{otherwise},\end{cases}
+\]
+and output weights $2\bm e_{s'+b'}$:
+\begin{equation}
+ \textstyle\sum_{s',b'}2\,\bm e_{s'+b'}\relu(\mathrm{pre}_{s'b'})=\bm e_{s+b}.
+ \label{eq:lookup}
+\end{equation}
+
+\subsection{Both programs are exact}
+\label{app:exact}
+
+\begin{proof}[Proof of \cref{prop:represent}]
+\emph{Ideal routing} ($\Omega_n=\infty$). With $m=\sum_tb_t$ and $[m=a]=\relu(m-a+1)-2\relu(m-a)+\relu(m-a-1)$,
+\begin{gather*}
+ \reg{match}_{1+t}=2\textstyle\sum_{a\in\Sigma}\relu\bigl([w_t=a]+[w^\star=a]-\frac{3}{2}\bigr)=b_t,\\
+ \reg{prev}_{n+1+t}=\bm e_{s_{t-1}},\qquad \reg{mt}_{n+1+t}=b_t,\qquad
+ \reg{cnt}_{n+3}=n\cdot\tfrac{1}{n}\textstyle\sum_tb_t=m,\qquad \reg{s0}_{n+3}=\bm e_{s_0},\\
+ \reg{out}_{n+1+t}=\sum_{j,\iota}\bm e_{j+\iota}\,2\relu\Bigl([s_{t-1}=j]+[b_t=\iota]-\frac{3}{2}\Bigr)=\bm e_{s_t},\\
+ \reg{out}_{n+3}=\sum_{j,a}\bm e_{j+a}[s_0=j][m=a]=\bm e_{s_n}.
+\end{gather*}
+The test $[s_0=j]$ is applied by adding $(n+2)([s_0=j]-1)$ to each of the three pre-activations of $[m=a]$. The readout has weight $20$
+on $\reg{out}$ for value tokens and weight $20$ on the relevant $\reg{pos}$ coordinates for ``:'' and EOS; all unused maps are zero.
+
+\emph{Finite scores.} Put $\omega=(d_{\mathrm h}-1)e^{-\Omega_n}$. Every intended source set at a required position is nonempty and causal, so its outside softmax mass is at most $\omega<1/[256(n+3)^2]$. The intended source weights are equal. Coordinatewise,
+\[\begin{gathered}
+|\reg{match}-b_t|\le2\omega,\quad
+\|\reg{prev}-e_{s_{t-1}}\|_\infty\le\omega,\quad
+|\reg{mt}-b_t|\le3\omega,\\
+|\reg{cnt}-m|\le3n\omega,\quad
+\|\reg{s0}-e_{s_0}\|_\infty\le\omega.
+\end{gathered}\]
+The infinity norm here is intentional: an unqualified Euclidean bound with the same constant would be false for a leaking one-hot copy. The matching step lookup unit has preactivation at least $1/2-4\omega$; every other unit has preactivation at most $-1/2+4\omega<0$. It thus contributes at least $1-8\omega$ to the correct output and zero to every wrong output. The additional head-3 write at these positions is nonnegative with each coordinate at most $\omega$ (its fallback is the query letter, which has zero count register). The resulting count margin is at least $20(1-9\omega)>19$.
+
+For the outcome lookup, let $T_a(x)=\relu(x-a+1)-2\relu(x-a)+\relu(x-a-1)=\max(1-|x-a|,0)$. For the true start-state row its argument is
+$x=\reg{cnt}+(n+2)(\reg{s0}[s_0]-1)$, so
+$|x-m|\le(4n+2)\omega=:D<1/192$. Consequently $T_m(x)\ge1-D$, while the sum of all other integer tents with $0\le a\le n$ is at most $D$: for $|x-m|<1$, only the adjacent tent can be nonzero. For a wrong start-state row, $x\le n+3n\omega-(n+2)(1-\omega)<-1$, so all its tents vanish. Modular collisions can only add nonnegative output to a class. The correct output is therefore at least $1-D$ and every wrong output at most $D$, giving margin at least $20(1-2D)>19$.
+
+At the step final-answer position head 3 copies the last displayed count, with correct coordinate at least $1-\omega$ and wrong coordinates at most $\omega$. The fallback previous-state head has $\|\reg{prev}\|_\infty\le\omega$, so its lookup is inactive there. The final-answer margin is at least $20(1-2\omega)>19$. At colon and EOS prediction positions, the position readout gives the gold format token logit $20$, the previous-state lookup is inactive, and any spurious count-copy output is at most $\omega$. Thus format margins are also positive. The same argument covers outcome colon/EOS positions, where the count lookup's start-state fallback has norm at most $\omega$ and its tents vanish. This verifies every required prediction, including the first step whose source is $s_0$ in the prompt.
+
+\emph{Open neighbourhood.} Let $\mathcal P_n$ be the finite set of gold prefixes and supervised positions. By continuity there is
+$r_{\mathrm{exec},n}>0$ with
+\[
+ \|\bm\theta-\bm\theta^\star\|<r_{\mathrm{exec},n}\implies\max_{P\in\mathcal P_n}\|\bm z_{\bm\theta}(P)-\bm z_{\bm\theta^\star}(P)\|_\infty<\tfrac{19}{2},
+\]
+so every greedy prediction is $a^\star$, and induction over the continuation gives the claim.
+\end{proof}
+
+

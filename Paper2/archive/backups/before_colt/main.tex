@@ -1,0 +1,174 @@
+\documentclass{article}
+% For LaTeX2e
+% Anonymous double-blind submission copy: no package option (adds required
+% reviewer line numbers and the "Submitted to..." footer, keeps anonymity).
+\usepackage{neurips_2026}
+% After acceptance, switch to the camera-ready copy with real author names:
+%     \usepackage[final]{neurips_2026}
+% For a de-anonymized arXiv preprint instead, with real author names:
+%     \usepackage[preprint]{neurips_2026}
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit t1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{microtype}      % microtypography
+\usepackage{xcolor}         % colors
+\usepackage{subcaption}
+
+\title{Cancelled Credit: Matched Data Laws,\\ Polynomially Slower Attention Training}
+
+\author{%
+    Anonymous Author(s)\\
+    Anonymous Institution
+}
+
+% Commands
+% !TEX root = main.tex
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Packages, theorem environments, macros.
+% Loaded by main.tex after hyperref.  Load cleveref after amsthm and before
+% declaring theorem environments so it records each environment type.
+% main.tex already loads: hyperref, url, booktabs,
+% amsfonts, microtype, xcolor, subcaption.  Everything else the
+% section files need is loaded here.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{amsmath,amssymb,amsthm,mathtools,bm}
+% Use native fractions: \frac in displays and \tfrac inline.
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,decorations.pathreplacing,calc}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage{colortbl}
+\usepackage{xspace}
+% Pseudocode floats for the hand-constructed executors in appendix.
+% Loaded before cleveref so that cleveref records the algorithm float type.
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{needspace}
+\usepackage[capitalize,noabbrev]{cleveref}
+\crefname{algorithm}{Algorithm}{Algorithms}
+\Crefname{algorithm}{Algorithm}{Algorithms}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Theorem environments: separate counters for the two main results and support.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Independent counters, so the two headline theorems read as Theorem 1 and
+% Theorem 2 rather than inheriting the definition/proposition numbering.
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\newtheorem{assumption}{Assumption}
+\crefname{assumption}{Assumption}{Assumptions}
+\Crefname{assumption}{Assumption}{Assumptions}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+% Restatement of a main-text result at the head of its appendix proof.
+% Keep each headline theorem in one measured box and reserve its actual height.
+\newsavebox{\resultbox}
+\newenvironment{mainresult}{%
+  \par\medskip\begin{lrbox}{\resultbox}%
+  \begin{minipage}{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}%
+}{%
+  \end{minipage}\end{lrbox}%
+  \Needspace{\dimexpr\ht\resultbox+\dp\resultbox+2\fboxsep+2\fboxrule\relax}%
+  \noindent\fbox{\usebox{\resultbox}}\par\medskip%
+}
+\newenvironment{restated}[1]{\par\medskip\noindent\textbf{#1 (restated).}\ \itshape\ignorespaces}{\par\medskip}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Math macros
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\E}{\mathbb E}
+\newcommand{\proofstep}[1]{\par\smallskip\noindent\textbf{#1}\enspace}
+\newcommand{\softmax}{\operatorname{softmax}}
+\newcommand{\relu}{\operatorname{ReLU}}
+\newcommand{\pd}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\dv}[2]{\frac{d #1}{d #2}}
+\newcommand{\ddt}[1]{\dv{#1}{t}}
+\newcommand{\Dlaw}[1]{\mathcal D_{#1}}
+\newcommand{\Tr}{T}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Figure/table helpers
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \paperfig degrades to a visible placeholder box when the PDF is not yet in
+% figures/, so the document always compiles.
+\newcommand{\paperfig}[2][]{%
+  \IfFileExists{#2}{\includegraphics[#1]{#2}}{%
+    \fbox{\parbox[c][2.6cm][c]{0.86\linewidth}{\centering Figure placeholder: \texttt{\detokenize{#2}}}}}}
+
+\definecolor{lightmauve}{rgb}{0.7,0.7,.9}
+\definecolor{royalazure}{rgb}{0.0,0.22,0.66}
+\newcommand{\tabemph}[1]{\cellcolor{lightmauve!30}\textcolor{black!50!royalazure}{#1}}
+% Shrink a box to the text width only when it is wider.
+\newsavebox{\fitbox}
+\newcommand{\fitwidth}[1]{\sbox{\fitbox}{#1}\ifdim\wd\fitbox>\linewidth\resizebox{\linewidth}{!}{\usebox{\fitbox}}\else\usebox{\fitbox}\fi}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Draft notes.  Delete or redefine to \relax before submission.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\todonote}[1]{{\color{orange}[#1]}}
+
+
+% Link colours in the ICLR conference style: red for internal cross-references
+% (equations, sections, theorems), green for citations, magenta for URLs.
+\definecolor{reflink}{rgb}{0.78,0.11,0.11}
+\definecolor{citelink}{rgb}{0.07,0.52,0.32}
+\definecolor{urllink}{rgb}{0.80,0.10,0.56}
+\hypersetup{
+    colorlinks,
+    linkcolor=reflink,
+    citecolor=citelink,
+    urlcolor=urllink
+}
+
+\begin{document}
+\maketitle
+% Keep natural equation and heading spacing on pages containing large floats.
+\raggedbottom
+
+\input{body}            % abstract through conclusion
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Bibliography
+\bibliographystyle{plainnat}
+\bibliography{main}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% APPENDIX: decomposed proofs, numerical protocols, trace scope, and reproducibility.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\clearpage
+\appendix
+% Appendix layout: paragraph spacing and room around displays, so proofs are easier to read.
+\setlength{\parskip}{0.5\baselineskip plus 2pt minus 1pt}
+\setlength{\abovedisplayskip}{10pt plus 2pt minus 2pt}\setlength{\belowdisplayskip}{10pt plus 2pt minus 2pt}
+\setlength{\jot}{4pt}
+\counterwithin{theorem}{section}
+\counterwithin{lemma}{section}
+\counterwithin{proposition}{section}
+\counterwithin{corollary}{section}
+\counterwithin{definition}{section}
+\counterwithin{remark}{section}
+\raggedbottom
+\setlength{\parskip}{2pt plus 1pt minus 1pt}
+\setlength{\abovedisplayskip}{8pt plus 2pt minus 2pt}
+\setlength{\belowdisplayskip}{8pt plus 2pt minus 2pt}
+\setlist[itemize]{itemsep=2pt,topsep=3pt}
+\setlist[enumerate]{itemsep=2pt,topsep=3pt}
+
+\input{appendix}
+
+\clearpage
+% \input{checklist}  % re-enable before submission
+
+\end{document}

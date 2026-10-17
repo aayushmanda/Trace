@@ -1,0 +1,53 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,bm,enumitem,natbib,hyperref,cleveref}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+\newtheorem{assumption}{Assumption}
+\crefname{assumption}{Assumption}{Assumptions}
+\Crefname{assumption}{Assumption}{Assumptions}
+\newcommand{\E}{\mathbb E}
+\newcommand{\initscale}{\varepsilon}
+\newcommand{\rulecredit}{\Phi_{\mathrm{rule}}}
+\newcommand{\attconst}{C_{\mathrm{att}}}
+\newcommand{\pd}[2]{\frac{\partial #1}{\partial #2}}
+\title{Theorem 2: Conditional Gaussian Rule-Credit Addendum}
+\date{}
+\setlength{\emergencystretch}{1em}
+\begin{document}
+\maketitle
+This standalone preview displays only the new part (iii) and its proof.
+The manuscript retains its original parts (i) and (ii).
+\begin{assumption}[Architecture]\label{ass:arch}
+The manuscript's two-block causal Transformer, with full-prefix attention and a linear readout.
+\end{assumption}
+\begin{assumption}[Geometric initialization]\label{ass:init}
+Normalized matrix norms, value-embedding conditioning and nonzero MLP bias magnitudes obey deterministic envelopes. The initialization scale is below the resulting deterministic threshold.
+\end{assumption}
+\begin{assumption}[Task]\label{ass:task}
+Modular counting with a fixed query, independent letters, and a uniform start.
+\end{assumption}
+\begin{lemma}[Leading-coefficient input from the manuscript]\label{lem:leading}
+\begin{enumerate}[label=(\roman*)]
+\item The selected readout-gradient coordinate is $F_n(\varepsilon)=\varepsilon^6P_n+r_n$,
+where $P_n$ is homogeneous of degree six and
+$|r_n|\le(C_{\mathrm{rem}}/n)(\varepsilon^7/\varepsilon_0+\varepsilon^{10})$
+on the geometric event.
+\item The distinguished monomial has coefficient at least
+$p(1-p)\min\{1-2p,1/4\}/(3Kn\sqrt{d_{\mathrm h}})$.
+Its entries are $\tilde E_{s^\ast,0}$, $\tilde E_{w^\star,1}$,
+$\tilde E_{w^\star,2}$ and one entry each of the selected block-2 head's
+query, key and value matrices: $(\tilde W_Q)_{0,0}$, $(\tilde W_K)_{0,1}$,
+$(\tilde W_V)_{b,2}$, with readout row $a=s^\ast+1$.
+\end{enumerate}
+\end{lemma}
+\begin{theorem}[New part (iii)]
+\begin{enumerate}[label=(\roman*),start=3]
+\input{theorem2_main_insert}
+\end{enumerate}
+\end{theorem}
+\input{theorem2_appendix_insert}
+\bibliographystyle{plainnat}
+\bibliography{theorem2_references}
+\end{document}

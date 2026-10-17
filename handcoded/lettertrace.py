@@ -19,6 +19,7 @@ _STRING_KEYS = ("device", "task", "corrupt", "layout", "save_dir", "tag", "modes
 DEFAULTS = dict(
     task="count",          # count, first, shell, first_cup, lights, lights_parity
     alphabet=4,            # A letters; P(w_t == q) = 1/A
+    p_match=0.0,           # 0: letters uniform over A; else P(w_t == q) = p_match, other letters uniform on the rest
     word_len=12,           # n, the horizon
     mod=2,                 # m, count task only
     rho=1.0,               # fraction of clean process traces, count task only
@@ -34,6 +35,7 @@ DEFAULTS = dict(
     batch_size=256,
     lr=1e-3,
     init_std=0.02,
+    zero_readout=False,    # random init: draw every tensor as usual, then set the final readout to zero
     init="random",         # random | handcoded_dirs (seed the handcoded step solution's directions, see init_theta)
     seed_signs="handcoded",  # handcoded_dirs: signs from the solution ("handcoded") or random ("random")
     seed_bias="zero",      # handcoded_dirs: MLP biases start at zero ("zero") or are seeded like the weights ("solution")
@@ -64,6 +66,7 @@ def configure(**overrides):
     assert layout in ("stream", "block") and opt in ("adamw", "sgd", "adam")
     assert init in ("random", "handcoded_dirs") and seed_signs in ("handcoded", "random")
     assert seed_bias in ("zero", "solution")
+    assert p_match == 0 or (0 < p_match < 1 and alphabet >= 2), "p_match must lie in (0, 1)"
     if task == "shell" or task == "first_cup":
         g["alphabet"], g["mod"] = 10, 5
     elif task == "lights":
@@ -119,7 +122,11 @@ def step(s, t, letter, q):
 
 def make_example(rng):
     while True:
-        q, word = rng.randrange(A), tuple(rng.randrange(A) for _ in range(n))
+        if p_match:
+            q = rng.randrange(A)
+            word = tuple(q if rng.random() < p_match else (q + 1 + rng.randrange(A - 1)) % A for _ in range(n))
+        else:
+            q, word = rng.randrange(A), tuple(rng.randrange(A) for _ in range(n))
         if task != "first" or q in word:
             break
     if task == "count":
@@ -419,7 +426,10 @@ def init_theta():
     scaled by init_std they exceed the O(init_std^2) input terms, so every seeded unit would start, and stay, inactive.
     """
     if init == "random":
-        return {k: torch.randn_like(t) * init_std for k, t in zero_params().items()}
+        theta = {k: torch.randn_like(t) * init_std for k, t in zero_params().items()}
+        if zero_readout:
+            theta["readout"].zero_()
+        return theta
     gen = torch.Generator().manual_seed(seed + 40_000)
     theta = {}
     for k, sol in process_solution().items():
@@ -517,7 +527,8 @@ def main():
           + f"  L={n_blocks} opt={opt} batch={batch_size} heads={H} d_ff={F_WIDTH} width={W}"
           + f"  params={sum(t.numel() for t in theta_0.values()):,}")
     if task == "count" and mod == 2:
-        print(f"answer bias given everything but the count: (1-2/A)^n = {(1 - 2 / A) ** n:.2e}")
+        p_q = p_match or 1 / A
+        print(f"answer bias given everything but the count: |1-2p|^n = {abs(1 - 2 * p_q) ** n:.2e}  (p={p_q:g})")
     if task in ("count", "first") and every_k == 1:
         for mode, p in handcoded_params().items():
             exact, answer, _ = free_run(p, test, mode)

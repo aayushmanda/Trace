@@ -1,0 +1,558 @@
+{
+  "schema": "tex2lean.paper-proof-map/1",
+  "ledgerId": "ledger:59576106-99e9-4a3f-af0b-8f32a66e4b79",
+  "paper": {
+    "id": "paper:eba0adeb-d483-4e0f-b64b-26b67a3e66e1"
+  },
+  "target": {
+    "id": "target:4d2f731d-1304-475d-8591-16d6dbc8b35f",
+    "paperId": "paper:eba0adeb-d483-4e0f-b64b-26b67a3e66e1",
+    "activeVersionId": "target-version:f44cf09d-3022-4a66-82e7-6810c66359a3"
+  },
+  "activeClaimSetReceiptId": "claim-set:3453a12b-58ab-430e-bdcb-1ba99387d108",
+  "activeSurfaceInventoryId": "surface-inventory:26bc153b-4ecf-425e-8182-8e6bcaf2b75a",
+  "targetVersions": [
+    {
+      "id": "target-version:f44cf09d-3022-4a66-82e7-6810c66359a3",
+      "targetId": "target:4d2f731d-1304-475d-8591-16d6dbc8b35f",
+      "paperPacketDigest": "sha256-7a20f32bc0ebab6cc0cbfbe5c1b3e45795b7c4cd6c106d764dd03213fadfb75e",
+      "bodyDigest": "sha256-024b0dfdc2e446cf3a4662ce98780a42134cffd63ba6a6f5ddba74cfaf140a8c",
+      "anchor": {
+        "file": "Paper/body.tex",
+        "label": "thm:main",
+        "environment": "theorem",
+        "from": 191,
+        "to": 199,
+        "excerptDigest": "sha256-d77c9981047181c643098452e24fc33bda67b4fd995d9f8221d64f6b6fc504e9"
+      },
+      "status": "active"
+    }
+  ],
+  "claims": [
+    {
+      "id": "claim:c2d28b05-a7ff-48b2-ad07-93f2a59f607e",
+      "targetId": "target:4d2f731d-1304-475d-8591-16d6dbc8b35f",
+      "activeVersionId": "claim-version:e036b619-586c-4db2-aa12-61030ed70f7e",
+      "role": "reportable"
+    },
+    {
+      "id": "claim:33ad9281-da9c-45de-8366-161660c3d40d",
+      "targetId": "target:4d2f731d-1304-475d-8591-16d6dbc8b35f",
+      "activeVersionId": "claim-version:5d83901a-b3d1-446c-ae56-5282c5ef0c09",
+      "role": "reportable"
+    },
+    {
+      "id": "claim:fd3334b8-3847-4bea-8ca8-dc4e9a0caa85",
+      "targetId": "target:4d2f731d-1304-475d-8591-16d6dbc8b35f",
+      "activeVersionId": "claim-version:de5a5f81-9506-4c43-9de2-ee9af58c0bc8",
+      "role": "reportable"
+    },
+    {
+      "id": "claim:17eddc24-f71b-411a-9bb2-df7731d62a42",
+      "targetId": "target:4d2f731d-1304-475d-8591-16d6dbc8b35f",
+      "activeVersionId": "claim-version:d1f2b329-905f-4d0b-9035-dc9d83ec11d8",
+      "role": "reportable"
+    },
+    {
+      "id": "claim:3b4d827c-9c45-4190-acd3-4803e91552ed",
+      "targetId": "target:4d2f731d-1304-475d-8591-16d6dbc8b35f",
+      "activeVersionId": "claim-version:3939d1d1-a23f-4c2d-9e17-f4d371f14677",
+      "role": "reportable"
+    },
+    {
+      "id": "claim:e0048d33-a772-4499-bcf4-efd389e3c9ad",
+      "targetId": "target:4d2f731d-1304-475d-8591-16d6dbc8b35f",
+      "activeVersionId": "claim-version:9f2ed519-25b9-4760-9b04-b8ab5530e3f6",
+      "role": "reportable"
+    },
+    {
+      "id": "claim:b222934b-7c04-4f49-8f97-71f60875bf06",
+      "targetId": "target:4d2f731d-1304-475d-8591-16d6dbc8b35f",
+      "activeVersionId": "claim-version:606ed17b-1fa7-45a0-ae55-ea9f11dc493d",
+      "role": "reportable"
+    }
+  ],
+  "claimVersions": [
+    {
+      "id": "claim-version:e036b619-586c-4db2-aa12-61030ed70f7e",
+      "claimId": "claim:c2d28b05-a7ff-48b2-ad07-93f2a59f607e",
+      "targetVersionId": "target-version:f44cf09d-3022-4a66-82e7-6810c66359a3",
+      "anchor": {
+        "file": "Paper/body.tex:195, eq:credit-degree body.tex:178; proof lem:target-contraction appendix.tex",
+        "from": 264,
+        "to": 290,
+        "excerptDigest": "sha256-95ba9acc9c0919e7ef90ed6363e21f0ef52a5a1198e84476caf1628bd9be53f4"
+      },
+      "text": "(i) For all S ⊆ [n] and every H depending only on letters in S: ‖E[Hᵀ(y − u)]‖ ≤ λ^{n−|S|}‖H‖_{L²}.",
+      "normalizedTextDigest": "sha256-e78fdb505d30974a4cdc1a56d7e2a4f533d015ad7db153e537ced42c87116fe8",
+      "kind": "correctness",
+      "evidence": [
+        {
+          "file": "Paper/body.tex:195, eq:credit-degree body.tex:178; proof lem:target-contraction appendix.tex",
+          "from": 264,
+          "to": 290,
+          "excerptDigest": "sha256-95ba9acc9c0919e7ef90ed6363e21f0ef52a5a1198e84476caf1628bd9be53f4"
+        }
+      ],
+      "status": "active"
+    },
+    {
+      "id": "claim-version:5d83901a-b3d1-446c-ae56-5282c5ef0c09",
+      "claimId": "claim:33ad9281-da9c-45de-8366-161660c3d40d",
+      "targetVersionId": "target-version:f44cf09d-3022-4a66-82e7-6810c66359a3",
+      "anchor": {
+        "file": "Paper/body.tex:196; lem:score-sum appendix.tex",
+        "from": 497,
+        "to": 499,
+        "excerptDigest": "sha256-df85724f0d76678bb4908fb1910e6562e8626d1f72504d54c279e28ab330a31d"
+      },
+      "text": "(ii-a) n ≥ 2, ε² ≤ cλ, θ ∈ B_ε ⇒ ‖E[J_scoreᵀ(y − u)]‖ ≤ Cε⁶λ^{n−3}.",
+      "normalizedTextDigest": "sha256-366d6038207f1bae2cd4cc235bc0c944bbe9e864bf0683aa7a52abcea1d57e19",
+      "kind": "other",
+      "evidence": [
+        {
+          "file": "Paper/body.tex:196; lem:score-sum appendix.tex",
+          "from": 497,
+          "to": 499,
+          "excerptDigest": "sha256-df85724f0d76678bb4908fb1910e6562e8626d1f72504d54c279e28ab330a31d"
+        }
+      ],
+      "status": "active"
+    },
+    {
+      "id": "claim-version:de5a5f81-9506-4c43-9de2-ee9af58c0bc8",
+      "claimId": "claim:fd3334b8-3847-4bea-8ca8-dc4e9a0caa85",
+      "targetVersionId": "target-version:f44cf09d-3022-4a66-82e7-6810c66359a3",
+      "anchor": {
+        "file": "Paper/body.tex:196-197; eq:thm1-full appendix.tex",
+        "from": 502,
+        "to": 505,
+        "excerptDigest": "sha256-6ecd8f3bfeaf6c304d254646809870a5beb6464cd54dd208642b2bf069329e97"
+      },
+      "text": "(ii-b) n ≥ 2, ε ≤ cλ, θ ∈ B_ε ⇒ ‖∇_θ Φ_out(θ)‖ ≤ Cελ^n.",
+      "normalizedTextDigest": "sha256-95bbfbd86c2f6ccea9c34a6620bcd522aa12388de4ebfd26d6a14c1ee2d95a89",
+      "kind": "other",
+      "evidence": [
+        {
+          "file": "Paper/body.tex:196-197; eq:thm1-full appendix.tex",
+          "from": 502,
+          "to": 505,
+          "excerptDigest": "sha256-6ecd8f3bfeaf6c304d254646809870a5beb6464cd54dd208642b2bf069329e97"
+        }
+      ],
+      "status": "active"
+    },
+    {
+      "id": "claim-version:d1f2b329-905f-4d0b-9035-dc9d83ec11d8",
+      "claimId": "claim:17eddc24-f71b-411a-9bb2-df7731d62a42",
+      "targetVersionId": "target-version:f44cf09d-3022-4a66-82e7-6810c66359a3",
+      "anchor": {
+        "file": "Paper/appendix.tex:60-61, 227-228; body.tex",
+        "from": 127,
+        "to": 128,
+        "excerptDigest": "sha256-2d31608ab8e0df62100562b3bd669441f12629fad7d28a5b61297005bf29c2fd"
+      },
+      "text": "Constants c₀, c, C depend only on a0, c_emb, K, number of heads (blocks fixed at 2).",
+      "normalizedTextDigest": "sha256-dc5cc4a530599cbf65b832c25b78de8fcbba77d20a42bf9684bafd81fb268fdd",
+      "kind": "other",
+      "evidence": [
+        {
+          "file": "Paper/appendix.tex:60-61, 227-228; body.tex",
+          "from": 127,
+          "to": 128,
+          "excerptDigest": "sha256-2d31608ab8e0df62100562b3bd669441f12629fad7d28a5b61297005bf29c2fd"
+        }
+      ],
+      "status": "active"
+    },
+    {
+      "id": "claim-version:3939d1d1-a23f-4c2d-9e17-f4d371f14677",
+      "claimId": "claim:3b4d827c-9c45-4190-acd3-4803e91552ed",
+      "targetVersionId": "target-version:f44cf09d-3022-4a66-82e7-6810c66359a3",
+      "anchor": {
+        "file": "Paper/appendix.tex",
+        "from": 267,
+        "to": 270,
+        "excerptDigest": "sha256-fa26fc4e9c28e4ca5ed466a010ed08b9c5b27bec1963c4ea6ca38cd6894d329f"
+      },
+      "text": "eq:horizon: ‖E[G | F_S]‖² = (1/K)Σ_{j=1}^{K−1}|ρ_j|^{2(n−|S|)} ≤ (1 − 1/K)λ^{2(n−|S|)} (pointwise in the conditioning letters).",
+      "normalizedTextDigest": "sha256-739479dfcb3995860ec495ae030452aa82222e81e34559b44297debd4cb0e101",
+      "kind": "correctness",
+      "evidence": [
+        {
+          "file": "Paper/appendix.tex",
+          "from": 267,
+          "to": 270,
+          "excerptDigest": "sha256-fa26fc4e9c28e4ca5ed466a010ed08b9c5b27bec1963c4ea6ca38cd6894d329f"
+        }
+      ],
+      "status": "active"
+    },
+    {
+      "id": "claim-version:9f2ed519-25b9-4760-9b04-b8ab5530e3f6",
+      "claimId": "claim:e0048d33-a772-4499-bcf4-efd389e3c9ad",
+      "targetVersionId": "target-version:f44cf09d-3022-4a66-82e7-6810c66359a3",
+      "anchor": {
+        "file": "Paper/body.tex",
+        "excerptDigest": "sha256-792941352f8186f06d452bf310daab04bf136860e8a46ed31bae98eef640dd55"
+      },
+      "text": "prop:score-degree: ζ-Taylor decomposition of J_z into J^{[0]} (≤ 1 letter per term), J^{[k]} (≤ 2k+1 letters, total Cε²(C_att ε⁴)^k) and remainder; fixed ReLU pattern on B_ε.",
+      "normalizedTextDigest": "sha256-91543326593af2593da65a4b4eda7ce3de68ae89e60042a53ae3398b894e71e5",
+      "kind": "other",
+      "evidence": [
+        {
+          "file": "Paper/body.tex",
+          "excerptDigest": "sha256-792941352f8186f06d452bf310daab04bf136860e8a46ed31bae98eef640dd55"
+        }
+      ],
+      "status": "active"
+    },
+    {
+      "id": "claim-version:606ed17b-1fa7-45a0-ae55-ea9f11dc493d",
+      "claimId": "claim:b222934b-7c04-4f49-8f97-71f60875bf06",
+      "targetVersionId": "target-version:f44cf09d-3022-4a66-82e7-6810c66359a3",
+      "anchor": {
+        "file": "Paper/body.tex:167-168; appendix.tex",
+        "from": 242,
+        "excerptDigest": "sha256-ac6122479c1994153b15822344b5a4f511e3e9c5ebe3ee38e47411ad6f0a56cb"
+      },
+      "text": "Credit equals gradient of the credit functional: ∇_θ E⟨z_θ, ξ⟩ = E[J_zᵀ ξ].",
+      "normalizedTextDigest": "sha256-3f18166489a19364646a6057e116ddd479906dd60f5d96d5a4dcb5d25ed3d0a7",
+      "kind": "other",
+      "evidence": [
+        {
+          "file": "Paper/body.tex:167-168; appendix.tex",
+          "from": 242,
+          "excerptDigest": "sha256-ac6122479c1994153b15822344b5a4f511e3e9c5ebe3ee38e47411ad6f0a56cb"
+        }
+      ],
+      "status": "active"
+    }
+  ],
+  "plans": [
+    {
+      "claimVersionId": "claim-version:e036b619-586c-4db2-aa12-61030ed70f7e",
+      "disposition": "formalize",
+      "requirements": {
+        "allOf": [
+          {
+            "anyOf": [
+              "obligation:7b0acf34-6ae8-4f89-88ab-c3389a253a1d"
+            ]
+          }
+        ]
+      },
+      "evidenceIds": [
+        "sha256-96a602a972001d44a236b301d07e006a504f823a022f43154b2810a70c2d8b0b"
+      ],
+      "reason": "Carried from the finalized blueprint claim ledger into Model/Theorem."
+    },
+    {
+      "claimVersionId": "claim-version:5d83901a-b3d1-446c-ae56-5282c5ef0c09",
+      "disposition": "formalize",
+      "requirements": {
+        "allOf": [
+          {
+            "anyOf": [
+              "obligation:b765b26c-f68c-4988-9dcd-9db340759ae5"
+            ]
+          }
+        ]
+      },
+      "evidenceIds": [
+        "sha256-6728570662db5ae9b94468b7cf82d3337bcedf23c9ed0d8e30f7d980b2208ce2"
+      ],
+      "reason": "Carried from the finalized blueprint claim ledger into Model/Theorem."
+    },
+    {
+      "claimVersionId": "claim-version:de5a5f81-9506-4c43-9de2-ee9af58c0bc8",
+      "disposition": "formalize",
+      "requirements": {
+        "allOf": [
+          {
+            "anyOf": [
+              "obligation:91b9ddb4-a4fc-4fce-b83b-9e917010d517"
+            ]
+          }
+        ]
+      },
+      "evidenceIds": [
+        "sha256-59646a1dad7f2bb0ce15abf58acb593f6bc3fbbc3765ac08470949f9b83c5a7c"
+      ],
+      "reason": "Carried from the finalized blueprint claim ledger into Model/Theorem."
+    },
+    {
+      "claimVersionId": "claim-version:d1f2b329-905f-4d0b-9035-dc9d83ec11d8",
+      "disposition": "formalize",
+      "requirements": {
+        "allOf": [
+          {
+            "anyOf": [
+              "obligation:4a40c1fd-9f5f-478b-97d7-e59d5da19cf6"
+            ]
+          }
+        ]
+      },
+      "evidenceIds": [
+        "sha256-1258d89d8460b20f22fea38057214b14329ed2a4b33aa83948bfe0f3dd26013a"
+      ],
+      "reason": "Carried from the finalized blueprint claim ledger into Model/Theorem."
+    },
+    {
+      "claimVersionId": "claim-version:3939d1d1-a23f-4c2d-9e17-f4d371f14677",
+      "disposition": "formalize",
+      "requirements": {
+        "allOf": [
+          {
+            "anyOf": [
+              "obligation:cc476c88-5165-43d5-89cb-08245fe06d8f"
+            ]
+          }
+        ]
+      },
+      "evidenceIds": [
+        "sha256-34ac9450fb068bb0c323f2a2bede77f816ffbbd98e423c3bf9c5afccd0f43919"
+      ],
+      "reason": "Carried from the finalized blueprint claim ledger into Analysis."
+    },
+    {
+      "claimVersionId": "claim-version:9f2ed519-25b9-4760-9b04-b8ab5530e3f6",
+      "disposition": "formalize",
+      "requirements": {
+        "allOf": [
+          {
+            "anyOf": [
+              "obligation:798672cd-274e-4c8a-83c2-8c832c90be91"
+            ]
+          }
+        ]
+      },
+      "evidenceIds": [
+        "sha256-f1b4d52b82fa7b5a818471d140d764f80826bec7d51fe72d4dbb71ee2fd5edc8"
+      ],
+      "reason": "Carried from the finalized blueprint claim ledger into Analysis."
+    },
+    {
+      "claimVersionId": "claim-version:606ed17b-1fa7-45a0-ae55-ea9f11dc493d",
+      "disposition": "formalize",
+      "requirements": {
+        "allOf": [
+          {
+            "anyOf": [
+              "obligation:2922a291-c30a-4c98-ad30-c381a0c7a950"
+            ]
+          }
+        ]
+      },
+      "evidenceIds": [
+        "sha256-306072e602b94477b9f2ba290bd952e11e532ca33eaac7b902a9d0ec0acf39fd"
+      ],
+      "reason": "Carried from the finalized blueprint claim ledger into Interface."
+    }
+  ],
+  "obligations": [
+    {
+      "id": "obligation:7b0acf34-6ae8-4f89-88ab-c3389a253a1d",
+      "kind": "headline",
+      "summary": "(i) For all S ⊆ [n] and every H depending only on letters in S: ‖E[Hᵀ(y − u)]‖ ≤ λ^{n−|S|}‖H‖_{L²}.",
+      "rationale": "The finalized blueprint assigns this paper claim to Model/Theorem.",
+      "owner": "Model/Theorem",
+      "status": "materialized"
+    },
+    {
+      "id": "obligation:b765b26c-f68c-4988-9dcd-9db340759ae5",
+      "kind": "headline",
+      "summary": "(ii-a) n ≥ 2, ε² ≤ cλ, θ ∈ B_ε ⇒ ‖E[J_scoreᵀ(y − u)]‖ ≤ Cε⁶λ^{n−3}.",
+      "rationale": "The finalized blueprint assigns this paper claim to Model/Theorem.",
+      "owner": "Model/Theorem",
+      "status": "planned"
+    },
+    {
+      "id": "obligation:91b9ddb4-a4fc-4fce-b83b-9e917010d517",
+      "kind": "headline",
+      "summary": "(ii-b) n ≥ 2, ε ≤ cλ, θ ∈ B_ε ⇒ ‖∇_θ Φ_out(θ)‖ ≤ Cελ^n.",
+      "rationale": "The finalized blueprint assigns this paper claim to Model/Theorem.",
+      "owner": "Model/Theorem",
+      "status": "planned"
+    },
+    {
+      "id": "obligation:4a40c1fd-9f5f-478b-97d7-e59d5da19cf6",
+      "kind": "headline",
+      "summary": "Constants c₀, c, C depend only on a0, c_emb, K, number of heads (blocks fixed at 2).",
+      "rationale": "The finalized blueprint assigns this paper claim to Model/Theorem.",
+      "owner": "Model/Theorem",
+      "status": "planned"
+    },
+    {
+      "id": "obligation:cc476c88-5165-43d5-89cb-08245fe06d8f",
+      "kind": "headline",
+      "summary": "eq:horizon: ‖E[G | F_S]‖² = (1/K)Σ_{j=1}^{K−1}|ρ_j|^{2(n−|S|)} ≤ (1 − 1/K)λ^{2(n−|S|)} (pointwise in the conditioning letters).",
+      "rationale": "The finalized blueprint assigns this paper claim to Analysis.",
+      "owner": "Analysis",
+      "status": "planned"
+    },
+    {
+      "id": "obligation:798672cd-274e-4c8a-83c2-8c832c90be91",
+      "kind": "headline",
+      "summary": "prop:score-degree: ζ-Taylor decomposition of J_z into J^{[0]} (≤ 1 letter per term), J^{[k]} (≤ 2k+1 letters, total Cε²(C_att ε⁴)^k) and remainder; fixed ReLU pattern on B_ε.",
+      "rationale": "The finalized blueprint assigns this paper claim to Analysis.",
+      "owner": "Analysis",
+      "status": "planned"
+    },
+    {
+      "id": "obligation:2922a291-c30a-4c98-ad30-c381a0c7a950",
+      "kind": "headline",
+      "summary": "Credit equals gradient of the credit functional: ∇_θ E⟨z_θ, ξ⟩ = E[J_zᵀ ξ].",
+      "rationale": "The finalized blueprint assigns this paper claim to Interface.",
+      "owner": "Interface",
+      "status": "planned"
+    }
+  ],
+  "bindings": [
+    {
+      "id": "binding:4a9bc6d8-c316-467a-954e-c9eaa4f5801c",
+      "obligationId": "obligation:7b0acf34-6ae8-4f89-88ab-c3389a253a1d",
+      "declaration": "Trace.unseen_letters_erase_outcome_credit",
+      "file": "Trace/Model/Theorem.lean",
+      "module": "Trace.Model.Theorem",
+      "role": "headline",
+      "status": "proposed"
+    }
+  ],
+  "leanRelations": [],
+  "claimSetReceipts": [
+    {
+      "id": "claim-set:3453a12b-58ab-430e-bdcb-1ba99387d108",
+      "targetVersionId": "target-version:f44cf09d-3022-4a66-82e7-6810c66359a3",
+      "paperPacketDigest": "sha256-7a20f32bc0ebab6cc0cbfbe5c1b3e45795b7c4cd6c106d764dd03213fadfb75e",
+      "claimVersionIds": [
+        "claim-version:e036b619-586c-4db2-aa12-61030ed70f7e",
+        "claim-version:5d83901a-b3d1-446c-ae56-5282c5ef0c09",
+        "claim-version:de5a5f81-9506-4c43-9de2-ee9af58c0bc8",
+        "claim-version:d1f2b329-905f-4d0b-9035-dc9d83ec11d8",
+        "claim-version:3939d1d1-a23f-4c2d-9e17-f4d371f14677",
+        "claim-version:9f2ed519-25b9-4760-9b04-b8ab5530e3f6",
+        "claim-version:606ed17b-1fa7-45a0-ae55-ea9f11dc493d"
+      ],
+      "readerProvenance": "reader-agent"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "sha256-96a602a972001d44a236b301d07e006a504f823a022f43154b2810a70c2d8b0b",
+      "kind": "source-reading",
+      "anchors": [
+        {
+          "file": "Paper/body.tex:195, eq:credit-degree body.tex:178; proof lem:target-contraction appendix.tex",
+          "from": 264,
+          "to": 290,
+          "excerptDigest": "sha256-95ba9acc9c0919e7ef90ed6363e21f0ef52a5a1198e84476caf1628bd9be53f4"
+        }
+      ]
+    },
+    {
+      "id": "sha256-6728570662db5ae9b94468b7cf82d3337bcedf23c9ed0d8e30f7d980b2208ce2",
+      "kind": "source-reading",
+      "anchors": [
+        {
+          "file": "Paper/body.tex:196; lem:score-sum appendix.tex",
+          "from": 497,
+          "to": 499,
+          "excerptDigest": "sha256-df85724f0d76678bb4908fb1910e6562e8626d1f72504d54c279e28ab330a31d"
+        }
+      ]
+    },
+    {
+      "id": "sha256-59646a1dad7f2bb0ce15abf58acb593f6bc3fbbc3765ac08470949f9b83c5a7c",
+      "kind": "source-reading",
+      "anchors": [
+        {
+          "file": "Paper/body.tex:196-197; eq:thm1-full appendix.tex",
+          "from": 502,
+          "to": 505,
+          "excerptDigest": "sha256-6ecd8f3bfeaf6c304d254646809870a5beb6464cd54dd208642b2bf069329e97"
+        }
+      ]
+    },
+    {
+      "id": "sha256-1258d89d8460b20f22fea38057214b14329ed2a4b33aa83948bfe0f3dd26013a",
+      "kind": "source-reading",
+      "anchors": [
+        {
+          "file": "Paper/appendix.tex:60-61, 227-228; body.tex",
+          "from": 127,
+          "to": 128,
+          "excerptDigest": "sha256-2d31608ab8e0df62100562b3bd669441f12629fad7d28a5b61297005bf29c2fd"
+        }
+      ]
+    },
+    {
+      "id": "sha256-34ac9450fb068bb0c323f2a2bede77f816ffbbd98e423c3bf9c5afccd0f43919",
+      "kind": "source-reading",
+      "anchors": [
+        {
+          "file": "Paper/appendix.tex",
+          "from": 267,
+          "to": 270,
+          "excerptDigest": "sha256-fa26fc4e9c28e4ca5ed466a010ed08b9c5b27bec1963c4ea6ca38cd6894d329f"
+        }
+      ]
+    },
+    {
+      "id": "sha256-f1b4d52b82fa7b5a818471d140d764f80826bec7d51fe72d4dbb71ee2fd5edc8",
+      "kind": "source-reading",
+      "anchors": [
+        {
+          "file": "Paper/body.tex",
+          "excerptDigest": "sha256-792941352f8186f06d452bf310daab04bf136860e8a46ed31bae98eef640dd55"
+        }
+      ]
+    },
+    {
+      "id": "sha256-306072e602b94477b9f2ba290bd952e11e532ca33eaac7b902a9d0ec0acf39fd",
+      "kind": "source-reading",
+      "anchors": [
+        {
+          "file": "Paper/body.tex:167-168; appendix.tex",
+          "from": 242,
+          "excerptDigest": "sha256-ac6122479c1994153b15822344b5a4f511e3e9c5ebe3ee38e47411ad6f0a56cb"
+        }
+      ]
+    }
+  ],
+  "surfaceInventories": [
+    {
+      "id": "surface-inventory:26bc153b-4ecf-425e-8182-8e6bcaf2b75a",
+      "targetVersionId": "target-version:f44cf09d-3022-4a66-82e7-6810c66359a3",
+      "source": "sealed-blueprint",
+      "blueprintDigest": "sha256-f4a691a444c1491722ea0dd60f83456127483d459aafab7420ec4e8804062f35",
+      "declarations": [
+        {
+          "declaration": "Trace.unseen_letters_contraction",
+          "role": "headline",
+          "file": "Trace/Model/Theorem.lean",
+          "module": "Trace.Model.Theorem"
+        },
+        {
+          "declaration": "Trace.unseen_letters_score_credit",
+          "role": "headline",
+          "file": "Trace/Model/Theorem.lean",
+          "module": "Trace.Model.Theorem"
+        },
+        {
+          "declaration": "Trace.unseen_letters_outcome_credit",
+          "role": "headline",
+          "file": "Trace/Model/Theorem.lean",
+          "module": "Trace.Model.Theorem"
+        },
+        {
+          "declaration": "Trace.unseen_letters_erase_outcome_credit",
+          "role": "headline",
+          "file": "Trace/Model/Theorem.lean",
+          "module": "Trace.Model.Theorem"
+        }
+      ]
+    }
+  ],
+  "appliedDecisionIds": []
+}

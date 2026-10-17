@@ -1,0 +1,200 @@
+% A0 landscape poster for long_horizon_searcg.pdf (ASearcher, ICLR 2026).
+% Scientific sources: Sections 3--4, Figures 1--6, Tables 1--2, Appendix E.
+% Figures are extracted unchanged from the paper PDF into figures/.
+% Compile: bash Poster/build.sh
+\RequirePackage{fix-cm}
+\documentclass{article}
+\usepackage[paperwidth=1189mm,paperheight=841mm,margin=0mm]{geometry}
+\usepackage{fontspec}
+\setmainfont{Lato-Regular.ttf}[Path=/usr/share/fonts/truetype/lato/,
+  BoldFont=Lato-Bold.ttf,ItalicFont=Lato-Italic.ttf,BoldItalicFont=Lato-BoldItalic.ttf]
+\usepackage{amsmath,amssymb,booktabs,array,xfp}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,calc}
+\usepackage{hyperref}
+\usepackage{qrcode}
+\hypersetup{pdftitle={ASearcher: Unlocking Long-Horizon Agentic Search with Large-Scale End-to-End RL},
+  pdfauthor={Jiaxuan Gao, Wei Fu, Minyang Xie, Shusheng Xu, Chuyi He, Zhiyu Mei, Banghua Zhu, Yi Wu},
+  colorlinks=true,urlcolor=white}
+\pagestyle{empty}
+\hyphenpenalty=10000
+\exhyphenpenalty=10000
+% Palette taken from the paper's figures: indigo, periwinkle arrows, light-blue boxes, purple trajectories.
+\definecolor{navy}{HTML}{1E2A5E}
+\definecolor{ink}{HTML}{1F2940}
+\definecolor{muted}{HTML}{5A6480}
+\definecolor{teal}{HTML}{3F63B8}
+\definecolor{blue}{HTML}{7A9BD9}
+\definecolor{mint}{HTML}{E6EEFA}
+\definecolor{pale}{HTML}{F3F6FB}
+\definecolor{line}{HTML}{D3DCEE}
+\definecolor{paper}{HTML}{EEF1F8}
+\definecolor{lavender}{HTML}{F1EAF8}
+\definecolor{violet}{HTML}{7B4FB0}
+\definecolor{peach}{HTML}{FBEEE3}
+\newcommand{\fs}[2]{\fontsize{#1}{\fpeval{#2}}\selectfont}
+% Coordinates in cm from the upper-left corner; text remains fully editable.
+\newcommand{\txt}[6]{\node[anchor=north west,inner sep=0pt,outer sep=0pt,
+  align=left,text width=#3cm,text=#4,font=\fs{#5}{1.2*#5}] at (#1,#2) {#6};}
+\newcommand{\boxtext}[7]{%
+  \filldraw[fill=#5,draw=line,line width=1pt,rounded corners=3mm]
+    (#1,#2) rectangle ++(#3,#4);
+  \node[align=center,text=ink,text width=\fpeval{#3-0.8}cm,
+    inner sep=0,font=\fs{#6}{1.2*#6}] at (#1+#3/2,#2+#4/2) {#7};}
+% Section card: x, y, width, height, number, title.
+\newcommand{\card}[6]{%
+  \filldraw[fill=white,draw=line,line width=1.2pt,rounded corners=5mm] (#1,#2) rectangle ++(#3,#4);
+  \begin{scope}
+    \clip[rounded corners=5mm] (#1,#2) rectangle ++(#3,#4);
+    \shade[left color=navy,right color=teal] (#1,#2) rectangle ++(#3,2.8);
+  \end{scope}
+  \node[circle,fill=white,text=navy,font=\fs{25}{29}\bfseries,minimum size=1.75cm,inner sep=0] at (#1+1.85,#2+1.4) {#5};
+  \node[anchor=west,text=white,font=\fs{33}{39}\bfseries] at (#1+3.3,#2+1.45) {#6};}
+% Number chip: x, y, width, height, fill, big text, small text.
+\newcommand{\chip}[7]{%
+  \filldraw[fill=#5,draw=line,line width=1pt,rounded corners=3mm] (#1,#2) rectangle ++(#3,#4);
+  \node[anchor=north,align=center,text width=\fpeval{#3-0.6}cm,inner sep=0] at (#1+#3/2,#2+0.5)
+    {{\fs{38}{44}\bfseries\textcolor{violet}{#6}}\\[4mm]{\fs{20}{24}\textcolor{ink}{#7}}};}
+\tikzset{arrow/.style={-{Stealth[length=5mm,width=5mm]},line width=3pt,draw=blue}}
+\newsavebox{\objective}
+\begin{document}
+% GRPO objective with annotations, typeset outside the flipped poster coordinates.
+\sbox{\objective}{\fs{27}{32}$\displaystyle
+  \mathcal J(\theta)=\mathbb E\Biggl[
+  \underbrace{\frac{1}{G}\sum_{i=1}^{G}}_{\text{\fs{19}{22}\textcolor{muted}{group mean}}}
+  \underbrace{\frac{1}{L_i}\sum_{t,j}}_{\text{\fs{19}{22}\textcolor{muted}{mean over $\tau_i$'s tokens}}}
+  \underbrace{\min\bigl\{w_{itj}\widehat A_i,\ \operatorname{clip}(w_{itj},1\!-\!\epsilon,1\!+\!\epsilon)\,\widehat A_i\bigr\}}_{\text{\fs{19}{22}\textcolor{muted}{clipped ratio term}}}
+  \Biggr]$}
+\null
+\begin{tikzpicture}[remember picture,overlay]
+\begin{scope}[shift={(current page.north west)},x=1cm,y=-1cm]
+\fill[paper] (0,0) rectangle (118.9,84.1);
+% -------------------------------------------------------------------
+% Header: title, authors, links, logo, presenter, QR code.
+\fill[navy] (0,0) rectangle (118.9,14.6);
+\shade[left color=teal,right color=violet] (0,14.6) rectangle (118.9,14.95);
+\txt{2.5}{1.2}{75}{white}{72}{\bfseries Unlocking Long-Horizon Agentic Search\\[-1mm]
+  with Large-Scale End-to-End RL}
+\txt{2.5}{8.2}{76}{white}{27}{Jiaxuan Gao\textsuperscript{1,2}, Wei Fu\textsuperscript{1,2},
+  Minyang Xie\textsuperscript{1}, Shusheng Xu\textsuperscript{2}, Chuyi He\textsuperscript{2},
+  Zhiyu Mei\textsuperscript{2}, Banghua Zhu\textsuperscript{3}, Yi Wu\textsuperscript{1}}
+\txt{2.5}{10.2}{76}{white!85}{22}{\textsuperscript{1}IIIS, Tsinghua University
+  \qquad\textsuperscript{2}Ant Group, AReaL Team
+  \qquad\textsuperscript{3}University of Washington}
+\txt{2.5}{12.25}{76}{white}{22}{\textcolor{blue!60}{\bfseries Paper}\enspace
+  \href{https://openreview.net/pdf?id=MfPDdPUGKi}{openreview.net/pdf?id=MfPDdPUGKi}
+  \qquad\textcolor{blue!60}{\bfseries Contact}\enspace samjia2000@gmail.com \enspace$\cdot$\enspace jxwuyi@gmail.com}
+\fill[white,rounded corners=4mm] (80.0,1.5) rectangle (101.4,7.3);
+\node[anchor=west,inner sep=0] at (81.0,4.4) {\includegraphics[height=4.2cm]{figures/iclr_logo.pdf}};
+\node[anchor=east,text=navy,font=\fs{40}{46}\bfseries] at (100.6,4.5) {2026};
+\node[anchor=north east,text=white!80,font=\fs{22}{26}] at (101.4,8.5) {Presented by};
+\node[anchor=north east,text=white,font=\fs{38}{44}\bfseries] at (101.4,10.1) {Aayushman};
+\fill[white,rounded corners=4mm] (103.2,1.2) rectangle (116.4,13.9);
+\node[anchor=north,inner sep=0] at (109.8,1.85)
+  {\color{black}\qrcode[nolink,height=10.0cm,level=M]{https://openreview.net/pdf?id=MfPDdPUGKi}};
+\node[anchor=north,text=navy,font=\fs{21}{25}\bfseries] at (109.8,12.2) {Scan for the paper};
+% Key message: the question the poster answers.
+\filldraw[fill=white,draw=line,line width=1.2pt,rounded corners=5mm] (2.5,16.0) rectangle (116.4,20.5);
+\fill[violet,rounded corners=2mm] (2.5,16.0) rectangle (3.3,20.5);
+\txt{4.4}{16.75}{88}{teal}{38}{\bfseries Can one open model learn to search like an expert, with RL alone?}
+\txt{4.4}{19.0}{88}{ink}{25}{Yes, if training gives it hard questions and room to explore: up to 128 actions per rollout, trained fully asynchronously.}
+\node[anchor=east,text=violet,font=\fs{46}{52}\bfseries] at (114.9,18.25) {ASearcher};
+% ===================================================================
+% LEFT COLUMN: the agent and the data.
+\card{2.5}{21.6}{36.7}{22.3}{1}{Start simple: one model, two tools}
+\txt{3.7}{25.1}{34.3}{ink}{24}{\textbf{QwQ-32B} does everything itself: it reasons, picks the next action, and summarizes the pages it reads.
+  It can only \textbf{search} and \textbf{access}; no external model is called.}
+\node[anchor=north west,inner sep=0] at (3.7,28.0) {\includegraphics[width=34.3cm]{figures/fig2_agent.png}};
+\txt{3.7}{40.8}{34.3}{muted}{19}{Each turn the agent thinks, writes a short analysis, then acts. Only the analysis, actions and tool results stay in its history,
+  so long searches remain readable; webpages are summarized in 10k-character chunks.}
+\card{2.5}{45.0}{36.7}{37.6}{2}{Give it questions worth searching}
+\txt{3.7}{48.5}{34.3}{ink}{24}{Easy questions teach shortcuts. So the data is made hard on purpose: open-source QA is filtered,
+  and an agent rewrites seed questions until answering them truly needs search.}
+\node[anchor=north west,inner sep=0] at (3.7,51.3) {\includegraphics[width=34.3cm]{figures/fig3_synthesis.png}};
+\txt{3.7}{68.1}{34.3}{muted}{19}{The synthesis agent injects new facts and blurs telling details, and keeps a question only if it is clear, hard, and has one answer.}
+\chip{3.7}{69.9}{10.9}{4.0}{pale}{304k$\to$16k}{hard open-source QA kept}
+\chip{15.4}{69.9}{10.9}{4.0}{lavender}{25.6k}{synthesized QA pairs}
+\chip{27.1}{69.9}{10.9}{4.0}{mint}{3 checks}{quality, difficulty, uniqueness}
+\txt{3.7}{74.6}{34.3}{ink}{24}{\bfseries Then a two-stage curriculum}
+\boxtext{3.7}{76.3}{15.0}{4.6}{pale}{22}{\textbf{Stage 1}\\mixed difficulties\\[1mm]learn basic tool use}
+\draw[arrow] (19.1,78.6)--(22.6,78.6);
+\boxtext{23.0}{76.3}{15.0}{4.6}{mint}{22}{\textbf{Stage 2}\\tasks needing $\ge5$ tool calls\\[1mm]learn deeper search}
+% ===================================================================
+% MIDDLE COLUMN: the training system and the learning signal.
+\card{41.1}{21.6}{36.7}{34.8}{3}{Let long rollouts run free}
+\txt{42.3}{25.1}{34.3}{ink}{24}{Hard questions need long searches, and long searches stall batch training.
+  ASearcher runs rollouts of up to \textbf{128 actions} concurrently and trains as soon as enough of them finish.}
+\node[anchor=north west,inner sep=0] at (42.3,28.0) {\includegraphics[width=34.3cm]{figures/fig5_async.png}};
+\txt{42.3}{41.6}{34.3}{muted}{19}{Top: a batch must wait for its slowest trajectory, and GPUs sit idle. Bottom: fully asynchronous RL keeps generating while it trains.}
+\node[anchor=north west,inner sep=0] at (42.3,43.9) {\includegraphics[width=11.4cm]{figures/fig4_lengths_crop.png}};
+\filldraw[fill=pale,draw=line,line width=1pt,rounded corners=3mm] (54.7,43.9) rectangle (76.6,55.3);
+\txt{55.5}{44.6}{20.4}{teal}{24}{\bfseries Why the tail matters}
+\txt{55.5}{46.7}{20.4}{ink}{21}{%
+  \textcolor{teal}{$\blacktriangleright$}\ Trajectory lengths are \textbf{long-tailed}: most stay below 100k tokens, a few approach 400k (left, training steps 290--310).\\[2.5mm]
+  \textcolor{teal}{$\blacktriangleright$}\ A synchronous batch would wait for that tail.\\[2.5mm]
+  \textcolor{teal}{$\blacktriangleright$}\ Here a long rollout may span several policy versions; finished ones go straight to training.}
+\card{41.1}{57.5}{36.7}{25.1}{4}{Learn from the final answer alone}
+% Pipeline: rollouts -> judge -> advantage -> update, with the loop back.
+\boxtext{42.3}{61.0}{7.4}{5.0}{pale}{20}{\textbf{Roll out}\\$G$ trajectories\\per question}
+\draw[arrow] (49.8,63.5)--(51.4,63.5);
+\boxtext{51.6}{61.0}{7.4}{5.0}{peach}{20}{\textbf{LLM judge}\\scores the final\\answer: $R_i$}
+\draw[arrow] (59.1,63.5)--(60.7,63.5);
+\boxtext{60.9}{61.0}{7.4}{5.0}{lavender}{20}{\textbf{Advantage}\\$\widehat A_i$ relative\\to the group}
+\draw[arrow] (68.4,63.5)--(70.0,63.5);
+\boxtext{70.2}{61.0}{7.4}{5.0}{mint}{20}{\textbf{Update}\\clipped, on action\\tokens only}
+\draw[arrow,rounded corners=4mm] (73.9,66.1)--(73.9,67.4)--(46.0,67.4)--(46.0,66.2);
+\node[fill=white,inner sep=2mm,text=muted,font=\fs{19}{23}] at (59.95,67.4) {the updated policy generates the next rollouts};
+\filldraw[fill=mint,draw=line,line width=1pt,rounded corners=3mm] (42.3,68.7) rectangle (76.6,77.0);
+\node[anchor=north,inner sep=0,text=ink] at (59.45,69.4) {\resizebox{32.6cm}{!}{\usebox{\objective}}};
+\node[anchor=south,inner sep=0,text=ink,font=\fs{22}{26}] at (59.45,76.5)
+  {$w_{itj}=\dfrac{\pi_\theta(a^i_{t,j}\mid s^i_t,a^i_{t,<j})}{\pi_{\theta_{\rm old}}(a^i_{t,j}\mid s^i_t,a^i_{t,<j})}$,
+   \quad $L_i$ = number of generated action tokens in $\tau_i$};
+\boxtext{42.3}{77.8}{11.0}{3.8}{pale}{19}{\textbf{Sparse reward}\\at completion, no format reward}
+\boxtext{53.95}{77.8}{11.0}{3.8}{lavender}{19}{\textbf{Dynamic filtering}\\drop groups with equal rewards}
+\boxtext{65.6}{77.8}{11.0}{3.8}{peach}{19}{\textbf{AdamW}, lr $2\times10^{-6}$\\$\approx$16k H800 GPU-hours}
+% ===================================================================
+% RIGHT COLUMN: results and behavior.
+\card{79.7}{21.6}{36.7}{33.0}{5}{The result: a strong open searcher}
+\txt{80.9}{25.1}{34.3}{ink}{24}{RL alone lifts the same single-model agent on every benchmark.
+  Adding \textbf{DeepSeek-V3 summaries} and \textbf{16 parallel rollouts} at test time, with no retraining, lifts it further.}
+\node[anchor=north west,inner sep=0] at (80.9,28.0) {\includegraphics[width=34.3cm]{figures/fig1_overview.png}};
+\txt{80.9}{37.6}{34.3}{muted}{19}{Left: pass@1 before RL, after RL, and with test-time scaling. Middle and right: as training goes on,
+  tool calls per trajectory grow from 1.67 to over 20, and reflective words become common.}
+\chip{80.9}{40.0}{10.9}{4.1}{lavender}{+15.0}{GAIA pass@1 from RL}
+\chip{92.6}{40.0}{10.9}{4.1}{lavender}{+22.4}{xBench pass@1 from RL}
+\chip{104.3}{40.0}{10.9}{4.1}{lavender}{+15.6}{Frames pass@1 from RL}
+\node[anchor=north west,inner sep=0,text=ink,font=\fs{22}{26}] at (80.9,44.8) {%
+  \renewcommand{\arraystretch}{1.2}\setlength{\tabcolsep}{2.5mm}
+  \begin{tabular*}{34.3cm}{@{\extracolsep{\fill}}lrrrr@{}}
+    \toprule
+    32B-scale agent & GAIA & xBench & Frames & HLE\\
+    \midrule
+    Search-o1 (QwQ) & 48.1 & 40.3 & 63.6 & --\\
+    WebSailor-32B & 53.2 & 53.3 & 69.8 & --\\
+    \textbf{ASearcher} & \textbf{58.7} & \textbf{51.1} & \textbf{74.5} & \textbf{21.5}\\
+    \textcolor{violet}{\textbf{+ summaries + $K{=}16$}} & \textcolor{violet}{\textbf{71.8}} & \textcolor{violet}{\textbf{75.0}} & \textcolor{violet}{\textbf{83.4}} & \textcolor{violet}{\textbf{24.6}}\\
+    \bottomrule
+  \end{tabular*}};
+\txt{80.9}{51.1}{34.3}{muted}{18}{Pass@1; the base agent averages four seeds; WebSailor as officially reported.
+  GAIA: 103 text-only questions; xBench: 100; Frames: 824; HLE: 500; judged by Qwen2.5-72B-Instruct.}
+\card{79.7}{55.7}{36.7}{26.9}{6}{Why it works, and what it learns}
+\txt{80.9}{59.0}{34.3}{ink}{22}{Cut the horizon or the hard data and the agent stops searching deeply. All variants train 200 steps from Stage 1:}
+\node[anchor=north west,inner sep=0,text=ink,font=\fs{21}{25}] at (80.9,61.3) {%
+  \renewcommand{\arraystretch}{1.12}\setlength{\tabcolsep}{2.5mm}
+  \begin{tabular*}{34.3cm}{@{\extracolsep{\fill}}lrrr@{}}
+    \toprule
+    Training recipe & Tool calls & GAIA & xBench\\
+    \midrule
+    \textbf{Full recipe} & \textbf{26.59} & \textbf{58.7} & \textbf{51.1}\\
+    Turn limit 10 & 3.48 & 49.2 & 39.3\\
+    Stage 1 data only & 5.40 & 51.6 & 43.0\\
+    AFM data & 4.12 & 50.9 & 39.9\\
+    \bottomrule
+  \end{tabular*}};
+\txt{80.9}{67.6}{34.3}{ink}{22}{And a searcher emerges: late in training it says \textbf{``alternatively''}, \textbf{``check''} and \textbf{``however''}
+  far more often, and points to its evidence (\textbf{``doc''}, \textbf{``previous''}).}
+\node[anchor=north,inner sep=0] at (98.05,70.3) {\includegraphics[width=31.0cm]{figures/fig6_pair.png}};
+\end{scope}
+\end{tikzpicture}
+\end{document}

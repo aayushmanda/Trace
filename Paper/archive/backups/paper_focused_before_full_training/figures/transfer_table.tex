@@ -1,0 +1,21 @@
+\begin{table}[t]
+\centering\small
+\caption{\textbf{Qwen2.5-0.5B LoRA transfer, with all three seeds.} Held-out greedy answer accuracy (\%). Columns identify seeds $2001,2002,2003$; SD is the sample standard deviation. Boolean-8 has $300$ held-out generated prompts; BBH has $250$ official items per size. The eightfold outcome control uses $6400$ rather than $800$ updates.}
+\label{tab:transfer}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Condition & 2001 & 2002 & 2003 & Mean $\pm$ SD\\
+\midrule
+Boolean-8: step & 95.7 & 99.3 & 100.0 & $98.3\pm2.3$\\
+Boolean-8: outcome & 11.3 & 11.0 & 11.0 & $11.1\pm0.2$\\
+Boolean-8: answer first & 9.0 & 10.3 & 11.0 & $10.1\pm1.0$\\
+Boolean-8: outcome, $8\times$ & 10.7 & 9.0 & 10.3 & $10.0\pm0.9$\\
+BBH 3 objects: step & 100.0 & 98.4 & 100.0 & $99.5\pm0.9$\\
+BBH 3 objects: outcome & 35.2 & 35.2 & 35.2 & $35.2\pm0.0$\\
+BBH 5 objects: step & 100.0 & 100.0 & 46.0 & $82.0\pm31.2$\\
+BBH 5 objects: outcome & 94.4 & 83.6 & 80.0 & $86.0\pm7.5$\\
+BBH 7 objects: step & 96.4 & 100.0 & 100.0 & $98.8\pm2.1$\\
+BBH 7 objects: outcome & 24.4 & 16.0 & 15.2 & $18.5\pm5.1$\\
+\bottomrule
+\end{tabular}
+\end{table}

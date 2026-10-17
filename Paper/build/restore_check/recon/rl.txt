@@ -1,0 +1,2627 @@
+         Where the Credit Is: Why Running Counts Teach
+                    What Final Counts Miss
+
+
+                                                  Anonymous Author(s)
+                                                      Afﬁliation
+                                                       Address
+                                                        email
+
+
+
+                                                         Abstract
+1              A Transformer can represent a counting algorithm and still struggle to learn it
+2              from ﬁnal answers. On counting modulo a small number, showing the running
+3              counts makes the task much easier to learn. We explain this gap through the infor-
+4              mation each training signal carries. Every letter hidden from a feature contracts its
+5              correlation with the ﬁnal count, while near initialization the Transformer’s output
+6              is dominated by features that read only a few letters. A displayed count exposes
+7              the next update directly. In a two-block Transformer that holds exact solutions
+8              for both formats, outcome gradient ﬂow from a zero readout stays near chance for
+9              a time exponential in the number of letters. With a gate that reads the displayed
+10             count and the current letter, simultaneous gradient ﬂow from small random magni-
+11             tudes along structured directions learns the supervised transitions after polynomial
+12             time. This holds for every modulus when match and non-match probabilities dif-
+13             fer; the proof supplies the routing and gate-readout direction. Experiments test
+14             what happens beyond these restrictions: step supervision helps on counting, other
+15             state-tracking tasks, and LoRA-tuned Qwen2.5-0.5B on BIG-Bench Hard object
+16             tracking. It does not help at every size, and one reversal remains unexplained.
+
+
+17   1 Introduction
+18   A model that can count need not learn to count from ﬁnal answers. In our experiments, the same
+19   Transformer succeeds when shown running counts and stays near chance when trained on the ﬁnal
+20   count alone. Yet we can write down exact parameters for either computation. If both solutions are
+21   available, what does showing the steps give the learner?
+22   Intermediate supervision often makes reasoning tasks easier to learn [Nye et al., 2021, Wei et al.,
+23   2022, Lightman et al., 2023]. The usual intuition is that steps break a long computation into smaller
+24   ones. We ask what this means for the gradient of a ﬁxed network. Counting a query letter modulo
+25   K lets us examine that question closely: the answer-only and step-by-step tasks share the same
+26   counting process, architecture, initialization and training budget (Figure 2b, Figure 1a).
+27   The key is what a feature learns from the letters it reads. Averaging over every other letter contracts
+28   its correlation with the ﬁnal count by a factor λ < 1 per unseen letter. Near initialization, the
+29   output is dominated by terms that each read one letter; combining more letters costs powers of the
+30   initialization scale (Figure 1b). Final answers thus supply very little credit to the features the network
+31   can readily change. A displayed count and the current letter, however, expose the next update. The
+32   two paths are
+         outcome:     hidden letters → few-letter features decorrelate → tiny credit → plateau,
+         step:        displayed count → local innovation → accessible credit → learned transition → solution.
+
+
+     Submitted to 40th Conference on Neural Information Processing Systems (NeurIPS 2026). Do not distribute.
+                                 (a) Training                                                        (b) Degree mismatch
+
+                                     Exact executor
+                           100                                                                 100
+      Exact accuracy (%)             Step
+
+
+
+
+                                                                               Energy share
+                                     8/10 seeds solve
+
+                                     Outcome                                                                                        Target Ar
+                                                                                              10−3
+                            50
+                                     Chance
+                                                                                                                        Jacobian Jr
+
+                                                                                              10−6
+                             0
+                                 0                           4                          8            0                          4               8
+                                                  Updates (thousands)                                                        Degree r
+
+     Figure 1: Same architecture and task, different training behavior. (a) Counting with n = 16,
+     K = 2 and zero readout: median exact continuation accuracy and interquartile band over ten paired
+     seeds, 8k updates; the dashed line marks the exact executor that both formats admit (Proposition 1).
+     (b) A separate n = 8, K = 2, ε = 0.02 measurement with nonzero readout: target and Jacobian
+     energy occupy different ANOVA degrees, the number of letters a component depends on jointly
+     (Appendix E.3).
+
+
+33   Contributions.
+34   • Unseen letters erase outcome credit (Section 3). A feature that reads a set S of letters has
+35     correlation at most λn−|S| with the ﬁnal count, so near initialization outcome credit decays like
+36     λn ; the upper bound and leading coefﬁcient of step credit for the counting rule carry no such factor
+37     (Theorems 1 and 2).
+38   • Outcome training plateaus (Theorem 3). From a zero readout, gradient ﬂow stays near chance
+39     under any block schedule, the relative bias included, for time Ω(λ−n ), in a Transformer wide
+40     enough to hold the outcome executor.
+41   • Step training converges (Theorem 4). For a gate head that reads the displayed count and the cur-
+42     rent letter, joint gradient ﬂow on its query, key and both readouts, from small random magnitudes
+43     along hand-coded directions, reaches positive margins on every count in a time polynomial in the
+44     initialization scale and the head dimension, with no other dependence on n.
+45   • Experiments (Section 5) test each prediction: the exponential plateau, outcome accuracy at the
+46     low-degree prior, learnable routing, and step supervision beyond counting, including a pretrained
+47     model.
+48   Section 6 places this ﬁxed-target comparison alongside work on parity and intermediate supervision.
+
+49   2 Setup
+50   Modular counting keeps the state space ﬁxed as the prompt grows. What increases is the number of
+51   updates hidden behind the answer. We can therefore lengthen the computation without changing the
+52   prediction problem at its end.
+53   Deﬁnition 1 (Counting modulo K). A prompt has a start count s0 , uniform on ZK , and letters
+54   w1 , . . . , wn drawn i.i.d. from an alphabet in which a ﬁxed query letter w⋆ has probability p ∈ (0, 1).
+55   With bt = 1[wt = w⋆ ],
+                                                           st = st−1 + bt   (mod K),                     t = 1, . . . , n,                      (1)
+56   and the answer is y = sn .
+57   Deﬁnition 2 (Contraction coefﬁcient). For counting modulo K,
+                                                        λ = max 1 − p + p e2πij/K = 1 − p + p e2πi/K .                                          (2)
+                                                            1≤j<K
+
+
+58   Averaging over one unseen letter contracts every nonconstant Fourier mode of the count by at most λ
+59   (Figure 2); in information-theoretic terms, λ is the maximal correlation of consecutive counts and λ2
+
+                                                                                     2
+                        1−p
+      (a)                                           (b) Outcome: supervise sn only
+                         0
+                 p                 p                         s0       w1       s1     w2     s2    ···     wn      sn
+
+                                                         n hidden letters: each Fourier mode contracts by ≤ λ per letter
+      1−p    K−1                       1   1−p
+
+
+                                                           Step: supervise every st from the displayed st−1
+                 p                 p
+                         2
+                                                             s0       w1       s1     w2     s2    ···     wn      sn
+                        1−p
+              st = st−1 + bt (mod K)                       one local transition (st−1 , wt ) 7→ st : innovation ≥ 1 − λ2
+                T = (1 − p) I + p R
+
+     Figure 2: One counting process, two views of it. (a) Counting modulo K is a cyclic Markov chain:
+     each letter keeps the count with probability 1 − p and advances it with probability p, so the transition
+     matrix is T = (1 − p)I + pR with R the cyclic shift. Its nonconstant Fourier modes contract by at
+     most λ per step (Appendix C.2). (b) Outcome supervision labels only sn , so the label depends on
+     the letters through n unseen steps of the chain and its correlation with any feature of k letters shrinks
+     like λn−k (Theorem 1). Step supervision displays st−1 and labels st , so each label is one step of the
+     chain and keeps an innovation of at least 1 − λ2 (Theorem 2).
+
+
+60   the χ2 contraction coefﬁcient of one unseen letter [Witsenhausen, 1975, Raginsky, 2016]. The com-
+61   plementary quantity 1 − λ2 is the variance a displayed count leaves to the next letter (Equation (4)).
+62   For four uniform letters, λ = 0.5 at K = 2 and 0.66 at K = 3.
+
+63   Formats. Both formats see the same prompt. The outcome loss Lout is the cross-entropy of the
+64   ﬁnal count; the step loss Lstep is the teacher-forced cross-entropy of the transitions st−1 , wt 7→ st for
+65   t ≥ 2; the ﬁrst prediction is a boundary case whose previous count sits in the prompt (Deﬁnition A.1).
+66   Experiments supervise every running count unless stated otherwise.
+
+67   Model. A causal Transformer with two blocks of softmax heads and ReLU MLPs, a relative
+68   position bias initialized at zero, no LayerNorm, arbitrary widths and a linear readout (Assump-
+69   tion 1), initialized at θ0 = εθ̃ with fan-in operator-norm bounds and MLP biases of order one
+70   (Assumption 2). The biases ﬁx every ReLU’s sign on a ball Bε of radius   √ proportional to ε, pro-
+71   vided ε ≤ ε0 = c min(1, N1b ) with Nb the MLP bias norm (of order n at executor width, Ap-
+72   pendix C.6), so near initialization the MLPs act linearly; the AdamW experiments drop this condi-
+73   tion (Appendix C.1). Constants c, C depend on neither the widths, n nor ε.
+74   Proposition 1 (Both solutions exist). For every K, alphabet size and n, one architecture as in
+                                                                 ⋆        ⋆
+75   Assumption 1, with widths linear in n, has parameters θstep     and θout at which greedy decoding
+76   produces the correct step and outcome continuations on every prompt, with a positive logit margin.
+
+77   2.1    Two exact programs in one Transformer
+
+78   The exact executors make the training failure more puzzling. One program updates the state locally;
+79   the other aggregates the match bits before applying modular arithmetic. Both ﬁt in this Transformer.
+80   We still have to explain why training reaches one so much more readily than the other.
+
+             Executor    Block 1                 Block 2                              Output (lookup, modulo K)
+81                                         ⋆
+             Step        bt = 1[wt = w ]         route st−1 and bt                    st = st−1 +Pbt
+             Outcome     every bt                average b1 , . . . , bn ; route s0   s n = s 0 + t bt
+
+82   Two primitives implement them: positional attention with scores of order log n on a chosen source
+83   set copies one register or averages several, and one ReLU unit per count–bit pair performs the
+84   modular lookup. Routing leakage is O(n−2 ); Appendix B gives the literal tensor entries and the
+85   error calculation, certifying a logit margin greater than 19 on every prompt.
+
+                                                               3
+86    3 Credit through unseen letters
+87    To understand the training gap, we ﬁrst ask how much information about the target reaches a param-
+88    eter update. Fix the start count, so the letters are independent.
+89    Deﬁnition 3 (Credit). For a target
+                                      ∂z signal   ξ, a random vector in RK , let Φξ (θ) = E[hzθ , ξi]. The
+90    credit for ξ is k∇θ Φξ k = E ( ∂θθ )⊤ ξ .
+
+91    For the outcome signal ξ = y − u (one-hot answer minus uniform), credit is the answer-dependent
+92    part of the gradient of Lout (Lemma C.1; Shalev-Shwartz et al., 2017, Abbe et al., 2025).
+
+93    3.1   Outcome: few-letter features cannot see the ﬁnal count
+
+94    What a feature misses. Suppose a feature H reads only the letters in a set S. Even if it uses
+95    those letters perfectly, it must average over every letter outside the set. By the tower property,
+96    E[H⊤ (y − u)] = E[H⊤ E[y − u | wS ]], and given wS the n − |S| unseen letters still move the
+97    count: each multiplies every nonconstant Fourier mode of its distribution by at most λ (Figure 2a).
+98    Hence                                         
+                                        E H⊤ (y − u) ≤ λn−|S| kHkL2                                   (3)
+99    (Lemma C.2). Each omitted letter has the same multiplicative cost; seeing a few letters cannot
+100   bypass the rest of the computation. The exponent is sharp.
+
+101   The network reads few letters at a time. Scale every attention score by ζ ∈ [0, 1] and expand
+102   in ζ. At ζ = 0 attention is uniform and the MLPs are afﬁne, so the network is additive over
+103   positions: each term reads at most one letter. Every interaction among letters passes through the
+104   scores, and a term with k ≥ 1 scores reads at most 2k + 1 letters and costs ε2+4k in the Jacobian
+105   (Proposition C.1). Applying Equation (3) term by term bounds the outcome credit. Call the credit
+106   of the score-dependent part Jscore of the Jacobian the score-mediated credit: it contains every term
+107   that reads two or more letters, and also score-dependent terms that read one.
+108   Theorem 1 (Unseen letters erase outcome credit). Under Assumptions 1 to 3, with the start count
+109   ﬁxed:
+110     (i) for every set S of letters and every square-integrable H that depends only on the letters in S,
+111         Equation (3) holds;
+112    (ii) for all n ≥ 2, ε2 ≤ cλ and θ ∈ Bε , the score-mediated credit is at most Cε6 λn−3 , and if
+113         ε ≤ cλ the whole outcome credit is at most Cελn .
+
+114   3.2   Step: a local innovation survives
+
+115   A large step gradient could be misleading. The displayed count alone predicts the two possible
+116   next states and their probabilities. Fitting that prior lowers the loss without learning how to use
+117   the current letter. We separate that easy signal from the rule itself. With the state-only predictor
+118   qs = (1 − p)es + p es+1 , write est − u = (qst−1 − u) + gt , where the rule signal
+                                                                               
+                                gt = est − qst−1 = (bt − p) est−1 +1 − est−1
+119   has covariance, on the centred state subspace 1⊥ := {v ∈ RK : 1⊤ v = 0},
+                                                      1 − λ2
+                                         Cov(gt )           I   on 1⊥ .                                 (4)
+                                                        K
+120   Thus an outcome target pays λn−|S| for the letters a feature does not read, whereas a displayed
+121   transition pays the local innovation 1 − λ2 only once. Let Φrule be the credit functional with the rule
+122   signal as target.
+123   Theorem 2 (Step credit). Under Assumptions 1 to 3 with a uniform start, for all n ≥ 2 and θ ∈ Bε :
+124     (i) (prior-ﬁtting gradient) if ε ≤ cλ, then k∇θ Lstep (θ)k ≥ c ελ while k∇θ Lout (θ)k ≤ Cε(ε2 +
+125         λn );
+
+
+
+                                                        4
+                                                                                                             6
+126     (ii) (rule credit) if ε ≤ c and attention uses the full causal preﬁx, then k∇θ Φrule (θ)k ≤ Cε
+                                                                                                     n ;
+127          if moreover p < 12 , the degree-6 polynomial Pn is not identically zero, with an explicit
+128          count×letter monomial of coefﬁcient of order n√1d (Lemma C.8).
+                                                                  h
+
+                                                                                                             6
+129   Part (i) ﬁts the count-only prior. Part (ii) isolates the rule signal: its upper bound is of order εn ,
+130   without the factor λn , and its nonzero leading coefﬁcient shows that the signal can survive. Its size
+131   at random initialization remains a separate question. The bound becomes two-sided at any direction
+                                                         ε6 γrule                           1/4
+132   with |Pn (θ̃)| ≥ γrule
+                         n , where k∇θ Φrule (εθ̃)k ≥       2n    for ε ≤ c min(γrule ε0 , γrule ) (Remark C.2);
+133   we do not prove such a margin at random initialization. Measurements are in Appendix E.2.
+
+134   4 Which solution training reaches
+135   Small initial credit alone does not imply slow learning: the parameters might reach a region with a
+136   stronger signal. We ask whether outcome ﬂow can get there quickly, and whether step ﬂow can turn
+137   its local signal into a learned transition.
+
+138   4.1   Outcome: an exponential plateau
+
+139   The next theorem controls the trajectory as it tries to leave initialization. A local loss ﬂoor limits
+140   how far gradient ﬂow can travel.
+141   Theorem 3 (Exponential-time outcome plateau near small initialization). Under Assumptions 1
+142   to 3 with a zero initial readout, let P (t) be, at each time, the orthogonal projection onto a set
+143   of trainable parameter blocks, piecewise constant in t; the blocks may include the relative bias.
+144   Consider gradient ﬂow dθdt = −P(t)∇θ Lout (θ); full joint ﬂow (P ≡ I) and training only the blocks
+145   of Theorem 4 are special cases. For all n ≥ 2, ε ≤ cλ and 0 ≤ t ≤ cλ−n , with constants that do
+146   not depend on the schedule:
+147     (i) (locality) kθ(t) − θ0 k ≤ r0 ε, the relative bias included in the norm;
+148     (ii) (loss) Lout (θ(t)) ≥ log K − Cε2 λn ;
+                                                           
+149    (iii) (correct-answer probability) E softmax(zθ(t) )y ≤ K
+                                                               1
+                                                                 + Cελn/2 .
+
+150   The theorem bounds the length of the plateau; it does not assert that outcome training never con-
+151   verges.
+152   Proof idea. Along the ﬂow, for any schedule,
+              dLout                                                                               
+                     = −kP(t)∇θ Lout k2 ,        so     kθ(t) − θ0 k2 ≤ t Lout (θ0 ) − Lout (θ(t)) .
+               dt
+153   This gives the weak signal a consequence beyond the ﬁrst update. Near θ0 , the outcome loss can fall
+154   by at most Cε2 λn (Lemma C.3), even with a trained relative bias (Lemma C.4). That small decrease
+155   limits the distance the ﬂow can travel: leaving the ball takes time of order λ−n (Appendix C.4).
+
+156   4.2   Step: joint gradient ﬂow learns the transition
+
+157   For step training, the question is whether the surviving signal is enough to learn the update. We
+158   supply the routing to isolate this question. One block-2 head, the gate head, has a ﬁxed mask: the
+159   position holding st−1 and predicting st attends only to itself and the current letter. Its query, key
+160   and value start along hand-coded directions that read the count, read the
+                                                                              letter and carry the count,
+161   respectively (Appendix D). With xt = est−1 and rb = σ −(−1)b a , the state logits are exactly
+162   (Lemma D.1)
+                                                                        ε2 qk
+                                    zt = εUxt + εv rbt Wxt ,       a= √ ,
+                                                                          dh
+163   where U and W = w(I − R) are K × K readout blocks for the count and for the gate output, and
+164   q, k, v are the scalar query, key and value factors of the gate. The weight rbt that the gate keeps
+165   on the displayed count depends on the current letter through a, so the gate output is a count×letter
+166   product of strength a.
+
+
+                                                          5
+167   Initialization and training. The seed ﬁxes directions, not magnitudes: 12 ε ≤ |q(0)|, |k(0)|, |v| ≤
+168   2ε with arbitrary signs, and both readouts start at zero, so the initial prediction is uniform and
+169   |a(0)| is of order ε4 . Having the right directions does not guarantee a useful initial interaction: the
+170   query and key can have unfavorable signs, and the zero readouts initially carry no prediction. One
+171   Euclidean gradient ﬂow trains (U, W, q, k) simultaneously, with no stages and no stopping rule; the
+172   gate readout is trained along its transition direction I − R, like the query, key and value (for K = 2
+173   this is no restriction), and v and all other parameters stay at the seed.
+174   Theorem 4 (Joint gradient ﬂow learns the transition). Count modulo K ≥ 2 with n ≥ 2 letters
+175   and a query of probability p ∈ (0, 1), p 6= 21 , and let h⋆ = | log 1−p p |, pmin = min(p, 1 − p) and
+176   gap ∈ (0, 1]. Call the initialization aligned if q(0)k(0)(1 − 2p) < 0 and misaligned otherwise, and
+177   let                                                   √
+                                  1                           gap pmin h⋆
+                            ε⋆ = (aligned),          ε⋆ =                    (misaligned).
+                                  2                        712 (1 + log K)
+178   For 0 < ε ≤ ε⋆ , and in the misaligned case |D| ≥ gap ε2 with D = q(0)2 − k(0)2 , joint gradient
+179   ﬂow on Lstep gives every prediction positive margin against all K − 1 other counts at every time
+180   t ≥ T , and Lstep → 0, where, with an absolute constant C, γ = gap (misaligned) or γ = 1
+181   (aligned),                              √
+                                       C       dh log dεh      K log K 
+                                  T ≤ 4                      +            .
+                                       ε pmin min{1, h⋆ } γ       p2min
+182   T depends on n only through dh (any dh ≥ 1 is allowed). If |q(0)|ε   and |k(0)|
+                                                                                 ε    are independent and
+183   uniform on [ 2 , 2], with any signs, then Pr(|D| < gap ε ) ≤ 3 gap, so for ε ≤ ε⋆ (misaligned
+                   1                                            2       4
+
+184   value) the conclusion holds with probability at least 1 − 43 gap; the randomness is over the scalar
+185   magnitudes and signs, not the directions.
+
+186   Why joint training succeeds. Cyclic symmetry reduces the simultaneous ﬂow to four scalars:
+187   the count-readout contrast c, the background level s of the count readout (absent for K = 2), the
+188   gate-readout contrast g, and the query–key strength a (Lemma D.3). The gate gradient splits as
+                       ∂Lstep   1 ∂Lstep  1     a                    ∂Lstep
+                              =          + tanh( ) err,                     = g σ ′ (a) err,
+                        ∂g      2 ∂c      2     2                     ∂a
+189   where err > 0 is the probability-weighted prediction error, including the background counts. The
+190   count-only prior ﬁrst gives g a direction to move; the local innovation supplies the letter-dependent
+191   term. The second identity makes the query–key strength move against the sign of g. A misaligned
+192   gate can therefore cross into a useful regime while the count readout ﬁts the prior (Lemma D.9). But
+193   crossing once is not enough: the gate readout must survive as the other parameters keep moving. A
+194   monotone balance between g and c keeps g ≥ 0 once a < 0 (Lemma D.8) and eventually holds
+195   g above a ﬁxed ﬂoor (Lemma D.10). That ﬂoor lets |a| grow exponentially to order one. The
+196   gradient lower bound proportional to tanh2 ( a2 ) then gives positive margins after time O(ε−4 log 1ε ),
+197   consistent with the measured ε−4.0 to ε−4.3 (Lemma D.11 and Table 5). These are phases of the
+198   same simultaneous ﬂow, rather than training stages chosen by the analyst; an aligned start bypasses
+199   the crossing phase, starting aligned at t = 0.
+
+200   Matched separation. Take the same architecture, mask, seed and trained set (U, W, q, k), and
+201   ε ≤ min(ε⋆ , cλ). By Corollary D.1 and Theorem 4,
+                          Tout ≥ c λ−n   (any block schedule, relative bias included),
+                                                √
+                                         C       dh log dεh       K log K 
+                                 Tstep ≤ 4                      +             ,
+                                        ε pmin min{1, h⋆ }γ          p2min
+202   where Tout is the time outcome ﬂow stays near chance and Tstep the time after which step ﬂow
+203   has positive margins. At executor widths dh = Θ(n), Theorem 3 needs ε ≤ c min(λ, n−1/2 )
+204   (Appendix C.6); with ε at that value, Tstep is polynomial in n, of order n5/2 log n for ﬁxed λ, p, K
+205   and γ, not independent of n, while Tout is exponential. The mask gives the gate head its routing;
+206   whether joint training also learns which letter to read is open, and the experiments below test it at
+207   ﬁnite step size.
+
+
+                                                         6
+                                         (a) Plateau duration                                          (b) Answer bias                                          (c) Above the prior
+                                                                                                 100
+
+
+
+       Displacement time τ (0.1)
+                                                                                                        Spearman ρ = 0.91                                        Spearman ρ = 0.15
+
+
+
+
+                                                                          Outcome accuracy (%)
+                                   107                                                                                                                     20
+
+
+
+
+                                                                                                                                   Above prior (points)
+                                             Outcome
+                                                                                                        State-only prior
+                                                                   λ−n
+                                   105
+                                                                                                  50                                                        0
+                                                                                                        Chance
+                                   103                                                                                                                           State-only prior
+                                                            Step
+                                                                                                                                                          −20
+                                   101
+                                                                                                  0
+                                         4              8            14                           10−5           10−3       10−1                           10−5           10−3        10−1
+                                                       Horizon n                                            Remaining bias λn                                        Remaining bias λn
+
+      Figure 3: Outcome escape is slow; outcome training learns the low-degree prior and little else.
+      (a) Zero-readout counting, K = 2, λ = 0.5, ε = 0.002: median time to a displacement of 0.1εkθ̃k
+      and interquartile band over three draws; the dashed λ−n guide is anchored at n = 4. The step
+      exit reﬂects ﬁtting the count-only prior, not learning the rule. (b) Outcome exact accuracy after 8k
+      AdamW updates in 20 horizon–alphabet cells: means and seed ranges over three seeds; the green
+                                        n
+      curve is the state-only prior 1+λ
+                                      2 , and gray is chance. (c) The same accuracies minus the prior.
+      Correlations use cell means.
+
+
+208   5 Experiments
+209   The experiments ask where the explanation survives a change of optimizer, initialization or task, and
+210   where it stops being enough. They use ﬁnite-step training; the AdamW runs have learned absolute
+211   positions without the relative bias. Protocols are in Appendix E.
+
+212   Does outcome escape exponentially slowly? The plateau proof concerns continuous time and a
+213   small ball. We ﬁrst check whether its escape mechanism is visible with ﬁnite updates. In a compact
+214   model built to approximate the theorems’ assumptions, with full-batch gradient descent in ﬂoat64
+215   and no ReLU sign change on any input along the trajectory, the outcome exit time grows at least as
+216   fast as λ−n , both from the ball Bε of Theorem 3 and at a displacement of 0.1εkθ̃k, while the step
+217   exit time stays constant (Figure 3a, Table 7), because the step loss can leave the ball by ﬁtting the
+218   count-only prior; halving the update length changes the exit time by less than 1%. At initialization,
+219   99.6% of the Jacobian’s energy is at degree 0 (Figure 1b), and the answer-dependent gradient decays
+220   by a ﬁtted 0.48–0.51 per letter at λ = 0.5 over three seeds (Table 9).
+221   Under AdamW, with a zero readout and paired seeds, at n = 16, K = 2 and 8k updates, step
+222   training reaches 93.1% exact accuracy (8 of 10 seeds above 90%) and outcome training 49.8%
+223   (none). Across 120 counting runs at n = 6–16 with the default readout, outcome training solves
+224   none and step training 60 within 8k updates. Step training at ε = 0.02 is slow rather than stuck, as
+225   its ε6 rule credit suggests: every step run of Table 11(a) is solved by 16k updates, and at ε = 0.1,
+226   where ε6 is 1.6 × 104 times larger, every step seed solves within 8k. From initialization through 6k
+227   outcome updates, at most 2.4 × 10−6 of the Jacobian’s energy lies above degree 1 (Appendix E.3).
+228   Outcome failure is not universal at moderate λn : for counting modulo 3 at n = 8 (λn ≈ 0.036),
+229   outcome training solves two of three seeds within 32k updates.
+
+230   Does outcome learn only the accessible low-degree prior? Near-chance accuracy can hide some
+231   learning. To ﬁnd out what outcome training has learned, we compare its accuracy with the prediction
+232   available from the start count alone. Varying the alphabet sets λ = 1 − A2 . Over 20 settings of
+233   n ∈ {6, . . . , 16} and λ ∈ {0.5, . . . , 0.9}, outcome accuracy has Spearman correlation 0.91 with λn
+                                                                                   n
+234   and −0.36 with n alone. Most of this correlation is the state-only prior 1+λ2 , which predicting from
+235   the start count achieves: cell means lie between 2 points below and 7 points above it (median +0.2),
+236   and the excess has Spearman correlation only 0.15 with λn (Figure 3b,c). Once λn ≤ 0.04, every
+237   cell mean is within 1.5 points of the prior. Once λn is small, these runs show little improvement
+238   beyond that accessible prior. Together with the Jacobian measurements, this supports the picture of
+239   training that stays sensitive mainly to degree-0 and 1 features.
+
+240   Can ordinary ﬁnite-step training learn the routing? The positive theorem tells the gate where
+241   to look. Is that assistance necessary for learning, or mainly for our proof? Training the scores, the
+
+                                                                                                                 7
+      Table 1: Joint step training of the routing solves the task in most runs; outcome training under
+      the same protocol solves none. Two-block Transformer of Assumption 1, counting modulo 2 with
+      p = 14 ; only the scores, the relative bias and the readout are trained, by full-batch gradient descent
+      (step size 2) from ε = 0.3, with the same seeds for both formats. A run is solved when every
+      held-out prediction is correct.
+                                          Step                        Outcome (300k updates)
+                   n   Solved    Updates to solve, median (range)   Solved   Answer accuracy (%)
+                   6     5/5              44k (41–78k)               0/5             50–94
+                   8     5/5              61k (46–99k)               0/5             50–55
+                  12     4/5              77k (42–103k)              0/5               50
+                  16     2/2             237k (208–266k)             0/2             50–51
+
+
+242   relative bias and the readout jointly from a fan-in random initialization (ε = 0.3), every held-out
+243   count prediction becomes correct in 16 of 17 runs; the remaining run reaches 99.95% (Table 1);
+244   outcome training under the same protocol and seeds solves none of 17 runs within 300k updates and
+245   stays at chance for n ≥ 8. The median solve time grows from 44k updates at n = 6 to 237k at
+246   n = 16, where a factor λ−n would grow 1,024-fold.
+
+247   Does the same pattern appear beyond counting? Counting lets us prove the mechanism, but
+248   cannot tell us how far it travels. We test other tasks that hide a state behind a sequence of up-
+249   dates; these experiments probe the explanation beyond the theorem assumptions. Boolean-8 and a
+250   reversible register machine put 98.9% and 99.9% of their answer variance at degrees ≥ 2; outcome
+251   training fails on both while step training succeeds, and a ﬁrst-occurrence control, which keeps a
+252   degree-1 part at every n, is learned from answers alone (Table 13; Figure 4 in Appendix E.5). With
+253   rank-8 LoRA on Qwen2.5-0.5B and the 750 real BIG-Bench Hard object-tracking items [Suzgun
+254   et al., 2022], outcome training stays at the majority-option rate at three objects (λ = 0, the answer
+255   is pure top degree) and reaches 15–24% at seven, while step training reaches 96–100% at both. At
+256   ﬁve objects the pattern breaks: outcome training reaches 80–94%, and one of three step runs fails
+257   (46%). Five objects have a smaller low-degree share (1.56%) than seven (3.34%), so λn does not
+258   order these sizes. We do not have an explanation for this reversal; it is a result the credit picture has
+259   yet to account for.
+
+260   6 Related work
+261   Intermediate supervision. Scratchpads and process supervision [Nye et al., 2021, Uesato et al.,
+262   2022, Wei et al., 2022, Lightman et al., 2023] have been analysed through task decomposition [Wies
+263   et al., 2023], locality [Prystawski et al., 2023, Abbe et al., 2024] and expressivity [Feng et al., 2023,
+264   Merrill and Sabharwal, 2024, Malach, 2024]; outcome supervision need not be statistically harder
+265   [Jia et al., 2025], and chain supervision can improve sample complexity [Hanneke et al., 2026, Wen
+266   et al., 2025]; Wen et al. [2025] trace the gain to sparse dependence between tokens, which the
+267   running count makes local. We study how a ﬁxed network distributes gradient credit.
+
+268   Gradient signal for hard targets. Shalev-Shwartz et al. [2017] show exponentially weak target-
+269   dependent gradients over families of composed targets. We ask how one ﬁxed target supplies credit
+270   to a concrete Transformer, by tracking which letters each network term reads. Staircase and leap
+271   analyses [Abbe et al., 2021, 2022, 2023] characterize when SGD learns high-degree targets; for
+272   counting at λ > 0 every degree is present, and its size, not its absence, limits credit. Abbe et al.
+273   [2025] prove that noisy gradient descent on a two-layer network stays at chance on high-degree par-
+274   ities under Gaussian initialization, for the correlation loss; Theorem 3 concerns a Transformer under
+275   cross-entropy, with time λ−n from the contraction of the target. Panigrahi et al. [2025] show that
+276   intermediate teacher checkpoints supply low-degree signal for sparse parity; we analyse optimiza-
+277   tion rather than sample complexity. Li and Mossel [2025] use an Efron–Stein decomposition of the
+278   target; our proofs need no decomposition: they bound the overlap of the target with each network
+279   term directly, by conditioning on the letters the term reads, and we use ANOVA degree spectra only
+280   as a measurement (Appendix E.3). Closest in spirit, Hahn and Roﬁn [2024] show that Transformers
+281   are biased toward low-sensitivity functions, through a sharpness argument on the loss landscape; we
+
+
+                                                           8
+282   bound gradient credit through the letters each network term reads, and add a time bound. Spectral
+283   analyses of simplicity bias [Yang and Salman, 2019] ﬁnd kernel eigenvalues on the Boolean cube
+284   that decay with degree, consistent with the low-degree Jacobian we measure.
+
+285   Chain of thought for parity and permutations. Kim and Suzuki [2025] prove that a one-layer
+286   Transformer with position-only attention and a ﬁxed nonlinearity learns parity in one teacher-forced
+287   step, and that gradient methods fail without intermediate supervision for a parity drawn from a class.
+288   We ask why one format succeeds and the other fails for one ﬁxed target in a model holding both
+289   solutions, with the computation learned. Wang et al. [2025] give a statistical-query lower bound and
+290   a curriculum result for compositions of hidden permutations; our displayed states permit constant-
+291   depth executors. Counting modulo K is a cyclic-group automaton, for which Liu et al. [2023]
+292   construct shallow shortcut Transformers; our outcome executor is such a shortcut, and the question
+293   is whether training ﬁnds it.
+
+294   7 Discussion and conclusion
+295   7.1   What the paper establishes
+
+296   The exact executors give us a useful starting point: this Transformer can carry out either computation.
+297   The learning gap appears because the two formats give its parameters different information. Final-
+298   answer credit contracts across the letters a feature does not read; from a zero readout, the resulting
+299   loss ﬂoor keeps outcome ﬂow near chance for exponential time. A displayed count leaves a local
+300   update to learn. Its leading count–letter coefﬁcient is nonzero for p < 12 under full-preﬁx attention,
+301   and the structured gate turns that signal into a transition learned in polynomial time.
+302   Joint training of scores, relative bias and readout solves 16 of 17 step runs, and transfer experi-
+303   ments generally favor step supervision. These results push beyond the proof, but accessible credit,
+304   convergence with supplied routing, and discovery of that routing remain different claims.
+
+305   7.2   What remains open
+
+306   The ﬁrst open question is how the network learns where to look. A nonzero degree-6 coefﬁcient does
+307   not show that simultaneous ﬂow from random initialization ampliﬁes it into routing. Table 1 gives
+308   ﬁnite-step evidence at ε = 0.3, but the positive theorem supplies the mask and structured directions.
+309   The other restrictions matter too. Theorems 1 and 2 concern small initialization with a ﬁxed ReLU
+310   pattern; Theorem 3 adds full-batch gradient ﬂow. The AdamW and routing experiments leave that
+311   regime. Theorem 4 covers every K ≥ 2 and transitions t ≥ 2, but trains the gate readout along I−R,
+312   together with the count readout and query and key; the value map and the rest of the network stay
+                                                                                        log 1
+313   ﬁxed. Its bound grows like ε−4 log 1ε , so the proved separation needs n of order log 1ε (Remark D.1).
+                                                                                            λ
+314   A full circulant gate readout for K ≥ 3 adds background terms of no ﬁxed sign to the gate velocity
+315   (Appendix D.5). Every reduced ﬂow we integrated still converges (Table 5); we do not yet know
+316   how to prove that broader result.
+317   There are empirical limits as well. Two of three outcome seeds solve counting modulo 3 at n = 8
+318   within 32k updates. On BIG-Bench Hard, outcome training succeeds at ﬁve objects and one step run
+319   fails, reversing the pattern at three and seven even though the low-degree variance share is smaller at
+320   ﬁve. We leave that reversal unexplained. The controlled credit analysis gives us a way to ask what
+321   signal training receives, but does not yet predict the trajectories of pretrained models.
+
+322   Conclusion. Showing intermediate states changes which parts of a computation supply useful
+323   gradient credit. In counting, we can follow that change from a local signal to a separation in training
+324   time. The next question is how a network discovers the relevant computational structure when
+325   the routing is not supplied. Understanding that discovery would bring the mechanism closer to
+326   explaining when intermediate supervision helps reasoning beyond a controlled task.
+
+
+
+
+                                                        9
+327   References
+328   Emmanuel Abbe, Enric Boix-Adsera, Matthew Brennan, Guy Bresler, and Dheeraj Nagaraj. The
+329    staircase property: How hierarchical structure can guide deep learning. In Advances in Neural
+330    Information Processing Systems (NeurIPS), 2021.
+331   Emmanuel Abbe, Enric Boix-Adsera, and Theodor Misiakiewicz. The merged-staircase property:
+332    A necessary and nearly sufﬁcient condition for SGD learning of sparse functions on two-layer
+333    neural networks. In Conference on Learning Theory (COLT), pages 4782–4887, 2022.
+334   Emmanuel Abbe, Enric Boix-Adsera, and Theodor Misiakiewicz. SGD learning on neural networks:
+335    Leap complexity and saddle-to-saddle dynamics. In Conference on Learning Theory (COLT),
+336    volume 195 of Proceedings of Machine Learning Research, pages 2552–2623, 2023.
+337   Emmanuel Abbe, Samy Bengio, Aryo Lotﬁ, Colin Sandon, and Omid Saremi. How far can trans-
+338    formers reason? the globality barrier and inductive scratchpad, 2024. URL https://arxiv.
+339    org/abs/2406.06467.
+340   Emmanuel Abbe, Elisabetta Cornacchia, Jan Haz˛ła, and Donald Kougang-Yombi. Learning high-
+341    degree parities: The crucial role of the initialization. In International Conference on Learning
+342    Representations, 2025.
+343   Loubna Ben Allal, Anton Lozhkov, Elie Bakouch, Gabriel Martín Blázquez, Guilherme Penedo,
+344     Lewis Tunstall, Andrés Maraﬁoti, Hynek Kydlíček, Agustín Piqueres Lajarín, Vaibhav Srivastav,
+345     et al. SmolLM2: When smol goes big – data-centric training of a small language model, 2025.
+346   Bradley Efron and Charles Stein. The jackknife estimate of variance. The Annals of Statistics, 9(3):
+347     586–596, 1981.
+348   Guhao Feng, Bohang Zhang, Yuntian Gu, Haotian Ye, Di He, and Liwei Wang. Towards revealing
+349     the mystery behind chain of thought: A theoretical perspective. In Advances in Neural Informa-
+350     tion Processing Systems (NeurIPS), 2023.
+351   Michael Hahn and Mark Roﬁn. Why are sensitive functions hard for transformers? In Proceedings
+352    of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long
+353    Papers), pages 14973–15008, 2024.
+354   Steve Hanneke, Idan Mehalel, and Shay Moran. Sample complexity of autoregressive reasoning:
+355     Chain-of-thought vs. end-to-end, 2026. URL https://arxiv.org/abs/2604.12013.
+356   Wassily Hoeffding. A class of statistics with asymptotically normal distribution. Annals of Mathe-
+357    matical Statistics, 19(3):293–325, 1948.
+358   Zeyu Jia, Alexander Rakhlin, and Tengyang Xie. Do we need to verify step by step? rethinking
+359     process supervision from a theoretical perspective. In Proceedings of the 42nd International
+360     Conference on Machine Learning, volume 267 of Proceedings of Machine Learning Research,
+361     2025.
+362   Juno Kim and Taiji Suzuki. Transformers provably solve parity efﬁciently with chain of thought. In
+363     International Conference on Learning Representations, 2025.
+364   Rupert Li and Elchanan Mossel. Noise sensitivity and learning lower bounds for hierarchical func-
+365     tions. arXiv preprint arXiv:2502.05073, 2025.
+366   Hunter Lightman, Vineet Kosaraju, Yura Burda, Harri Edwards, Bowen Baker, Teddy Lee, Jan
+367     Leike, John Schulman, Ilya Sutskever, and Karl Cobbe. Let’s verify step by step, 2023. URL
+368     https://arxiv.org/abs/2305.20050.
+369   Bingbin Liu, Jordan T. Ash, Surbhi Goel, Akshay Krishnamurthy, and Cyril Zhang. Transformers
+370     learn shortcuts to automata. In International Conference on Learning Representations, 2023. URL
+371     https://openreview.net/forum?id=De4FYqjFueZ.
+372   Eran Malach. Auto-regressive next-token predictors are universal learners. In Proceedings of the
+373     41st International Conference on Machine Learning, volume 235 of Proceedings of Machine
+374     Learning Research, pages 34417–34431, 2024.
+
+                                                      10
+375   William Merrill and Ashish Sabharwal. The expressive power of transformers with chain of thought.
+376    In International Conference on Learning Representations (ICLR), 2024.
+377   Maxwell Nye, Anders Johan Andreassen, Guy Gur-Ari, Henryk Michalewski, Jacob Austin, David
+378    Bieber, David Dohan, Aitor Lewkowycz, Maarten Bosma, David Luan, Charles Sutton, and Au-
+379    gustus Odena. Show your work: Scratchpads for intermediate computation with language models,
+380    2021. URL https://arxiv.org/abs/2112.00114.
+381   Ryan O’Donnell. Analysis of Boolean Functions. Cambridge University Press, 2014.
+382   Abhishek Panigrahi, Bingbin Liu, Sadhika Malladi, Andrej Risteski, and Surbhi Goel. Progressive
+383     distillation induces an implicit curriculum. In International Conference on Learning Representa-
+384     tions, 2025.
+385   Ben Prystawski, Michael Y. Li, and Noah D Goodman. Why think step-by-step? reasoning emerges
+386     from the locality of experience. arXiv preprint arXiv:2304.03843, 2023.
+387   Qwen Team. Qwen2.5 technical report. arXiv preprint arXiv:2412.15115, 2024.
+388   Maxim Raginsky. Strong data processing inequalities and Φ-Sobolev inequalities for discrete chan-
+389    nels. IEEE Transactions on Information Theory, 62(6):3355–3389, 2016.
+390   Shai Shalev-Shwartz, Ohad Shamir, and Shaked Shammah. Failures of gradient-based deep learn-
+391     ing. In Proceedings of the 34th International Conference on Machine Learning, volume 70 of
+392     Proceedings of Machine Learning Research, pages 3067–3075, 2017.
+393   Mirac Suzgun, Nathan Scales, Nathanael Schärli, Sebastian Gehrmann, Yi Tay, Hyung Won Chung,
+394    Aakanksha Chowdhery, Quoc V Le, Ed H Chi, Denny Zhou, et al. Challenging BIG-Bench tasks
+395    and whether chain-of-thought can solve them. arXiv preprint arXiv:2210.09261, 2022.
+396   Jonathan Uesato, Nate Kushman, Ramana Kumar, Francis Song, Noah Siegel, Lisa Wang, Antonia
+397     Creswell, Geoffrey Irving, and Irina Higgins. Solving math word problems with process- and
+398     outcome-based feedback, 2022. URL https://arxiv.org/abs/2211.14275.
+399   Roman Vershynin. High-Dimensional Probability: An Introduction with Applications in Data Sci-
+400     ence. Cambridge University Press, 2018.
+401   Zixuan Wang, Eshaan Nichani, Alberto Bietti, Alex Damian, Daniel Hsu, Jason D. Lee, and Denny
+402     Wu. Learning compositional functions with transformers from easy-to-hard data. In Conference
+403     on Learning Theory (COLT), volume 291 of Proceedings of Machine Learning Research, pages
+404     5632–5711, 2025.
+405   Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten Bosma, Brian Ichter, Fei Xia, Ed Chi, Quoc
+406     Le, and Denny Zhou. Chain-of-thought prompting elicits reasoning in large language models. In
+407     Advances in Neural Information Processing Systems, volume 35, 2022.
+408   Kaiyue Wen, Huaqing Zhang, Hongzhou Lin, and Jingzhao Zhang. From sparse dependence to
+409     sparse attention: Unveiling how chain-of-thought enhances transformer sample efﬁciency. In
+410     International Conference on Learning Representations, 2025.
+411   Noam Wies, Yoav Levine, and Amnon Shashua. Sub-task decomposition enables learning in se-
+412     quence to sequence tasks. In The Eleventh International Conference on Learning Representations,
+413     2023. URL https://arxiv.org/abs/2204.02892.
+414   Hans S. Witsenhausen. On sequences of pairs of dependent random variables. SIAM Journal on
+415    Applied Mathematics, 28(1):100–113, 1975.
+416   Greg Yang and Hadi Salman. A ﬁne-grained spectral perspective on neural networks. arXiv preprint
+417     arXiv:1907.10599, 2019.
+
+418   A Formal setup
+419   This section states the deﬁnitions and assumptions that the main text summarizes.
+
+
+                                                      11
+420   Losses and credit.
+421   Deﬁnition A.1 (Outcome and step losses). Let zt (θ) ∈ RK be the state logits at the position that pre-
+422   dicts st , and zθ those at the answer position. The outcome loss is Lout (θ) = E[− log softmax(zθ )y ],
+423   and y = ey is the one-hot answer. Write ℓt (θ) = E[− log softmax(zt (θ))st ]. The ﬁrst state predic-
+424   tion is a boundary case: the previous count s0 sits in the prompt rather than at the predicting position.
+425   The step loss is therefore the teacher-forced transition loss
+
+                                                           1 X
+                                                                n
+                                           Lstep (θ) =             ℓt (θ),
+                                                         n − 1 t=2
+                          Pn
+426   and Lall        1
+           step (θ) = n      t=1 ℓt (θ) also includes t = 1.
+                     −1
+427   With u = K 1, the outcome credit functional is Φout = Φy−u (Deﬁnition 3), and with the
+428   state-only predictor qs and the rule signal gt of Section 3, Φrule = Et E[hzt , gt i] with t uniform on
+429   {2, . . . , n}. At zero attention scores the network is additive over positions (Proposition C.2(iii)), so
+430   every interaction among letters passes through the scores; the score-mediated credit is the credit of
+431   the score-dependent part Jscore = ∂z   ∂θ − J
+                                                θ    [0]
+                                                         of the Jacobian (Equation (9)), E[J⊤score (y − u)] .
+
+432   Architecture and initialization.
+433   Assumption 1 (Architecture). A causal Transformer with two blocks of softmax heads and ReLU
+434   MLPs, learned token and position embeddings, a learned relative position bias βi−j added to every
+435   attention score and initialized at zero, no LayerNorm, any widths (residual dres , head dh , MLP w)
+436   and a linear readout V; every logit vector is z = Vh with h independent of V. A head may have a
+437   ﬁxed, input-independent causal submask; ordinary attention uses the full preﬁx.
+438   Assumption 2 (Initialization). Scale. θ0 = εθ̃ with ε ≤ ε0 := c min(1, N1b ), where every weight
+439   matrix and embedding block of θ̃ has operator norm at most a0 and the value-token embeddings
+440   have smallest singular value at least cemb > 0.
+441   Biases. Every MLP bias satisﬁes |b̃m | ≥ 1, and each MLP bias vector has norm at most Nb .
+442   Neighbourhood. We work on Bε = {θ : kθ − θ0 k ≤ r0 ε, β = 0} with r0 = min( 81 , cemb 4 ), where
+443   β is the relative position bias.
+444   Assumption 3 (Task). The task is counting modulo K ≥ 2 (Deﬁnition 1), so λ < 1.
+445   Constants and widths. On Bε , no ReLU unit changes sign (Appendix C.3). Constants c, C > 0
+446   depend only on a0 , cemb , K and the numbers of blocks and heads, never on the widths, n, ε or
+447   the time. Fan-in-scaled initialization satisﬁes Assumption 2 w.h.p.   √at every width, with a0 bounded
+448   in terms of the largest block aspect ratio, cemb ≥ 12 and Nb ≤ 2 w, provided the MLP biases are
+449   drawn with |b̃m | ∈ [1, 2], which default initializations (zero or small biases) do not do; at the executor
+450   width the aspect ratios are bounded, so the theorems hold there with n-independent constants for
+451   ε ≤ c min(λ, n−1/2 ) (Appendix C.6).
+452   Parameters and training.
+453   Assumption 4 (Training). Full-batch gradient ﬂow dθ      dt = −P∇θ L(θ) on Lout or Lstep , where P
+454   is the orthogonal projection onto the trainable parameter blocks, with the relative position bias held
+455   at its zero initialization. Theorem 3 drops this restriction and lets the bias train (Lemma C.4).
+456   Parameters carry the Euclidean norm of the vectorized parameters (Frobenius on each block). In
+457   Theorems 1 and 2 the relative bias is ﬁxed at zero, which is what β = 0 in Bε and Assumption 4
+      encode, and θ denotes the parameters other than β: the Jacobian ∂z∂θ , the gradients ∇θ L and ∇θ Φ,
+                                                                          θ
+458
+459   and the Jacobian terms of Proposition C.1 are taken with respect to these parameters only. The
+460   step-credit bounds use uniform zero-score attention through Proposition C.2(iv) and do not cover a
+461   trained bias. Theorem 3 allows the bias to be trained: its proof uses only the logit bounds, which
+462   hold for every β (Lemma C.4). The runs of Table 1 also train it; the gate head of Theorem 4 has no
+463   relative bias. The in-regime runs of Appendix E.2 have no relative bias.
+
+464   B Exact two-block executors
+465   This section proves Proposition 1. An implementation of the construction is in the accompanying
+466   code repository.
+
+                                                          12
+467   Architecture. Each block has three heads with dh = 2n + 6 (the number of positions) and one
+468   ReLU MLP of width max{|Σ|, 3K(n + 1), 2n + 1}; there is no LayerNorm:
+                                    3 X
+                                    X                  1               
+                                            softmaxj≤i √ (WQ hi )⊤ WK hj WV hj ,
+                                                            (h)     (h)   (h)
+                        hi ← hi +
+                                    h=1 j≤i
+                                                        d h
+
+                        hi ← hi + Wout ReLU(Win hi + bin ),                        logitsi = V hi .
+
+469   Registers. The residual stream is the concatenation of one-hot registers
+           tl |{z}
+          |{z} tv pos qry match     prev mt cnt s0 out ,                                dres = 2|Σ| + 4K + dh + 3.
+                   |{z} |{z} | {z } |{z} |{z} |{z} |{z} |{z}
+           |Σ|    K      dh   |Σ|        1         K     1        1        K   K
+
+
+470   r[a] is coordinate a of register r, and Ea←b copies b into a.
+471   Layout. Token ids: letters 0, . . . , |Σ| − 1, value v 7→ |Σ| + v, then SEP, “:”, EOS. Positions
+472   (0-indexed):
+                         prompt      s0 @0, w⋆ @1, wt @(1 + t), SEP@(n + 2)
+                         step row    st @(n + 2 + t), “:”@(2n + 3), sn @(2n + 4)
+                         outcome row “:”@(n + 3), sn @(n + 4)
+473   Position i predicts the token at i + 1: n + 1 + t predicts st , and n + 3 predicts sn in the outcome
+474   row.
+475   Programs. State arithmetic is modulo K.
+                         step executor                                                 outcome executor
+      block 1, head 1    qry ← the query, at every letter
+      block 1, MLP       match ← bt
+476   block 2, head 1    prev ← set−1                                                  cnt ← mean of match over the letters
+      block 2, head 2    mt ← match of letter t                                        s0 ← s0
+      block 2, head 3    copy the last displayed count to the answer position          —
+      block 2, MLP       out ← lookup(prev, mt)                                        out ← lookup(s0, cnt)
+                                                                                         √
+477   Route and average. Let Ωn = max{16, 3 log(8(n + 3))}, CQ = Ωn dh , and let src(i) ⊆
+478   {0, . . . , i} be the source set of position i (a fallback {f } where none is listed). Set
+                              (WK )j,pos[j] = 1,                 (WQ )j,pos[i] = CQ (j ∈ src(i)),
+                                          1                                                                             (5)
+                                         √ (WQ hi )⊤ WK hj = Ωn [j ∈ src(i)].
+                                          dh
+479   With WV = Ea←b , the head writes into a the average of b over src(i), up to the leak bounded
+480   below; |src(i)| = 1 is a route and |src(i)| > 1 an average. A fallback f > i gives uniform attention
+481   at a position with no supervised prediction.
+482   Lookup. For a count s and a bit b ∈ {0, 1}, use one unit per pair (s′ , b′ ) with
+                                                          1
+                                      ′          ′    3              (s′ , b′ ) = (s, b),
+                     pres′ b′ = [s = s ] + [b = b ] − = 2 1
+                                                      2     ≤ − 2 otherwise,
+483   and output weights 2es′ +b′ :
+                                             P
+                                                 s′ ,b′ 2 es +b ReLU(pres′ b′ ) = es+b .                                (6)
+                                                         ′   ′
+
+
+
+
+                                                                      13
+484   B.1   Both programs are exact
+                                                                 P
+485   Proof of Proposition 1. Ideal routing (Ωn = ∞). With m = t bt and [m = a] = ReLU(m − a +
+486   1) − 2 ReLU(m − a) + ReLU(m − a − 1),
+                                        P                                     
+                         match1+t = 2 a∈Σ ReLU [wt = a] + [w⋆ = a] − 23 = bt ,
+                                                                    1P
+         prevn+1+t = est−1 ,      mtn+1+t = bt ,       cntn+3 = n ·      bt = m,         s0n+3 = es0 ,
+                                                                    n t
+                                   X                                        3 
+                      outn+1+t =        ej+ι 2 ReLU [st−1 = j] + [bt = ι] −      = e st ,
+                                    j,ι
+                                                                             2
+                                             X
+                                 outn+3 =       ej+a [s0 = j][m = a] = esn .
+                                               j,a
+
+487   The test [s0 = j] is applied by adding (n + 2)([s0 = j] − 1) to each of the three pre-activations
+488   of [m = a]. The readout has weight 20 on out for value tokens and weight 20 on the relevant pos
+489   coordinates for “:” and EOS; all unused maps are zero.
+490   Finite scores. A row puts total weight at most ωnleak outside its sources, where
+                                                             2(n + 3)           1
+                               ωnleak = (dh − 1)e−Ωn <                 3
+                                                                         =             .
+                                                            (8(n + 3))     256(n + 3)2
+491   Hence
+                |match − bt | ≤ 2ωnleak ,      kprev − est−1 k ≤ ωnleak ,         |mt − bt | ≤ 3ωnleak ,
+                                  |cnt − m| ≤ 3n ωnleak ,        ks0 − es0 k ≤ ωnleak .
+492   At the step positions,
+                                   1
+                        prest ≥      − 4ωnleak > 0 > max prea ,          outst ≥ 1 − 8ωnleak .
+                                   2                 a̸=st
+
+                                                                 1
+493   At the answer position the errors add to (4n + 2)ωnleak < 192 , and the three-ReLU test is 1-Lipschitz,
+494   so
+                         outsn ≥ 1 − (4n + 2)ωnleak ,        max outa ≤ (4n + 2)ωnleak .
+                                                                 a̸=sn
+495   With readout weight 20 and a⋆ the gold token at a supervised position,
+                                              
+                     za⋆ − max⋆ za ≥ 20 min 1 − 8ωnleak , 1 − 2(4n + 2)ωnleak > 19.
+                                a̸=a
+
+496   Open neighbourhood. Let Pn be the ﬁnite set of gold preﬁxes and supervised positions. By continu-
+497   ity there is rexec,n > 0 with
+                                                                                          19
+                         kθ − θ ⋆ k < rexec,n =⇒ max kzθ (P ) − zθ⋆ (P )k∞ <                 ,
+                                                      P ∈Pn                                2
+498   so every greedy prediction is a⋆ , and induction over the continuation gives the claim.
+
+499   C Proofs of Theorems 1 to 3
+500   The outcome argument has two parts. We ﬁrst ask what a feature can learn about the answer from the
+501   letters it reads, then bound which such features appear in the network near initialization. Combining
+502   the estimates gives a local loss ﬂoor. The ﬂow’s energy identity turns that ﬂoor into an escape-time
+503   bound. For step credit, the decisive distinction is between ﬁtting the displayed-state prior and using
+504   the current letter. The proofs below keep those two signals separate.
+505   C.1   Conventions
+506   (A1)–(A4) denote Assumptions 1 to 4, and (A3′ ) a uniform start. Unless stated otherwise the query
+507   and the start count are ﬁxed. Constants c, C depend only on a0 , cemb , K and the numbers of blocks
+508   and heads. Every bound stated on Bε also holds on Bε′ = {θ : kθ − θ0 k ≤ 2r0 ε, β = 0}, whose
+                                             2 ); there |bm | ≥ (1 − 2r0 )ε ≥ 4 ε and σmin (Eval ) ≥
+      relative radius is at most min( 14 , cemb                               3                      εcemb
+509
+                                                                                                       2 . The
+                                                              1
+510   only width-dependent threshold is ε0 = c min(1, Nb        ).
+
+
+                                                            14
+                            Table 2: Lemmas of Appendix C and the theorems they feed.
+      Result      Key estimate                                                                         Feeds
+                                   θ ⊤
+      C.1         ∇θ Lout = E[( ∂z
+                                ∂θ
+                                    ) (p − u)] − ∇θ Φout                                               Theorems 2 and 3
+                                                  ⊤
+      C.2         H reads the letters in S =⇒ ∥E[H (y − u)]∥ ≤ λn−|S| ∥H∥L2                            Theorems 1 and 3
+      C.1         J[0] reads ≤ 1 letter per term; J[k] reads ≤ 2k + 1, total size ≤ Cε2 (Catt ε4 )k    Theorems 1 and 3
+      C.3         score-mediated credit ≤ Cε6 λn−3 ; |Φout | ≤ Cε2 λn                                  Theorems 1 and 3
+      C.4, C.5    bounds uniform in β; ∥∇θ Lout ∥ ≤ C1 ε, curvature ≤ C1                               Theorem 3
+      C.6–C.8     rule credit needs letter and state; Et [κlt ,it ] ≤ n6 ; leading coefﬁcient ε6 Pn    Theorem 2
+
+
+511   The bias condition. The bias condition of (A2) ﬁxes one ReLU pattern for all inputs on Bε . The
+512   AdamW runs violate it: at their initialization (n = 8, MLP width 54, ε = 0.02, Gaussian biases), 10
+513   to 19 of the 54 units per block switch with the letters. Those runs therefore lie outside the regime of
+514   the theorems; Appendix E.2 repeats the key measurements inside it.
+515   Lemma C.1 (Gradient split). For every differentiable model, with Φout (θ) = E[hzθ , y − ui],
+                            ∂zθ ⊤                                                    ∂zθ ⊤        
+               ∇θ Lout = E (    ) (p − u) − ∇θ Φout ,                      ∇θ Φout = E (    ) (y − u) .
+                             ∂θ               | {z }                                     ∂θ
+                         |       {z      } answer-dependent
+                              answer-independent
+
+516   Proof. The logit gradient of the cross-entropy is p − ey = (p − u) − (y − u).
+517   C.2      Conditioning on unseen letters
+518   A feature may be arbitrarily complicated in the letters it reads. The contraction argument concerns
+519   the letters it leaves out: after conditioning on the observed set, those letters are still independent
+520   updates of the count. Fourier modes make their cumulative effect explicit.
+521   Contraction. By Equation (2), λ2 = 1 − 2p(1 − p)(1 − cos 2π         K ), and for K = 2, λ = |1 − 2p|
+522   and 1 − λ = 4p(1 − p). With α = e
+                 2                             2πi/K
+                                                     and the Fourier multipliers ρj = 1 − p + pαj , so that
+523   λ = maxj̸=0 |ρj |, one unseen letter multiplies each nonconstant count mode αjst by ρj , while one
+524   displayed transition keeps the innovation
+                                                       2
+                                  E αjst − ρj αjst−1       = 1 − |ρj |2 ≥ 1 − λ2 .                        (7)
+                                                                                                            
+525   In the Fourier basis of 1⊥ , Cov(gt ) is diagonal with entries K1
+                                                                        (1 − |ρj |2 ) = 2p(1−p)
+                                                                                           K    1 − cos 2πj
+                                                                                                         K ,
+526   which gives Equation (4).
+527   Lemma C.2 (Conditional contraction). Assume (A3) and ﬁx the start count and the query, so that
+528   the letters are independent. Let G = y − u, S ⊆ [n] and FS = σ(wt : t ∈ S). Then
+
+                                                  1 X
+                                                     K−1                   1  2(n−|S|)
+                                            2
+                             E[G | FS ]         =       |ρj |2(n−|S|) ≤ 1 −    λ         .                          (8)
+                                                  K j=1                     K
+
+529   Hence for every square-integrable FS -measurable matrix H with K rows,
+                                                                                1/2
+                         E[H⊤ G] ≤ λn−|S| kHkL2 ,          kHkL2 := EkHk2F           .
+                            P
+530   Proof. Write sn = s0 + t bt . The letters are independent, so for j 6= 0
+                                        Y         Y                   n−|S|
+                                                                                Y
+                     E αjsn FS = αjs0         αjbt     E αjbt = αjs0 ρj            αjbt ,
+                                                   t∈S      t∈S
+                                                             /                              t∈S
+
+531   whose modulus is |ρj |n−|S| . Parseval over the nonconstant modes j = 1, . . . , K − 1 gives the
+532   identity, and |ρj | ≤ λ the bound. For a unit vector v, Hv is FS -measurable, so
+                     v ⊤ E[H⊤ G] = E Hv, E[G | FS ]                                   (tower property)
+                                          1/2                1/2
+                                 ≤ EkHvk2      EkE[G | FS ]k2                         (Cauchy–Schwarz)
+                                    ≤ kHkL2 λn−|S|                                    (Equation (8))
+
+
+                                                              15
+533   and the supremum over v is the claim.
+
+534   Sharpness. The j = 1 term of Equation (8) is K1 2(n−|S|)
+                                                      λ        , and H = E[G | FS ] attains the second
+535   bound up to the factor (1 − K ) , so the exponent n − |S| is sharp for 0 < λ < 1.
+                                  1 1/2
+
+
+536   C.3    Network terms and the letters they read
+537   The contraction estimate helps only if we can control how many letters a network term uses. Ex-
+538   panding the attention scores does this without asking the entire output to depend on a small set: each
+539   term has its own set of letters, and terms with larger sets are smaller near initialization.
+540   Score expansion. For ζ ∈ [0, 1], let z(ζ) be the network with every score ψil , in both blocks,
+541   replaced by ζψil . Then z(1) = zθ , and for every integer k0 ≥ 0,
+
+                   X
+                   k0                                                         Z 1
+                                                      1 dk z                        (1 − ζ)k0 dk0 +1 z
+            zθ =         z [k] + zrem ,     z [k] =           (0),   zrem =                            (ζ) dζ.   (9)
+                                                      k! dζ k                  0       k0 !   dζ k0 +1
+                   k=0
+
+542   J[k] and Jrem are the corresponding Jacobian terms. A term reads the letters whose inputs it contains.
+543   Proposition C.1 (Score count and letter support). Fix the start state and the query. For θ ∈ Bε ,
+      ∂zθ     P k0      [k]
+544
+       ∂θ =       k=0 J     + Jrem , and there is Catt such that:
+                      [0]     Pn      [0]            [0]            [0]                   [0]
+545      (i) J[0] = J∅ + t=1 Jt , where J∅ reads no letter, Jt reads only wt , sup kJ∅ kF ≤ Cε and
+             P            [0]
+                t sup kJt kF ≤ Cε ;
+                                       2
+546
+                                            P
+             P k ≥ 1, J
+                                  [k]
+547     (ii) for                      =       ν Tk,ν , where each Tk,ν reads at most 2k + 1 letters and
+548
+                ν sup kT   k,ν k F  ≤ Cε  2
+                                            (C      4 k
+                                               att ε ) ;
+
+549    (iii) sup kJrem kF ≤ Cε2 (Catt ε4 )k0 +1 .
+550   The same bounds hold for z [k] and zrem with one more factor ε. Suprema are over inputs; constants
+551   do not depend on n, k or k0 .
+552   Catt is ﬁxed once, large enough for Propositions C.1 and C.2; it depends only on a0 , cemb and K.
+553   Proposition C.2 (Bounds for the score expansion). Assume (A1)–(A2). Uniformly on Bε , at every
+554   position and input, with xi the token-plus-position vector, ∂v F = ds  d
+                                                                               F (θ + sv)|s=0 , and kF kabs
+555   the absolute sum of F at ζ = 0: expand F into monomials, products of parameter blocks, inputs xj
+556   and input-independent attention weights; bound each monomial by the product of the norm bounds
+557   of its parameter factors on the ball, of sup kxj k for its inputs, and of its weights; and sum these
+558   bounds before any cancellation:
+559      (i) with input-independent offsets O 1 = o1 , O 2 = o1 + o2 : hℓi = xi + O ℓ + O(ε2 ), |ψil | ≤ Cε4 ,
+560          kzi k ≤ Cε2 , k∂v zi k ≤ Cεkvk;
+561     (ii) for k ≥ 1, ζ ∈ [0, 1] and kvk = 1,
+                                 1 d k zi                            1    d k zi
+                                             ≤ Cε3 (C0 ε4 )k ,          ∂v k        ≤ Cε2 (C0 ε4 )k ;
+                                 k! dζ k                             k!   dζ
+562          the same holds for the absolute sums at ζ = 0, for h2i with one power of ε fewer, and for the
+563          Taylor remainder with k = k0 + 1;
+564    (iii) the zero-score network is afﬁne in the inputs; its transported logit terms have tangent O(ε2 ),
+565          and direct-input and input-free terms have tangent O(ε); an order-k coefﬁcient contains at
+566          most 2k + 1 inputs; a one-score logit term has size O(ε7 ) and tangent O(ε6 );
+567    (iv) with full-preﬁx attention, the terms of the order-k coefﬁcients at ζ = 0 that contain an earlier
+568          input xl , l < i, obey the bounds of (ii) multiplied by
+                                              1        X 1 
+                                       κl,i =      1+              ,   mi = i + 1,                     (10)
+                                              mi              mj
+                                                             l<j≤i
+
+569         after enlarging C0 .
+570   The constants do not depend on n, the widths or k.
+
+                                                                16
+                                                                            k
+571   Proof. For a network quantity F let F [k] (ζ) = k!1 d F
+                                                          dζ k
+                                                               (ζ), so that z [k] = z [k] (0), and write kF [k] k
+572   for its supremum over inputs, positions and ζ ∈ [0, 1] (the ℓ1 norm for attention rows).
+573   (i). |bm | ≥ 34 ε > Cε2 ≥ |(Win h)m |, so one activation matrix Dact serves every input and every ζ,
+574   and
+                                   
+             hℓi = Mℓ hℓ−1i   + aℓi + oℓ ,     Mℓ = I + Wout   ℓ
+                                                                  Dact Win ℓ
+                                                                             ,     oℓ = Wout   ℓ
+                                                                                                 Dact bℓ ,
+                  P        P
+575   with aℓi = heads j≤i ωij WV hjℓ−1 and ωi· = softmax(ζψi· ). Then
+
+               kMℓ − Ik ≤ Cε2 ,                   koℓ k ≤ CNb ε2 ≤ Cε,                 k∂v oℓ k ≤ (a0 + 2Nb )ε ≤ C,
+576   and kωi· k1 = 1. Induction over the two blocks gives (i).
+                                                        P
+577   Softmax calculus. For ω = softmax(s), Eω [f ] = j ωj fj and a direction ν,
+
+              d                                                        d
+                 ωj (s + tν) 0 = ωj (νj − Eω [ν]),                        Eω(s+tν) [f ] 0 = Eω [νf ] − Eω [ν]Eω [f ].
+              dt                                                       dt
+578   After k derivatives each term is ωj times at most k averages and direction entries, with each direction
+579   once, so it has at most k + 1 differentiable
+                                           P             factors; the absolute coefﬁcient sums obey ak+1 ≤
+580   2(k + 1)ak , a0 = 1, and summing j ωj | · | gives
+                                                                        Y
+                                    Dk ω(s)[ν1 , . . . , νk ] 1 ≤ 2k k!    kνa k∞ .                      (11)
+                                                                                       a
+
+                                                                                                                            k−1
+                                                                                                                                  
+581   Normalized derivatives of products are convolutions; those of compositions sum over the                               j−1
+582   compositions of k into j positive parts. Hence
+                1
+                   kF (j) k ≤ Acj , kh[k] k ≤ abk                   =⇒          k(F ◦ h)[k] k ≤ Aca bk (1 + ca)k−1 .
+                j!
+
+583   (ii), values. With kω ℓ,[0] k1 = 1, kh0,[k] k = 0 for k ≥ 1, and ar ≥ 1 in the compositions,
+                                   P
+                 kψ ℓ,[k] k ≤ Cε2 a+b=k khℓ−1,[a] k khℓ−1,[b] k            (score is a product)
+
+             k(ζψ ℓ )[k] k ≤ kψ ℓ,[k] k + kψ ℓ,[k−1] k                                      ((ζψ)[k] = ζψ [k] + ψ [k−1] )
+                             Pk         P              Q
+              kω ℓ,[k] k1 ≤ j=1 2j a1 +···+aj =k r k(ζψ ℓ )[ar ] k                          (composition, Equation (11))
+                                 P
+                kaℓ,[k] k ≤ Cε a+c=k kω ℓ,[a] k1 khℓ−1,[c] k                                (head output is a product)
+                                                       
+               khℓ,[k] k ≤ C khℓ−1,[k] k + kaℓ,[k] k                                        (afﬁne block)
+                  kz k ≤ Cε kh
+                     [k]                 2,[k]
+                                                 k                                          (readout)
+
+584   With b = Cε4 , block 1 gives, for k ≥ 1, kω 1,[k] k1 ≤ bk and ka1,[k] k + kh1,[k] k ≤ Cε2 bk (while
+585   kh1,[0] k ≤ Cε). Then kψ 2,[0] k ≤ Cε4 , kψ 2,[k] k ≤ Cε5 (k + 1)bk for k ≥ 1, and k(ζψ 2 )[k] k ≤
+586   C(2b)k , so
+                                                             k 
+                                                             X       
+                                                                 k−1
+                                    kω    2,[k]
+                                                  k1 ≤ C                        C j (2b)k ≤ C(Cb)k ,
+                                                             j=1
+                                                                    j−1
+
+                           ka   2,[k]
+                                        k + kh    2,[k]
+                                                          k ≤ Cε2 (Cb)k ,          kz [k] k ≤ Cε3 (C0 ε4 )k .
+
+587   (ii), tangents, remainders, absolute sums. Differentiating along v replaces one factor of each product
+588   by its tangent, or one (ζψ)[a] in a softmax term, or adds Dj+1 ω[∂v (ζψ)[0] , . . .]. With k∂v h0,[0] k =
+589   O(1), k∂v ψ ℓ,[0] k = O(ε3 ) and j + 1 ≤ 2k absorbed into C0k ,
+
+                   k∂v ω ℓ,[k] k1 ≤ Cε−1 (C0 ε4 )k ,                  k∂v aℓ,[k] k + k∂v hℓ,[k] k ≤ Cε(C0 ε4 )k ,
+                                                          k∂v z [k] k ≤ Cε2 (C0 ε4 )k .
+590   The integral remainder is bounded by the supremum of the next normalized derivative.
+
+                                                                       17
+591   Absolute sums. k · kabs is subadditive and submultiplicative, and kF k ≤ kF kabs . At ζ = 0 ev-
+592   ery attention row is an input-independent probability vector π (uniform over the visible sites here,
+593   softmax(β) in Lemma C.4), and
+                                  P          Q                         Q
+                                      j πj       r Fr (j)         ≤        r maxj kFr (j)kabs .
+                                                            abs
+
+594   At ζ = 0, Dj ω expands as ω(0)-weights times products of direction entries and ω(0)-averages, with
+595   total coefﬁcient at most 2j j!, so Equation (11) holds for absolute sums with kνa k∞ replaced by
+596   maxl kνa,l kabs . Hence every line of the recursion above holds verbatim for k · kabs at ζ = 0, which
+597   gives the absolute-sum bounds of (ii).
+598   Tangents of absolute sums. Take the norm bound of every parameter factor at least ε (weights and
+599   embeddings (a0 + 1)ε, biases (Nb + 1)ε). An order-k monomial has at most C(k + 1) factors: at
+600   most k scores, each with WQ and WK , and at most 2k + 1 inputs, each carried by at most four
+601   parameter blocks. Replacing one factor by its unit-direction tangent multiplies the bound by at most
+                                            C(k+1)       k
+602
+       1
+       ε , so the tangent bound is at most     ε    ≤ C2ε times the monomial bound, uniformly in the unit
+603   direction v; this lets supv pass inside the sum over monomials.
+604   (iii). At zero scores the network is afﬁne in the inputs (for a head with a submask, m1j becomes one
+605   over the size of its visible set):
+                                                        1 X 1 
+                                       h1j = M1 xj +            W V xl + o 1 ,
+                                                       mj
+                                                            l≤j
+                                             h            1 X 2 1             i
+                                     [0]
+                                   zi = V M2 h1i +               W V hj + o2 .
+                                                         mi
+                                                                       j≤i
+
+606   Transported terms contain V, WV and some xj , so their tangent is O(ε2 ); direct-input and input-
+607   free terms have tangent O(ε). With d(F ) the number of input occurrences in F ,
+
+                   d(hℓ,[a] ) ≤ 2a + 1                                                 (induction on ℓ)
+                   d(ψ ℓ,[b] ) ≤ 2b + 2                                                (score is a product of two residuals)
+                            
+                 d (ζψ)[a] ≤ 2a                                                        ((ζψ)[a] = ψ [a−1] )
+      d(order-k head term) ≤ 2a1 + · · · + 2aj + 2c + 1 = 2k + 1                       (a1 + · · · + aj + c = k)
+
+608   and afﬁne MLPs and parameter derivatives add none. The one-score correction is
+                      1 X                                             1 X
+                             ψij (0) − ψ̄i (0) WV hj (0),    ψ̄i (0) =        ψil (0);
+                     mi                                                mi
+                           j≤i                                                               l≤i
+
+609   its logit terms contain V, WV , WQ , WK and three residual inputs, so they have size O(ε7 ) and
+610   tangent O(ε6 ).
+611   (iv). Fix l < i; (iv) concerns the coefﬁcients at ζ = 0 and their tangents. Replace xl by χxl . A
+612   monomial containing xl exactly d ≥ 1 times carries χd , so
+                                      X              d X          
+                                          ktkabs ≤          ktkabs       ,
+                                      t∋x
+                                                    dχ t             χ=1
+                                             l
+
+
+                                                                                                                       (ℓ)
+613   a tangent along an input direction, which obeys the product and composition rules above. Call Ij a
+614   weight of position j if every marked order-k coefﬁcient of hℓj (absolute sum and tangent) is at most
+       (ℓ)                                                  (0)
+615   Ij times the unmarked bound of (ii); then Ij = 1[j = l]. At ζ = 0, ωjj ′ = m1j , and each term of
+616   a ζ-derivative of ωjj ′ is ωjj ′ times score entries and Eω -averages, so each entry of an order-a row
+617   coefﬁcient is at most m1j times the bound Equation (11), which stays valid with one kνk∞ replaced
+
+
+
+
+                                                                  18
+618   by Eω |ν|. A marked factor of the head output at j contributes:
+                                Marked factor       Weight     Reason
+                                            ′        1 (ℓ−1)
+                                value at j ≤ j      mj Ij ′    entrywise row bound
+                                        ′            2 (ℓ−1)             |ν ′ |
+                                key at j ≤ j        mj Ij ′    Eω |ν| = mjj
+                                                     (ℓ−1)
+                                query at j          Ij         all score entries
+
+619   With the residual path and kMℓ k ≤ 2,
+                                                            1 X (ℓ−1) 
+                                        (ℓ)          (ℓ−1)
+                                       Ij       ≤ C Ij     +      Ij ′   ,                               (12)
+                                                             mj ′
+                                                                j ≤j
+
+620   where C may grow like C(k + 1), since the product rule picks the marked factor among O(k + 1)
+621   factors; this is absorbed into C0k . Unrolling, for i > l,
+
+                (1)             1[j > l] 
+               Ij     ≤ C 1[j = l] +                                    (causality, Equation (12))
+                                  mj
+                      C    1        X C 
+                (2)
+               Ii ≤ C     +      C+           ≤ Cκl,i                   (Equation (12), Equation (10))
+                       mi   mi             mj
+                                                l<j≤i
+
+622   The readout and parameter tangents do not move positions.
+623   Proof of Proposition C.1. Expand each coefﬁcient into monomials in parameters and inputs. A Ja-
+624   cobian entry of a monomial
+                          √         is a monomial with the same inputs, and the Frobenius norm of a map
+625   into RK is at most K times its operator norm.
+626   (i) At zero scores the network is afﬁne in the inputs (Proposition C.2(iii)): each term contains at
+627   most one input. Group the terms by that input. At the answer position the direct input is ﬁxed and
+628   contains no letter; the transported terms have tangent O(ε2 ), and their coefﬁcients sum absolutely
+629   to a constant because every zero-score attention row is a probability vector.
+630   (ii) By Proposition C.2(iii) an order-k monomial contains at most 2k + 1 inputs, and by Proposi-
+631   tion C.2(ii) the absolute sum of the tangents at ζ = 0 is at most Cε2 (C0 ε4 )k ; take Catt ≥ C0 .
+632   (iii) Apply Proposition C.2(ii) with k = k0 + 1. Logit bounds carry one more factor ε than Jacobian
+633   bounds.
+
+634   C.4   Outcome credit and the outcome plateau
+635   We now bring the two estimates together. A term can read more letters and avoid some contraction,
+636   but doing so costs additional attention scores. The geometric sum below shows that this tradeoff still
+637   leaves exponentially little outcome credit.
+638   Lemma C.3 (Credit summation). Assume (A1)–(A3), θ ∈ Bε , 0 < ε ≤ ε0 and 0 < λ < 1, with the
+639   start state and query ﬁxed. Let k0 = d n−12 e. If Catt ε ≤ 2 λ , then
+                                                              4  1 2
+
+
+                                                                                ∂zθ
+                           E J⊤
+                              score (y − u)   ≤ Cε6 λn−3 ,          Jscore =          − J[0] .
+                                                                                  ∂θ
+640   If moreover ε ≤ λ, then
+                                k∇θ Φout (θ)k ≤ Cελn ,         |Φout (θ)| ≤ Cε2 λn .                     (13)
+641   The bounds persist after averaging over the start state and query.
+
+
+
+
+                                                          19
+642   Proof. Apply Lemma C.2 to each term of Proposition C.1, with kHkL2 ≤ sup kHkF and ky−uk ≤
+643   1 for the remainder:
+                                  
+                 E (J[0] )⊤ (y − u) ≤ Cελn + Cε2 λn−1               ((i): 0 or 1 letter)
+                   [k] ⊤          
+                E (J ) (y − u) ≤ Cε2 (Catt ε4 )k λn−2k−1            ((ii): ≤ 2k + 1 letters, k ≥ 1)
+                                                  C ε4 k−1
+                                                     att
+                                     = Cε6 λn−3
+                                                     λ2
+                     ⊤            
+                   E Jrem (y − u) ≤ Cε (Catt ε )
+                                         2        4 k0 +1
+                                                                    ((iii))
+                                                      C ε 4 k0
+                                                         att
+                                     = CCatt ε6 λ2k0
+                                                         λ2
+                                                  C ε 4 k0
+                                                     att
+                                     ≤ Cε6 λn−3                     (2k0 ≥ n − 1)
+                                                     λ2
+                                                                                    4
+644   If 2k+1 > n, the factor λn−2k−1 ≥ 1 still bounds the credit. Since Catt
+                                                                          λ2
+                                                                              ε
+                                                                                ≤ 21 , the score-dependent
+                               6 n−3
+645   terms sum to at most 3Cε λ     , which is the ﬁrst bound. Adding the zero-order term,
+                                                                           
+                                k∇θ Φout k ≤ C ελn + ε2 λn−1 + ε6 λn−3 ,
+                                                                            
+                                    |Φout | ≤ C ε2 λn + ε3 λn−1 + ε7 λn−3 ,
+646   by Lemma C.1 and the same argument for the logits, and ε ≤ λ reduces both to Equation (13).
+647   For c small enough, ε ≤ cλ implies ε ≤ λ and Catt ε4 ≤ 21 λ2 , and ε2 ≤ cλ implies Catt ε4 ≤ 21 λ2 .
+
+648   Proof of Theorem 1. Part (i) is Lemma C.2. For (ii), take c ≤ (2Catt )−1/2 :
+                                                                            1 2
+                                  ε2 ≤ cλ =⇒ Catt ε4 ≤ Catt c2 λ2 ≤           λ ,
+                                                                            2
+649   and Lemma C.3 gives both bounds.
+650   A trained relative bias. Let ϑ denote the parameters other than β, and Bεfull = {θ : kϑ − ϑ0 k ≤
+651   2r0 ε} with β unrestricted. A zero readout in θ̃ is admissible in (A2).
+652   Lemma C.4 (Uniformity in the relative bias). Assume (A1)–(A3), ε ≤ ε0 . On Bεfull , with constants
+653   independent of β:
+654    (a) the logit bounds of Proposition C.2(i)–(iii) and of Proposition C.1 for z [k] , zrem hold;
+655    (b) if ε ≤ cλ, then |Φout (θ)| ≤ C2 ε2 λn ;
+656    (c) the conclusions of Lemma C.5 hold for unit directions in all parameters, β included.
+657   Proof. Each attention row is
+                                                            
+                           ωi· (ζ) = softmax βi−· + ζψi·           over its visible sites.
+658   (a) At ζ = 0,
+                        ωi· (0) = softmax(βi−· ),      ωi· (0) ≥ 0,     kωi· (0)k1 = 1,
+659   which does not depend on the input; the zero-score network is afﬁne with the same input counts d(·).
+660   Since β does not depend on ζ,
+                                  (β + ζψ)[k] = ζψ [k] + ψ [k−1]        (k ≥ 1),
+661   so the recursion of Proposition C.2(ii) is unchanged, and Equation (11) holds uniformly in β. The
+662   ReLU pattern stays ﬁxed, since |(Win h)m | ≤ Cε2 < |bm | for any attention weights. The uniform
+663   weights m1j enter only Proposition C.2(iv), which is not needed here.
+664   (b) The proof of Lemma C.3 uses only Lemma C.2 and the logit bounds of (a), so |Φout (θ)| ≤
+665   C 2 ε2 λn .
+666   (c) A unit direction with β-component vβ perturbs each row’s scores by ν = vβ , kνk∞ ≤ 1. By
+667   Equation (11) with k = 1, 2, a row has proﬁle (1, C, C) in ℓ1 , so head outputs keep the proﬁle
+668   (Cε2 , Cε, C), and the proof of Lemma C.5 applies unchanged.
+
+                                                       20
+669   Lemma C.5 (Smoothness near initialization). Assume (A1)–(A2), ε ≤ ε0 . There is C1 , independent
+670   of n, ε and the widths, such that for every θ ∈ Bε′ and every unit direction v,
+                                                          d2
+                           k∇θ Lout (θ)k ≤ C1 ε,              Lout (θ + sv) s=0 ≤ C1 .
+                                                          ds2
+671   Proof. Write F ′ , F ′′ for the ﬁrst two derivatives along v, and say F has proﬁle (A, A′ , A′′ ) if
+672   kF k ≤ A, kF ′ k ≤ A′ , kF ′′ k ≤ A′′ . Products obey
+                   (A, A′ , A′′ ) · (B, B ′ , B ′′ ) = (AB, A′ B + AB ′ , A′′ B + 2A′ B ′ + AB ′′ ).
+673   Parameter blocks and inputs have proﬁle (Cε, C, 0); an MLP bias vector has proﬁle (C, 1, 0) and
+674   enters only through oℓ . Then, in order:
+                 Quantity                   Proﬁle                          Reason
+                 h                          (Cε, C, C)                      both blocks
+                 WQ h, WK h, WV h           (Cε2 , Cε, C)                   product rule
+                       (WQ h)⊤ WK h
+                 ψ=         √
+                              dh
+                                            (Cε4 , Cε3 , Cε2 )              product rule
+                 attention row, in ℓ1       (1, Cε3 , Cε2 )                 Equation (11), k = 1, 2
+                 head output                (Cε2 , Cε, C)                   kωk1 = 1
+                 Mℓ − I, oℓ                 (Cε2 , Cε, C), (Cε, C, C)       ﬁxed ReLU pattern
+                 z = Vh                     (Cε2 , Cε, C)                   readout
+675   For one prompt, with p = softmax(z),
+                     ℓ′ = hp − ey , z ′ i,  ℓ′′ = z ′⊤ (diag p − pp⊤ )z ′ + hp − ey , z ′′ i,
+                      √
+676   and kp − ey k ≤ 2, k diag p − pp⊤ k ≤ 12 , so |ℓ′ | ≤ Cε and |ℓ′′ | ≤ C. Positions enter only through
+677   rows of ℓ1 norm one and hidden coordinates only through operator norms, so C1 depends on neither
+678   n nor the widths.
+                                                               P
+679   Outcome plateau. For one prompt, DKL (ukp) = log a eza − log K − hu, zi, hence
+                                                                   
+                              Lout (θ) = log K + E DKL (u k pθ ) − Φout (θ).                            (14)
+
+680   Proof of Theorem 3. Loss ﬂoor. Let Bn = C2 ε2 λn , ε ≤ cλ and θ ∈ Bεfull .
+                 Lout (θ) = log K + E DKL (u k pθ ) − Φout (θ)            (Equation (14))
+                          ≥ log K − Bn                                    (DKL ≥ 0, Lemma C.4(b))           (15)
+
+681   Escape time. By Lemma C.5 and Lemma C.4(c), Lout is smooth on Bεfull , so the ﬂow is deﬁned
+682   between the switching times of P(t) and continuous across them. Let Texit = inf{t : kθ(t) − θ0 k >
+683   r0 ε}, the norm including β. For t ≤ Texit ,
+                     dLout                           dθ 2
+                            = −kP∇θ Lout k2 = −                       (P constant between switches)
+                       dt                             dt
+                Z t
+                      dθ 2
+                            = Lout (θ0 ) − Lout (θ(t)) ≤ Bn           (Lout (θ0 ) = log K, Equation (15))
+                  0   dt
+                                Z t
+                                    dθ 2
+              kθ(t) − θ0 k2 ≤ t            ≤ t Bn                     (Cauchy–Schwarz)
+                                 0   dt
+                                 r02 −n
+                       Texit ≥      λ                                 (∥θ(Texit ) − θ0 ∥ = r0 ε)
+                                 C2
+684   and Equation (15) holds on [0, Texit ].
+685   Near-chance prediction.
+            E DKL (u k pt ) ≤ Φout (θ(t)) ≤ Bn                       (Equation (14), Lout (θ(t)) ≤ log K)
+                                             r
+                         1                     C2 n/2
+              E[pt,y ] −    ≤ E TV(pt , u) ≤     ελ                  (Pinsker, Jensen)
+                         K                     2
+
+
+                                                          21
+                                             r2
+686   Constants. Take c the smaller of C02 and the constant for which ε ≤ cλ gives ε ≤ λ and Catt ε4 ≤
+                                q
+      1 2                         C2
+687
+      2 λ , and C = max(C   2 ,   2 ).
+
+688   Remark C.1 (Gradient descent). For θj+1 = θj − ηPj ∇θ Lout (θj ) with any block projections Pj
+689   and η ≤ η0 = min(1, r0 )/C1 , each step stays in Bε′ and the descent lemma replaces the energy
+                                                               r2
+690   identity, so the conclusions of Theorem 3 hold for jη ≤ 2C02 λ−n .
+
+691   C.5   Step rule credit
+692   For step supervision, averaging over the current letter removes the rule signal, and averaging over
+693   a uniform start removes it from features that use no state. A term must therefore bring the letter
+694   and a state together. This cancellation identiﬁes the ﬁrst terms that can teach the update, before we
+695   calculate their size.
+696   Let gt = (bt − p)(est−1 +1 − est−1 ) and Φrule (θ) = Et E[hzt , gt i], t uniform on {2, . . . , n}. Letter
+697   wt sits at lt = 1+t, and it = n+1+t holds st−1 and predicts st , so mlt = t+2 and mit = n+2+t.
+698   Write κt = κlt ,it . The displayed counts visible from it are functions of (s0 , w⋆ , w<t ); the prompt
+699   also shows every letter. After conditioning on (s0 , w⋆ , w̸=t ), the current letter is the only visible
+700   input that depends on bt .
+701   Lemma C.6 (Average dilution). For n ≥ 2,
+                                                1                n + 2       6
+                                   Et [κt ] ≤        1 + log 2 +           ≤ .                             (16)
+                                               n+4                n−1          n
+                                P                                        Pn                 Pn+2
+702   Proof. mit ≥ n+4 and lt <j≤it m−1       j ≤ log 2+log t+2 ; also
+                                                              n+2
+                                                                           t=2 log t+2 ≤
+                                                                                    n+2
+                                                                                               k=1 log k ≤
+                                                                                                         n+2
+
+703   n + 2.
+704   Lemma C.7 (Rule-credit sites). Under (A3′ ), a term t of zt or h2it has Eht, gt i = 0 unless it
+                                                                                                             [0]
+705   contains both the letter input xlt and the input of a state (s0 or a displayed state). In particular zt
+706   contributes nothing.
+707   Proof. If xlt ∈
+                    / t, then E[gt | s0 , w⋆ , w̸=t ] = 0. If t contains no state input, it is a function of
+708   (w , w) and, by (A3′ ), E[gt | w⋆ , w] = (bt − p)(u − u) = 0. A contributing term has two sites, so
+        ⋆
+
+709   k ≥ 1 by Proposition C.2(iii).
+710   For readout indices a, b let
+                              X X 1 X             1 X 
+                       Qt =           WV xj ψ̂ij −    ψ̂il ,                                i = it ,
+                                   mi              mi
+                               ℓ=1,2 heads         j≤i                      l≤i
+
+                                                           (WQ xi )⊤ WK xj
+                                                  ψ̂ij =        √          ,
+                                                                   dh
+
+711   and Pn (θ̃) = Et E[(gt )a (Qt )b ]|θ=θ̃ .
+712   Lemma C.8 (Leading rule coefﬁcient). Assume (A1) with full-preﬁx attention, (A2) and (A3′ ). Fix
+713   a readout entry Vab and let
+                         ∂Φrule
+              Fn (ε) =               = Et E[(gt )a h2it ,b ] θ=εθ̃ ,       so k∇θ Φrule (θ0 )k ≥ |Fn (ε)|.
+                          ∂Vab θ=εθ̃
+714     (i) Pn is a homogeneous polynomial of degree 6 in the attention and embedding entries of θ̃,
+715         independent of the activation pattern, and for ε ≤ ε0 with Catt ε4 ≤ 21 ,
+
+                                                                                    C  ε7      
+                               Fn (ε) = ε6 Pn (θ̃) + rn (ε),           |rn (ε)| ≤          + ε10 .
+                                                                                    n ε0
+
+716     (ii) For a ﬁxed query with 0 < p < 12 , Pn contains a degree-6 count–letter monomial with
+                                 p(1 − p) min{1 − 2p, 14 }
+717          coefﬁcient at least             √             > 0 for n ≥ 2; in particular Pn 6≡ 0.
+                                        3Kn dh
+
+
+                                                               22
+718   Proof. (i) Let k0 = 2 + dlog2 ne. By Lemma C.7, the zero-score term contributes nothing; by
+719   Proposition C.2 and Lemma C.6, the terms with at least two scores and the remainder contribute at
+720   most
+                                        X
+                                        k0
+                                                                               Cε10
+                           Cε2 Et [κt ]    (Catt ε4 )k + Cε2 (Catt ε4 )k0 +1 ≤      .
+                                                                                n
+                                           k=2
+
+721   With the activation matrices ﬁxed, a one-score monomial satisﬁes t(εθ̃) = εdeg t t(θ̃) with deg t ≥ 6,
+722   and the degree-6 part is exactly Qt . An MLP matrix correction adds two degrees and a bias output
+723   in place of an input adds one, so the remaining one-score terms are O(ε7 ); with ε0 ≤ (2Nb )−1 and
+                                                   7
+724   Lemma C.6, their absolute sum is at most Cεnε0 , with C independent of Nb .
+725   (ii) Choose a block-2 head, a state s∗ , an output coordinate b, and a = s∗ + 1. Set Ẽs∗ ,0 = Ẽw⋆ ,1 =
+726   Ẽw⋆ ,2 = (W̃Q )0,0 = (W̃K )0,1 = (W̃V )b,2 = 1 and all other entries to 0; the value of Pn is then
+727   the coefﬁcient of the product of these six entries. With Nt the number of visible query tokens,
+                                        1[st−1 = s∗ ]  Nt                 Nt2     
+                              (Qt )b =       √                      −                ,
+                                                dh       n + 2 + t (n + 2 + t)2
+                                                                                                
+                  E[(bt − p)Nt ] = p(1 − p),         E[(bt − p)Nt2 ] = p(1 − p) 3 + 2(n − 1)p .
+
+728   Under (A3′ ), st−1 is independent of the letters, so the coefﬁcient is
+                            X   p(1 − p)     3 + 2(n − 1)p  p(1 − p) min{1 − 2p, 14 }
+                             n
+                   1
+                 √                         1−                ≥            √             ,
+               K dh (n − 1) t=2 n + 2 + t       n+2+t                3Kn dh
+
+729   using 3 + 2(n − 1)p ≤ max{2p, 43 }(n + 4) for p < 21 , n ≥ 2, and n + 2 + t ≤ 3n.
+
+                                                                                            = E⊤
+                                                                                      (0)
+730   Proof of Theorem 2(i). Step gradient. At the position i predicting st , hi               val est−1 + Pei . Let
+              P                            ⊤
+                s (1 − p)es + pes+1 − u es . For ε ≤ 4KC ,
+           1                                             λcemb
+731   Γ= K
+                       (0)
+               hi = hi + O 2 + O(ε2 ),     pi − u = O(ε2 )                  (Proposition C.2(i))
+          ∂Lstep                (0)⊤ 
+                 = −E (est − u)hi       + O(ε2 )                            (O 2 ﬁxed, E[est − u] = 0)
+           ∂V
+                 = −ΓEval + O(ε2 )                                          (uniform start)
+      k∇θ Lstep k ≥ kΓEval kF − Cε     2
+
+                     λ εcemb          ελcemb                                                 λ                  εcemb
+                  ≥   ·       − Cε2 ≥                                       (σmax (Γ) =        , σmin (Eval ) ≥       )
+                    K     2             4K                                                   K                    2
+732   using that Eval has full row rank.
+733   Outcome gradient. On Bε and for ε ≤ cλ,
+                             ∂zθ ⊤        
+                ∇θ Lout = E (     ) (p − u) − ∇θ Φout                      (Lemma C.1)
+                               ∂θ
+              k∇θ Lout k ≤ Cε · Cε2 + Cελn ≤ Cε(ε2 + λn )                  (Proposition C.2(i), Lemma C.3)          (17)
+734
+
+
+735   Proof of Theorem 2(ii). Let k0 = 1 + dlog2 ne and Catt ε4 ≤ 12 . By Lemma C.7, only terms with at
+736   least one score contribute.
+                                           X
+                                           k0
+         k∇θ Φrule (θ)k ≤ 2Cε2 Et [κt ]          (Catt ε4 )k + 2Cε2 (Catt ε4 )k0 +1         (Proposition C.2(ii),(iv))
+                                           k=1
+                                                    
+                         ≤ CCatt ε6 Et [κt ] + 2−k0                                         (geometric sum)
+                                    6       1  Cε6
+                         ≤ CCatt ε6     +       ≤                                           (Lemma C.6)
+                                     n 2n            n
+
+
+
+                                                            23
+737   Zero readout. Theorem 2 holds with a zero readout: part (i) uses p − u = O(ε2 ), exact at θ0 , and
+738   part (ii) concerns Pn of Lemma C.8, which contains no readout entry.
+739   Remark C.2 (Generic initialization). For p < 12 , Pn is a nonzero polynomial (Lemma C.8(ii)), so
+740   Pn (θ̃) 6= 0 almost surely under any absolutely continuous law on the attention and embedding en-
+                                                                                      −1/4 γrule ε0
+741   tries. If θ̃ satisﬁes (A2) and |Pn (θ̃)| ≥ γrule
+                                                   n , then for ε ≤ min{ε0 , (2Catt )      , 4C , ( γ4C  ) },
+                                                                                                     rule 1/4
+
+742   with C from Lemma C.8(i),
+                                                          γrule    C  ε7        ε6 γ
+                                                                                          rule
+                         k∇θ Φrule (εθ̃)k ≥ |Fn (ε)| ≥ ε6        −        + ε10 ≥              ,
+                                                            n      n ε0                 2n
+743   which matches Theorem 2(ii) up to constants. Both the threshold and the constant depend on γrule ;
+744   a lower bound on γrule at random initialization would need anti-concentration of nPn , which we do
+745   not prove. Appendix E.2 measures n∥∇θεΦ6 rule ∥ .
+
+746   C.6       Initialization and width
+747   All bounds in this appendix go through operator norms of parameter blocks, ℓ1 norms of attention
+748   rows, and counts of blocks, heads, scores and sites. Constants therefore depend only on a0 , cemb , K
+749   and the numbers of blocks and heads, and the widths enter only through ε0 = c min(1, N1b ). Fan-
+750
+                                                  1
+      in-scaled initialization (weight variance fan-in                       1
+                                                       , embedding variance dres ) with |b̃m | ∈ [1, 2], so Nb ≤
+       √
+751   2 w, satisﬁes (A2) with high probability, with a0 bounded by the largest aspect ratio and cemb ≥ 21
+752   [Vershynin, 2018, Thms. 4.4.5, 4.6.1]. At executor widths dres , dh , w = Θ(n) the aspect ratios
+753   are bounded, so Theorems 1 and 3 and Theorem 2 hold in the architecture of Proposition 1 with
+754   n-independent constants for ε ≤ c min(λ, n−1/2 ).
+
+755   C.7       Numerical veriﬁcation
+756   Table 3 checks the scalings of the proved bounds by exact computation; training experiments are in
+757   Appendix E. The theorems give upper bounds, so the predicted exponents in ε are lower bounds and
+758   the predicted horizon dependence is an upper bound. Per-draw checks and an exact reconstruction
+759   of the executors are in the accompanying code repository. The identity Equation (8) and the condi-
+760   tioning bound of Lemma C.2 are checked exactly over every support S for n ≤ 7, K ∈ {2, 3, 4, 6}
+761   and ﬁve values of p (5,080 cases, Paper/direct_proofs/check_direct_proofs.py).
+
+      Claim                         What is measured                                        Predicted                      Measured
+      Equation (8)a                 answer-dependent gradient vs n                          at most ≈ λ = 0.5 per letter   ﬁtted 0.48–0.51, three seeds (Table 9)
+                                                  P
+      Proposition C.1b , degree r   exponent of |S|=r ∥( ∂z    θ
+                                                                 ) ∥ (Appendix E.3) in ε
+                                                              ∂θ S
+                                                                                            ≥ 2; ≥ 6 (r = 2, 3); ≥ 10      2.0, 6.1, 7.0, 11.1, 12.0 for r = 1..5
+      Lemma C.8c                    rule credit vs ε6 Pn (θ̃)                               equal to leading order         equal to six digits, n = 2..12
+                                    n∥∇θ Φrule ∥
+      Theorem 2(ii)d                     ε6
+                                                 , n = 4..8                                 bounded in n; exponent ≥ 6     304–324 and 130–134 (two draws); exponent 6.00
+      Proposition 1e                executor reconstruction                                 exact                          exact accuracy at n = 1000
+      Table 3: Scaling checks of the proved bounds. Rows (b)–(d): two-block Transformer of (A1) at
+      width 16, K = 2, with (A2) in force, ﬂoat64, exact over all words. (a) Experiment architecture with
+      N (0, 0.022 ) parameters, outside (A2), log-linear ﬁts over n = 2–10. (b) n = 6, four letters, one
+      draw, exponents from ε ∈ {0.03, 0.04, 0.05}. (c) Hand-built structured θ̃, ε ∈ {0.02, 0.05}. (d) Four
+      uniform letters, ﬁxed query, exponents from ε ∈ {0.01, 0.02}. (e) Executor of Proposition 1 at width
+      2,029 on 532 prompts.
+
+
+
+762   D Proof of Theorem 4
+763   The gate has the relevant inputs, but its query and key may begin with the wrong alignment and its
+764   readouts begin at zero. The proof must show that these coupled parameters ﬁnd a useful interaction
+765   and keep it. The key is a balance between the gate readout and the count readout: it ﬁrst controls the
+766   crossing, then prevents the useful gate signal from disappearing. Table 4 maps this argument to the
+767   lemmas; the right-hand columns of displayed chains name the estimates used.
+
+768   D.1 Model and exact features
+769   We count modulo K with a ﬁxed query of probability p ∈ (0, 1) and a uniform start;
+                                                                                     every non-query
+770   letter has the same embedding. Let xt = est−1 , Res = es+1 , rb = σ −(−1)b a for b ∈ {0, 1} and
+771   σ(z) = (1 + e−z )−1 .
+
+                                                                                           24
+           Lemma      Statement                                                          Uses
+           D.1        logits εUxt + εv rbt Wxt                                           seed
+           D.2        U stays circulant                                                  D.1
+           D.3        autonomous ODE for (c, g, s, a), any K ≥ 2                         D.1, D.2
+           D.4        partial derivatives; properties of ϕ                               D.3
+           D.5        loss levels                                                        D.4
+           D.6        dL
+                       dt
+                          ≤ − 31 ρε2 v 2 τ 2 (err20 + err21 )                            D.4
+           D.7        sign da
+                            dt
+                               = − sign g; drifts of Q and h                             D.3, D.4
+           D.8        once aligned, g ≥ 0 and a nonincreasing forever                    D.7
+           D.9        Phase I (misaligned start): a ≤ − a8sc by T1 + Tcross              D.4, D.7, Equation (19)
+           D.10       g ≥ glow after time Th                                             D.7, D.8
+           D.11       |a| grows exponentially to 1; L ≤ L⋆ by time O(ε−4 log 1ε )        D.5, D.6, D.10
+           D.12       Phase II: margins and L → 0                                        D.5, D.6
+                                    Table 4: Lemmas of the proof of Theorem 4.
+
+
+
+772   Seed. Fix orthonormal residual directions ê0 , êℓ , a count register (êcs )s∈ZK , a gate register
+773   (êgs )s∈ZK , and a unit vector êh of the head space. The embeddings are
+             E(s) = ε êcs ,       E(query letter) = ε(ê0 − êℓ ),           E(other letters) = ε(ê0 + êℓ ).
+774   The gate head is head 1 of block 2. At the position it that holds st−1 and predicts st (t ≥ 2), its
+775   ﬁxed mask admits it and the position jt of the current letter, and its relative bias is zero. Its maps
+776   are WQ = q ΠQ , WK = k ΠK and WV = v ΠV , with scalars q, k, v and ﬁxed matrices
+                             P                                               P
+                      ΠQ = s êh (êcs )⊤ ,    ΠK = êh ê⊤ℓ ,       ΠV = s êgs (êcs )⊤ .
+777   All other embeddings, heads and MLP weights are zero, and the MLP biases are ±ε. The readout
+778   is zero except for the K × K blocks U (count register) and W = w(I − R) (gate register), seeded
+779   along the transition direction I − R like q, k, v (Appendix D.5).
+780   Training. The trained parameters are ϑ = (U, W, q, k), with W on the line R(I − R), and
+       dt = −∇ϑ Lstep (ϑ) for the Euclidean (Frobenius) norm on R                × R(I − R) × R × R. The
+      dϑ                                                                 K×K
+781
+782   value factor v and all other parameters are ﬁxed. The four trained parameters follow this one ﬂow at
+783   all times; there are no stages and no stopping rule. The initialization is
+                                                                 1
+                         U(0) = 0,          w(0) = 0,              ε ≤ |q(0)|, |k(0)|, |v| ≤ 2ε,
+                                                                 2
+784   with arbitrary signs.
+785   Lemma D.1 (Exact features). For every ϑ and t ≥ 2, the logits of the prediction of st are
+                                                                              ε2 qk
+                                     zt = εUxt + εv rbt Wxt ,              a= √ .
+                                                                                dh
+786   Proof. Block 1 and all MLPs add zero, so each residual is its embedding. The query at it , the keys
+787   and the values are
+                           queryit = εq êh ,       keyjt = (−1)bt εk êh ,           keyit = 0,
+                                        valueit = εv êgst−1 ,        valuejt = 0.
+
+788   The scores are (−1)bt a at jt and 0 at it , so it gets weight rbt . The residual at it becomes
+                                                εêcst−1 + εv rbt êgst−1 ,
+
+789   and the readout gives zt .
+790   Lemma D.2 (Cyclic symmetry). RU(t) = U(t)R for all t ≥ 0; W(t) ∈ R(I − R) commutes with
+791   R by deﬁnition.
+
+
+
+
+                                                           25
+792   Proof. Shifting s0 by one preserves the data law and the match bits, and CE(z, j + 1) =
+793   CE(R−1 z, j) for the cross-entropy. By Lemma D.1,
+                       Lstep ◦ S = Lstep ,       S(U, W, q, k) = (R−1 UR, W, q, k).
+794   S is a linear isometry, so Sϑ(t) solves the ﬂow, with Sϑ(0) = ϑ(0). By uniqueness, Sϑ(t) =
+795   ϑ(t).
+
+796   D.2 Reduction
+797   Let N = K − 2, ρ = K     2
+                                 , π0 = 1 − p, π1 = p, Hp = −p log p − (1 − p) log(1 − p) and
+798   pmin = min(p, 1 − p). For m, s ∈ R let
+                                                                                    ∂F
+                    F (m; s) = log 1 + e−m + N e−s−m/2 ,               ϕ(m; s) = −      (m; s);
+                                                                                     ∂m
+799   for K = 2, F (m; s) = ℓ(m) := log(1 + e−m ).
+                                                      P
+800   Lemma D.3 (Reduced loss and ﬂow). Write U = j uj Rj . Then uj = ubg for 2 ≤ j ≤ K − 1.
+801   Let
+                                   1                                                   
+        c = ε(u0 − u1 ),     s = ε (u0 + u1 ) − ubg ,   g = 2εvw,    mb = (−1)b c + g rb ,
+                                   2
+802   with s = 0 if K = 2. The prediction of st with match bit bt = b puts logits s + m2b on its target,
+803   s − m2b on the other count of {st−1 , st−1 + 1}, and 0 on the remaining N counts, up to a common
+804   shift. Hence, for every n,
+                            Lstep = L(c, g, s, a) := (1 − p) F (m0 ; s) + p F (m1 ; s).
+805   With D = q(0)2 − k(0)2 ,
+        dc        ∂L          dg            ∂L          ds    ε2 ∂L                       da    ε4 S ∂L
+           = −ρε2    ,           = −ρε2 v 2    ,           =−         (K ≥ 3),               =−         ,
+        dt        ∂c          dt            ∂g          dt    2N ∂s                       dt     dh ∂a
+                                                         r
+                                                                4dh a2
+                                        S := q 2 + k 2 = D2 +          .
+                                                                  ε4
+                                                                                                        (18)
+806   Proof. Background coordinates. By Lemma D.1, Lstep depends on U through (uj ),   Pand the targets
+807   are at offsets 0 and 1. Permuting u2 , . . . , uK−1 preserves Lstep and kUk2F = K j u2j and ﬁxes
+808   U(0) = 0; as in Lemma D.2, uj = ubg for j ≥ 2.
+809   Logits. For xt = es′ , Wxt = w(es′ − es′ +1 ). By Lemma D.1, after subtracting εubg ,
+                   1                                  1
+        zt,s′ = s + (c + g rbt ),       zt,s′ +1 = s − (c + g rbt ),       zt,s′ +j = 0 (2 ≤ j ≤ K − 1).
+                   2                                  2
+                                                 m                               m
+810   The target is s′ + bt , so its logit is s + 2bt and the other one is s − 2bt . The cross-entropy is
+811   log(1 + e−m + N e−s−m/2 ) = F (m; s).
+812   Flow. At a circulant U the Frobenius gradient ∇U Lstep is circulant (it is invariant under the isometry
+                                                                                                       du
+813   S of Lemma D.2), so the ﬂow stays on circulant matrices and acts on their coefﬁcients as dtj =
+         1 ∂Lstep                 1 ∂Lstep
+                                                               P
+814   − K ∂uj and dt = − 2K ∂w , since kUk2F = K j u2j and kWk2F = 2Kw2 . By the chain
+                       dw
+
+815   rule,
+                         ∂Lstep        ∂L 1 ∂L            ∂Lstep      ∂L 1 ∂L 
+                                  =ε         +         ,           =ε −         +          ,
+                          ∂u0            ∂c     2 ∂s          ∂u1          ∂c      2 ∂s
+                                             ∂Lstep      ε ∂L
+                                                     =−         (j ≥ 2),
+                                              ∂uj        N ∂s
+                    dc       du       du1        2ε2 ∂L       dg       dw         2ε2 v 2 ∂L
+                                 0
+                        =ε          −         =−          ,        = 2εv       =−              ,
+                     dt        dt       dt          K ∂c        dt        dt          K ∂g
+                                       ds       ε2  1   1  ∂L      ε2 ∂L
+                                           =−          +         =−          .
+                                       dt       K 2 N ∂s             2N ∂s
+
+
+                                                        26
+816   For the gate,
+                         dq    ε2 k ∂L         dk    ε2 q ∂L       d 2
+                            = −√       ,          = −√       ,        (q − k 2 ) = 0,
+                         dt      dh ∂a         dt      dh ∂a       dt
+                                      da   ε2  dq    dk      ε4 S ∂L
+                                         =√     k +q       =−           ,
+                                      dt    dh    dt   dt       dh ∂a
+817   and S 2 = (q 2 − k 2 )2 + 4q 2 k 2 . The ﬂow exists for all t ≥ 0: the vector ﬁeld is smooth,
+                                                                                 |g|
+818   | ∂L
+        ∂c |, | ∂g |, | ∂s | ≤ 1, so c, g, s grow at most linearly, and | ∂a | ≤ 4 , so (q, k) grows at most
+                ∂L      ∂L                                                ∂L
+
+819   exponentially by Grönwall.
+820   Notation. r0 + r1 = 1 and τ := r1 − r0 = tanh( a2 ). Let
+
+                                    errb = πb ϕ(mb ; s),           err = err0 + err1 ,
+                        1                 g                                                     v2
+                 h=       (m0 − m1 ) = c + ,                ∆ = m0 + m1 = −gτ,           Q=g−      c,
+                        2                 2                                                     2
+821   the weighted errors, the count-only margin, the common margin shift from the learned rule, and
+822   a gate–count balance. Let Pb be the probability that the prediction with match bit b assigns to its
+823   target.
+                                                                                                       
+      Lemma D.4 (Derivatives). (a) ∂L ∂c = err1 − err0 ,     ∂g = r1 err1 − r0 err0 = 2 ∂c + τ err ,
+                                                             ∂L                          1 ∂L
+824
+           ∂L       ′
+825
+           ∂a = g σ (a) err.
+826   (b) 0 < ϕ < 1; ϕ(m; s) ≥ 12 σ(−m); ϕ(m; s) ≥ 12 (1 − Pb ) at m = mb ; m 7→ ϕ(m; s) is
+827       nonincreasing; and ϕ(m − 2x; s) ≤ e2x ϕ(m; s) for x ≥ 0.
+828   (c) F (m; s) ≥ ℓ(m) ≥ −m.
+                                                        2            4
+
+          dt = −ρε ( ∂c ) − ρε v ( ∂g ) − 2N ( ∂s ) − dh ( ∂a ) ≤ 0 (no s term if K = 2).
+      (d) dL      2 ∂L 2      2 2 ∂L 2    ε    ∂L 2   ε S ∂L 2
+829
+
+
+830
+                 ∂F
+      Proof. (a) ∂m = −ϕ, and
+                      ∂mb                   ∂mb               ∂mb
+                          = (−1)b ,              = (−1)b rb ,      = −g σ ′ (a) (b = 0, 1),
+                       ∂c                    ∂g                ∂a
+                                                     1          
+                                                rb = 1 − (−1)b τ .
+                                                     2
+
+831   (b) With A = e−m and B = N e−s−m/2 , ϕ = 1+A+B
+                                                   A+B/2
+                                                         : the probability of the other count plus half
+832   the background probability. Hence 0 < ϕ < 1 and
+                                1   A+B  1           1  A   1
+                          ϕ≥      ·     = (1 − Pb ) ≥ ·    = σ(−m).
+                                2 1+A+B  2           2 1+A  2
+833   F (·; s) is minus a log-softmax coordinate of logits afﬁne in m, so it is convex and ϕ is nonincreasing.
+834   Finally
+                                   d             A + B/4       A + B/2
+                                      log ϕ = −             +               > −1,
+                                  dm             A + B/2 1 + A + B
+835   and integration over [m − 2x, m] gives the last claim.
+836   (c) Drop N e−s−m/2 ; log(1 + e−m ) ≥ −m. (d) is the chain rule with Equation (18).
+837   Lemma D.5 (Loss levels). Let L⋆ = 21 pmin log 2.
+838   (a) If L < pmin log 2, then P0 , P1 > 21 : every prediction of st , t ≥ 2, has positive margin against
+839       all K − 1 other counts.
+      (b) If P0 , P1 ≥ 12 , then err20 + err21 ≥ L32 .
+                                                    2
+840
+
+                                              p2
+841   (c) If L > L⋆ , then err20 + err21 ≥ 267
+                                            min
+                                                .
+
+
+
+                                                              27
+842   Proof. (a) πb ≥ pmin , so − log Pb = F (mb ; s) < log 2.
+843   (b) For P ≥ 12 , − log P ≤ 1−P   P    ≤ 2(1 − P ). By Lemma D.4(b), F (mb ; s) ≤ 4ϕ(mb ; s), so
+844   L ≤ 4 err and err0 + err1 ≥ 2 err ≥ 32
+                         2      2    1    2
+                                                L .
+                                              1 2
+
+845   (c) If Pb < 2 , then errb ≥ 4 ≥ 4 by Lemma D.4(b); otherwise (b) applies. So
+                  1               πb     pmin
+
+                                                n p2          (L⋆ )2 o (log 2)2 2    p2
+                          err20 + err21 ≥ min       min
+                                                          ,           =        pmin ≥ min .
+                                                    16         32        128          267
+
+                                                  ∂c ) + ( ∂g ) ≥ 3 τ (err0 + err1 ). If v ≤ 1, then
+                                                ( ∂L  2    ∂L 2   1 2     2      2        2
+846   Lemma D.6 (Gradient lower bound).
+                                         dL    1
+                                            ≤ − ρε2 v 2 τ 2 (err20 + err21 ).
+                                         dt    3
+                                     ∂L ⊤                                            −1 1
+                                                                                              
+847   Proof. By Lemma D.4(a), ( ∂L
+                                ∂c , ∂g ) = A(err0 , err1 )⊤ with A =                −r0 r1       . Its singular values
+848   s1 ≥ s2 satisfy
+                                                                                     √                   |τ |
+              s1 s2 = | det A| = |τ |,      s1 ≤ kAkF = (2 + r02 + r12 )1/2 ≤            3,         s2 ≥ √ .
+                                                                                                           3
+849   The second claim follows from Lemma D.4(d).
+850   Reﬂection. The map (c, g, s, a) 7→ (−c, −g, s, −a) exchanges m0 and m1 , and so maps L and
+851   Equation (18) for p to those for 1 − p. On parameters it is (u0 , u1 , w, q, k) 7→ (u1 , u0 , −w, −q, k),
+852   i.e. q(0) 7→ −q(0). It preserves q(0)k(0)(1 − 2p), D and the conclusion of Theorem 4. Hence we
+853   assume p < 12 , and set
+                                              1−p                   p(1 − 2p)
+                                    h⋆ = log        > 0,       µ=               .
+                                                p                       14
+854   The initialization is aligned if q(0)k(0) < 0, i.e. a(0) < 0.
+855
+                                             dt = − sign g.
+      Lemma D.7 (Drift identities). (a) sign da
+
+          dt = − 2 ρε v τ err, so Q is nondecreasing while a ≤ 0.
+      (b) dQ     1   2 2
+856
+                  2               2
+857   (c) (1 + v4 ) g = Q + v2 h.
+                              2
+
+          dt = −ρε (1 + 4 ) ∂c − 4 ρε v τ err.
+      (d) dh      2     v ∂L     1   2 2
+858
+                      ⋆                         ⋆
+859
+                           ∂c ≤ 0. If h ≤ 4 and |∆| ≤ 1, then ∂c ≤ −µ.
+      (e) If h ≤ h2 , then ∂L             h                   ∂L
+
+                                                                          4
+                                                                 ′              ′
+                                                    dt = − dh g σ (a) err with σ (a), err > 0 and
+      Proof. (a) By Equation (18) and Lemma D.4(a), da    ε S
+860
+                                                    √
+861   S = q 2 + k 2 > 0 (if D = 0, then S = 2 εd2h |a| and a never reaches 0 by Appendix D.5).
+                                                                                 
+      (b), (d) By Equation (18) and Lemma D.4(a), dQ   dt = −ρε v     ∂g − 2 ∂c and dt = dt + 2 dt . (c)
+                                                                2 2 ∂L      1 ∂L     dh    dc  1 dg
+862
+
+863   Substitute c = h − 2 .
+                          g
+
+864   (e) m1 = m0 − 2h and ∂L ∂c = p ϕ(m1 ; s) − (1 − p) ϕ(m0 ; s). By Lemma D.4(b),
+
+         ϕ(m1 ; s) ≤ e2 max(h,0) ϕ(m0 ; s)                             (ϕ nonincreasing; ϕ(m − 2x) ≤ e2x ϕ(m))
+             ∂L                                        
+                   ≤ −ϕ(m0 ; s) (1 − p) − p e2 max(h,0) ,
+              ∂c
+              ⋆                                       ⋆                            ⋆     p
+865   and p eh = 1 − p gives the ﬁrst claim. If h ≤ h4 , then p e2 max(h,0) ≤ p eh /2 = p(1 − p) and
+                                 √
+                 p                 1 − p (1 − 2p)     1 − 2p         p           1    1 p      √
+        (1 − p) − p(1 − p) = √               √ ≥                    ( 1 − p ≥ √ ≥ ( 1 − p + p))
+                                    1−p+ p                2                       2   2
+                                 1      h⋆    1                               ∆     h⋆   1
+                   ϕ(m0 ; s) ≥ σ − −                                (m0 = h +      ≤    + )
+                                 2      4     2                                 2    4    2
+                                 1 −1/2  p 1/4          p                   1
+                              ≥ e                     ≥             (σ(−z) ≥ e−z )
+                                 4         1−p            7                   2
+
+866   using p1/4 ≥ p and 41 e−1/2 ≥ 17 . Multiply.
+
+                                                               28
+867   Lemma D.8 (Alignment is kept). Let t0 ≥ 0 with
+                                                                   v2           v2          h⋆ 
+                     a(t0 ) < 0,           g(t0 ) ≥ 0,       1+         g(t0 ) ≥    h(t0 ) −      .
+                                                                   4             2           2 +
+                                                                                                ⋆
+868   Then for all t ≥ t0 : g(t) ≥ 0, a(t) ≤ a(t0 ), and h(t) ≥ h0 := min{h(t0 ), h2 }.
+
+869   Proof. Let t′ = sup{t ≥ t0 : a < 0 on [t0 , t]} > t0 . On [t0 , t′ ), τ < 0 and err > 0.
+                             ⋆
+870   h ≥ h0 . Where h ≤ h2 , dh dt > 0 by Lemma D.7(d), (e).          If h(t1 ) < h0 for some t1 ∈ (t0 , t′ ),
+                                                                 h⋆
+871   let t2 = sup{t ≤ t1 : h(t) ≥ h0 }. Then h < h0 ≤ 2 on (t2 , t1 ], so h(t1 ) > h(t2 ) = h0 , a
+872   contradiction.
+873   g ≥ 0. By Lemma D.7(b), (c),
+                   v2              v2                         
+              1+        g(t) = 1 +       g(t0 ) + Q(t) − Q(t0 )
+                   4                4
+                                   v2                
+                                +      h(t) − h(t0 )
+                                   2
+                                    v2           v2             
+                             ≥ 1+        g(t0 ) −    h(t0 ) − h0               (Q ↑, h ≥ h0 )
+                                    4             2
+                                                                                                               h⋆
+                               ≥0                                              (h(t0 ) − h0 = (h(t0 ) −           )+ )
+                                                                                                               2
+                                                        ′       ′                ′
+874   a ≤ a(t0 ). By Lemma D.7(a), da  dt ≤ 0 on [t0 , t ). If t < ∞, then a(t ) ≤ a(t0 ) < 0 and, by
+875   continuity, a < 0 on a neighbourhood of t , contradicting the deﬁnition of t′ . So t′ = ∞.
+                                               ′
+
+
+876   D.3 Conditions and scales
+877   Threshold. Let
+                                    
+                                     1
+                                    
+                                    2                        if q(0)k(0) < 0 (aligned),
+                               ε⋆ =     √
+                                    
+                                          gap p h⋆
+                                                             if q(0)k(0) > 0 (misaligned),
+                                      712 (1 + log K)
+878   and in the misaligned case also |D| ≥ gap ε2 . Let 0 < ε ≤ ε⋆ . In the aligned case only ε ≤ 12
+                                            √        √                                          ⋆ 4
+879   is used. In the misaligned case, since p h⋆ ≤ p log p1 ≤ 2e , p2 (h⋆ )6 ≤ ( 3e )6 and p(h  )
+                                                                                             1−2p ≤ 10
+880   (Appendix C.7),
+                         1                 µ                      p                           gap p (h⋆ )2
+                    ε≤     ,        ε4 ≤      ,      ε6 ≤                 ,            ε2 ≤                .             (19)
+                         2                 16               16(1 + log K)                       506944
+881   These are the only smallness properties of ε used below.
+882   Scales. Let
+                                                                             √                           √
+                      ε4                      h⋆                       15840 dh                        h⋆ d h
+               asc = √ ,             T1 =           ,       Tcross =               ,          Tmax =          .
+                       dh                    2ρε2 µ                    gap p h⋆ ε4                     16ρε6
+883   From the seed and ε ≤ 12 ,
+                             1 2                               1                       1
+                               ε ≤ v 2 ≤ 4ε2 ≤ 1,                asc ≤ |a(0)| ≤ 4asc ≤ ,
+                             4                                 4                       4
+                                                                                                                         (20)
+                                              1                                      x   x
+                         |a| ≤ 1 =⇒ σ ′ (a) ≥ ,               0 ≤ x ≤ 2 =⇒ tanh( ) ≥ .
+                                              6                                      2   4
+                                                                                                                         √
+884   In the misaligned case Equation (19) gives asc ≤ ε4 ≤ 16
+                                                            µ
+                                                               , T1 ≤ 12 Tmax (equivalent to ε4 ≤ µ 16dh )
+                                                             ⋆ 2
+885   and Tcross < 12 Tmax (equivalent to ε2 < gap p (h )
+                                                506880 ρ , and ρ ≤ 1).
+
+
+
+
+                                                              29
+886   D.4 Phase I: misaligned start
+887   An aligned start skips this phase. For a misaligned start, we need the count prior to orient the gate
+888   before the other parameters move too far. The crossing lemma follows the count margin and the gate
+889   readout together, rather than treating either as ﬁxed.
+890   Lemma D.9 (Crossing). Let q(0)k(0) > 0 and ta = inf{t ≥ 0 : a(t) ≤ − a8sc }. Then ta ≤
+891   T1 + Tcross , and
+                                                                     v 2 h⋆                           asc
+                             g ≥ 0 on [0, ta ],        |Q(ta )| ≤           ,        a(ta ) = −           .
+                                                                       16                              8
+892   Proof. Let t′ be the supremum of t ≤ min{ta , Tmax } such that g ≥ 0 and |∆| ≤ 1 on [0, t]; t′ > 0,
+      because ta > 0 (as a(0) > 0), ∆ is continuous with ∆(0) = 0, and dg dt (0) = 2 ρε v ϕ(0; 0) (1 −
+                                                                                       1  2 2
+893
+                                                                              ′
+894   2p) − τ (0) > 0 since τ (0) ≤ 2asc < 1 − 2p. Parts (i)–(v) hold on [0, t ); (vi) bounds the time.
+895   (i) Gate strength. By Lemma D.7(a), a is nonincreasing, so − a8sc < a ≤ a(0) ≤ 4asc :
+                                                    1                                   1
+                                           |τ | ≤     |a| ≤ 2asc ,       σ ′ (a) ≥        .
+                                                    2                                   6
+896   (ii) Balance. By Lemma D.7(b) and err ≤ 1,
+                        dQ                                                         v 2 h⋆
+                           ≤ ρε2 v 2 asc ,          |Q(t)| ≤ ρε2 v 2 asc t ≤                       (t ≤ Tmax ).
+                        dt                                                           16
+                                            ⋆
+897   (iii) Count margin. Where h ≤ h4 ,
+                             dh          1
+                                ≥ ρε2 µ − ρε2 v 2 |τ |                          (Lemma D.7(d), (e))
+                             dt          4
+                                         1             1
+                                ≥ ρε2 µ − ρε2 asc ≥ ρε2 µ                       ((i), v 2 ≤ 1, asc ≤ µ)
+                                         2             2
+                                                                                    ⋆
+898   Hence h ≥ 0. Let T1′ be the ﬁrst time in [0, t′ ) at which h = h4 , and T1′ = t′ if there is none; then
+                           ⋆
+899   T1′ ≤ T1 , and h ≥ h4 on [T1′ , t′ ).
+900   (iv) Gate contrast. On [0, T1′ ), by Lemma D.7(c), (ii) and (iii),
+                              dh    v 2  i dQ v 2 dh            µ      
+                                 1+      g =    +      ≥ ρε2 v 2   − asc > 0,
+                              dt    4        dt   2 dt           4
+901   so g > 0 on (0, T1′ ]. After T1′ ,
+                               v2     v 2 h⋆   v 2 h⋆   v 2 h⋆                               v 2 h⋆   ε 2 h⋆
+                          1+        g≥    ·   −        =        ,                   g≥               ≥        .
+                               4       2 4        16       16                                   32     128
+902   (v) Rule shift: |∆| ≤ 12 .
+                   ∆
+             p h−       = −p m1 ≤ p F (m1 ; s) ≤ L(t) ≤ L(0) = log K                               (Lemma D.4(c), (d))
+                    2
+                  v2     v 2 h⋆   v 2  log K   1  v 2 (1 + log K)                                              1    1
+               1+      g≤        +             +    ≤                                              ((ii), h⋆ ≤      ,p< )
+                  4         16     2       p     2           p                                                    p    2
+                                      8ε6 (1 + log K)   1
+                      |∆| = g|τ | ≤                   ≤                                            ((i), Equation (19))
+                                             p          2
+
+903   (vi) Crossing time. Both deﬁning conditions are closed, so they hold at t′ . By (iv), (v) and continuity,
+                               2 ⋆                               2
+904   g(t′ ) > 0 (from g ≥ v 32h if t′ > T1′ , and since (1 + v4 )g increases strictly on [0, t′ ] otherwise)
+905   and |∆(t′ )| ≤ 21 ; so the conditions extend past t′ unless t′ = min{ta , Tmax }. On [T1′ , t′ ), m1 =
+
+
+
+
+                                                               30
+906   −h + ∆
+           2 ≤ 4 , and
+               1
+
+
+                                   p     1      p
+            err ≥ p ϕ(m1 ; s) ≥      σ(− ) ≥                                            (Lemma D.4(b))
+                                   2     4      5
+            da    ε4 S                 ε 6
+                                           gap   ε 2 h⋆ 1 p  ε8 gap h⋆ p
+          −     =      g σ ′ (a) err ≥         ·       · · =                            (S ≥ |D| ≥ gap ε2 , (i), (iv))
+            dt     dh                     dh      128 6 5     3840 dh
+                  33          3840 dh
+       t′ − T1′ ≤    asc · 8            = Tcross                                        (a(T1′ ) ≤ 4asc )
+                   8       ε gap h⋆ p
+907   So t′ ≤ T1 + Tcross < Tmax , hence t′ = ta . The bounds extend to ta by continuity.
+908   D.5 Phase II and the theorem
+909   Crossing gives the gate a useful sign, but a small readout could still slow it down. We next show that
+910   the gate readout eventually stays above a ﬁxed ﬂoor. That ﬂoor lets the interaction grow to order
+911   one, where the gradient lower bound makes the remaining loss decrease at the sharper rate.
+                  h⋆                        v 2 h⋆   ε2
+                   2 µ and glow = min{1, 20 } ≥ 80 min{1, h }.
+                                                                  ⋆
+912   Let Th = 4ρε
+913   Lemma D.10 (Gate ﬂoor). Let t0 satisfy the hypotheses of Lemma D.8, with moreover h(t0 ) ≥ 0
+                      2 ⋆
+914   and Q(t0 ) ≥ − v 16h . Then g(t) ≥ glow for all t ≥ t0 + Th .
+915   Proof. On [t0 , ∞), a < 0, Q ≥ Q(t0 ) and h ≥ 0 (Lemma D.8, Lemma D.7(b)). At any s ≥ t0 with
+916   g(s) < glow ,
+           v2              v2               5 v 2 h⋆   v 2 h⋆   v 2 h⋆
+              h(s) = 1 +        g(s) − Q(s) < ·       +        =                         (Lemma D.7(c), v 2 ≤ 1)
+           2                4                4 20         16        8
+            |∆(s)| = g(s)|τ (s)| < glow ≤ 1,
+                   ⋆
+917   so h(s) < h4 , and by Lemma D.7(d), (e) and τ (s) < 0,
+                      dh                dh        v2  i       dQ       v 2 dh
+                         (s) ≥ ρε2 µ,         1+       g (s) =    (s) +        (s) > 0.
+                      dt                dt         4           dt       2 dt
+918   Suppose g(t) < glow for some t ≥ t0 +Th , and let s0 = sup{s ∈ [t0 , t] : g(s) ≥ glow }, or s0 = t0 if
+919   there is none. On (s0 , t], g increases, so g(t) > g(s0 ); if s0 > t0 then g(s0 ) = glow , a contradiction.
+                                                                                                ⋆
+920   So s0 = t0 , and on (t0 , t], h increases at rate at least ρε2 µ: h(t) ≥ ρε2 µ Th = h4 , contradicting
+                ⋆
+921   h(t) < h4 .
+922   Lemma D.11 (Gate growth). Let t0 ≥ 0 with a(t0 ) ≤ − a8sc , and suppose g ≥ glow on [t0 , ∞).
+923   Then t3 = inf{t ≥ t0 : L(t) ≤ L⋆ } satisﬁes
+                                              √        √
+                                         4080 dh log 8 ε4dh    8010 K log K
+                              t3 − t0 ≤                      +              .
+                                         pmin min{1, h⋆ } ε4      p2min ε4
+924   Proof. Since g ≥ 0, a is nonincreasing (Lemma D.7(a)), so |a| is nondecreasing on [t0 , ∞). Let
+925   t1 = inf{t ≥ t0 : |a(t)| ≥ 1}. On [t0 , min{t1 , t3 }),
+                                  1/2   pmin
+             err ≥ err20 + err21       ≥                                  (Lemma D.5(c))
+                                          17
+                                                                                √
+           d|a|    ε4 S                 2ε2 |a| ε2 min{1, h⋆ } 1 pmin          2 dh |a|
+                 =      g σ ′ (a) err ≥ √      ·              · ·         (S ≥          , |a| ≤ 1)
+            dt      dh                    dh           80      6 17               ε2
+                       ε4 min{1, h⋆ } pmin
+                  =             √          |a|,
+                           4080 dh
+                                         √
+926   so min{t1 , t3 } − t0 ≤ ε4 min{1,h
+                                  4080 dh
+                                         ⋆ }p
+                                              min
+                                                  log a8sc . If t1 < t3 , then on [t1 , t3 ), |a| ≥ 1 and
+                      dL    1               1
+                         ≤ − ρε2 v 2 tanh2 ( ) (err20 + err21 )         (Lemma D.6)
+                      dt    3               2
+                            ε4 p2min                                                             1  1
+                         ≤−                                             (Lemma D.5(c), tanh2       ≥ )
+                            8010 K                                                               2  5
+
+
+                                                             31
+927   and t3 − t1 ≤ 8010K log K
+                      p2 ε4
+                                , since L(t1 ) ≤ log K.
+                            min
+
+
+928   Lemma D.12 (Descent). Suppose |a(t)| ≥ a8sc for all t ≥ t0 , and let t3 = inf{t ≥ t0 : L(t) ≤ L⋆ }.
+929   Then
+                                                    1.7 · 106 K log K dh
+                                          t3 − t0 ≤                      ,
+                                                           p2min ε12
+930   every prediction of st , t ≥ 2, has positive margin against all K − 1 other counts for all t ≥ t3 , and
+                   5
+931   L(t) ≤ 2·10    Kdh
+              ε12 (t−t3 ) for t > t3 .
+
+932   Proof. For t ≥ t0 ,
+                                                  asc     a2
+                                  τ 2 ≥ tanh2 (       ) ≥ sc                      (Equation (20))
+                                                  16     1024
+                              dL    1
+                                 ≤ − ρε2 v 2 τ 2 (err20 + err21 )                 (Lemma D.6)
+                              dt    3
+                                       ε12                                               2 2    1
+                                 ≤−               (err20 + err21 )                (ρ =     , v ≥ ε2 )
+                                    6144 K dh                                            K      4
+933   While L > L⋆ ,
+                                 dL         ε12 p2min
+                                     ≤−                                      (Lemma D.5(c))
+                                 dt      1640448 K dh
+                                       1640448 K log K dh
+                             t3 − t0 ≤                                       (L(t0 ) ≤ L(0) = log K)
+                                             p2min ε12
+934   For t ≥ t3 , L < pmin log 2, so all margins are positive and P0 , P1 > 21 (Lemma D.5(a)), and
+                                       dL          ε12
+                                           ≤−              L2                   (Lemma D.5(b))
+                                        dt     196608 K dh
+                                      d 1        ε12
+                                           ≥
+                                      dt L   196608 K dh
+935   Proof of Theorem 4. Reduction. By the reﬂection, p < 12 ; then pmin = p.
+936   Aligned start. a(0) ≤ − a4sc < 0 and g(0) = h(0) = 0, so Lemma D.8 applies at t0 = 0: a(t) ≤
+937   − a4sc for all t. Lemma D.12 with t0 = 0 gives positive margins for t ≥ t3 and Lstep → 0.
+938   Lemma D.10 applies at t0 = 0 (h(0) = Q(0) = 0), and Lemma D.11 with t0 = Th gives
+                                              √          √
+                                         4080 dh log 8 ε4dh      8010 K log K
+                             t3 ≤ T h +                      +                 .
+                                           p min{1, h⋆ } ε4           p2 ε 4
+939   Misaligned start. By Lemma D.9, a(ta ) < 0, g(ta ) ≥ 0, and
+                       v2                   v2        v2          h⋆  v 2          h⋆ 
+                  1+        g(ta ) = Q(ta ) + h(ta ) ≥    h(ta ) −     ≥    h(ta ) −      .
+                       4                     2         2           8     2           2
+                                                       2                 ⋆
+940   With g(ta ) ≥ 0 the left side is at least v2 (h(ta ) − h2 )+ , so Lemma D.8 applies at t0 = ta and
+941   a(t) ≤ − a8sc for all t ≥ ta . Lemma D.12 with t0 = ta gives positive margins for t ≥ t3 and
+                                                                                  2 ⋆
+942   Lstep → 0. Lemma D.10 applies at t0 = ta (h(ta ) ≥ 0 and Q(ta ) ≥ − v 16h by Lemma D.9), and
+943   Lemma D.11 with t0 = ta + Th gives
+                                                        √          √
+                                                   4080 dh log 8 ε4dh     8010 K log K
+                       t3 ≤ T1 + Tcross + Th +                          +               .
+                             | {z }                 p min{1, h } ε
+                                                                ⋆    4        p2 ε 4
+                                Phase I     |                     {z                  }
+                                                                             Phase II
+                                                   √
+944   The stated bound. Tcross ≤ gap p15840 dh               ⋆
+                                       min{1,h⋆ }ε4 . Since h = log(1 +  p )≤
+                                                                        1−2p  1−2p
+                                                                                p ,
+
+                                                       7Kh⋆               7K      6K log K
+                                   T1 = 2Th =                        ≤          ≤          ,
+                                                   2ε2 p(1 − 2p)         2p2 ε2     p2 ε 4
+
+                                                                32
+               √
+945   and log 8 ε4dh ≤ C log dεh , which gives the bound of Theorem 4 with γ = gap (misaligned) or γ = 1
+946   (aligned). In the aligned case there is no Phase I, and gap does not enter. Lemma D.12 also gives
+                                 6
+947   t3 ≤ T1 + Tcross + 1.7·10 pK    log K dh
+                                   2 ε12
+                                                                                1
+                                               , a bound without the factor min{1,h ⋆} .
+
+
+948   Probability. Let X = |q(0)|
+                                ε    and Y = |k(0)|
+                                               ε    be independent and uniform on [ 12 , 2]. Then X 2 has
+949   density 3√z ≤ 3 on [ 4 , 4], so
+               1     2     1
+
+
+                                                                     2 4
+                   Pr |D| < gap ε2 = E Pr |X 2 − Y 2 | < gap Y ≤ 2gap · = gap.
+                                                                       3 3
+                                                                                             √
+950   Why the gap condition. If |q(0)| = |k(0)| and q(0)k(0) > 0, then D = 0, S = 2 εd2h |a| , and
+
+                                 da                      2ε2
+                                    = −f (t) a,      f = √ sign(a) g σ ′ (a) err.
+                                 dt                       dh
+951   Then a never changes sign, so a misaligned gate stays misaligned and the crossing estimate of
+952   Lemma D.9(vi) fails. The condition |D| ≥ gap ε2 excludes this case. An aligned start needs no
+953   such condition.
+954   Why the gate readout is trained along I − R. For K = 2 this is no restriction: W stays circulant
+955   (Lemma D.2), and its component along I + R adds the same constant
+                                                                      P      to both logits, so it has zero
+956   gradient and stays 0. For K ≥ 3, a full circulant gate readout j wj Rj has, by the argument of
+957   Lemma D.3, contrasts g (i) = εv(wi − wbg ) at offsets i = 0, 1, and with g = g (0) − g (1) and Pb (y)
+958   the probabilities by offset,
+                   1   ∂L                               
+                             = g (1 − p)P0 (1) + pP1 (0) + (1 − p) g (0) P0 (bg) − p g (1) P1 (bg).
+                σ ′ (a) ∂a
+                                                                                                         
+959   On the line W = w(I−R), g (0) = −g (1) = g2 , the last two terms equal g2 (1−p)P0 (bg)+pP1 (bg) ,
+960   and the bracket is err: this is Lemma D.7(a). Off the line, the background terms carry g (0) + g (1) ,
+961   which grows as the readout suppresses the K − 2 background counts, and need not have the sign of
+962   g. Table 5 integrates both versions.
+
+963   D.6 Controls and outcome training
+964   Letter direction. If ΠK = êh ê⊤0 instead, both letters have key εk êh and the gate weight does not
+965   depend on bt . As in Lemma D.3, both letter values then give ∆ = 0, and Lstep ≥ L0 (h) ≥ Hp for
+966   every ϑ.
+967   Corollary D.1 (Outcome training from the same initialization). Take the architecture and initial-
+968   ization of Theorem 4 for any K ≥ 2, with any ﬁxed mask at the answer position, and λ as in
+969   Equation (2). Gradient ﬂow on Lout , training (U, W, q, k) or any larger set of blocks (the relative
+970   bias included) under any block schedule, obeys the plateau bound of Theorem 3 for λ > 0 and ε in
+971   the range of that theorem.
+                                                                                                  √
+972   Proof. After division by ε, every map and embedding block has operator norm at most 2 K, the
+973   count embeddings have singular values 1, every MLP bias has |b̃m | = 1, and the readout is zero: this
+974   is Assumption 2. A ﬁxed mask keeps every attention row a softmax over its visible sites (Assump-
+975   tion 1) and only lowers the numbers of scores and sites. Hence Proposition C.1, Proposition C.2(i)–
+976   (iii), Lemmas C.3 and C.5 and Theorem 3 apply unchanged for any schedule, and Lemma C.4 covers
+977   a trained bias.
+978   Remark D.1 (Scope). Trained and ﬁxed. One ﬂow trains U, W, q, k; the times ta , t3 are deﬁned
+979   from the trajectory for the analysis and are not optimizer stages. The mask, which supplies the
+980   routing, and v are ﬁxed. Corollary D.1 uses the same architecture, mask and seed, with the same
+981   trained set or a larger one.
+982   Dependence on n. The time bound and ε1⋆ are polynomial in 1ε , p(1−p)
+                                                                          1
+                                                                             , h1⋆ , dh , gap
+                                                                                           1
+                                                                                              and K, and
+983   depend on n only through dh ≥ 1. For the executor width dh = 2n + 6 they are polynomial in n,
+984   while outcome training stays near chance for time of order λ−n . The bound grows like ε−4 log 1ε ,
+
+
+
+                                                         33
+985    and in Table 5 solve times grow like ε−4.0 to ε−4.3 , so the exponent is sharp up to the logarithm.
+                                       log 1
+986    The separation needs n of order log 1ε .
+                                            λ
+
+987    Task. The theorem covers every K ≥ 2 and transitions t ≥ 2. At K = 2, λ = |1 − 2p| > 0
+988    exactly when p 6= 21 . At p = 12 , h⋆ = 0: the count-only prior no longer separates the two candidate
+989    counts, the drift of h in Lemma D.7(e) vanishes, and nothing orients a misaligned gate; for K ≥ 3
+990    this excludes p = 21 although λ > 0 there. The gate readout is trained along I − R (Appendix D.5);
+991    Table 5 shows the same behaviour for a full circulant gate readout. Whether joint training also learns
+992    the routing is open; Table 1 gives ﬁnite-step evidence at ε = 0.3.
+
+993    D.7 Numerical check
+994    Table 5 integrates Equation (18) for K = 2, 3, 4, 6, and for K = 3, 4, 6 also the
+995    ﬂow with a full circulant gate readout, with dh = 8, v = ε and 1ε (|q(0)|, |k(0)|) ∈
+996    {(1.3, 0.8) aligned, (1.3, 0.8) misaligned, (1, 0.98) misaligned}. A run is solved when every pre-
+997    diction has positive margin and Lstep ≤ L⋆ . The checked properties are those of the proof: g keeps
+998    its sign after prior ﬁtting, a crosses zero at most once, and once the gate is aligned with |a| ≥ a8sc ,
+999    ag ≤ 0 and |a| is nondecreasing. All 189 runs solve and pass. The aligned runs lie inside the range of
+1000   Theorem 4; the misaligned ones, at ε ∈ {0.3, 0.2, 0.1}, lie outside it. The identities and constants of
+1001   the proof are also checked mechanically (handcoded/theory_checks/theorem4_checks.py):
+1002   ε⋆ implies Equation (19) and the scale relations of Appendix D.3 on a grid of (p, dh , gap, K) in
+1003   60-digit arithmetic; the derivative identities, the properties of ϕ and the gradient bound match ﬁnite
+1004   differences; and the softmax model with full K × K count readout reproduces the reduced ﬂow of
+1005   Lemma D.3 for K = 2, 3, 4, 6.
+
+           K    gate readout   solved          median solve time            slope of log T in log 1ε   checks
+                                         ε = 0.3   ε = 0.2     ε = 0.1              (range)            passed
+           2    –              27/27    3.1 · 104   1.7 · 105   3.1 · 106         4.04–4.33            27/27
+           3    R(I − R)       27/27    4.1 · 104   2.2 · 105   3.9 · 106         4.07–4.27            27/27
+           4    R(I − R)       27/27    5.0 · 104   2.7 · 105   4.7 · 106         4.07–4.24            27/27
+           6    R(I − R)       27/27    6.4 · 104   3.3 · 105   5.7 · 106         4.06–4.19            27/27
+           3    circulant      27/27    4.0 · 104   2.2 · 105   3.9 · 106         4.08–4.28            27/27
+           4    circulant      27/27    4.9 · 104   2.6 · 105   4.7 · 106         4.09–4.25            27/27
+           6    circulant      27/27    6.2 · 104   3.3 · 105   5.6 · 106         4.09–4.21            27/27
+       Table 5: Reduced gate ﬂow: every run solves, with initialization-scale dependence close to the
+       proved exponent. Rows with gate readout R(I − R) (and K = 2) integrate Equation (18), the
+       setting of Theorem 4; rows marked circulant train the full circulant gate readout of Appendix D.5.
+       Each row: p ∈ {0.1, 0.25, 0.75}, ε ∈ {0.3, 0.2, 0.1}, three seeds, dh = 8; these ε lie outside the
+       range of Theorem 4 in the misaligned case. Checks: g keeps its sign after prior ﬁtting, a crosses zero
+       at most once, and from the ﬁrst time |a| ≥ a8sc with the gate aligned, ag ≤ 0 and |a| is nondecreasing
+       (Lemma D.8). Implementation: handcoded/reduced_ode.py.
+
+
+
+
+                                                         34
+1006   E Experimental details
+1007   These experiments ask how much of the controlled explanation survives outside its proof assump-
+1008   tions. We give the protocols and results in the order of the questions in Section 5, including the cases
+1009   that resist the explanation. Exact-computation proof audits are reported separately in Appendix C.7.
+
+1010   E.1     Shared protocol
+1011   Paired step and outcome runs share initialization, data order, optimizer and update budget; only the
+1012   supervised continuation differs. We report greedy-decoding accuracy on held-out prompts. Table 6
+1013   lists model- and task-speciﬁc settings.
+
+                        Letter tasks (two-block)                  Boolean-8, register (GPT-2L)              LoRA (SmolLM2, Qwen2.5)
+       Model            Appendix B, 2 blocks, 3 heads             2 blocks, 4 heads, width 128, LayerNorm   rank 8
+       Data             20,000 train, 1,000 test                  20,000 train, 500–1,000 test              12,000 train
+       Initialization   every tensor N(0, 0.022 )                 default                                   default LoRA
+       Optimizer        AdamW, lr 10−3 , clip 1, batch 256        AdamW, lr 3 × 10−4 , batch 128            batch 16
+       Budget           8,000 updates (16k or 32k where stated)   8,000 updates                             800 updates
+       Seeds            42–44 (42–51 at n = 16)                   three or ﬁve                              2001–2003
+       Table 6: Shared experimental settings. Task-speciﬁc exceptions are stated in the corresponding
+       subsections.
+
+
+1014   For counting, outcome runs supervise only the ﬁnal count, while step runs supervise every running
+1015   count, formatting token, ﬁnal answer and EOS unless stated otherwise. The theory-only transition
+1016   loss Lstep excludes the t = 1 boundary case; experimental step training supervises the full continu-
+1017   ation. The joint routing runs in Appendix E.6 instead supervise every running count (Lallstep ). Letter
+1018   tasks use four letters unless stated otherwise; ﬁrst-occurrence words contain the query. For GPT-2L
+1019   and LoRA, seeds change only initialization, so their spread does not capture data variability.
+
+1020   E.2     Controlled test of the theorem regime
+1021   Purpose and setup. These runs approximate the regime of (A1)–(A4): the architecture, task and
+1022   initialization conditions are enforced where they can be checked numerically, and gradient ﬂow
+1023   is approximated by reﬁned full-batch updates. They test exponential outcome escape and step rule
+1024   credit with polynomial horizon cost. The compact widths below test the gradient and exit mechanism
+1025   only; exact executors are certiﬁed by Proposition 1 in the wider architecture, not at these widths. We
+1026   use K = 2, two blocks of width 16, three heads of dimension 8, MLP width 16, |b̃m | ≥ 1, and
+1027   two letters with match probability 41 (λ = 12 ). Gradients are exact over all words through n = 14,
+1028   in full-batch ﬂoat64, with step objective Lstep . Exit-time runs start from a zero readout; credit
+1029   measurements retain a nonzero readout (Appendix C.5).
+1030   Each update moves the parameters by 10−3 εkθ̃k. The exit time τ (r) is the accumulated step size
+1031   when kθj − θ0 k = rεkθ̃k. We report it at r = 0.1 and at the radius r0 ε of the ball Bε in Theorem 3,
+1032   r = r0 /kθ̃k ≈ 1.8 × 10−3 (r0 = 81 and kθ̃k ≈ 70 for all three draws); τ (0.1) is therefore a
+1033   displacement time well outside Bε . Halving or quartering the update changes τ (0.1) by less than
+1034   1%. The exit from Bε is a much shorter distance, so it is integrated with updates of 10−6 εkθ̃k, about
+1035   1,800 updates to the boundary; updates of 10−5 change it by less than 0.5%. At every update before
+1036   either exit, no ReLU pre-activation changes sign from its value at θ0 , on any input or position, so
+1037   the ﬁxed activation pattern of the analysis holds along the trajectory.
+1038   Exit times. Figure 3a and Table 7 show outcome escape growing at least as fast as λ−n at both
+1039   radii, while step escape remains nearly constant. Here ε = 0.002; the fast step exit reﬂects ﬁtting
+1040   the count-only prior.
+
+
+
+
+                                                                       35
+                                               n=4           6            8          10           12           14
+       outcome, exit from Bε (r = r0 /∥θ̃∥)   2.8–6.8e2   1.4–3.4e3    0.7–1.6e4 3.2–8.2e4     1.5–3.5e5    0.7–1.8e6
+       step, exit from Bε                                              0.10–0.16 at every n
+       outcome τ (0.1)                        0.9–1.5e4   0.5–0.8e5    2.3–3.8e5 1.0–1.8e6     4.7–7.8e6    2.2–3.8e7
+       step τ (0.1)                                                    4.18–5.55 at every n
+       Table 7: Outcome escape grows exponentially while step escape stays nearly constant. ε =
+       0.002, zero readout; ranges are over three draws.
+
+
+
+1041   Gradient decomposition. Rule credit has polynomial horizon cost; outcome interaction credit,
+1042   measured as the credit at ANOVA degrees ≥ 2 (Appendix E.3), has exponential cost. Table 8
+                                              6
+1043   separates the O(ε) step prior, the O( εn ) useful rule credit, and the exponentially suppressed outcome
+1044   interaction. These measurements use ε = 0.02 and are exact over all words. For a uniform start, the
+1045   rule-to-outcome interaction credit ratios at n = 4, 6, 8, 10, 12, 14 are respectively 64–119, 129–268,
+1046   315–709, 803–2,000, 2,600–6,730, and 9,410–21,300.
+
+                 part of the gradient at θ0                bound scale        n=4     n=8         n = 12
+                 Absorbed by single-position features
+                 step: prior                                    ελ         3.3e−2     3.3e−2      3.3e−2
+                 outcome: total (degree 0 dominates)           ελn         1.6e−4     6.6e−6      3.2e−7
+                 Requires interactions
+                                                               ε6
+                 step: rule credit ∥∇θ Φrule ∥                  n
+                                                                           3.3e−9    1.8e−9       1.1e−9
+                 outcome: degrees ≥ 2, start state ﬁxed       6 n−3
+                                                             ε λ           1.4e−9    1.9e−10      1.6e−11
+                 outcome: degrees ≥ 2, uniform start         ε6 λn−3      2.8e−11    2.6e−12      1.7e−13
+       Table 8: Step rule credit is polynomial in horizon; outcome interaction credit is exponentially
+       suppressed. Gradient norms at initialization for one draw of θ̃ (two letters, match probability
+       1
+       4 ), with their theorem scales (constants omitted; the scales are upper bounds). Over three draws,
+       n∥∇θ Φrule ∥
+            ε6      ranges over 192–231, 141–195 and 97–169 for n = 4–14. The draws differ from those
+       of Table 3.
+
+
+1047   E.3   Outcome training remains low degree
+1048   Degree as a measurement. The proofs do not use it, but the experiments report where the tar-
+1049   get and the Jacobian put their energy. With the start count ﬁxed, every square-integrable  P function
+1050   f of the letters has a unique Hoeffding–Efron–Stein (ANOVA) decomposition f =                 S⊆[n] fS ,
+                      P             |S\U |
+1051   with fS =          U ⊆S (−1)        E[f    |  w U ] depending only on the letters in S and  centred  in
+1052   each of them [Hoeffding, 1948, Efron and Stein, 1981, O’Donnell, 2014]; its degree is |S|, and
+1053   vector- and matrix-valued functions are decomposed entrywise. For the target, Ek(y − u)S k2 =
+          PK−1                                                          Q                   
+1054
+       K
+        1
+             j=1 |ρj |
+                       2(n−|S|)
+                                (1 − |ρj |2 )|S| : expand αjsn = αjs0 t ρj + (αjbt − ρj ) , whose term in-
+1055   dexed by S is centred in each letter of S. A function that reads k letters has components only on
+1056   their subsets, so Proposition C.1 predicts Jacobian energy at degrees 0 and 1 near initialization.
+1057   Question. Does the low-degree Jacobian at initialization persist along the outcome-training trajec-
+1058   tory? The initialization spectrum, answer-dependent gradient, and AdamW trajectory test successive
+1059   parts of this mechanism.
+1060   At initialization. The Jacobian has 99.6% of its energy at degree 0 (Figure 1b), and the answer-
+1061   dependent gradient decays by approximately a factor 0.5 per additional letter: log-linear ﬁts over
+1062   n = 2–10 give 0.508 for seed 42 (Table 9, R2 = 0.995) and 0.513 and 0.480 for seeds 43 and 44.
+1063   These gradient measurements use counting modulo 2 over four letters (λ = 0.5) in the experiment
+1064   architecture with every parameter drawn from N (0, 0.022 ), outside (A2), and a ﬂoat32 forward pass;
+1065   gradients are exact over all prompts. The answer-dependent part is only 5×10−3 (n = 2) to 2×10−5
+1066   (n = 10) of the full outcome gradient.
+1067   For the spectrum at n = 8, ε = 0.02, a Gaussian parameter direction g satisﬁes Eg [k( ∂z  ∂θ g)r k ] =
+                                                                                                   θ      2
+
+1068   k( ∂θ )r k2F . We split ∂θθ g exactly by an orthonormal transform along each letter axis of the 48 grid,
+          ∂zθ                  ∂z
+
+
+
+                                                             36
+1069   averaging 16 directions over all eight (s0 , w⋆ ) pairs. Per-seed spectra and gradient ﬁts are in the
+1070   accompanying code repository.
+
+       n                                                         2            4          6          8          9         10
+                                         θ ⊤
+       answer-dependent gradient ∥E[( ∂z
+                                      ∂θ
+                                          ) (y − u)]∥        8.6e−4         2.5e−4   6.5e−5       2.1e−5     7.6e−6    3.6e−6
+       step supervision gradient                             1.8e−2         3.0e−2   3.9e−2       4.0e−2     4.2e−2    4.3e−2
+       ratio                                                   21             119      598         1,849      5,561    11,708
+       Table 9: The answer-dependent gradient decays with horizon while the step gradient does not.
+       Gradient norms at initialization, seed 42.
+
+
+
+1071   During training. At K = 2, n = 8, ε = 0.02 and seed 42, under the AdamW protocol of
+1072   Appendix E.1, the share of Jacobian energy above degree 1 stays at most 2.4 × 10−6 through 6k
+1073   updates. It rises to 0.155 at 8k updates, when the trajectory is escaping (Table 10).
+
+                                      outcome updates      share above degree 1        accuracy
+                                      initialization                 2.4e−6               –
+                                      1,000                          1.1e−8              52%
+                                      3,000                          1.1e−8              48%
+                                      6,000                          2.0e−6              48%
+                                      8,000 (escaping)                0.155              55%
+       Table 10: Outcome training remains low degree until escape. Jacobian energy above degree 1
+       and held-out answer accuracy.
+
+
+1074   Robustness. Tables 11 and 12 report nonzero-readout, seed, initialization-scale and deeper-model
+1075   sweeps. The ﬁrst-occurrence control is learned from answers, whereas modulo-2 counting retains a
+1076   step/outcome gap. At K = 3, n = 8, outcome accuracy after 32k updates is 100.0, 67.7, 99.9% for
+1077   seeds 42–44, an explicit moderate-horizon exception.
+1078   In Table 11, panel (a) reports 8k accuracies for ε = 0.02, seeds 42–44; parentheses count runs
+1079   reaching 90% by 16k updates for step and 32k for outcome. Panel (b) uses 20 seeds per horizon
+1080   and 8k updates; n = 4 is excluded because there are fewer distinct prompts than training examples.
+1081   Panel (c) uses seeds 42–44 and 8k updates. At ε = 0.5 both losses are unstable at this learning rate.
+1082   The ε6 rule-credit scale at 0.1 is 56 ≈ 1.6 × 104 times that at 0.02, a qualitative comparison outside
+1083   the certiﬁed small-initialization regime. Both exact executors remain correct at every tested horizon.
+1084   For the ﬁrst-occurrence row in Table 12, the 12 runs use ε = 0.02, seeds 42–44, and report 8k
+1085   accuracies; parentheses count runs reaching 90% by 16k updates. The deeper-model sweeps use
+1086   four or six blocks at n = 8, 12; 10 of 12 counting step runs exceed 80%, while outcome stays near
+1087   chance.
+
+       Setting                                   Runs                step                       outcome                chance
+       (a) Horizon sweep: ε = 0.02, three seeds
+       count, K = 2, n = 8                      3              57–95 (3/3)                     49–55 (0/3)               50
+       count, K = 2, n = 12                     3               100 (3/3)                      49–51 (0/3)               50
+       count, K = 2, n = 16                     3              17–26 (3/3)                     49–52 (0/3)               50
+       count, K = 2, n = 24                     3             74–100 (3/3)                     49–52 (0/3)               50
+       (b) Seed sweep: ε = 0.02, 20 seeds per horizon
+       count, K = 2, n = 6, 8, 10, 12, 14, 16 120        5, 8, 13, 13, 13, 8 of 20   0 of 20 each (median 49.8–50.8)     50
+       (c) Initialization-scale sweep: three seeds
+       ε = 0.1, n = 8 / 16                         3/3         100 / 100                      63–65 / 48–50              50
+       ε = 0.5, n = 8 / 16                         3/3         8–69 / 0–1                     48–53 / 50–52              50
+       Table 11: Modulo-2 outcome runs remain unsolved across horizons, seeds and initialization
+       scales. Held-out exact-continuation accuracy (%); solved counts are in parentheses.
+
+
+
+
+                                                                 37
+                                                                  Outcome           Step    Chance
+                                    (a) GPT-2L                      (b) Qwen2.5 LoRA             (c) Qwen2.5 on BBH
+                              100
+        Answer accuracy (%)
+
+
+
+                                                                                                                        seed
+                              50                                                                                        variation
+
+
+
+
+                               0
+                                      Boolean-8   Register                  Boolean-8             3 objects     5 objects      7 objects
+
+
+       Figure 4: Step supervision also helps beyond counting. Held-out answer accuracy for (a) GPT-2L,
+       (b) Qwen2.5-0.5B LoRA, and (c) Qwen2.5-0.5B LoRA on the ofﬁcial 250 BIG-Bench Hard items
+       at each object count. Points show medians, thick intervals the interquartile range, and thin intervals
+       the full seed range; GPT-2L Boolean-8 uses ﬁve seeds, other groups three. Dashed segments show
+       chance; exact values and protocols are in Table 13 and Appendix E.
+
+
+       Setting                                               Runs                   step                      outcome               chance
+       ﬁrst occurrence, n = 8–24                             12            80–99 (12/12)           71–100 (11/12, by 16k)              –
+       count, K = 2, 4 or 6 blocks, n = 8, 12                12       31–100 (10/12 above 80%)           47.8–50.9                    50
+       ﬁrst occurrence, 4 or 6 blocks                        –                 95–100                     95–100                       –
+       Table 12: The ﬁrst-occurrence control is learned from answers; deeper counting models retain
+       the supervision gap. Held-out accuracy (%), with the success criteria stated in the prose.
+
+
+
+1088   E.4                     Horizon–contraction sweep
+1089   Question and setup. Does outcome performance depend on the remaining low-degree signal λn ,
+1090   rather than horizon n alone? For counting modulo 2, we vary alphabet size A ∈ {4, 6, 10, 20},
+1091   giving
+                                               2
+                                      λ = 1 − ∈ {0.5, 0.67, 0.8, 0.9},
+                                               A
+1092   and horizons n ∈ {6, 8, 10, 12, 16}. Each of the 20 cells uses three paired seeds (42–44) and 8k
+1093   AdamW updates under Appendix E.1.
+1094   Result. Outcome accuracy has Spearman correlation 0.91 with λn , but only −0.36 with n. After
+                                            n
+1095   subtracting the state-only prior 1+λ                         n
+                                          2 , the correlation with λ falls to 0.15 (Figure 3b,c). Cell means
+1096   are 2 points below to 7 above the prior (median +0.2); when λn ≤ 0.04, every cell mean is within
+1097   1.5 points. Thus most learned outcome signal is explained by the accessible low-degree prior. No
+1098   outcome run reaches 90%; step runs reach it in 17 of 60. The full grid, including per-seed step
+1099   accuracies, is in the accompanying code repository.
+
+1100   E.5                     Beyond counting
+1101   Purpose. Synthetic state-tracking tasks test how degree structure relates to the supervision gap;
+1102   pretrained models and BIG-Bench Hard test whether the qualitative pattern transfers to a different
+1103   setting.
+1104   Synthetic state tracking. Boolean-8 has 4 bits (K = 16) and NOT, CNOT, SWAP and Toffoli
+1105   gates on random wires (n = 8); the register machine has (x, y) ∈ Z217 , ﬁve instructions, n = 16
+1106   and answer x. Their answers put 98.9% and 99.9% of their variance at degrees ≥ 2, while ﬁrst
+1107   occurrence keeps a degree-1 part at every n (there 1[y = 1] = b1 , so Ek(y − u){1} k2 ≥ p(1 − p)).
+1108   GPT-2L uses character tokens.
+
+
+
+                                                                              38
+1109   Pretrained models and BIG-Bench Hard. The LoRA runs test transfer of the qualitative mecha-
+1110   nism beyond the controlled model. On Boolean-8 (mean±SD over seeds), SmolLM2-135M LoRA
+1111   reaches 9.9 ± 0.2 (outcome) and 89.7 ± 4.9 (step); eight times the outcome budget gives 11.8 ± 2.2
+1112   (SmolLM2) and 10.0 ± 0.9 (Qwen2.5); answer-ﬁrst formats give 8.0 ± 0.9, 9.3 ± 0.3 and 10.1 ± 1.0
+1113   (GPT-2L, SmolLM2, Qwen2.5), so they do not reproduce the step beneﬁt.
+       Benchmark setup and results. Training items come from the benchmark’s templates with new as-
+       signments and swaps; testing uses the ofﬁcial 250 items per size, all of which parse and rebuild
+       exactly. Traces list every holder’s item with its option letter (“Alice has Ulysses (A)”); with item
+       names alone, answers stayed at the letter base rate. With m objects a random swap gives λ = mp−1m−1
+                 (m−1
+                    2 )
+       with p = m , which is 0, 2 and 3 for m = 3, 5, 7, and the share of answer variance at degrees ≤ 1
+                                      1     2
+                  (2)
+1114
+       is λ2n + nλ2(n−1) (1 − λ2 ): 0, 1.56% and 3.34%. Zero-shot accuracy is 33.6, 16.4 and 11.2%. At
+       three objects, outcome runs select the most common option, whose base rate is 35.2%. Five objects
+       reverse the ordering that the low-degree share predicts: outcome training reaches 80–94% there but
+       15–24% at seven objects, whose share is larger. One of three ﬁve-object step runs fails (46% on real
+       items, 45% on generated ones). Five objects are therefore an exception: outcome training succeeds
+       despite less low-degree variance than seven objects. We treat the degree calculation as a mechanistic
+       guide, not a complete predictor of pretrained-model optimization; these LoRA runs are outside the
+       theorem assumptions.
+1115   For the BBH spectrum measurement, we split all 63 swap sequences at ﬁxed scene, assignment
+1116   and query, using the three option logits and the LoRA up-projection Jacobian. For every task in
+1117   Table 13, λ is the largest singular value of the averaged move permutation on mean-zero state vectors
+1118   (Deﬁnition 2 for counting). It determines the low-degree share for counting and BBH. For Boolean-
+1119   8 and the register machine, it is only the slowest of many state modes: the single-mode estimate
+1120   λ2n + nλ2(n−1) (1 − λ2 ) gives 20% and 56%, far above the measured 1.1% and 0.08% degree-≤ 1
+1121   shares.
+1122   The summary counting rows use a zero readout and ten paired seeds with 8k updates for modulo 2
+1123   (mean accuracy, solved seeds in parentheses), and 32k updates with seeds 42–44 for modulo 3. BBH
+1124   rows test on the 750 ofﬁcial items, 250 per size.
+
+        Task                         Model                     n       λ       outcome          step        chance
+        count mod 2                  two-block                16     0.50    49.8 (0/10)    93.1 (8/10)       50
+        count mod 3                  two-block                16     0.66      30–50            100           33
+        ﬁrst occurrence (control)    two-block               8–24      –       71–100         80–99            –
+        Boolean-8                    GPT-2L                    8     0.82        7.7             82          6.25
+        register machine             GPT-2L                   16     0.95        6.3           99.9          5.9
+        Boolean-8                    Qwen2.5-0.5B LoRA         8     0.82       11.1           98.3          6.25
+        BBH, 3 objects               Qwen2.5-0.5B LoRA           3    0         35.2          98.4–100        33
+        BBH, 5 objects               Qwen2.5-0.5B LoRA           5   0.50     80.0–94.4        46–100         20
+        BBH, 7 objects               Qwen2.5-0.5B LoRA           7   0.67     15.2–24.4       96.4–100        14
+       Table 13: Step supervision usually helps when the answer has little low-degree signal. Held-out
+       accuracy (%); ranges are over seeds. Detailed protocols and per-seed values are in the accompanying
+       code repository.
+
+
+1125   E.6     Joint routing runs
+1126   Table 1 uses the following protocol.
+       Model            two-block executor architecture (Appendix B)
+       Task             counting modulo 2, four letters, p = 41
+                                                                                    1
+       Initialization   fan-in-scaled Gaussian weights, embeddings of variance dres   , MLP biases of magnitude 1–2,
+1127                    all scaled by ε = 0.3; relative biases and readout zero
+       Trained          query/key maps, relative biases, readout (embeddings, values, MLPs ﬁxed)
+       Optimizer        full-batch gradient descent, step size 2, 4,096 training prompts
+       Success          every state prediction on 16,384 held-out prompts has positive margin
+
+1128   Of 17 runs, 16 solve; the remaining n = 12 run reaches 99.95% by 300k updates. The outcome
+1129   baseline uses the same initialization, trained parameter subset, step size and data, with only the
+
+                                                            39
+1130   ﬁnal count supervised; no outcome run solves within 300k updates. Implementation and per-run
+1131   measurements are available in the accompanying code repository.
+
+1132   F   Reproducibility
+1133   Code. Code, conﬁgurations, seeds, reproduction commands, numerical proof checks and per-run
+1134   measurements are available at https://anonymous.4open.science/r/trace. The accompany-
+1135   ing code repository provides an exact implementation of the executors, a numerical check of the
+1136   reduced ﬂow of Theorem 4, and instructions for reproducing every experiment.
+1137   Compute and data. Runs use one NVIDIA A100 80GB GPU: about one minute per 8k counting
+1138   updates and ﬁfteen minutes per 800-update LoRA run; exploratory runs used more compute than
+1139   reported. Data are synthetic; the accompanying code repository also contains the ofﬁcial BIG-Bench
+1140   Hard items, unchanged. Software and assets: PyTorch 2.13 (BSD-3-Clause), Transformers 5.16 and
+1141   PEFT 0.20 (Apache-2.0), SmolLM2-135M [Allal et al., 2025] and Qwen2.5-0.5B [Qwen Team,
+1142   2024] (Apache-2.0), and BIG-Bench Hard [Suzgun et al., 2022] (MIT).
+
+
+
+
+                                                      40
+

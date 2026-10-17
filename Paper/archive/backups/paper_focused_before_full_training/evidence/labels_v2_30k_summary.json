@@ -1,0 +1,569 @@
+[
+  {
+    "n": 6,
+    "condition": "full_process",
+    "seeds": 10,
+    "mean_answer": 0.97,
+    "sd_answer": 0.09486832980505139,
+    "min_answer": 0.7,
+    "max_answer": 1.0,
+    "solved": 9,
+    "mean_complete_continuation": 0.9612,
+    "per_seed": [
+      {
+        "seed": 42,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 43,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 44,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 45,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 46,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 47,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 48,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 49,
+        "answer": 0.7,
+        "exact": 0.612
+      },
+      {
+        "seed": 50,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 51,
+        "answer": 1.0,
+        "exact": 1.0
+      }
+    ]
+  },
+  {
+    "n": 6,
+    "condition": "one_process",
+    "seeds": 10,
+    "mean_answer": 0.9714,
+    "sd_answer": 0.09044114108081565,
+    "min_answer": 0.714,
+    "max_answer": 1.0,
+    "solved": 9,
+    "mean_complete_continuation": 0.9625999999999999,
+    "per_seed": [
+      {
+        "seed": 42,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 43,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 44,
+        "answer": 0.714,
+        "exact": 0.626
+      },
+      {
+        "seed": 45,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 46,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 47,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 48,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 49,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 50,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 51,
+        "answer": 1.0,
+        "exact": 1.0
+      }
+    ]
+  },
+  {
+    "n": 6,
+    "condition": "outcome",
+    "seeds": 10,
+    "mean_answer": 0.6846,
+    "sd_answer": 0.07306800485392585,
+    "min_answer": 0.617,
+    "max_answer": 0.816,
+    "solved": 0,
+    "mean_complete_continuation": 0.6845,
+    "per_seed": [
+      {
+        "seed": 42,
+        "answer": 0.617,
+        "exact": 0.617
+      },
+      {
+        "seed": 43,
+        "answer": 0.634,
+        "exact": 0.634
+      },
+      {
+        "seed": 44,
+        "answer": 0.816,
+        "exact": 0.815
+      },
+      {
+        "seed": 45,
+        "answer": 0.643,
+        "exact": 0.643
+      },
+      {
+        "seed": 46,
+        "answer": 0.744,
+        "exact": 0.744
+      },
+      {
+        "seed": 47,
+        "answer": 0.729,
+        "exact": 0.729
+      },
+      {
+        "seed": 48,
+        "answer": 0.654,
+        "exact": 0.654
+      },
+      {
+        "seed": 49,
+        "answer": 0.617,
+        "exact": 0.617
+      },
+      {
+        "seed": 50,
+        "answer": 0.623,
+        "exact": 0.623
+      },
+      {
+        "seed": 51,
+        "answer": 0.769,
+        "exact": 0.769
+      }
+    ]
+  },
+  {
+    "n": 8,
+    "condition": "full_process",
+    "seeds": 10,
+    "mean_answer": 0.8907999999999999,
+    "sd_answer": 0.17385805193381818,
+    "min_answer": 0.522,
+    "max_answer": 1.0,
+    "solved": 5,
+    "mean_complete_continuation": 0.8434000000000001,
+    "per_seed": [
+      {
+        "seed": 42,
+        "answer": 0.912,
+        "exact": 0.912
+      },
+      {
+        "seed": 43,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 44,
+        "answer": 0.909,
+        "exact": 0.909
+      },
+      {
+        "seed": 45,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 46,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 47,
+        "answer": 0.944,
+        "exact": 0.943
+      },
+      {
+        "seed": 48,
+        "answer": 0.621,
+        "exact": 0.422
+      },
+      {
+        "seed": 49,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 50,
+        "answer": 0.522,
+        "exact": 0.248
+      },
+      {
+        "seed": 51,
+        "answer": 1.0,
+        "exact": 1.0
+      }
+    ]
+  },
+  {
+    "n": 8,
+    "condition": "one_process",
+    "seeds": 10,
+    "mean_answer": 0.9983000000000001,
+    "sd_answer": 0.0053758720222862495,
+    "min_answer": 0.983,
+    "max_answer": 1.0,
+    "solved": 9,
+    "mean_complete_continuation": 0.9983000000000001,
+    "per_seed": [
+      {
+        "seed": 42,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 43,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 44,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 45,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 46,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 47,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 48,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 49,
+        "answer": 0.983,
+        "exact": 0.983
+      },
+      {
+        "seed": 50,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 51,
+        "answer": 1.0,
+        "exact": 1.0
+      }
+    ]
+  },
+  {
+    "n": 8,
+    "condition": "outcome",
+    "seeds": 10,
+    "mean_answer": 0.6432,
+    "sd_answer": 0.05183049295540223,
+    "min_answer": 0.597,
+    "max_answer": 0.761,
+    "solved": 0,
+    "mean_complete_continuation": 0.6432,
+    "per_seed": [
+      {
+        "seed": 42,
+        "answer": 0.616,
+        "exact": 0.616
+      },
+      {
+        "seed": 43,
+        "answer": 0.604,
+        "exact": 0.604
+      },
+      {
+        "seed": 44,
+        "answer": 0.761,
+        "exact": 0.761
+      },
+      {
+        "seed": 45,
+        "answer": 0.71,
+        "exact": 0.71
+      },
+      {
+        "seed": 46,
+        "answer": 0.625,
+        "exact": 0.625
+      },
+      {
+        "seed": 47,
+        "answer": 0.616,
+        "exact": 0.616
+      },
+      {
+        "seed": 48,
+        "answer": 0.643,
+        "exact": 0.643
+      },
+      {
+        "seed": 49,
+        "answer": 0.597,
+        "exact": 0.597
+      },
+      {
+        "seed": 50,
+        "answer": 0.632,
+        "exact": 0.632
+      },
+      {
+        "seed": 51,
+        "answer": 0.628,
+        "exact": 0.628
+      }
+    ]
+  },
+  {
+    "n": 12,
+    "condition": "full_process",
+    "seeds": 10,
+    "mean_answer": 1.0,
+    "sd_answer": 0.0,
+    "min_answer": 1.0,
+    "max_answer": 1.0,
+    "solved": 10,
+    "mean_complete_continuation": 1.0,
+    "per_seed": [
+      {
+        "seed": 42,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 43,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 44,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 45,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 46,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 47,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 48,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 49,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 50,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 51,
+        "answer": 1.0,
+        "exact": 1.0
+      }
+    ]
+  },
+  {
+    "n": 12,
+    "condition": "one_process",
+    "seeds": 10,
+    "mean_answer": 0.9919,
+    "sd_answer": 0.02561444904736386,
+    "min_answer": 0.919,
+    "max_answer": 1.0,
+    "solved": 9,
+    "mean_complete_continuation": 0.9919,
+    "per_seed": [
+      {
+        "seed": 42,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 43,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 44,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 45,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 46,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 47,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 48,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 49,
+        "answer": 1.0,
+        "exact": 1.0
+      },
+      {
+        "seed": 50,
+        "answer": 0.919,
+        "exact": 0.919
+      },
+      {
+        "seed": 51,
+        "answer": 1.0,
+        "exact": 1.0
+      }
+    ]
+  },
+  {
+    "n": 12,
+    "condition": "outcome",
+    "seeds": 10,
+    "mean_answer": 0.5122,
+    "sd_answer": 0.051002832165369896,
+    "min_answer": 0.468,
+    "max_answer": 0.635,
+    "solved": 0,
+    "mean_complete_continuation": 0.5122,
+    "per_seed": [
+      {
+        "seed": 42,
+        "answer": 0.474,
+        "exact": 0.474
+      },
+      {
+        "seed": 43,
+        "answer": 0.508,
+        "exact": 0.508
+      },
+      {
+        "seed": 44,
+        "answer": 0.476,
+        "exact": 0.476
+      },
+      {
+        "seed": 45,
+        "answer": 0.479,
+        "exact": 0.479
+      },
+      {
+        "seed": 46,
+        "answer": 0.503,
+        "exact": 0.503
+      },
+      {
+        "seed": 47,
+        "answer": 0.561,
+        "exact": 0.561
+      },
+      {
+        "seed": 48,
+        "answer": 0.635,
+        "exact": 0.635
+      },
+      {
+        "seed": 49,
+        "answer": 0.508,
+        "exact": 0.508
+      },
+      {
+        "seed": 50,
+        "answer": 0.468,
+        "exact": 0.468
+      },
+      {
+        "seed": 51,
+        "answer": 0.51,
+        "exact": 0.51
+      }
+    ]
+  }
+]

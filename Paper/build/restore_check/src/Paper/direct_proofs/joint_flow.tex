@@ -1,0 +1,528 @@
+\section{Complete binary joint-flow proof}
+\label{app:joint}
+
+\providecommand{\why}[1]{\text{\small(#1)}}
+
+\Cref{tab:J-map} lists the lemmas. In displayed chains, the right-hand column names the inequality or lemma used on that line.
+
+\begin{table}[h]
+\centering\small
+\fitwidth{\begin{tabular}{@{}lll@{}}
+\toprule
+Lemma & Statement & Uses\\
+\midrule
+\ref{lem:J-features} & logits $\initscale \mathbf U\bm x_t+\initscale v\,r_{b_t}\mathbf W\bm x_t$ & seed\\
+\ref{lem:J-symmetry} & $\mathbf U,\mathbf W$ stay circulant & \ref{lem:J-features}\\
+\ref{lem:J-reduce} & autonomous ODE for $(c,g,a)$ & \ref{lem:J-features}, \ref{lem:J-symmetry}\\
+\ref{lem:J-geometry} & partial derivatives; convexity & \ref{lem:J-reduce}\\
+\ref{lem:J-levels} & loss levels & \ref{lem:J-geometry}\\
+\ref{lem:J-gradient} & $\ddt{\mathcal L}\le-\tfrac{1}{3}\initscale^2v^2\tanh^2(\frac{a}{2})(\mathrm{err}_0^2+\mathrm{err}_1^2)$ & \ref{lem:J-geometry}\\
+\ref{lem:J-align} & below $H_p$: $ag<0$ and $|a|$ nondecreasing & \ref{lem:J-geometry}, \ref{lem:J-levels}\\
+\ref{lem:J-prior} & Phase I: prior fitted by $t_1\le\frac{2h^\star}{\kappa_0\initscale^3}$ & \ref{lem:J-geometry}, \cref{eq:J-eps}\\
+\ref{lem:J-phase2} & Phase II: gate aligned and $\mathcal L(t_2)<H_p$ by $t_2$ & \ref{lem:J-geometry}, \ref{lem:J-align}, \ref{lem:J-prior}, \cref{eq:J-eps}\\
+\ref{lem:J-descent} & Phase III: margins and $\mathcal L\to0$ & \ref{lem:J-levels}, \ref{lem:J-gradient}, \ref{lem:J-align}\\
+\bottomrule
+\end{tabular}}
+\caption{Lemmas of the proof of \cref{thm:joint}.}
+\label{tab:J-map}
+\end{table}
+
+\paragraph{Global existence.} The finite-dimensional parameter loss is smooth everywhere. On every interval of existence, $\int_0^t\|\dot\vartheta\|^2\,ds\le\log2$, hence $\|\vartheta(t)-\vartheta(0)\|\le\sqrt{t\log2}$. No finite-time escape is possible, so local uniqueness extends to every finite time. This also justifies the symmetry argument and all stopping-time bootstraps below.
+
+\subsection{Model and exact features}
+
+We count modulo $K$ with a fixed query of probability $p\in(0,1)$ and a uniform start; every non-query letter has the same embedding. Let $\bm x_t=\bm e_{s_{t-1}}$, $\mathbf R\bm e_s=\bm e_{s+1}$, $r_b=\sigma\bigl(-(-1)^ba\bigr)$ for $b\in\{0,1\}$ and $\sigma(z)=(1+e^{-z})^{-1}$.
+
+\paragraph{Seed.} Fix orthonormal residual directions $\hat{\bm e}_0,\hat{\bm e}_\ell$, a count register $(\hat{\bm e}^{\mathrm c}_s)_{s\in\mathbb Z_K}$, a gate register
+$(\hat{\bm e}^{\mathrm g}_s)_{s\in\mathbb Z_K}$, and a unit vector $\hat{\bm e}_{\mathrm h}$ of the head space. The embeddings are
+\[
+ E(s)=\initscale\,\hat{\bm e}^{\mathrm c}_s,\qquad E(\text{query letter})=\initscale(\hat{\bm e}_0-\hat{\bm e}_\ell),\qquad E(\text{other letters})=\initscale(\hat{\bm e}_0+\hat{\bm e}_\ell).
+\]
+The gate head is head $1$ of block $2$. At the position $i_t$ that holds $s_{t-1}$ and predicts $s_t$ ($t\ge2$), its fixed mask admits
+$i_t$ and the position $j_t$ of the current letter, and its relative bias is zero. Its maps, with scalar factors $q,k,v$ and fixed directions, are
+\[\mathbf W_Q=q\,\bm\Pi_Q,\qquad \mathbf W_K=k\,\bm\Pi_K,\qquad \mathbf W_V=v\,\bm\Pi_V.\]
+The direction matrices are
+\[
+ \bm\Pi_Q=\textstyle\sum_s\hat{\bm e}_{\mathrm h}(\hat{\bm e}^{\mathrm c}_s)^{\!\top},\qquad \bm\Pi_K=\hat{\bm e}_{\mathrm h}\hat{\bm e}_\ell^{\top},\qquad \bm\Pi_V=\sum_s\hat{\bm e}^{\mathrm g}_s(\hat{\bm e}^{\mathrm c}_s)^{\!\top}.
+\]
+All other embeddings, heads and MLP weights are zero, and the MLP biases are $\pm\initscale$. The readout is zero except for the
+$K\times K$ blocks $\mathbf U$ (count register) and $\mathbf W$ (gate register).
+
+\paragraph{Training.} The trained parameters are $\bm\vartheta=(\mathbf U,\mathbf W,q,k)$, and $\ddt{\bm\vartheta}=-\nabla_{\bm\vartheta}\Lstep(\bm\vartheta)$ for the Euclidean norm on
+$\R^{K\times K}\times\R^{K\times K}\times\R\times\R$. The value factor $v$ and all other parameters are fixed. The four trained parameters follow
+this one flow at all times; there are no stages and no stopping rule. The initialization is
+\[
+ \mathbf U(0)=\mathbf W(0)=0,\qquad \tfrac{1}{2}\initscale\le|q(0)|,\ |k(0)|,\ |v|\le2\initscale,
+\]
+with arbitrary signs.
+
+\begin{lemma}[Exact features]
+\label{lem:J-features}
+For every $\bm\vartheta$ and $t\ge2$, the logits of the prediction of $s_t$ are
+\[
+ \bm z_t=\initscale \mathbf U\bm x_t+\initscale v\,r_{b_t}\,\mathbf W\bm x_t,\qquad a=\frac{\initscale^2qk}{\sqrt{d_{\mathrm h}}}.
+\]
+\end{lemma}
+
+\begin{proof}
+Block $1$ and all MLPs add zero, so each residual is its embedding. The query at $i_t$, the keys and the values are
+\begin{gather*}
+ \text{query}_{i_t}=\initscale q\,\hat{\bm e}_{\mathrm h},\qquad \text{key}_{j_t}=(-1)^{b_t}\initscale k\,\hat{\bm e}_{\mathrm h},\qquad \text{key}_{i_t}=0,\\
+ \text{value}_{i_t}=\initscale v\,\hat{\bm e}^{\mathrm g}_{s_{t-1}},\qquad \text{value}_{j_t}=0 .
+\end{gather*}
+The scores are $(-1)^{b_t}a$ at $j_t$ and $0$ at $i_t$, so $i_t$ gets weight $r_{b_t}$. The residual at $i_t$ becomes
+\[
+ \initscale\hat{\bm e}^{\mathrm c}_{s_{t-1}}+\initscale v\,r_{b_t}\,\hat{\bm e}^{\mathrm g}_{s_{t-1}},
+\]
+and the readout gives $\bm z_t$.
+\end{proof}
+
+\begin{lemma}[Cyclic symmetry]
+\label{lem:J-symmetry}
+$RU(t)=\mathbf U(t)\mathbf R$ and $RW(t)=\mathbf W(t)\mathbf R$ for all $t\ge0$.
+\end{lemma}
+
+\begin{proof}
+Shifting $s_0$ by one preserves the data law and the match bits, and $\ell(\bm z,j+1)=\ell(\mathbf R^{-1}\bm z,j)$ for the cross-entropy. By \cref{lem:J-features},
+\[
+ \Lstep\circ S=\Lstep,\qquad S(\mathbf U,\mathbf W,q,k)=(\mathbf R^{-1}UR,\ \mathbf R^{-1}WR,\ q,\ k).
+\]
+$S$ is a linear isometry, so $S\vartheta(t)$ solves the flow, with $S\vartheta(0)=\bm\vartheta(0)$. By uniqueness, $S\vartheta(t)=\bm\vartheta(t)$.
+\end{proof}
+
+\subsection{Reduction for \texorpdfstring{$K=2$}{K = 2}}
+
+Let $K=2$, $\ell(z)=\log(1+e^{-z})$, $H_p=-p\log p-(1-p)\log(1-p)$ and $p_{\min}=\min(p,1-p)$.
+
+\begin{lemma}[Reduced loss and flow]
+\label{lem:J-reduce}
+Write $\mathbf U=u_0\mathbf I+u_1\mathbf R$, $\mathbf W=w_0\mathbf I+w_1\mathbf R$, and
+\[
+ c=\initscale(u_0-u_1),\qquad g=\initscale v(w_0-w_1),\qquad m_b=(-1)^b\bigl(c+g\,r_b\bigr).
+\]
+The prediction of $s_t$ has margin $m_{b_t}$ (target logit minus the other logit), so for every $n$
+\[
+ \Lstep=\mathcal L(c,g,a):=(1-p)\,\ell(m_0)+p\,\ell(m_1).
+\]
+With $D=q(0)^2-k(0)^2$,
+\begin{equation}
+ \begin{gathered}
+ \ddt{c}=-\initscale^2\pd{\mathcal L}{c},\qquad \ddt{g}=-\initscale^2v^2\pd{\mathcal L}{g},\qquad \ddt{a}=-\frac{\initscale^4S}{d_{\mathrm h}}\pd{\mathcal L}{a},\\
+ S:=q^2+k^2=\sqrt{D^2+\frac{4d_{\mathrm h}a^2}{\initscale^4}}.
+ \end{gathered}
+ \label{eq:J-flow}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+For $\bm x_t=\bm e_s$, \cref{lem:J-features} gives $z_{t,s}-z_{t,s+1}=c+g\,r_{b_t}$, and the target is $s+b_t$. This gives the margins.
+
+By \cref{lem:J-symmetry} and $\|\mathbf I\|_F^2=\|\mathbf R\|_F^2=2$, $\langle\mathbf I,\mathbf R\rangle_F=0$:
+\begin{gather*}
+ \nabla_{\mathbf U}\Lstep=\tfrac{1}{2}\Bigl(\pd{\Lstep}{u_0}\mathbf I+\pd{\Lstep}{u_1}\mathbf R\Bigr),\qquad \pd{\Lstep}{u_0}=-\pd{\Lstep}{u_1}=\initscale\, \pd{\mathcal L}{c},\\
+ \ddt{c}=\initscale(\ddt{u_0}-\ddt{u_1})=-\initscale^2 \pd{\mathcal L}{c} .
+\end{gather*}
+The equation for $g$ is identical. For the gate,
+\begin{gather*}
+ \ddt{q}=-\frac{\initscale^2k}{\sqrt{d_{\mathrm h}}}\pd{\mathcal L}{a},\qquad \ddt{k}=-\frac{\initscale^2q}{\sqrt{d_{\mathrm h}}}\pd{\mathcal L}{a},\qquad \frac{d}{dt}(q^2-k^2)=0,\\
+ \ddt{a}=\frac{\initscale^2}{\sqrt{d_{\mathrm h}}}\Bigl(k\ddt{q}+q\ddt{k}\Bigr)=-\frac{\initscale^4S}{d_{\mathrm h}}\pd{\mathcal L}{a},
+\end{gather*}
+and $S^2=(q^2-k^2)^2+4q^2k^2$.
+\end{proof}
+
+\paragraph{Notation.} $r_0+r_1=1$, $r_1-r_0=\tanh(\frac{a}{2})$ and $\frac{d}{da}\tanh(\frac{a}{2})=2\sigma'(a)$. Let
+\begin{gather*}
+ \mathrm{err}_0=(1-p)\,\sigma(-m_0),\qquad \mathrm{err}_1=p\,\sigma(-m_1),\qquad \mathrm{err}=\mathrm{err}_0+\mathrm{err}_1,\\
+ h=\tfrac{1}{2}(m_0-m_1)=c+\tfrac{g}{2},\qquad \Delta=m_0+m_1=-g\tanh(\frac{a}{2}),
+\end{gather*}
+the weighted errors, the count-only margin, and the common margin shift from the learned rule; $m_0=h+\frac{\Delta}{2}$ and
+$m_1=-h+\frac{\Delta}{2}$.
+
+\begin{lemma}[Derivatives]
+\label{lem:J-geometry}
+Let $\tilde{\mathcal L}( h,\Delta)=(1-p)\ell( h+\tfrac{\Delta}{2})+p\,\ell(- h+\tfrac{\Delta}{2})$ and $ \mathcal L_0( h)=\tilde{\mathcal L}( h,0)$.
+\begin{enumerate}[label=(\alph*),leftmargin=*,itemsep=2pt,topsep=3pt]
+\item $\mathcal L=\tilde{\mathcal L}( h,\Delta)$, $\tilde{\mathcal L}$ is jointly convex, and $\pd{\tilde{\mathcal L}}{\Delta}=-\frac{\mathrm{err}}{2}<0$.
+\item $ \pd{\mathcal L}{c}=\mathrm{err}_1-\mathrm{err}_0$, $\quad \pd{\mathcal L}{g}=r_1\mathrm{err}_1-r_0\mathrm{err}_0=\tfrac{1}{2}\bigl( \pd{\mathcal L}{c}+\tanh(\frac{a}{2})\,\mathrm{err}\bigr)$, $\quad \pd{\mathcal L}{a}=g\,\sigma'(a)\,\mathrm{err}$.
+\item $\kappa:=\frac{\partial^2\tilde{\mathcal L}}{\partial h^2}=(1-p)\sigma'(m_0)+p\sigma'(m_1)$, $\quad|\frac{\partial^2\tilde{\mathcal L}}{\partial h\,\partial\Delta}|\le\min(\tfrac{1}{8},\tfrac{\kappa}{2})$, $\quad| \pd{\mathcal L}{c}- \mathcal L_0'( h)|\le\tfrac{1}{8}|\Delta|$.
+\item $ \mathcal L_0'(z)=\sigma(z)-(1-p)$ and $ \mathcal L_0''=\sigma'\le\tfrac{1}{4}$.
+\item $\ddt{\mathcal L}=-\initscale^2( \pd{\mathcal L}{c})^2-\initscale^2v^2( \pd{\mathcal L}{g})^2-\frac{\initscale^4S\,( \pd{\mathcal L}{a})^2}{d_{\mathrm h}}\le0$.
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+(a) $m_0=h+\frac{\Delta}{2}$, $m_1=-h+\frac{\Delta}{2}$, and $\ell$ is convex and decreasing.
+
+(b) With $\ell'(z)=-\sigma(-z)$: $\pd{\tilde{\mathcal L}}{h}=\mathrm{err}_1-\mathrm{err}_0$ and $\pd{\tilde{\mathcal L}}{\Delta}=-\frac{\mathrm{err}}{2}$. Then use
+\begin{gather*}
+ \pd{h}{c}=1,\qquad \pd{h}{g}=\tfrac{1}{2},\qquad \pd{\Delta}{g}=-\tanh(\frac{a}{2}),\qquad \pd{\Delta}{a}=-2g\,\sigma'(a),\\
+ r_b=\tfrac{1}{2}\bigl(1-(-1)^b\tanh(\frac{a}{2})\bigr).
+\end{gather*}
+
+(c) $\frac{\partial^2\tilde{\mathcal L}}{\partial h\,\partial\Delta}=\frac{1}{2}\bigl[(1-p)\sigma'(m_0)-p\sigma'(m_1)\bigr]$, and $\sigma'\le\frac{1}{4}$. The last bound is the mean value theorem in $\Delta$.
+
+(d) is direct. (e) is $\ddt{\mathcal L}= \pd{\mathcal L}{c}\,\ddt{c}+ \pd{\mathcal L}{g}\,\ddt{g}+ \pd{\mathcal L}{a}\,\ddt{a}$ with \cref{eq:J-flow}.
+\end{proof}
+
+\begin{lemma}[Loss levels]
+\label{lem:J-levels}
+Let $\mathcal L^\star=\frac{1}{2}p_{\min}\log2$.
+\begin{enumerate}[label=(\alph*),leftmargin=*,itemsep=2pt,topsep=3pt]
+\item If $\Delta\le0$, then $\mathcal L\ge H_p$.
+\item If $\mathcal L<p_{\min}\log2$, then $m_0>0$ and $m_1>0$: every prediction of $s_t$, $t\ge2$, has positive margin.
+\item If $m_0,m_1\ge0$, then $\mathrm{err}_0^2+\mathrm{err}_1^2\ge \frac{\mathcal L^2}{8}$.
+\item If $\mathcal L>\mathcal L^\star$, then $\mathrm{err}_0^2+\mathrm{err}_1^2\ge \frac{p_{\min}^2}{70}$.
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+(a) $\mathcal L=\tilde{\mathcal L}( h,\Delta)\ge \mathcal L_0( h)\ge\min \mathcal L_0=H_p$, attained at $\sigma( h)=1-p$.
+
+(b) $m_0\le0\implies \mathcal L\ge(1-p)\log2$, and $m_1\le0\implies \mathcal L\ge p\log2$.
+
+(c) For $z\ge0$, $\ell(z)\le e^{-z}\le2\sigma(-z)$. Hence $\mathcal L\le2\mathrm{err}$ and $\mathrm{err}_0^2+\mathrm{err}_1^2\ge\frac{1}{2}\mathrm{err}^2\ge\frac{1}{8}\mathcal L^2$.
+
+(d) If $m_0<0$, then $\mathrm{err}_0>\frac{1}{2}(1-p)$; if $m_1<0$, then $\mathrm{err}_1>\frac{1}{2}p$; otherwise (c) applies. So
+\[
+ \mathrm{err}_0^2+\mathrm{err}_1^2\ge\min\Bigl\{\frac{p_{\min}^2}{4},\ \frac{(\mathcal L^\star)^2}{8}\Bigr\}=\frac{(\log2)^2}{32}\,p_{\min}^2\ge\frac{p_{\min}^2}{70}.
+\]
+\end{proof}
+
+\begin{lemma}[Gradient lower bound]
+\label{lem:J-gradient}
+$( \pd{\mathcal L}{c})^2+( \pd{\mathcal L}{g})^2\ge\frac{1}{3}\tanh^2(\frac{a}{2})\,(\mathrm{err}_0^2+\mathrm{err}_1^2)$. If $\initscale^2v^2\le\initscale^2$, then
+\[
+ \ddt{\mathcal L}\le-\tfrac{1}{3}\initscale^2v^2\tanh^2(\frac{a}{2})\,(\mathrm{err}_0^2+\mathrm{err}_1^2).
+\]
+\end{lemma}
+
+\begin{proof}
+By \cref{lem:J-geometry}(b), $(\pd{\mathcal L}{c},\pd{\mathcal L}{g})^\top=\mathbf A(\mathrm{err}_0,\mathrm{err}_1)^\top$ with $\mathbf A=\bigl(\begin{smallmatrix}-1&1\\-r_0&r_1\end{smallmatrix}\bigr)$. Its singular values $s_1\ge s_2$
+satisfy
+\begin{gather*}
+ s_1s_2=|\det\mathbf A|=|\tanh(\frac{a}{2})|,\qquad s_1\le\|\mathbf A\|_F=(2+r_0^2+r_1^2)^{1/2}\le\sqrt3,\\
+ s_2\ge\frac{|\tanh(\frac{a}{2})|}{\sqrt3} .
+\end{gather*}
+The second claim follows from \cref{lem:J-geometry}(e).
+\end{proof}
+
+\begin{lemma}[Alignment below the prior]
+\label{lem:J-align}
+\begin{enumerate}[label=(\alph*),leftmargin=*,itemsep=2pt,topsep=3pt]
+\item $\operatorname{sign}\ddt{a}=-\operatorname{sign}g$.
+\item If $\mathcal L(t_0)<H_p$, then for all $t\ge t_0$: $\Delta(t)>0$, $a(t)g(t)<0$ and $|a(t)|\ge|a(t_0)|$.
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+(a) By \cref{eq:J-flow},
+\[
+ \ddt{a}=-\frac{\initscale^4S\,g\,\sigma'(a)\,\mathrm{err}}{d_{\mathrm h}},\qquad S,\ \sigma'(a),\ \mathrm{err}>0.
+\]
+
+(b) $\mathcal L(t)\le \mathcal L(t_0)<H_p$, so $\Delta(t)>0$ by \cref{lem:J-levels}(a). Since $\Delta=-g\tanh(\frac{a}{2})$, $ag<0$, and
+\[
+ \frac{d}{dt}a^2=-\frac{2\initscale^4S}{d_{\mathrm h}}\,ag\,\sigma'(a)\,\mathrm{err}>0 .
+\]
+\end{proof}
+
+\paragraph{Reflection.} The map $(c,g,a)\mapsto(-c,-g,-a)$ exchanges $m_0$ and $m_1$, and so maps $\mathcal L$ and \cref{eq:J-flow} for $p$ to those for
+$1-p$. On parameters it is $(u_0,u_1,w_0,w_1,q,k)\mapsto(u_1,u_0,w_1,w_0,-q,k)$, i.e.\ $q(0)\mapsto-q(0)$. It preserves $q(0)k(0)(1-2p)$, $D=q(0)^2-k(0)^2$
+and the conclusion of \cref{thm:joint}. Hence we assume $p<\frac{1}{2}$, and set
+\[
+  h^\star=\log\frac{1-p}{p}>0,\qquad \kappa_0=\frac{p(1-p)}{e}\le\frac{1}{4e},\qquad  \mathcal L_0'( h^\star)=0 .
+\]
+The initialization is \emph{aligned} if $q(0)k(0)<0$, i.e.\ $a(0)<0$.
+
+\subsection{Conditions and scales}
+\label{app:J-constants}
+
+\paragraph{Threshold.} Let $\gamma=\mathrm{gap}$ if $q(0)k(0)>0$ and $\gamma=1$ if $q(0)k(0)<0$, and
+\[
+ \initscale^\star=\frac{\kappa_0\,p(1-p)\,\min(h^\star,1)\,\gamma}{1.3\cdot10^7\,(1+h^\star)^2\sqrt{d_{\mathrm h}}} ;
+\]
+in the misaligned case also $|D|\ge\mathrm{gap}\,\initscale^2$. Let $0<\initscale\le\initscale^\star$. Since $\initscale^\star<1$, $\min(h^\star,1)\le h^\star$,
+$\frac{h^\star}{(1+h^\star)^2}\le\frac{1}{4}$, $\frac{(h^\star)^2}{(1+h^\star)^2}\le1$, $\gamma\le1$, $\initscale^3,\initscale^6\le\initscale$ and $\initscale^2\le(\initscale^\star)^2$,
+\begin{equation}
+ \begin{gathered}
+ \initscale\le\frac{h^\star}{4},\qquad \initscale\le\frac{\kappa_0}{4}\le\frac{1}{40},\qquad \initscale h^\star\le\frac{\kappa_0}{45}\le\frac{1}{8},\qquad
+ \initscale(h^\star)^2\le\frac{\kappa_0}{20},\\
+ \initscale\le\frac{\kappa_0h^\star}{128},\qquad \initscale^3\le\frac{\kappa_0h^\star}{30720},\qquad
+ \initscale^6\le\frac{\kappa_0p(1-p)h^\star}{7.2\cdot10^6(1+h^\star)\sqrt{d_{\mathrm h}}},\\
+ \initscale^2\le\frac{\kappa_0\,\mathrm{gap}\,(h^\star)^2}{1.3\cdot10^7\sqrt{d_{\mathrm h}}}\quad\text{if }q(0)k(0)>0,
+ \end{gathered}
+ \label{eq:J-eps}
+\end{equation}
+and $\initscale\log\frac{1}{\initscale}\le e^{-1}$. These are the only smallness properties of $\initscale$ used below.
+
+\paragraph{Scales.} Let
+\begin{gather*}
+ a_{\mathrm{sc}}=\frac{\initscale^4}{\sqrt{d_{\mathrm h}}}\le\initscale^4,\qquad
+ T_{\mathrm{relax}}=\frac{5\log\frac{1}{\initscale}}{\kappa_0\initscale^2},\\
+ T_{\mathrm{align}}=\begin{cases}\dfrac{2048\sqrt{d_{\mathrm h}}}{\kappa_0h^\star\,\mathrm{gap}\,\initscale^4}&\text{if }q(0)k(0)>0,\\0&\text{if }q(0)k(0)<0.\end{cases}
+\end{gather*}
+From the seed,
+\begin{equation}
+ \begin{gathered}
+ \tfrac{1}{4}\initscale^4\le \initscale^2v^2\le4\initscale^4\le\initscale^2,\qquad |D|\le4\initscale^2,\qquad \tfrac{1}{4}a_{\mathrm{sc}}\le|a(0)|\le4a_{\mathrm{sc}},\\
+ |a|\le ma_{\mathrm{sc}}\implies S\le(4+2m)\initscale^2,\qquad |a|\le1\implies\sigma'(a)\ge\tfrac{1}{6} .
+ \end{gathered}
+ \label{eq:J-scales}
+\end{equation}
+
+
+\subsection{Phase I: the prior}
+
+\begin{lemma}[Prior fitting]
+\label{lem:J-prior}
+Let $t_1=\inf\{t\ge0: h(t)\ge h^\star-\initscale\}$. Then $t_1\le\frac{2 h^\star}{\kappa_0\initscale^3}$; on $[0,t_1]$, $c,g, h$ are nondecreasing and $a$ is
+nonincreasing; and, with $ g_1=g(t_1)$,
+\begin{gather*}
+  h(t_1)= h^\star-\initscale,\qquad \tfrac{1}{32}\initscale^2 h^\star\le g_1\le3\initscale^2 h^\star,\\
+ |a(t_1)|\le5a_{\mathrm{sc}},\qquad a(t_1)\le a(0),\qquad \Bigl|\pd{\mathcal L}{c}(t_1)\Bigr|\le\tfrac{\initscale}{2} .
+\end{gather*}
+\end{lemma}
+
+\begin{proof}
+Let $[0,t')$ be the maximal subinterval of $[0,t_1)$ on which
+\[
+ \mathsf B_1:\qquad |a|\le6a_{\mathrm{sc}},\qquad 0\le g\le4\initscale^2 h^\star,\qquad 0\le h< h^\star-\initscale .
+\]
+$\mathsf B_1$ holds at $t=0$ by \cref{eq:J-scales} and $\initscale\le\frac{h^\star}{4}$. On $[0,t')$,
+\begin{alignat*}{2}
+ &S\le16\initscale^2,\qquad |\tanh(\frac{a}{2})|\le3\initscale^4,\qquad |\Delta|\le12\initscale^6 h^\star, &\qquad& \\
+ &\mathcal L_0'(h)\le-\kappa_0\initscale && \why{$\mathcal L_0''=\sigma'\ge p(1-p)$ on $[0,h^\star]$}
+\end{alignat*}
+Hence
+\begin{align}
+  \pd{\mathcal L}{c}&\le \mathcal L_0'( h)+\tfrac{1}{8}|\Delta|\le-\kappa_0\initscale+\tfrac{3}{2}\initscale^6 h^\star\le-\tfrac{1}{2}\kappa_0\initscale && \why{\cref{eq:J-eps}}\label{eq:J-I-Fx}\\
+ |\tanh(\frac{a}{2})|\,\mathrm{err}&\le3\initscale^4\le\tfrac{1}{8}\kappa_0\initscale\le\tfrac{1}{4}\Bigl|\pd{\mathcal L}{c}\Bigr| && \why{$\initscale\le\tfrac{\kappa_0}{4}$}\label{eq:J-I-tau}
+\end{align}
+and
+\begin{alignat}{2}
+ \ddt{c}&=\initscale^2\Bigl|\pd{\mathcal L}{c}\Bigr| &\qquad& \why{\cref{eq:J-flow}, \cref{eq:J-I-Fx}}\nonumber\\
+ \tfrac{3}{8}\initscale^2v^2\Bigl|\pd{\mathcal L}{c}\Bigr|\le\ddt{g}&\le\tfrac{5}{8}\initscale^2v^2\Bigl|\pd{\mathcal L}{c}\Bigr| && \why{\cref{lem:J-geometry}(b), \cref{eq:J-I-tau}}\label{eq:J-I-rates}\\
+ \ddt{h}=\ddt{c}+\tfrac{1}{2}\ddt{g}&\ge\initscale^2\Bigl|\pd{\mathcal L}{c}\Bigr|\ge\tfrac{1}{2}\kappa_0\initscale^3 && \why{\cref{eq:J-I-Fx}}\nonumber
+\end{alignat}
+So $c,g, h$ are nondecreasing and $t'\le\frac{2 h^\star}{\kappa_0\initscale^3}$. By \cref{eq:J-I-rates,eq:J-scales}, $\frac{\ddt{g}}{\ddt{c}}\in[\frac{3}{32}\initscale^2,\frac{5}{2}\initscale^2]$, hence
+\begin{equation}
+ \tfrac{3}{32}\initscale^2c\le g\le\tfrac{5}{2}\initscale^2c<\tfrac{5}{2}\initscale^2 h^\star .
+ \label{eq:J-I-g}
+\end{equation}
+By \cref{lem:J-align}(a), $\ddt{a}\le0$, and
+\begin{align*}
+ |\ddt{a}|&\le\frac{\initscale^4S}{d_{\mathrm h}}\cdot\frac{g}{4}\le\frac{10\,\initscale^8 h^\star}{d_{\mathrm h}},\\
+ |a(t)-a(0)|&\le\frac{10\,\initscale^8 h^\star}{d_{\mathrm h}}\cdot\frac{2 h^\star}{\kappa_0\initscale^3}\le a_{\mathrm{sc}} && \why{$\initscale(h^\star)^2\le\tfrac{\kappa_0}{20}$}
+\end{align*}
+With $|a(0)|\le4a_{\mathrm{sc}}$ and $a$ nonincreasing, $|a|\le5a_{\mathrm{sc}}$. So $\mathsf B_1$ holds strictly on $[0,t')$, and $t'=t_1$ by continuity.
+
+At $t_1$, by $\initscale\le\frac{h^\star}{4}$ and \cref{eq:J-I-g},
+\[
+  h= h^\star-\initscale\ge\tfrac{3}{4} h^\star,\qquad c= h-\tfrac{g}{2}\ge\tfrac{3}{4} h^\star-\tfrac{5}{4}\initscale^2 h^\star\ge\tfrac{1}{2} h^\star,\qquad  g_1\ge\tfrac{3}{64}\initscale^2 h^\star .
+\]
+Finally $ \mathcal L_0'( h^\star-\initscale)\in[-\frac{\initscale}{4},0]$ by \cref{lem:J-geometry}(d), and $\frac{1}{8}|\Delta|\le\frac{3}{2}\initscale^6 h^\star\le\frac{\initscale}{4}$.
+\end{proof}
+
+\subsection{Phase II: alignment of the gate}
+
+Let
+\begin{gather*}
+ t_{\mathrm{align}}=\inf\Bigl\{t\ge t_1:a(t)\le-\frac{a_{\mathrm{sc}}}{8}\Bigr\},\qquad t_2=\max\{t_1+T_{\mathrm{relax}},\,t_{\mathrm{align}}\},\qquad
+ \Delta_2=\frac{\initscale^6h^\star}{2048\sqrt{d_{\mathrm h}}}.
+\end{gather*}
+
+\begin{lemma}[Gate alignment]
+\label{lem:J-phase2}
+$t_2\le t_1+T_{\mathrm{relax}}+T_{\mathrm{align}}$, and on $[t_1,t_2]$
+\[
+ \Bigl|\pd{\mathcal L}{c}(t)\Bigr|\le22\initscale^6+\frac{\initscale}{2}e^{-\kappa_0\initscale^2(t-t_1)},\qquad |h-h^\star|\le\frac{3\initscale}{\kappa_0},\qquad
+ |g-g_1|\le\frac{1}{2}g_1,\qquad |a|\le9a_{\mathrm{sc}} .
+\]
+At $t_2$,
+\[
+ \Bigl|\pd{\mathcal L}{c}(t_2)\Bigr|\le23\initscale^6,\qquad a(t_2)\le-\frac{a_{\mathrm{sc}}}{8},\qquad \mathcal L(t_2)\le H_p-\frac{1}{4}p(1-p)\Delta_2<H_p .
+\]
+\end{lemma}
+
+\begin{proof}
+Let $M_\infty=22\initscale^6$ and $M(t)=M_\infty+\frac{\initscale}{2}e^{-\kappa_0\initscale^2(t-t_1)}\le\initscale$. Let $[t_1,t^\ast)$ be the maximal subinterval of
+$[t_1,t_2)$ on which
+\[
+ \mathsf B_2:\qquad \Bigl|\pd{\mathcal L}{c}\Bigr|\le2M,\qquad |h-h^\star|\le1,\qquad |g-g_1|\le\frac{3}{4}g_1,\qquad |a|\le20a_{\mathrm{sc}} .
+\]
+$\mathsf B_2$ holds strictly at $t_1$ by \cref{lem:J-prior}. Parts (a)--(f) hold on $[t_1,t^\ast)$; (g) closes the bootstrap and (h) proves the loss bound.
+
+\smallskip\noindent(a) \emph{Consequences of $\mathsf B_2$.}
+\begin{alignat*}{2}
+ \tfrac{1}{4}g_1\le g&\le\tfrac{7}{4}g_1\le\tfrac{21}{4}\initscale^2h^\star\le6\initscale^2h^\star &\qquad& \why{$\mathsf B_2$, \cref{lem:J-prior}}\\
+ |\tanh(\tfrac{a}{2})|&\le\tfrac{1}{2}|a|\le10a_{\mathrm{sc}} && \why{$\mathsf B_2$}\\
+ |\Delta|&=g\,|\tanh(\tfrac{a}{2})|\le60\initscale^6h^\star\le\initscale && \why{$\initscale h^\star\le\tfrac{1}{8}$, $\initscale\le\tfrac{1}{40}$}\\
+ S&\le44\initscale^2,\qquad \Bigl|\pd{\mathcal L}{c}\Bigr|\le2M\le2\initscale,\qquad \sigma'(a)\ge\tfrac{1}{6} && \why{\cref{eq:J-scales}, $|a|\le20\initscale^4\le1$}
+\end{alignat*}
+
+\noindent(b) \emph{Location.} Since $\sigma'$ decreases in $|x|$ and $p+e(1-p)\le e$, $\sigma'(x)\ge\sigma'(h^\star+1)=\frac{e\,p(1-p)}{(p+e(1-p))^2}\ge\kappa_0$
+for $|x-h^\star|\le1$. With $\mathcal L_0'(h^\star)=0$ and $|h-h^\star|\le1$,
+\begin{alignat*}{2}
+ \kappa_0|h-h^\star|&\le|\mathcal L_0'(h)|\le\Bigl|\pd{\mathcal L}{c}\Bigr|+\tfrac{1}{8}|\Delta| &\qquad& \why{mean value, \cref{lem:J-geometry}(c)}\\
+ &\le3\initscale\le\tfrac{3}{4}\kappa_0 && \why{(a), $\initscale\le\tfrac{\kappa_0}{4}$}
+\end{alignat*}
+So $m_0=h+\frac{1}{2}\Delta$ and $-m_1=h-\frac{1}{2}\Delta$ lie in $[h^\star-1,h^\star+1]$, and
+\begin{alignat*}{2}
+ \kappa&=(1-p)\sigma'(m_0)+p\,\sigma'(m_1)\ge\kappa_0 &\qquad& \why{$\sigma'$ even}\\
+ \mathrm{err}&\ge(1-p)\,\sigma(-h^\star-1)+p\,\sigma(h^\star-1)\ge(1-p)\frac{p}{e}+p\,\frac{1-p}{e}=2\kappa_0 && \why{monotonicity of $\sigma$}
+\end{alignat*}
+
+\noindent(c) \emph{Tracking.} For almost every $t$,
+\begin{equation}
+ \frac{d}{dt}\Bigl|\pd{\mathcal L}{c}\Bigr|\le-\kappa\initscale^2\Bigl(\Bigl|\pd{\mathcal L}{c}\Bigr|-M_\infty\Bigr).
+ \label{eq:J-track}
+\end{equation}
+Indeed, by \cref{eq:J-flow} and \cref{lem:J-geometry}(b),
+\begin{align*}
+ \ddt{h}&=-\bigl(\initscale^2+\tfrac{\initscale^2v^2}{4}\bigr) \pd{\mathcal L}{c}-\tfrac{\initscale^2v^2}{4}\tanh(\tfrac{a}{2})\,\mathrm{err},\\
+ \ddt{\Delta}&=\tfrac{\initscale^2v^2}{2}\tanh(\tfrac{a}{2})\Bigl( \pd{\mathcal L}{c}+\tanh(\tfrac{a}{2})\mathrm{err}\Bigr)+\frac{2\initscale^4S}{d_{\mathrm h}}\,g^2\sigma'(a)^2\mathrm{err},
+\end{align*}
+and $\pd{\mathcal L}{c}=\pd{\tilde{\mathcal L}}{h}(h,\Delta)$ gives $\frac{d}{dt}\pd{\mathcal L}{c}=\kappa\,\ddt{h}+\frac{\partial^2\tilde{\mathcal L}}{\partial h\,\partial\Delta}\,\ddt{\Delta}$. With
+$|\frac{\partial^2\tilde{\mathcal L}}{\partial h\,\partial\Delta}|\le\frac{\kappa}{2}$, $|\pd{\mathcal L}{c}|+|\tanh(\frac{a}{2})|\le1$, $\mathrm{err}\le1$ and $\sigma'\le\frac{1}{4}$,
+\begin{alignat*}{2}
+ \frac{d}{dt}\Bigl|\pd{\mathcal L}{c}\Bigr|&\le-\kappa\initscale^2\Bigl|\pd{\mathcal L}{c}\Bigr|+\kappa\Bigl(\frac{\initscale^2v^2}{2}\Bigl|\tanh(\tfrac{a}{2})\Bigr|+\frac{\initscale^4S}{16\,d_{\mathrm h}}\,g^2\Bigr) &\qquad& \\
+ \tfrac{\initscale^2v^2}{2}|\tanh(\tfrac{a}{2})|&\le2\initscale^4\cdot10\initscale^4=20\initscale^8 && \why{\cref{eq:J-scales}, (a)}\\
+ \tfrac{\initscale^4S}{16d_{\mathrm h}}\,g^2&\le\tfrac{44}{16}\initscale^6\cdot36\initscale^4(h^\star)^2\le2\initscale^8 && \why{(a), $\initscale h^\star\le\tfrac{1}{8}$}
+\end{alignat*}
+which is \cref{eq:J-track}. With $u=(|\pd{\mathcal L}{c}|-M_\infty)_+$, \cref{eq:J-track} and (b) give $\ddt{u}\le-\kappa_0\initscale^2u$, so
+$u(t)\le u(t_1)e^{-\kappa_0\initscale^2(t-t_1)}\le\frac{\initscale}{2}e^{-\kappa_0\initscale^2(t-t_1)}$ by \cref{lem:J-prior}. Hence $|\pd{\mathcal L}{c}|\le M$, and
+$|\pd{\mathcal L}{c}|\le23\initscale^6$ once $t-t_1\ge T_{\mathrm{relax}}$, where the exponential is at most $\initscale^5$.
+
+\smallskip\noindent(d) \emph{Elapsed time: $t-t_1\le T_{\mathrm{relax}}+T_{\mathrm{align}}$.} If $q(0)k(0)<0$, then $a(t_1)\le a(0)\le-\frac{1}{4}a_{\mathrm{sc}}$, so
+$t_{\mathrm{align}}=t_1$ and $t<t_2=t_1+T_{\mathrm{relax}}$. If $q(0)k(0)>0$ and $t>t_1+T_{\mathrm{relax}}$, then $t<t_{\mathrm{align}}$, so $a>-\frac{a_{\mathrm{sc}}}{8}$ on
+$[t_1,t]$, and there
+\begin{alignat*}{2}
+ S&\ge|D|\ge\initscale^2\mathrm{gap},\qquad g\ge\tfrac{1}{4}g_1\ge\tfrac{1}{128}\initscale^2h^\star &\qquad& \why{$q^2-k^2=D$, (a), \cref{lem:J-prior}}\\
+ -\ddt{a}&=\frac{\initscale^4S}{d_{\mathrm h}}\,g\,\sigma'(a)\,\mathrm{err}\ge\frac{\initscale^8\mathrm{gap}\,h^\star}{128\,d_{\mathrm h}}\cdot\frac{1}{6}\cdot2\kappa_0=\frac{\initscale^8\mathrm{gap}\,h^\star\kappa_0}{384\,d_{\mathrm h}} && \why{\cref{lem:J-align}(a), (a), (b)}\\
+ t-t_1&\le\frac{41}{8}a_{\mathrm{sc}}\cdot\frac{384\,d_{\mathrm h}}{\initscale^8\mathrm{gap}\,h^\star\kappa_0}=\frac{1968\sqrt{d_{\mathrm h}}}{\kappa_0h^\star\mathrm{gap}\,\initscale^4}\le T_{\mathrm{align}} && \why{$a(t_1)\le5a_{\mathrm{sc}}$}
+\end{alignat*}
+
+\noindent(e) \emph{Gate contrast: $|g-g_1|\le\frac{1}{2}g_1$.}
+\begin{alignat*}{2}
+ |\ddt{g}|&\le\tfrac{\initscale^2v^2}{2}\Bigl(\Bigl|\pd{\mathcal L}{c}\Bigr|+|\tanh(\tfrac{a}{2})|\Bigr)\le2\initscale^4\Bigl(\Bigl|\pd{\mathcal L}{c}\Bigr|+10\initscale^4\Bigr) &\qquad& \why{\cref{eq:J-flow}, (a)}\\
+ \int_{t_1}^t\Bigl|\pd{\mathcal L}{c}\Bigr|&\le M_\infty(t-t_1)+\frac{1}{2\kappa_0\initscale} && \why{(c)}\\
+ |g-g_1|&\le24\initscale^8(T_{\mathrm{relax}}+T_{\mathrm{align}})+\frac{\initscale^3}{\kappa_0}\le\frac{\initscale^2h^\star}{128}+\frac{\initscale^2h^\star}{128} && \why{(d), \cref{eq:J-eps}}
+\end{alignat*}
+using $T_{\mathrm{relax}},T_{\mathrm{align}}\le\frac{h^\star}{6144\initscale^6}$ and $\frac{\initscale^3}{\kappa_0}\le\frac{\initscale^2h^\star}{128}$, both from \cref{eq:J-eps} and $\initscale^4\log\frac{1}{\initscale}\le\initscale^3$. So
+$|g-g_1|\le\frac{1}{64}\initscale^2h^\star\le\frac{1}{2}g_1$.
+
+\smallskip\noindent(f) \emph{Gate strength: $a$ is nonincreasing and $|a|\le9a_{\mathrm{sc}}$.} By (e), $g>0$, so $\ddt{a}<0$ and $a\le a(t_1)\le5a_{\mathrm{sc}}$. For $t\le t_{\mathrm{align}}$,
+$a(t)\ge\min\{a(t_1),-\frac{a_{\mathrm{sc}}}{8}\}\ge-5a_{\mathrm{sc}}$. For $t>t_{\mathrm{align}}$, $t<t_2$ forces $t-t_{\mathrm{align}}\le T_{\mathrm{relax}}$, and
+\begin{alignat*}{2}
+ |\ddt{a}|&\le\frac{\initscale^4S}{d_{\mathrm h}}\cdot\frac{g}{4}\le\frac{66\,\initscale^8h^\star}{d_{\mathrm h}} &\qquad& \why{(a)}\\
+ |a(t)-a(t_{\mathrm{align}})|&\le\frac{330\,(\initscale h^\star)\,(\initscale\log\frac{1}{\initscale})}{\kappa_0}\,a_{\mathrm{sc}}\le\frac{330}{45e}\,a_{\mathrm{sc}}\le4a_{\mathrm{sc}} && \why{$\initscale h^\star\le\tfrac{\kappa_0}{45}$}
+\end{alignat*}
+so $a(t)\ge-9a_{\mathrm{sc}}$.
+
+\smallskip\noindent(g) \emph{Closing.} By (b), (c), (e), (f), on $[t_1,t^\ast)$
+\[
+ \Bigl|\pd{\mathcal L}{c}\Bigr|\le M<2M,\qquad |h-h^\star|\le\frac{3}{4}<1,\qquad |g-g_1|\le\frac{1}{2}g_1<\frac{3}{4}g_1,\qquad |a|\le9a_{\mathrm{sc}}<20a_{\mathrm{sc}},
+\]
+each strictly inside $\mathsf B_2$. If $t^\ast<t_2$, continuity would extend $\mathsf B_2$ past $t^\ast$; so $t^\ast=t_2$, and (d) gives
+$t_2-t_1\le T_{\mathrm{relax}}+T_{\mathrm{align}}$. The bounds extend to $t_2$ by continuity, and $a(t_2)\le a(t_{\mathrm{align}})\le-\frac{a_{\mathrm{sc}}}{8}$ since $a$ is
+nonincreasing and $t_2\ge t_{\mathrm{align}}$.
+
+\smallskip\noindent(h) \emph{Below the prior.} At $t_2$, with $h'=h^\star-\frac{1}{2}\Delta$ and $\tanh z\ge\frac{z}{2}$ on $[0,1]$,
+\begin{alignat*}{2}
+ \Delta&=g\tanh(\tfrac{|a|}{2})\ge\frac{\initscale^2h^\star}{64}\cdot\frac{a_{\mathrm{sc}}}{32}=\Delta_2,\qquad \Delta\le\initscale &\qquad& \why{(e), (g), (a)}\\
+ \tilde{\mathcal L}(h',\Delta)&=(1-p)\ell(h^\star)+p\,\ell(-h^\star+\Delta)\le H_p-p(1-p)\Delta+\tfrac{p}{8}\Delta^2 && \why{Taylor, $\ell''\le\tfrac{1}{4}$}\\
+ &\le H_p-\tfrac{1}{2}p(1-p)\Delta && \why{$\Delta\le4(1-p)$}\\
+ \tilde{\mathcal L}(h,\Delta)&\le\tilde{\mathcal L}(h',\Delta)+\Bigl|\pd{\mathcal L}{c}\Bigr|\,|h-h'| && \why{convexity in $h$}\\
+ |h-h'|&\le\frac{1}{\kappa_0}\Bigl(\Bigl|\pd{\mathcal L}{c}\Bigr|+\tfrac{1}{8}|\Delta|\Bigr)+\tfrac{1}{2}|\Delta|\le\frac{38(1+h^\star)\initscale^6}{\kappa_0} && \why{(b), (c), (a)}\\
+ \Bigl|\pd{\mathcal L}{c}\Bigr|\,|h-h'|&\le\frac{874(1+h^\star)\initscale^{12}}{\kappa_0}\le\tfrac{1}{4}p(1-p)\Delta_2 && \why{(c), \cref{eq:J-eps}}
+\end{alignat*}
+using $\ell(h^\star)=-\log(1-p)$, $\ell(-h^\star)=-\log p$ and $\ell'(-h^\star)=-(1-p)$. Hence
+$\mathcal L(t_2)=\tilde{\mathcal L}(h,\Delta)\le H_p-\frac{1}{2}p(1-p)\Delta+\frac{1}{4}p(1-p)\Delta_2\le H_p-\frac{1}{4}p(1-p)\Delta_2$.
+\end{proof}
+
+\subsection{Phase III and the theorem}
+
+\paragraph{Auxiliary constant correction.} For $|a|\ge a_{\mathrm{sc}}/8$, monotonicity gives\[|\tanh(a/2)|\ge\tanh(a_{\mathrm{sc}}/16)\ge a_{\mathrm{sc}}/32,\]because $a_{\mathrm{sc}}/16\le1$ and $\tanh x\ge x/2$ on $[0,1]$. Consequently the valid squared lower bound is $a_{\mathrm{sc}}^2/1024$. The manuscript's $1/256$ is slightly too large. The manuscript's conservative descent denominator $12288=3\cdot4\cdot1024$ already covers this correction, so its auxiliary time constants and the theorem's exponents can be retained.
+
+\begin{lemma}[Descent]
+\label{lem:J-descent}
+Let $t_3=\inf\{t\ge t_2:\mathcal L(t)\le \mathcal L^\star\}$. Then
+\[
+ t_3-t_2\le\frac{6\cdot10^5d_{\mathrm h}}{p_{\min}^2\initscale^{12}},
+\]
+every prediction of $s_t$, $t\ge2$, has positive margin for all $t\ge t_3$, and $\mathcal L(t)\le\frac{10^5d_{\mathrm h}}{\initscale^{12}(t-t_3)}$ for $t>t_3$.
+\end{lemma}
+
+\begin{proof}
+For $t\ge t_2$,
+\begin{alignat*}{2}
+ \tanh^2(\frac{a}{2})&\ge\tfrac{1}{1024}a_{\mathrm{sc}}^2 &\qquad& \why{$|a|\ge a_{\mathrm{sc}}/8$: \cref{lem:J-phase2,lem:J-align}}\\
+ \ddt{\mathcal L}&\le-\tfrac{1}{3}\initscale^2v^2\tanh^2(\frac{a}{2})\,(\mathrm{err}_0^2+\mathrm{err}_1^2) && \why{\cref{lem:J-gradient}}\\
+ &\le-\frac{\initscale^{12}}{12288\,d_{\mathrm h}}\,(\mathrm{err}_0^2+\mathrm{err}_1^2) && \why{$\initscale^2v^2\ge\tfrac{1}{4}\initscale^4$}
+\end{alignat*}
+While $\mathcal L>\mathcal L^\star$,
+\begin{alignat*}{2}
+ \ddt{\mathcal L}&\le-\frac{\initscale^{12}p_{\min}^2}{860160\,d_{\mathrm h}} &\qquad& \why{\cref{lem:J-levels}(d)}\\
+ t_3-t_2&\le\frac{860160\log2\cdot d_{\mathrm h}}{p_{\min}^2\initscale^{12}} && \why{$\mathcal L(t_2)<\log2$}
+\end{alignat*}
+For $t\ge t_3$, $\mathcal L<p_{\min}\log2$, so all margins are positive (\cref{lem:J-levels}(b)), and
+\begin{alignat*}{2}
+ \ddt{\mathcal L}&\le-\frac{\initscale^{12}}{98304\,d_{\mathrm h}}\,\mathcal L^2 &\qquad& \why{\cref{lem:J-levels}(c)}\\
+ \frac{d}{dt}\frac{1}{\mathcal L}&\ge\frac{\initscale^{12}}{98304\,d_{\mathrm h}} && 
+\end{alignat*}
+\end{proof}
+
+\begin{proof}[Proof of \cref{thm:joint}]
+\emph{Reduction.} By the reflection, $p<\frac{1}{2}$; then $p_{\min}=p$.
+
+\emph{Margins and convergence.} \Cref{lem:J-prior,lem:J-phase2,lem:J-descent} give positive margins for all $t\ge t_3$ and $\Lstep\to0$, with
+\[
+ t_3\le\underbrace{\frac{2h^\star}{\kappa_0\initscale^3}}_{\text{Phase I}}+\underbrace{\frac{5\log\frac{1}{\initscale}}{\kappa_0\initscale^2}+T_{\mathrm{align}}}_{\text{Phase II}}
+ +\underbrace{\frac{6\cdot10^5d_{\mathrm h}}{p_{\min}^2\initscale^{12}}}_{\text{Phase III}} .
+\]
+
+\emph{The stated bound.} The alignment term is the first term of the theorem:
+\[
+ T_{\mathrm{align}}=\frac{2048\,e\sqrt{d_{\mathrm h}}}{p(1-p)\,h^\star\mathrm{gap}\,\initscale^4}.
+\]
+The Phase I and relaxation terms are at most a constant times the Phase III term, because
+\[
+ h^\star\le\frac{1}{p_{\min}},\qquad p(1-p)\ge\frac{p_{\min}}{2},\qquad \frac{h^\star}{\kappa_0}\le\frac{2e}{p_{\min}^2},\qquad
+ \initscale^{-3},\ \log\frac{1}{\initscale}\,\initscale^{-2}\le d_{\mathrm h}\initscale^{-12} .
+\]
+If $q(0)k(0)<0$, then $T_{\mathrm{align}}=0$ and $\gamma=1$, so $\mathrm{gap}$ does not enter.
+
+\emph{Probability.} Let $X=\frac{|q(0)|}{\initscale}$ and $Y=\frac{|k(0)|}{\initscale}$ be independent and uniform on $[\frac{1}{2},2]$. Then $X^2$ has density
+$\frac{1}{3\sqrt z}\le\frac{2}{3}$ on $[\frac{1}{4},4]$, so
+\[
+ \Pr\bigl(|D|<\mathrm{gap}\,\initscale^2\bigr)=\E\,\Pr\bigl(|X^2-Y^2|<\mathrm{gap}\bigm|Y\bigr)\le2\mathrm{gap}\cdot\tfrac{2}{3}=\tfrac{4}{3}\mathrm{gap} .
+\]
+\end{proof}
+
+\paragraph{Why the gap condition.}\label{rem:J-balance} If $|q(0)|=|k(0)|$ and $q(0)k(0)>0$, then $D=0$, $S=\frac{2\sqrt{d_{\mathrm h}}|a|}{\initscale^2}$, and
+\[
+ \ddt{a}=-f(t)\,a,\qquad f=\frac{2\initscale^2}{\sqrt{d_{\mathrm h}}}\operatorname{sign}(a)\,g\,\sigma'(a)\,\mathrm{err} .
+\]
+Then $a$ keeps its sign, so alignment requires $g$ to change sign, and the crossing argument of \cref{lem:J-phase2}(d) fails. The condition $|D|\ge\mathrm{gap}\,\initscale^2$ excludes this case.
+
+
+
+\subsection{The optimization comparison in the same architecture}
+\begin{corollary}[Outcome training from the same initialization]
+\label{cor:joint-outcome}
+Take the architecture and initialization of \cref{thm:joint} for any $K\ge2$, with any fixed mask at the answer position, and $\mixrate$ as in
+\cref{eq:lambda}. Gradient flow on $\Lout$, training $(\mathbf U,\mathbf W,q,k)$ or any larger set of blocks (the relative bias included) under any block
+schedule, obeys the plateau bound of \cref{thm:outcome-end} for $\mixrate>0$ and $\initscale$ in the range of that theorem.
+\end{corollary}
+
+\begin{proof}
+After division by $\initscale$, every map and embedding block has operator norm at most $2\sqrt K$, the count embeddings have singular values
+$1$, every MLP bias has $|\tilde b_m|=1$, and the readout is zero: this is \cref{ass:init}. A fixed mask keeps every attention row a softmax over
+its visible sites (\cref{ass:arch}) and only lowers the numbers of scores and sites. Hence \cref{prop:score-degree}, \cref{prop:network}(i)--(iii),
+\cref{lem:score-sum,lem:end-smooth} and \cref{thm:outcome-end} apply unchanged for any schedule, and \cref{lem:bias-uniform} covers a trained bias.
+\end{proof}
+
+
+\paragraph{Resulting separation.} With $K=2$, the same mask, the same zero-readout seed, and the same trained variables $(U,W,q,k)$, take $\varepsilon\le\min(\varepsilon^\star,c\lambda,\varepsilon_0)$. Outcome flow obeys \cref{thm:outcome-end}, whereas step flow obeys \cref{thm:joint}. At fixed $p\ne1/2$ and fixed nonzero gap, the step bound is polynomial in $\varepsilon^{-1}$ and $d_{\mathrm h}$ and has no further dependence on $n$. The outcome bound grows as $\lambda^{-n}$. These bounds produce an actual ordering of the two guaranteed time scales whenever $c\lambda^{-n}$ exceeds the polynomial step upper bound. If $d_{\mathrm h}$ and $\varepsilon^{-1}$ grow polynomially with $n$, this ordering holds for sufficiently large $n$.
+
+\paragraph{Scope of this rewrite.} The joint convergence result remains restricted to $K=2$, $p\ne1/2$, the fixed two-source gate mask, fixed directions and value factor, and the stated query--key imbalance condition for misaligned seeds. The step-credit theorem still gives an upper bound and a nonzero polynomial coefficient, rather than a quantitative high-probability lower bound at arbitrary random initialization. The outcome theorem bounds expected correct-answer probability and loss, rather than greedy-decoding accuracy. No conclusion has been strengthened by suppressing any of these restrictions.

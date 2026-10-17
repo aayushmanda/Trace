@@ -1,0 +1,8 @@
+D1       seed=0 hit=None final_acc=0.4998 loss=0.6932 src_att=[0.05883634090423584, 0.05882435292005539] (419s)
+D1       seed=1 hit=None final_acc=0.5002 loss=0.6931 src_att=[0.05883406102657318, 0.05882316082715988] (503s)
+D1       seed=2 hit=None final_acc=0.4998 loss=0.6932 src_att=[0.058827534317970276, 0.05882499739527702] (520s)
+D1       seed=3 hit=None final_acc=0.5002 loss=0.6931 src_att=[0.05882493034005165, 0.0588240846991539] (520s)
+D1       seed=4 hit=None final_acc=0.5002 loss=0.6931 src_att=[0.05882773548364639, 0.05882388353347778] (520s)
+D1       seed=5 hit=None final_acc=0.5002 loss=0.6931 src_att=[0.05883041024208069, 0.05882465839385986] (418s)
+D1       seed=6 hit=None final_acc=0.5002 loss=0.6931 src_att=[0.05882653594017029, 0.05882337689399719] (386s)
+D1       seed=7 hit=None final_acc=0.4998 loss=0.6932 src_att=[0.05882999673485756, 0.05882395803928375] (385s)

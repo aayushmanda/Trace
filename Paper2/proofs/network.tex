@@ -1,0 +1,100 @@
+\subsection{Derivation from the one-block matrices}
+\label{app:network-proof}
+\label{app:architecture}
+\paragraph{Embeddings and attention matrices.}
+Let $\bm e_i\in\mathbb R^7$ be standard basis columns and let $\bm0$ denote a zero vector.
+The state and query embeddings are
+\begin{equation}
+ \bm h_j^{(0)}=x_j\bm e_1+\bm e_3+\mathbf1[j=N]\bm e_4+\mathbf1[j<N]\bm e_5,
+ \qquad \bm h_q^{(0)}=b\bm e_2+\bm e_3.
+ \label{eq:embeddings}
+\end{equation}
+Here $\mathbf1[\cdot]$ is the indicator of the stated condition.
+The one-dimensional query, key and value maps and their output projection are
+\begin{equation}
+ \begin{gathered}
+ \bm w_q=\bm e_3^\top,\qquad
+ \bm w_k=q_s\bm e_4^\top+q_d\bm e_5^\top,\qquad
+ \bm w_v=\bm e_1^\top,\qquad \bm w_o=\bm e_6,\\
+ \bm w_q,\bm w_k,\bm w_v\in\mathbb R^{1\times7},\qquad
+ \bm w_o\in\mathbb R^{7\times1}.
+ \end{gathered}
+ \label{eq:attention-matrices}
+\end{equation}
+For the $N$ unmasked state positions, define the score vector $\bm q$ and attention vector $\bm\alpha$ by
+\begin{equation}
+ q_j=(\bm w_q\bm h_q^{(0)})(\bm w_k\bm h_j^{(0)}),\qquad
+ \bm\alpha=\softmax(\bm q),\qquad
+ \bm h_q=\bm h_q^{(0)}+\bm w_o\sum_{j=1}^N \alpha_j\bm w_v\bm h_j^{(0)}.
+ \label{eq:attention-block}
+\end{equation}
+The query/key dimension is one, so the attention scaling factor is $1$.
+The attended value is the scalar $v=\sum_j \alpha_j x_j$; the residual $\bm h_q$ is a vector.
+
+\paragraph{Four-unit MLP matrices.}
+Fix $B>0$, let $\bm1_4$ be the four-dimensional all-ones vector, and apply $\relu$ coordinatewise to vector arguments. Set
+\begin{equation}
+ \begin{gathered}
+ \bm w_1=\begin{pmatrix}
+ r_1\bm e_6^\top+B\bm e_2^\top\\
+ -r_1\bm e_6^\top+B\bm e_2^\top\\
+ r_1\bm e_6^\top-B\bm e_2^\top\\
+ -r_1\bm e_6^\top-B\bm e_2^\top
+ \end{pmatrix},\qquad
+ \bm b_1=-B\bm1_4,\\
+ \bm w_2=r_2\bm e_7(1,-1,-1,1),\qquad
+ \bm w_1\in\mathbb R^{4\times7},\quad
+ \bm w_2\in\mathbb R^{7\times4},\quad \bm b_1\in\mathbb R^4,\\
+ \bm h'_q=\bm h_q+\bm w_2\relu(\bm w_1\bm h_q+\bm b_1),
+ \qquad z=\bm e_7^\top\bm h'_q.
+ \end{gathered}
+ \label{eq:mlp-matrices}
+\end{equation}
+
+\begin{proof}[Proof of \cref{prop:realization}]
+\proofstep{(a) Attention.}
+For the embeddings and matrices above,
+\begin{align*}
+ \bm w_q\bm h_q^{(0)}&=1,&
+ \bm w_k\bm h_j^{(0)}&=q_s\mathbf1[j=N]+q_d\mathbf1[j<N],&
+ \bm w_v\bm h_j^{(0)}&=x_j,\\
+ \bm h_q&=\bm h_q^{(0)}+\bm e_6\sum_{j=1}^N \alpha_j x_j,&
+ \alpha(q)&=\frac{e^{q_s}}{e^{q_s}+(N-1)e^{q_d}}
+ =\frac{e^q}{e^q+N-1}.
+\end{align*}
+Every decoy has weight $\tfrac{1-\alpha(q)}{N-1}$, so with $\bar w=\tfrac{1}{N-1}\sum_{j<N}x_j$,
+\[
+ v=\sum_{j=1}^N \alpha_j x_j=\alpha(q)x_N+(1-\alpha(q))\bar w,\qquad |v|\le1.
+\]
+\proofstep{(b) MLP.}
+The preactivation is
+\[
+ \bm w_1\bm h_q+\bm b_1=
+ \begin{pmatrix}
+ r_1v+B(b-1)\\-r_1v+B(b-1)\\
+ r_1v-B(b+1)\\-r_1v-B(b+1)
+ \end{pmatrix}.
+\]
+Since $\bm e_7^\top\bm h_q=0$ and $|r_1v|<2B$,
+\begin{align*}
+ b=1:\quad z&=r_2\bigl[\relu(r_1v)-\relu(-r_1v)\bigr]=r_1r_2v,\\
+ b=-1:\quad z&=r_2\bigl[-\relu(r_1v)+\relu(-r_1v)\bigr]=-r_1r_2v.
+\end{align*}
+Thus $z=r_1r_2b v$ on the open gate-valid region.
+\proofstep{(c) Parameter gradients.}
+For each coordinate $\theta_i$ of $\bm\theta$, differentiation of the identity gives
+\begin{align*}
+ \pd{}{\theta_i}\E[\ell(y,z)]
+ &=\E\left[\pd{\ell}{z}(y,z)\pd{z}{\theta_i}\right]&&\text{(finite support; chain rule)}\\
+ &=\E\left[\pd{\ell}{z}(y,r_1r_2b v)\pd{(r_1r_2b v)}{\theta_i}\right]
+ =\pd{}{\theta_i}\E[\ell(y,r_1r_2b v)].
+\end{align*}
+Stacking the four coordinates yields equality of $\nabla_{\bm\theta}$ for the matrix network and its derived logit.
+The matrix chain rule, for example, is
+\[
+ \pd{\mathcal L}{r_1}=\left\langle\nabla_{\bm w_1}\mathcal L,\pd{\bm w_1}{r_1}\right\rangle_{\mathrm F},\qquad
+ \pd{\mathcal L}{r_2}=\left\langle\nabla_{\bm w_2}\mathcal L,\pd{\bm w_2}{r_2}\right\rangle_{\mathrm F}.
+\]
+At $r_1v=0$, the composite $\relu(z)-\relu(-z)=z$ remains differentiable.
+Assigning derivative $\tfrac{1}{2}$ to each paired ReLU at zero reproduces its derivative $1$.\qedhere
+\end{proof}

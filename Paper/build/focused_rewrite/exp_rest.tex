@@ -1,0 +1,10 @@
+\paragraph{Pretrained Boolean-8.}
+Boolean-8 applies eight randomly wired NOT, CNOT, SWAP or Toffoli gates to four bits; there are $16$ answer states. Rank-$8$ LoRA on Qwen2.5-0.5B \citep{qwen2025qwen25,hu2022lora} reaches approximately $98.3\%$ held-out answer accuracy under step supervision and $11.1\%$ under outcome supervision. \Cref{tab:transfer} reports the checked seed summaries, the eightfold outcome budget, and answer-first control. These are synthetic sequential-computation results with a pretrained language model.
+\input{figures/transfer_table}
+
+\paragraph{BIG-Bench Hard object tracking.}
+Training examples are generated from benchmark templates using fresh assignments and swaps. Testing uses the official $250$ held-out items at each of three, five and seven objects \citep{suzgun2022challenging}. Traces give every holder's item and its answer-option letter. Step supervision usually helps at three and seven objects. The five-object condition reverses the pattern: outcome achieves $80$--$94\%$, and one step seed reaches only $46\%$. \Cref{tab:transfer} retains all three sizes and all seeds. This reversal limits transfer of the mechanism: counting's contraction coefficient and the theorem's initialization do not characterize pretrained-model optimization on object tracking.
+
+\paragraph{Count-label control.}
+A separate ten-seed counting control matches one randomly selected supervised count label per prompt to the outcome count-label budget, with the same formatting labels and $30$k updates. Sparse process training attains mean answer accuracy $97.1,99.8,99.2\%$ for $n=6,8,12$ and solves $27/30$ runs at a $99\%$ threshold; outcome means are $68.5,64.3,51.2\%$, with $0/30$ solved. Matching labels does not match teacher-forced prefix information: sparse process inputs still contain gold running states. The shorter $8$k control was inconclusive and is retained in \cref{app:label-budget}.
+

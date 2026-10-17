@@ -1,0 +1,113 @@
+{
+ "kappa=1": {
+  "rows": [
+   {
+    "eps": 0.1,
+    "T_route": 85.67221786515609,
+    "routed": true,
+    "max_rel_drift": 2.9301339826703903e-08
+   },
+   {
+    "eps": 0.3,
+    "T_route": 45.62519667709475,
+    "routed": true,
+    "max_rel_drift": 3.5569753932386385e-09
+   },
+   {
+    "eps": 0.5,
+    "T_route": 29.936167277849716,
+    "routed": true,
+    "max_rel_drift": 1.3836150003498915e-09
+   },
+   {
+    "eps": 0.7,
+    "T_route": 21.31782812500689,
+    "routed": true,
+    "max_rel_drift": 6.216547684786344e-10
+   },
+   {
+    "eps": 1.0,
+    "T_route": 13.974958680630552,
+    "routed": true,
+    "max_rel_drift": 3.362368161674567e-10
+   }
+  ],
+  "barrier_minus_F_q0": null,
+  "barrier_eps": null
+ },
+ "kappa=0": {
+  "rows": [
+   {
+    "eps": 0.1,
+    "T_route": 370.7753681905732,
+    "routed": true,
+    "max_rel_drift": 3.432478815068584e-08
+   },
+   {
+    "eps": 0.3,
+    "T_route": 98.4943642436259,
+    "routed": true,
+    "max_rel_drift": 7.022844959890683e-09
+   },
+   {
+    "eps": 0.5,
+    "T_route": 49.51002232887506,
+    "routed": true,
+    "max_rel_drift": 1.5213643678180233e-09
+   },
+   {
+    "eps": 0.7,
+    "T_route": 30.396250440512052,
+    "routed": true,
+    "max_rel_drift": 6.352366478639671e-10
+   },
+   {
+    "eps": 1.0,
+    "T_route": 17.484808234817155,
+    "routed": true,
+    "max_rel_drift": 2.9052760197600946e-10
+   }
+  ],
+  "barrier_minus_F_q0": null,
+  "barrier_eps": null
+ },
+ "kappa=-1": {
+  "rows": [
+   {
+    "eps": 0.1,
+    "T_route": Infinity,
+    "routed": false,
+    "max_rel_drift": 5.359948596073138e-12
+   },
+   {
+    "eps": 0.3,
+    "T_route": Infinity,
+    "routed": false,
+    "max_rel_drift": 6.163588158377328e-12
+   },
+   {
+    "eps": 0.5,
+    "T_route": Infinity,
+    "routed": false,
+    "max_rel_drift": 8.713674226612511e-11
+   },
+   {
+    "eps": 0.7,
+    "T_route": 67.60434308829718,
+    "routed": true,
+    "max_rel_drift": 8.556997514192263e-10
+   },
+   {
+    "eps": 1.0,
+    "T_route": 24.93779032328244,
+    "routed": true,
+    "max_rel_drift": 4.3259573700993315e-10
+   }
+  ],
+  "barrier_minus_F_q0": 0.29347568545415953,
+  "barrier_eps": 0.5417339618799615
+ },
+ "N": 16,
+ "gamma": 0.8,
+ "max_rel_invariant_drift": 3.432478815068584e-08
+}

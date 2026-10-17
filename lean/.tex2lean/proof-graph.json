@@ -1,0 +1,5524 @@
+{
+  "schema": "tex2lean.proof-graph/6",
+  "slug": "thm-main-14o4fct",
+  "updatedAt": "2026-10-10T23:26:55.793Z",
+  "sourceFingerprint": "sha256:8e8b3ac32ff795cc86e5fb092e6626b7b2ef98916f0be43844cf724dfda77175",
+  "buildFingerprint": "sha256:8e8b3ac32ff795cc86e5fb092e6626b7b2ef98916f0be43844cf724dfda77175",
+  "dependencyFingerprint": "sha256:8e8b3ac32ff795cc86e5fb092e6626b7b2ef98916f0be43844cf724dfda77175",
+  "dependencySource": "lean-environment",
+  "elaboratedAt": "2026-10-10T23:26:55.793Z",
+  "rootModule": "Trace.Model.Theorem",
+  "reachableModules": [
+    "Trace.Analysis.Contraction",
+    "Trace.Analysis.OutcomeCredit",
+    "Trace.Analysis.ScoreCredit",
+    "Trace.Meta.ModelClosure",
+    "Trace.Model.Prelude",
+    "Trace.Model.Prior",
+    "Trace.Model.Theorem"
+  ],
+  "target": {
+    "key": "label:thm:main",
+    "id": "t5",
+    "title": "Unseen letters erase outcome credit",
+    "label": "thm:main",
+    "location": "Paper/body.tex:191",
+    "paperDigest": "da6ca7c7b024"
+  },
+  "nodes": [
+    {
+      "id": "file:lean/Trace/Analysis/Contraction.lean",
+      "kind": "file",
+      "label": "lean/Trace/Analysis/Contraction.lean",
+      "file": "lean/Trace/Analysis/Contraction.lean",
+      "module": "Trace.Analysis.Contraction",
+      "status": "unknown",
+      "paperRefs": []
+    },
+    {
+      "id": "file:lean/Trace/Analysis/OutcomeCredit.lean",
+      "kind": "file",
+      "label": "lean/Trace/Analysis/OutcomeCredit.lean",
+      "file": "lean/Trace/Analysis/OutcomeCredit.lean",
+      "module": "Trace.Analysis.OutcomeCredit",
+      "status": "unknown",
+      "paperRefs": []
+    },
+    {
+      "id": "file:lean/Trace/Analysis/ScoreCredit.lean",
+      "kind": "file",
+      "label": "lean/Trace/Analysis/ScoreCredit.lean",
+      "file": "lean/Trace/Analysis/ScoreCredit.lean",
+      "module": "Trace.Analysis.ScoreCredit",
+      "status": "unknown",
+      "paperRefs": []
+    },
+    {
+      "id": "file:lean/Trace/Meta/ModelClosure.lean",
+      "kind": "file",
+      "label": "lean/Trace/Meta/ModelClosure.lean",
+      "file": "lean/Trace/Meta/ModelClosure.lean",
+      "module": "Trace.Meta.ModelClosure",
+      "status": "unknown",
+      "paperRefs": []
+    },
+    {
+      "id": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "file",
+      "label": "lean/Trace/Model/Prelude.lean",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "module": "Trace.Model.Prelude",
+      "status": "unknown",
+      "paperRefs": [
+        "thm:main",
+        "Paper/body.tex:191",
+        "lem:target-contraction",
+        "Paper/body.tex:163",
+        "appendix.tex:227",
+        "rem:norms",
+        "Paper/appendix.tex:76",
+        "Paper/appendix.tex:95",
+        "ass:arch:",
+        "prop:score-degree",
+        "Paper/appendix.tex:298",
+        "direct_proofs/conditional_outcome.tex:29",
+        "eq:score-split",
+        "def:task",
+        "Paper/body.tex:78",
+        "ass:task",
+        "appendix.tex:55",
+        "def:lambda",
+        "Paper/body.tex:89",
+        "Paper/appendix.tex:107",
+        "ass:arch",
+        "Paper/appendix.tex:34",
+        "ass:init",
+        "Paper/appendix.tex:43",
+        "eq:credit-degree",
+        "Paper/body.tex:178",
+        "def:credit",
+        "def:losses",
+        "Paper/appendix.tex:26"
+      ]
+    },
+    {
+      "id": "file:lean/Trace/Model/Prior.lean",
+      "kind": "file",
+      "label": "lean/Trace/Model/Prior.lean",
+      "file": "lean/Trace/Model/Prior.lean",
+      "module": "Trace.Model.Prior",
+      "status": "unknown",
+      "paperRefs": []
+    },
+    {
+      "id": "file:lean/Trace/Model/Theorem.lean",
+      "kind": "file",
+      "label": "lean/Trace/Model/Theorem.lean",
+      "file": "lean/Trace/Model/Theorem.lean",
+      "module": "Trace.Model.Theorem",
+      "status": "unknown",
+      "paperRefs": [
+        "thm:main",
+        "Paper/body.tex:191",
+        "ass:arch",
+        "ass:init",
+        "ass:task",
+        "lem:score-sum",
+        "Paper/appendix.tex:60",
+        "eq:credit-degree",
+        "lem:target-contraction",
+        "Paper/appendix.tex:264",
+        "Paper/appendix.tex:494",
+        "eq:thm1-full",
+        "Paper/appendix.tex:502"
+      ]
+    },
+    {
+      "id": "lean:Trace.Arch",
+      "kind": "lean",
+      "label": "Trace.Arch",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 146,
+      "declaration": "Trace.Arch",
+      "statementKind": "inductive",
+      "role": "definition",
+      "header": "structure Arch (nH n : ℕ) where",
+      "references": [],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Arch.dh",
+      "kind": "lean",
+      "label": "Trace.Arch.dh",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 150,
+      "declaration": "Trace.Arch.dh",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "def Trace.Arch.dh",
+      "references": [
+        "Trace.Arch"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Arch.dmlp",
+      "kind": "lean",
+      "label": "Trace.Arch.dmlp",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 152,
+      "declaration": "Trace.Arch.dmlp",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "def Trace.Arch.dmlp",
+      "references": [
+        "Trace.Arch"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Arch.dres",
+      "kind": "lean",
+      "label": "Trace.Arch.dres",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 148,
+      "declaration": "Trace.Arch.dres",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "def Trace.Arch.dres",
+      "references": [
+        "Trace.Arch"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Arch.mk.noConfusion",
+      "kind": "lean",
+      "label": "Trace.Arch.mk.noConfusion",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 146,
+      "declaration": "Trace.Arch.mk.noConfusion",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "def Trace.Arch.mk.noConfusion",
+      "references": [
+        "Trace.Arch"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Arch.vis",
+      "kind": "lean",
+      "label": "Trace.Arch.vis",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 154,
+      "declaration": "Trace.Arch.vis",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "def Trace.Arch.vis",
+      "references": [
+        "Trace.Arch"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Arch.vis_causal",
+      "kind": "lean",
+      "label": "Trace.Arch.vis_causal",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 156,
+      "declaration": "Trace.Arch.vis_causal",
+      "statementKind": "theorem",
+      "role": "supporting-lemma",
+      "header": "theorem Trace.Arch.vis_causal",
+      "references": [
+        "Trace.Arch",
+        "Trace.Arch.vis"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Arch.vis_nonempty",
+      "kind": "lean",
+      "label": "Trace.Arch.vis_nonempty",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 158,
+      "declaration": "Trace.Arch.vis_nonempty",
+      "statementKind": "theorem",
+      "role": "supporting-lemma",
+      "header": "theorem Trace.Arch.vis_nonempty",
+      "references": [
+        "Trace.Arch",
+        "Trace.Arch.vis"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.attnWeight",
+      "kind": "lean",
+      "label": "Trace.attnWeight",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 245,
+      "declaration": "Trace.attnWeight",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "noncomputable def attnWeight {A : Arch nH n} (ζ : ℝ) (θ : Params Sym K A) (l : Fin 2) (h : Fin nH) (x : Fin (n + 4) → Fin A.dres → ℝ) (i j : Fin (n + 4)) : ℝ :=",
+      "references": [
+        "Trace.Arch",
+        "Trace.Arch.dres",
+        "Trace.Arch.vis",
+        "Trace.Params",
+        "Trace.score"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.block",
+      "kind": "lean",
+      "label": "Trace.block",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 251,
+      "declaration": "Trace.block",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "noncomputable def block {A : Arch nH n} (ζ : ℝ) (θ : Params Sym K A) (l : Fin 2) (x : Fin (n + 4) → Fin A.dres → ℝ) : Fin (n + 4) → Fin A.dres → ℝ :=",
+      "references": [
+        "Trace.Arch",
+        "Trace.Arch.dmlp",
+        "Trace.Arch.dres",
+        "Trace.Arch.vis",
+        "Trace.Params",
+        "Trace.Params.bIn",
+        "Trace.Params.wIn",
+        "Trace.Params.wOut",
+        "Trace.Params.wV",
+        "Trace.attnWeight"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.embed",
+      "kind": "lean",
+      "label": "Trace.embed",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 234,
+      "declaration": "Trace.embed",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "def embed (T : Task K Sym) {A : Arch nH n} (θ : Params Sym K A) (w : Fin n → Sym) : Fin (n + 4) → Fin A.dres → ℝ :=",
+      "references": [
+        "Trace.Arch",
+        "Trace.Arch.dres",
+        "Trace.Params",
+        "Trace.Params.posEmb",
+        "Trace.Params.tokEmb",
+        "Trace.Task",
+        "Trace.Task.outcomePrompt"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.featureCredit",
+      "kind": "lean",
+      "label": "Trace.featureCredit",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 307,
+      "declaration": "Trace.featureCredit",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "noncomputable def featureCredit (T : Task K Sym) {ι : Type v} [Fintype ι] (H : (Fin n → Sym) → Matrix (ZMod K) ι ℝ) : ℝ :=",
+      "references": [
+        "Trace.Task",
+        "Trace.Task.Ex",
+        "Trace.Task.targetSignal"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.initBall",
+      "kind": "lean",
+      "label": "Trace.initBall",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 294,
+      "declaration": "Trace.initBall",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "def initBall {Sym : Type u} [Fintype Sym] {K nH n : ℕ} [NeZero K] {A : Arch nH n} (θt : Params Sym K A) (ε cemb : ℝ) : Set (Params Sym K A) :=",
+      "references": [
+        "Trace.Arch",
+        "Trace.Arch.dh",
+        "Trace.Arch.dmlp",
+        "Trace.Arch.dres",
+        "Trace.ParamIdx",
+        "Trace.Params",
+        "Trace.Token"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.InitHyp",
+      "kind": "lean",
+      "label": "Trace.InitHyp",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 277,
+      "declaration": "Trace.InitHyp",
+      "statementKind": "inductive",
+      "role": "definition",
+      "header": "structure InitHyp {Sym : Type u} [Fintype Sym] [DecidableEq Sym] {K nH n : ℕ} [NeZero K] {A : Arch nH n} (θt : Params Sym K A) (a0 cemb Nb : ℝ) : Prop where",
+      "references": [
+        "Trace.Arch",
+        "Trace.Params"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.InitHyp.bIn_ge_one",
+      "kind": "lean",
+      "label": "Trace.InitHyp.bIn_ge_one",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 289,
+      "declaration": "Trace.InitHyp.bIn_ge_one",
+      "statementKind": "theorem",
+      "role": "supporting-lemma",
+      "header": "theorem Trace.InitHyp.bIn_ge_one",
+      "references": [
+        "Trace.Arch",
+        "Trace.Arch.dmlp",
+        "Trace.InitHyp",
+        "Trace.Params",
+        "Trace.Params.bIn"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.InitHyp.bIn_norm_le",
+      "kind": "lean",
+      "label": "Trace.InitHyp.bIn_norm_le",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 290,
+      "declaration": "Trace.InitHyp.bIn_norm_le",
+      "statementKind": "theorem",
+      "role": "supporting-lemma",
+      "header": "theorem Trace.InitHyp.bIn_norm_le",
+      "references": [
+        "Trace.Arch",
+        "Trace.Arch.dmlp",
+        "Trace.InitHyp",
+        "Trace.Params",
+        "Trace.Params.bIn"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.InitHyp.posEmb_le",
+      "kind": "lean",
+      "label": "Trace.InitHyp.posEmb_le",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 280,
+      "declaration": "Trace.InitHyp.posEmb_le",
+      "statementKind": "theorem",
+      "role": "supporting-lemma",
+      "header": "theorem Trace.InitHyp.posEmb_le",
+      "references": [
+        "Trace.Arch",
+        "Trace.Arch.dres",
+        "Trace.InitHyp",
+        "Trace.Params",
+        "Trace.Params.posEmb",
+        "Trace.opNorm"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.InitHyp.readout_le",
+      "kind": "lean",
+      "label": "Trace.InitHyp.readout_le",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 286,
+      "declaration": "Trace.InitHyp.readout_le",
+      "statementKind": "theorem",
+      "role": "supporting-lemma",
+      "header": "theorem Trace.InitHyp.readout_le",
+      "references": [
+        "Trace.Arch",
+        "Trace.Arch.dres",
+        "Trace.InitHyp",
+        "Trace.Params",
+        "Trace.Params.readout",
+        "Trace.opNorm"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.InitHyp.tokEmb_le",
+      "kind": "lean",
+      "label": "Trace.InitHyp.tokEmb_le",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 279,
+      "declaration": "Trace.InitHyp.tokEmb_le",
+      "statementKind": "theorem",
+      "role": "supporting-lemma",
+      "header": "theorem Trace.InitHyp.tokEmb_le",
+      "references": [
+        "Trace.Arch",
+        "Trace.Arch.dres",
+        "Trace.InitHyp",
+        "Trace.Params",
+        "Trace.Params.tokEmb",
+        "Trace.Token",
+        "Trace.opNorm"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.InitHyp.valueEmb_sigmaMin",
+      "kind": "lean",
+      "label": "Trace.InitHyp.valueEmb_sigmaMin",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 287,
+      "declaration": "Trace.InitHyp.valueEmb_sigmaMin",
+      "statementKind": "theorem",
+      "role": "supporting-lemma",
+      "header": "theorem Trace.InitHyp.valueEmb_sigmaMin",
+      "references": [
+        "Trace.Arch",
+        "Trace.Arch.dres",
+        "Trace.InitHyp",
+        "Trace.Params",
+        "Trace.Params.valueEmb"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.InitHyp.wIn_le",
+      "kind": "lean",
+      "label": "Trace.InitHyp.wIn_le",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 284,
+      "declaration": "Trace.InitHyp.wIn_le",
+      "statementKind": "theorem",
+      "role": "supporting-lemma",
+      "header": "theorem Trace.InitHyp.wIn_le",
+      "references": [
+        "Trace.Arch",
+        "Trace.Arch.dmlp",
+        "Trace.Arch.dres",
+        "Trace.InitHyp",
+        "Trace.Params",
+        "Trace.Params.wIn",
+        "Trace.opNorm"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.InitHyp.wK_le",
+      "kind": "lean",
+      "label": "Trace.InitHyp.wK_le",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 282,
+      "declaration": "Trace.InitHyp.wK_le",
+      "statementKind": "theorem",
+      "role": "supporting-lemma",
+      "header": "theorem Trace.InitHyp.wK_le",
+      "references": [
+        "Trace.Arch",
+        "Trace.Arch.dh",
+        "Trace.Arch.dres",
+        "Trace.InitHyp",
+        "Trace.Params",
+        "Trace.Params.wK",
+        "Trace.opNorm"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.InitHyp.wOut_le",
+      "kind": "lean",
+      "label": "Trace.InitHyp.wOut_le",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 285,
+      "declaration": "Trace.InitHyp.wOut_le",
+      "statementKind": "theorem",
+      "role": "supporting-lemma",
+      "header": "theorem Trace.InitHyp.wOut_le",
+      "references": [
+        "Trace.Arch",
+        "Trace.Arch.dmlp",
+        "Trace.Arch.dres",
+        "Trace.InitHyp",
+        "Trace.Params",
+        "Trace.Params.wOut",
+        "Trace.opNorm"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.InitHyp.wQ_le",
+      "kind": "lean",
+      "label": "Trace.InitHyp.wQ_le",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 281,
+      "declaration": "Trace.InitHyp.wQ_le",
+      "statementKind": "theorem",
+      "role": "supporting-lemma",
+      "header": "theorem Trace.InitHyp.wQ_le",
+      "references": [
+        "Trace.Arch",
+        "Trace.Arch.dh",
+        "Trace.Arch.dres",
+        "Trace.InitHyp",
+        "Trace.Params",
+        "Trace.Params.wQ",
+        "Trace.opNorm"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.InitHyp.wV_le",
+      "kind": "lean",
+      "label": "Trace.InitHyp.wV_le",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 283,
+      "declaration": "Trace.InitHyp.wV_le",
+      "statementKind": "theorem",
+      "role": "supporting-lemma",
+      "header": "theorem Trace.InitHyp.wV_le",
+      "references": [
+        "Trace.Arch",
+        "Trace.Arch.dres",
+        "Trace.InitHyp",
+        "Trace.Params",
+        "Trace.Params.wV",
+        "Trace.opNorm"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.logits",
+      "kind": "lean",
+      "label": "Trace.logits",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 261,
+      "declaration": "Trace.logits",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "noncomputable def logits (T : Task K Sym) (A : Arch nH n) (ζ : ℝ) (θ : Params Sym K A) (w : Fin n → Sym) : ZMod K → ℝ :=",
+      "references": [
+        "Trace.Arch",
+        "Trace.Arch.dres",
+        "Trace.Params",
+        "Trace.Params.readout",
+        "Trace.Task",
+        "Trace.block",
+        "Trace.embed"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#modelClosure__1»",
+      "kind": "lean",
+      "label": "Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#modelClosure__1»",
+      "file": "lean/Trace/Meta/ModelClosure.lean",
+      "line": 94,
+      "declaration": "Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#modelClosure__1»",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "def Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#modelClosure__1»",
+      "references": [
+        "Trace.Meta.closureAux",
+        "Trace.Meta.outsideModel"
+      ],
+      "status": "closed",
+      "inAuditSurface": false,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#modelClosureOfType__1»",
+      "kind": "lean",
+      "label": "Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#modelClosureOfType__1»",
+      "file": "lean/Trace/Meta/ModelClosure.lean",
+      "line": 169,
+      "declaration": "Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#modelClosureOfType__1»",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "def Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#modelClosureOfType__1»",
+      "references": [
+        "Trace.Meta.closureAux",
+        "Trace.Meta.outsideModel"
+      ],
+      "status": "closed",
+      "inAuditSurface": false,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#statementSide__1»",
+      "kind": "lean",
+      "label": "Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#statementSide__1»",
+      "file": "lean/Trace/Meta/ModelClosure.lean",
+      "line": 216,
+      "declaration": "Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#statementSide__1»",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "def Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#statementSide__1»",
+      "references": [
+        "Trace.Meta.closureAux",
+        "Trace.Meta.moduleOf",
+        "Trace.Meta.relationConstants",
+        "Trace.Meta.resourceOperators",
+        "Trace.Meta.underBinders"
+      ],
+      "status": "closed",
+      "inAuditSurface": false,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#surplusIn_From__1»",
+      "kind": "lean",
+      "label": "Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#surplusIn_From__1»",
+      "file": "lean/Trace/Meta/ModelClosure.lean",
+      "line": 103,
+      "declaration": "Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#surplusIn_From__1»",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "def Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#surplusIn_From__1»",
+      "references": [
+        "Trace.Meta.closureAux",
+        "Trace.Meta.isAutoGenerated",
+        "Trace.Meta.moduleOf"
+      ],
+      "status": "closed",
+      "inAuditSurface": false,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Meta.«command#modelClosure_»",
+      "kind": "lean",
+      "label": "Trace.Meta.«command#modelClosure_»",
+      "file": "lean/Trace/Meta/ModelClosure.lean",
+      "line": 95,
+      "declaration": "Trace.Meta.«command#modelClosure_»",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "def Trace.Meta.«command#modelClosure_»",
+      "references": [],
+      "status": "closed",
+      "inAuditSurface": false,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Meta.«command#modelClosureOfType_»",
+      "kind": "lean",
+      "label": "Trace.Meta.«command#modelClosureOfType_»",
+      "file": "lean/Trace/Meta/ModelClosure.lean",
+      "line": 170,
+      "declaration": "Trace.Meta.«command#modelClosureOfType_»",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "def Trace.Meta.«command#modelClosureOfType_»",
+      "references": [],
+      "status": "closed",
+      "inAuditSurface": false,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Meta.«command#statementSide_»",
+      "kind": "lean",
+      "label": "Trace.Meta.«command#statementSide_»",
+      "file": "lean/Trace/Meta/ModelClosure.lean",
+      "line": 226,
+      "declaration": "Trace.Meta.«command#statementSide_»",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "def Trace.Meta.«command#statementSide_»",
+      "references": [],
+      "status": "closed",
+      "inAuditSurface": false,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Meta.«command#surplusIn_From_»",
+      "kind": "lean",
+      "label": "Trace.Meta.«command#surplusIn_From_»",
+      "file": "lean/Trace/Meta/ModelClosure.lean",
+      "line": 130,
+      "declaration": "Trace.Meta.«command#surplusIn_From_»",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "def Trace.Meta.«command#surplusIn_From_»",
+      "references": [],
+      "status": "closed",
+      "inAuditSurface": false,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Meta.admittedOutsideModel",
+      "kind": "lean",
+      "label": "Trace.Meta.admittedOutsideModel",
+      "file": "lean/Trace/Meta/ModelClosure.lean",
+      "line": 63,
+      "declaration": "Trace.Meta.admittedOutsideModel",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "private def admittedOutsideModel : List Name :=",
+      "references": [],
+      "status": "closed",
+      "inAuditSurface": false,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Meta.autoGenerated",
+      "kind": "lean",
+      "label": "Trace.Meta.autoGenerated",
+      "file": "lean/Trace/Meta/ModelClosure.lean",
+      "line": 77,
+      "declaration": "Trace.Meta.autoGenerated",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "private def autoGenerated : List String :=",
+      "references": [],
+      "status": "closed",
+      "inAuditSurface": false,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Meta.closureAux",
+      "kind": "lean",
+      "label": "Trace.Meta.closureAux",
+      "file": "lean/Trace/Meta/ModelClosure.lean",
+      "line": 22,
+      "declaration": "Trace.Meta.closureAux",
+      "statementKind": "opaque",
+      "role": "definition",
+      "header": "private partial def closureAux (env : Environment) : NameSet → List Name → NameSet → NameSet | _, [], acc => acc | seen, c :: rest, acc => if seen.contains c then closureAux env seen rest acc else let seen := seen.insert c let acc := if (`Trace).isPrefixOf c then acc.insert c else acc match env.find? c with | none => closureAux env seen rest acc | some ci => let next := ci.type.getUsedConstants.toList ++ (match ci.value? with | some v => v.getUsedConstants.toList | none => []) closureAux env seen (next ++ rest) acc",
+      "references": [],
+      "status": "closed",
+      "inAuditSurface": false,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Meta.isAutoGenerated",
+      "kind": "lean",
+      "label": "Trace.Meta.isAutoGenerated",
+      "file": "lean/Trace/Meta/ModelClosure.lean",
+      "line": 83,
+      "declaration": "Trace.Meta.isAutoGenerated",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "private def isAutoGenerated (c : Name) : Bool :=",
+      "references": [
+        "Trace.Meta.autoGenerated"
+      ],
+      "status": "closed",
+      "inAuditSurface": false,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Meta.moduleOf",
+      "kind": "lean",
+      "label": "Trace.Meta.moduleOf",
+      "file": "lean/Trace/Meta/ModelClosure.lean",
+      "line": 43,
+      "declaration": "Trace.Meta.moduleOf",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "private def moduleOf (env : Environment) (c : Name) : Name :=",
+      "references": [],
+      "status": "closed",
+      "inAuditSurface": false,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Meta.outsideModel",
+      "kind": "lean",
+      "label": "Trace.Meta.outsideModel",
+      "file": "lean/Trace/Meta/ModelClosure.lean",
+      "line": 68,
+      "declaration": "Trace.Meta.outsideModel",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "private def outsideModel (env : Environment) (cls : NameSet) : List (Name × Name) :=",
+      "references": [
+        "Trace.Meta.admittedOutsideModel",
+        "Trace.Meta.moduleOf"
+      ],
+      "status": "closed",
+      "inAuditSurface": false,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Meta.relationConstants",
+      "kind": "lean",
+      "label": "Trace.Meta.relationConstants",
+      "file": "lean/Trace/Meta/ModelClosure.lean",
+      "line": 201,
+      "declaration": "Trace.Meta.relationConstants",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "private def relationConstants (e : Expr) : List Name :=",
+      "references": [],
+      "status": "closed",
+      "inAuditSurface": false,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Meta.resourceOperators",
+      "kind": "lean",
+      "label": "Trace.Meta.resourceOperators",
+      "file": "lean/Trace/Meta/ModelClosure.lean",
+      "line": 181,
+      "declaration": "Trace.Meta.resourceOperators",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "private def resourceOperators : List Name :=",
+      "references": [],
+      "status": "closed",
+      "inAuditSurface": false,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Meta.underBinders",
+      "kind": "lean",
+      "label": "Trace.Meta.underBinders",
+      "file": "lean/Trace/Meta/ModelClosure.lean",
+      "line": 190,
+      "declaration": "Trace.Meta.underBinders",
+      "statementKind": "opaque",
+      "role": "definition",
+      "header": "private partial def underBinders : Expr → Expr | .forallE _ _ b _ => underBinders b | .letE _ _ _ b _ => underBinders b | e => e",
+      "references": [],
+      "status": "closed",
+      "inAuditSurface": false,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.mixrate",
+      "kind": "lean",
+      "label": "Trace.mixrate",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 112,
+      "declaration": "Trace.mixrate",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "noncomputable def mixrate (K : ℕ) (p : ℝ) : ℝ :=",
+      "references": [],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.opNorm",
+      "kind": "lean",
+      "label": "Trace.opNorm",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 269,
+      "declaration": "Trace.opNorm",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "noncomputable def opNorm {m k : Type*} [Fintype m] [Fintype k] [DecidableEq k] (M : Matrix m k ℝ) : ℝ :=",
+      "references": [],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.outcomeCredit",
+      "kind": "lean",
+      "label": "Trace.outcomeCredit",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 323,
+      "declaration": "Trace.outcomeCredit",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "noncomputable def outcomeCredit (T : Task K Sym) (A : Arch nH n) (θ : Params Sym K A) : ℝ :=",
+      "references": [
+        "Trace.Arch",
+        "Trace.Arch.dh",
+        "Trace.Arch.dmlp",
+        "Trace.Arch.dres",
+        "Trace.ParamIdx",
+        "Trace.Params",
+        "Trace.Task",
+        "Trace.Token",
+        "Trace.outcomeFunctional"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.outcomeFunctional",
+      "kind": "lean",
+      "label": "Trace.outcomeFunctional",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 312,
+      "declaration": "Trace.outcomeFunctional",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "noncomputable def outcomeFunctional (T : Task K Sym) (A : Arch nH n) (θ : Params Sym K A) : ℝ :=",
+      "references": [
+        "Trace.Arch",
+        "Trace.Params",
+        "Trace.Task",
+        "Trace.Task.Ex",
+        "Trace.Task.targetSignal",
+        "Trace.logits"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.ParamIdx",
+      "kind": "lean",
+      "label": "Trace.ParamIdx",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 165,
+      "declaration": "Trace.ParamIdx",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "abbrev ParamIdx (Sym : Type u) (K : ℕ) {nH n : ℕ} (A : Arch nH n) :=",
+      "references": [
+        "Trace.Arch",
+        "Trace.Arch.dh",
+        "Trace.Arch.dmlp",
+        "Trace.Arch.dres",
+        "Trace.Token"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Params",
+      "kind": "lean",
+      "label": "Trace.Params",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 178,
+      "declaration": "Trace.Params",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "abbrev Params (Sym : Type u) (K : ℕ) {nH n : ℕ} (A : Arch nH n) :=",
+      "references": [
+        "Trace.Arch",
+        "Trace.ParamIdx"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Params.bIn",
+      "kind": "lean",
+      "label": "Trace.Params.bIn",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 210,
+      "declaration": "Trace.Params.bIn",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "def bIn (l : Fin 2) : Fin A.dmlp → ℝ :=",
+      "references": [
+        "Trace.Arch",
+        "Trace.Arch.dh",
+        "Trace.Arch.dmlp",
+        "Trace.Arch.dres",
+        "Trace.ParamIdx",
+        "Trace.Params",
+        "Trace.Token"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Params.posEmb",
+      "kind": "lean",
+      "label": "Trace.Params.posEmb",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 190,
+      "declaration": "Trace.Params.posEmb",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "def posEmb : Matrix (Fin A.dres) (Fin (n + 4)) ℝ :=",
+      "references": [
+        "Trace.Arch",
+        "Trace.Arch.dh",
+        "Trace.Arch.dmlp",
+        "Trace.Arch.dres",
+        "Trace.ParamIdx",
+        "Trace.Params",
+        "Trace.Token"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Params.readout",
+      "kind": "lean",
+      "label": "Trace.Params.readout",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 219,
+      "declaration": "Trace.Params.readout",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "def readout : Matrix (ZMod K) (Fin A.dres) ℝ :=",
+      "references": [
+        "Trace.Arch",
+        "Trace.Arch.dh",
+        "Trace.Arch.dmlp",
+        "Trace.Arch.dres",
+        "Trace.ParamIdx",
+        "Trace.Params",
+        "Trace.Token"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Params.tokEmb",
+      "kind": "lean",
+      "label": "Trace.Params.tokEmb",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 186,
+      "declaration": "Trace.Params.tokEmb",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "def tokEmb : Matrix (Fin A.dres) (Token Sym K) ℝ :=",
+      "references": [
+        "Trace.Arch",
+        "Trace.Arch.dh",
+        "Trace.Arch.dmlp",
+        "Trace.Arch.dres",
+        "Trace.ParamIdx",
+        "Trace.Params",
+        "Trace.Token"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Params.valueEmb",
+      "kind": "lean",
+      "label": "Trace.Params.valueEmb",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 224,
+      "declaration": "Trace.Params.valueEmb",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "def valueEmb : Matrix (Fin A.dres) (ZMod K) ℝ :=",
+      "references": [
+        "Trace.Arch",
+        "Trace.Arch.dres",
+        "Trace.Params",
+        "Trace.Params.tokEmb",
+        "Trace.Token.value"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Params.wIn",
+      "kind": "lean",
+      "label": "Trace.Params.wIn",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 206,
+      "declaration": "Trace.Params.wIn",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "def wIn (l : Fin 2) : Matrix (Fin A.dmlp) (Fin A.dres) ℝ :=",
+      "references": [
+        "Trace.Arch",
+        "Trace.Arch.dh",
+        "Trace.Arch.dmlp",
+        "Trace.Arch.dres",
+        "Trace.ParamIdx",
+        "Trace.Params",
+        "Trace.Token"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Params.wK",
+      "kind": "lean",
+      "label": "Trace.Params.wK",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 198,
+      "declaration": "Trace.Params.wK",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "def wK (l : Fin 2) (h : Fin nH) : Matrix (Fin A.dh) (Fin A.dres) ℝ :=",
+      "references": [
+        "Trace.Arch",
+        "Trace.Arch.dh",
+        "Trace.Arch.dmlp",
+        "Trace.Arch.dres",
+        "Trace.ParamIdx",
+        "Trace.Params",
+        "Trace.Token"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Params.wOut",
+      "kind": "lean",
+      "label": "Trace.Params.wOut",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 214,
+      "declaration": "Trace.Params.wOut",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "def wOut (l : Fin 2) : Matrix (Fin A.dres) (Fin A.dmlp) ℝ :=",
+      "references": [
+        "Trace.Arch",
+        "Trace.Arch.dh",
+        "Trace.Arch.dmlp",
+        "Trace.Arch.dres",
+        "Trace.ParamIdx",
+        "Trace.Params",
+        "Trace.Token"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Params.wQ",
+      "kind": "lean",
+      "label": "Trace.Params.wQ",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 194,
+      "declaration": "Trace.Params.wQ",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "def wQ (l : Fin 2) (h : Fin nH) : Matrix (Fin A.dh) (Fin A.dres) ℝ :=",
+      "references": [
+        "Trace.Arch",
+        "Trace.Arch.dh",
+        "Trace.Arch.dmlp",
+        "Trace.Arch.dres",
+        "Trace.ParamIdx",
+        "Trace.Params",
+        "Trace.Token"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Params.wV",
+      "kind": "lean",
+      "label": "Trace.Params.wV",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 202,
+      "declaration": "Trace.Params.wV",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "def wV (l : Fin 2) (h : Fin nH) : Matrix (Fin A.dres) (Fin A.dres) ℝ :=",
+      "references": [
+        "Trace.Arch",
+        "Trace.Arch.dh",
+        "Trace.Arch.dmlp",
+        "Trace.Arch.dres",
+        "Trace.ParamIdx",
+        "Trace.Params",
+        "Trace.Token"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Prior",
+      "kind": "lean",
+      "label": "Trace.Prior",
+      "file": "lean/Trace/Model/Prior.lean",
+      "line": 22,
+      "declaration": "Trace.Prior",
+      "statementKind": "inductive",
+      "role": "definition",
+      "header": "structure Prior : Prop where",
+      "references": [],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Proof.unseenLettersContraction",
+      "kind": "lean",
+      "label": "Trace.Proof.unseenLettersContraction",
+      "file": "lean/Trace/Analysis/Contraction.lean",
+      "line": 10,
+      "declaration": "Trace.Proof.unseenLettersContraction",
+      "statementKind": "theorem",
+      "role": "supporting-lemma",
+      "header": "theorem Trace.Proof.unseenLettersContraction (hprior : Trace.Prior) {K : ℕ} [NeZero K] (hK : 2 ≤ K) {Sym : Type u} [Fintype Sym] [DecidableEq Sym] (T : Trace.Task K Sym) (hp0 : 0 < T.p) (hp1 : T.p < 1) (n : ℕ) (S : Finset (Fin n)) {ι : Type v} [Fintype ι] (H : (Fin n → Sym) → Matrix (ZMod K) ι ℝ) (hH : DependsOn H (S : Set (Fin n))) : Trace.featureCredit T H ≤ Trace.mixrate K T.p ^ (n - S.card) * T.l2Norm H := by",
+      "references": [
+        "Trace.Prior",
+        "Trace.Task",
+        "Trace.Task.l2Norm",
+        "Trace.Task.p",
+        "Trace.featureCredit",
+        "Trace.mixrate"
+      ],
+      "status": "open",
+      "inAuditSurface": false,
+      "hasSorry": true,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Proof.unseenLettersOutcomeCredit",
+      "kind": "lean",
+      "label": "Trace.Proof.unseenLettersOutcomeCredit",
+      "file": "lean/Trace/Analysis/OutcomeCredit.lean",
+      "line": 10,
+      "declaration": "Trace.Proof.unseenLettersOutcomeCredit",
+      "statementKind": "theorem",
+      "role": "supporting-lemma",
+      "header": "theorem Trace.Proof.unseenLettersOutcomeCredit (hprior : Trace.Prior) (a0 cemb : ℝ) (hcemb : 0 < cemb) (K : ℕ) [NeZero K] (hK : 2 ≤ K) (nH : ℕ) : ∃ c₀ c C : ℝ, 0 < c₀ ∧ 0 < c ∧ 0 < C ∧ ∀ n : ℕ, 2 ≤ n → ∀ (Sym : Type u) [Fintype Sym] [DecidableEq Sym] (T : Trace.Task K Sym), 0 < T.p → T.p < 1 → ∀ (A : Trace.Arch nH n) (θt : Trace.Params Sym K A) (Nb : ℝ), Trace.InitHyp θt a0 cemb Nb → ∀ ε : ℝ, 0 < ε → ε ≤ c₀ * min 1 (1 / Nb) → ∀ θ ∈ Trace.initBall θt ε cemb, ε ≤ c * Trace.mixrate K T.p → DifferentiableAt ℝ (Trace.outcomeFunctional T A) θ ∧ Trace.outcomeCredit T A θ ≤ C * ε * Trace.mixrate K T.p ^ n := by",
+      "references": [
+        "Trace.Arch",
+        "Trace.InitHyp",
+        "Trace.ParamIdx",
+        "Trace.Params",
+        "Trace.Prior",
+        "Trace.Task",
+        "Trace.Task.p",
+        "Trace.initBall",
+        "Trace.mixrate",
+        "Trace.outcomeCredit",
+        "Trace.outcomeFunctional"
+      ],
+      "status": "open",
+      "inAuditSurface": false,
+      "hasSorry": true,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Proof.unseenLettersScoreCredit",
+      "kind": "lean",
+      "label": "Trace.Proof.unseenLettersScoreCredit",
+      "file": "lean/Trace/Analysis/ScoreCredit.lean",
+      "line": 10,
+      "declaration": "Trace.Proof.unseenLettersScoreCredit",
+      "statementKind": "theorem",
+      "role": "supporting-lemma",
+      "header": "theorem Trace.Proof.unseenLettersScoreCredit (hprior : Trace.Prior) (a0 cemb : ℝ) (hcemb : 0 < cemb) (K : ℕ) [NeZero K] (hK : 2 ≤ K) (nH : ℕ) : ∃ c₀ c C : ℝ, 0 < c₀ ∧ 0 < c ∧ 0 < C ∧ ∀ n : ℕ, 2 ≤ n → ∀ (Sym : Type u) [Fintype Sym] [DecidableEq Sym] (T : Trace.Task K Sym), 0 < T.p → T.p < 1 → ∀ (A : Trace.Arch nH n) (θt : Trace.Params Sym K A) (Nb : ℝ), Trace.InitHyp θt a0 cemb Nb → ∀ ε : ℝ, 0 < ε → ε ≤ c₀ * min 1 (1 / Nb) → ∀ θ ∈ Trace.initBall θt ε cemb, ε ^ 2 ≤ c * Trace.mixrate K T.p → DifferentiableAt ℝ (Trace.scoreFunctional T A) θ ∧ Trace.scoreCredit T A θ ≤ C * ε ^ 6 * Trace.mixrate K T.p ^ ((n : ℤ) - 3) := by",
+      "references": [
+        "Trace.Arch",
+        "Trace.InitHyp",
+        "Trace.ParamIdx",
+        "Trace.Params",
+        "Trace.Prior",
+        "Trace.Task",
+        "Trace.Task.p",
+        "Trace.initBall",
+        "Trace.mixrate",
+        "Trace.scoreCredit",
+        "Trace.scoreFunctional"
+      ],
+      "status": "open",
+      "inAuditSurface": false,
+      "hasSorry": true,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.score",
+      "kind": "lean",
+      "label": "Trace.score",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 239,
+      "declaration": "Trace.score",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "noncomputable def score {A : Arch nH n} (θ : Params Sym K A) (l : Fin 2) (h : Fin nH) (x : Fin (n + 4) → Fin A.dres → ℝ) (i j : Fin (n + 4)) : ℝ :=",
+      "references": [
+        "Trace.Arch",
+        "Trace.Arch.dh",
+        "Trace.Arch.dres",
+        "Trace.Params",
+        "Trace.Params.wK",
+        "Trace.Params.wQ"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.scoreCredit",
+      "kind": "lean",
+      "label": "Trace.scoreCredit",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 327,
+      "declaration": "Trace.scoreCredit",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "noncomputable def scoreCredit (T : Task K Sym) (A : Arch nH n) (θ : Params Sym K A) : ℝ :=",
+      "references": [
+        "Trace.Arch",
+        "Trace.Arch.dh",
+        "Trace.Arch.dmlp",
+        "Trace.Arch.dres",
+        "Trace.ParamIdx",
+        "Trace.Params",
+        "Trace.Task",
+        "Trace.Token",
+        "Trace.scoreFunctional"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.scoreFunctional",
+      "kind": "lean",
+      "label": "Trace.scoreFunctional",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 318,
+      "declaration": "Trace.scoreFunctional",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "noncomputable def scoreFunctional (T : Task K Sym) (A : Arch nH n) (θ : Params Sym K A) : ℝ :=",
+      "references": [
+        "Trace.Arch",
+        "Trace.Params",
+        "Trace.Task",
+        "Trace.Task.Ex",
+        "Trace.Task.targetSignal",
+        "Trace.logits"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Task",
+      "kind": "lean",
+      "label": "Trace.Task",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 69,
+      "declaration": "Trace.Task",
+      "statementKind": "inductive",
+      "role": "definition",
+      "header": "structure Task (K : ℕ) (Sym : Type u) where",
+      "references": [],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Task.answer",
+      "kind": "lean",
+      "label": "Trace.Task.answer",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 85,
+      "declaration": "Trace.Task.answer",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "def answer (w : Fin n → Sym) : ZMod K :=",
+      "references": [
+        "Trace.Task",
+        "Trace.Task.s0",
+        "Trace.Task.wstar"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Task.Ex",
+      "kind": "lean",
+      "label": "Trace.Task.Ex",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 93,
+      "declaration": "Trace.Task.Ex",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "noncomputable def Ex {E : Type v} [AddCommGroup E] [Module ℝ E] (f : (Fin n → Sym) → E) : E :=",
+      "references": [
+        "Trace.Task",
+        "Trace.Task.letterWeight"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Task.l2Norm",
+      "kind": "lean",
+      "label": "Trace.Task.l2Norm",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 103,
+      "declaration": "Trace.Task.l2Norm",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "noncomputable def l2Norm [NeZero K] {ι : Type v} [Fintype ι] (H : (Fin n → Sym) → Matrix (ZMod K) ι ℝ) : ℝ :=",
+      "references": [
+        "Trace.Task",
+        "Trace.Task.Ex"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Task.letterWeight",
+      "kind": "lean",
+      "label": "Trace.Task.letterWeight",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 89,
+      "declaration": "Trace.Task.letterWeight",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "noncomputable def letterWeight (w : Fin n → Sym) : ℝ :=",
+      "references": [
+        "Trace.Task",
+        "Trace.Task.μ"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Task.mk.noConfusion",
+      "kind": "lean",
+      "label": "Trace.Task.mk.noConfusion",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 69,
+      "declaration": "Trace.Task.mk.noConfusion",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "def Trace.Task.mk.noConfusion",
+      "references": [
+        "Trace.Task"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Task.outcomePrompt",
+      "kind": "lean",
+      "label": "Trace.Task.outcomePrompt",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 134,
+      "declaration": "Trace.Task.outcomePrompt",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "def Task.outcomePrompt {K : ℕ} {Sym : Type u} (T : Task K Sym) {n : ℕ} (w : Fin n → Sym) (i : Fin (n + 4)) : Token Sym K :=",
+      "references": [
+        "Trace.Task",
+        "Trace.Task.s0",
+        "Trace.Task.wstar",
+        "Trace.Token",
+        "Trace.Token.colon",
+        "Trace.Token.letter",
+        "Trace.Token.sep",
+        "Trace.Token.value"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Task.p",
+      "kind": "lean",
+      "label": "Trace.Task.p",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 82,
+      "declaration": "Trace.Task.p",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "noncomputable def p : ℝ := (T.μ T.wstar).toReal",
+      "references": [
+        "Trace.Task",
+        "Trace.Task.wstar",
+        "Trace.Task.μ"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Task.s0",
+      "kind": "lean",
+      "label": "Trace.Task.s0",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 75,
+      "declaration": "Trace.Task.s0",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "def Trace.Task.s0",
+      "references": [
+        "Trace.Task"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Task.targetSignal",
+      "kind": "lean",
+      "label": "Trace.Task.targetSignal",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 99,
+      "declaration": "Trace.Task.targetSignal",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "noncomputable def targetSignal (w : Fin n → Sym) : ZMod K → ℝ :=",
+      "references": [
+        "Trace.Task",
+        "Trace.Task.answer"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Task.wstar",
+      "kind": "lean",
+      "label": "Trace.Task.wstar",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 73,
+      "declaration": "Trace.Task.wstar",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "def Trace.Task.wstar",
+      "references": [
+        "Trace.Task"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Task.μ",
+      "kind": "lean",
+      "label": "Trace.Task.μ",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 71,
+      "declaration": "Trace.Task.μ",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "def Trace.Task.μ",
+      "references": [
+        "Trace.Task"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Token",
+      "kind": "lean",
+      "label": "Trace.Token",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 117,
+      "declaration": "Trace.Token",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "abbrev Token (Sym : Type u) (K : ℕ) := Sym ⊕ ZMod K ⊕ Fin 3",
+      "references": [],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Token.colon",
+      "kind": "lean",
+      "label": "Trace.Token.colon",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 129,
+      "declaration": "Trace.Token.colon",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "def Token.colon {Sym : Type u} {K : ℕ} : Token Sym K := Sum.inr (Sum.inr 1)",
+      "references": [
+        "Trace.Token"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Token.letter",
+      "kind": "lean",
+      "label": "Trace.Token.letter",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 120,
+      "declaration": "Trace.Token.letter",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "def Token.letter {Sym : Type u} {K : ℕ} (a : Sym) : Token Sym K := Sum.inl a",
+      "references": [
+        "Trace.Token"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Token.sep",
+      "kind": "lean",
+      "label": "Trace.Token.sep",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 126,
+      "declaration": "Trace.Token.sep",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "def Token.sep {Sym : Type u} {K : ℕ} : Token Sym K := Sum.inr (Sum.inr 0)",
+      "references": [
+        "Trace.Token"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.Token.value",
+      "kind": "lean",
+      "label": "Trace.Token.value",
+      "file": "lean/Trace/Model/Prelude.lean",
+      "line": 123,
+      "declaration": "Trace.Token.value",
+      "statementKind": "def",
+      "role": "definition",
+      "header": "def Token.value {Sym : Type u} {K : ℕ} (v : ZMod K) : Token Sym K := Sum.inr (Sum.inl v)",
+      "references": [
+        "Trace.Token"
+      ],
+      "status": "closed",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.unseen_letters_contraction",
+      "kind": "lean",
+      "label": "Trace.unseen_letters_contraction",
+      "file": "lean/Trace/Model/Theorem.lean",
+      "line": 51,
+      "declaration": "Trace.unseen_letters_contraction",
+      "statementKind": "theorem",
+      "role": "author-statement",
+      "header": "theorem unseen_letters_contraction (hprior : Prior) {K : ℕ} [NeZero K] (hK : 2 ≤ K) {Sym : Type u} [Fintype Sym] [DecidableEq Sym] (T : Task K Sym) (hp0 : 0 < T.p) (hp1 : T.p < 1) (n : ℕ) (S : Finset (Fin n)) {ι : Type v} [Fintype ι] (H : (Fin n → Sym) → Matrix (ZMod K) ι ℝ) (hH : DependsOn H (S : Set (Fin n))) : featureCredit T H ≤ mixrate K T.p ^ (n - S.card) * T.l2Norm H := by",
+      "references": [
+        "Trace.Prior",
+        "Trace.Proof.unseenLettersContraction",
+        "Trace.Task",
+        "Trace.Task.l2Norm",
+        "Trace.Task.p",
+        "Trace.featureCredit",
+        "Trace.mixrate"
+      ],
+      "status": "assembled",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "restsOn": [
+        "lean/Trace/Analysis/Contraction.lean",
+        "lean/Trace/Analysis/OutcomeCredit.lean",
+        "lean/Trace/Analysis/ScoreCredit.lean"
+      ],
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.unseen_letters_erase_outcome_credit",
+      "kind": "lean",
+      "label": "Trace.unseen_letters_erase_outcome_credit",
+      "file": "lean/Trace/Model/Theorem.lean",
+      "line": 91,
+      "declaration": "Trace.unseen_letters_erase_outcome_credit",
+      "statementKind": "theorem",
+      "role": "author-statement",
+      "header": "theorem unseen_letters_erase_outcome_credit (hprior : Prior) : (∀ {K : ℕ} [NeZero K], 2 ≤ K → ∀ {Sym : Type u} [Fintype Sym] [DecidableEq Sym] (T : Task K Sym), 0 < T.p → T.p < 1 → ∀ (n : ℕ) (S : Finset (Fin n)) {ι : Type v} [Fintype ι] (H : (Fin n → Sym) → Matrix (ZMod K) ι ℝ), DependsOn H (S : Set (Fin n)) → featureCredit T H ≤ mixrate K T.p ^ (n - S.card) * T.l2Norm H) ∧ (∀ (a0 cemb : ℝ), 0 < cemb → ∀ (K : ℕ) [NeZero K], 2 ≤ K → ∀ nH : ℕ, ∃ c₀ c C : ℝ, 0 < c₀ ∧ 0 < c ∧ 0 < C ∧ ∀ n : ℕ, 2 ≤ n → ∀ (Sym : Type u) [Fintype Sym] [DecidableEq Sym] (T : Task K Sym), 0 < T.p → T.p < 1 → ∀ (A : Arch nH n) (θt : Params Sym K A) (Nb : ℝ), InitHyp θt a0 cemb Nb → ∀ ε : ℝ, 0 < ε → ε ≤ c₀ * min 1 (1 / Nb) → ∀ θ ∈ initBall θt ε cemb, ε ^ 2 ≤ c * mixrate K T.p → DifferentiableAt ℝ (scoreFunctional T A) θ ∧ scoreCredit T A θ ≤ C * ε ^ 6 * mixrate K T.p ^ ((n : ℤ) - 3)) ∧ (∀ (a0 cemb : ℝ), 0 < cemb → ∀ (K : ℕ) [NeZero K], 2 ≤ K → ∀ nH : ℕ, ∃ c₀ c C : ℝ, 0 < c₀ ∧ 0 < c ∧ 0 < C ∧ ∀ n : ℕ, 2 ≤ n → ∀ (Sym : Type u) [Fintype Sym] [DecidableEq Sym] (T : Task K Sym), 0 < T.p → T.p < 1 → ∀ (A : Arch nH n) (θt : Params Sym K A) (Nb : ℝ), InitHyp θt a0 cemb Nb → ∀ ε : ℝ, 0 < ε → ε ≤ c₀ * min 1 (1 / Nb) → ∀ θ ∈ initBall θt ε cemb, ε ≤ c * mixrate K T.p → DifferentiableAt ℝ (outcomeFunctional T A) θ ∧ outcomeCredit T A θ ≤ C * ε * mixrate K T.p ^ n) :=",
+      "references": [
+        "Trace.Arch",
+        "Trace.InitHyp",
+        "Trace.ParamIdx",
+        "Trace.Params",
+        "Trace.Prior",
+        "Trace.Task",
+        "Trace.Task.l2Norm",
+        "Trace.Task.p",
+        "Trace.featureCredit",
+        "Trace.initBall",
+        "Trace.mixrate",
+        "Trace.outcomeCredit",
+        "Trace.outcomeFunctional",
+        "Trace.scoreCredit",
+        "Trace.scoreFunctional",
+        "Trace.unseen_letters_contraction",
+        "Trace.unseen_letters_outcome_credit",
+        "Trace.unseen_letters_score_credit"
+      ],
+      "status": "assembled",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "restsOn": [
+        "lean/Trace/Analysis/Contraction.lean",
+        "lean/Trace/Analysis/OutcomeCredit.lean",
+        "lean/Trace/Analysis/ScoreCredit.lean"
+      ],
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.unseen_letters_outcome_credit",
+      "kind": "lean",
+      "label": "Trace.unseen_letters_outcome_credit",
+      "file": "lean/Trace/Model/Theorem.lean",
+      "line": 76,
+      "declaration": "Trace.unseen_letters_outcome_credit",
+      "statementKind": "theorem",
+      "role": "author-statement",
+      "header": "theorem unseen_letters_outcome_credit (hprior : Prior) (a0 cemb : ℝ) (hcemb : 0 < cemb) (K : ℕ) [NeZero K] (hK : 2 ≤ K) (nH : ℕ) : ∃ c₀ c C : ℝ, 0 < c₀ ∧ 0 < c ∧ 0 < C ∧ ∀ n : ℕ, 2 ≤ n → ∀ (Sym : Type u) [Fintype Sym] [DecidableEq Sym] (T : Task K Sym), 0 < T.p → T.p < 1 → ∀ (A : Arch nH n) (θt : Params Sym K A) (Nb : ℝ), InitHyp θt a0 cemb Nb → ∀ ε : ℝ, 0 < ε → ε ≤ c₀ * min 1 (1 / Nb) → ∀ θ ∈ initBall θt ε cemb, ε ≤ c * mixrate K T.p → DifferentiableAt ℝ (outcomeFunctional T A) θ ∧ outcomeCredit T A θ ≤ C * ε * mixrate K T.p ^ n := by",
+      "references": [
+        "Trace.Arch",
+        "Trace.InitHyp",
+        "Trace.ParamIdx",
+        "Trace.Params",
+        "Trace.Prior",
+        "Trace.Proof.unseenLettersOutcomeCredit",
+        "Trace.Task",
+        "Trace.Task.p",
+        "Trace.initBall",
+        "Trace.mixrate",
+        "Trace.outcomeCredit",
+        "Trace.outcomeFunctional"
+      ],
+      "status": "assembled",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "restsOn": [
+        "lean/Trace/Analysis/Contraction.lean",
+        "lean/Trace/Analysis/OutcomeCredit.lean",
+        "lean/Trace/Analysis/ScoreCredit.lean"
+      ],
+      "paperRefs": []
+    },
+    {
+      "id": "lean:Trace.unseen_letters_score_credit",
+      "kind": "lean",
+      "label": "Trace.unseen_letters_score_credit",
+      "file": "lean/Trace/Model/Theorem.lean",
+      "line": 61,
+      "declaration": "Trace.unseen_letters_score_credit",
+      "statementKind": "theorem",
+      "role": "author-statement",
+      "header": "theorem unseen_letters_score_credit (hprior : Prior) (a0 cemb : ℝ) (hcemb : 0 < cemb) (K : ℕ) [NeZero K] (hK : 2 ≤ K) (nH : ℕ) : ∃ c₀ c C : ℝ, 0 < c₀ ∧ 0 < c ∧ 0 < C ∧ ∀ n : ℕ, 2 ≤ n → ∀ (Sym : Type u) [Fintype Sym] [DecidableEq Sym] (T : Task K Sym), 0 < T.p → T.p < 1 → ∀ (A : Arch nH n) (θt : Params Sym K A) (Nb : ℝ), InitHyp θt a0 cemb Nb → ∀ ε : ℝ, 0 < ε → ε ≤ c₀ * min 1 (1 / Nb) → ∀ θ ∈ initBall θt ε cemb, ε ^ 2 ≤ c * mixrate K T.p → DifferentiableAt ℝ (scoreFunctional T A) θ ∧ scoreCredit T A θ ≤ C * ε ^ 6 * mixrate K T.p ^ ((n : ℤ) - 3) := by",
+      "references": [
+        "Trace.Arch",
+        "Trace.InitHyp",
+        "Trace.ParamIdx",
+        "Trace.Params",
+        "Trace.Prior",
+        "Trace.Proof.unseenLettersScoreCredit",
+        "Trace.Task",
+        "Trace.Task.p",
+        "Trace.initBall",
+        "Trace.mixrate",
+        "Trace.scoreCredit",
+        "Trace.scoreFunctional"
+      ],
+      "status": "assembled",
+      "inAuditSurface": true,
+      "hasSorry": false,
+      "restsOn": [
+        "lean/Trace/Analysis/Contraction.lean",
+        "lean/Trace/Analysis/OutcomeCredit.lean",
+        "lean/Trace/Analysis/ScoreCredit.lean"
+      ],
+      "paperRefs": []
+    },
+    {
+      "id": "mapping-claim:claim-version:3939d1d1-a23f-4c2d-9e17-f4d371f14677",
+      "kind": "paper-claim",
+      "label": "eq:horizon: ‖E[G | F_S]‖² = (1/K)Σ_{j=1}^{K−1}|ρ_j|^{2(n−|S|)} ≤ (1 − 1/K)λ^{2(n−|S|)} (pointwise in the conditioning letters).",
+      "status": "unknown",
+      "mappingId": "claim-version:3939d1d1-a23f-4c2d-9e17-f4d371f14677",
+      "file": "Paper/appendix.tex",
+      "line": 267
+    },
+    {
+      "id": "mapping-claim:claim-version:5d83901a-b3d1-446c-ae56-5282c5ef0c09",
+      "kind": "paper-claim",
+      "label": "(ii-a) n ≥ 2, ε² ≤ cλ, θ ∈ B_ε ⇒ ‖E[J_scoreᵀ(y − u)]‖ ≤ Cε⁶λ^{n−3}.",
+      "status": "unknown",
+      "mappingId": "claim-version:5d83901a-b3d1-446c-ae56-5282c5ef0c09",
+      "file": "Paper/body.tex:196; lem:score-sum appendix.tex",
+      "line": 497
+    },
+    {
+      "id": "mapping-claim:claim-version:606ed17b-1fa7-45a0-ae55-ea9f11dc493d",
+      "kind": "paper-claim",
+      "label": "Credit equals gradient of the credit functional: ∇_θ E⟨z_θ, ξ⟩ = E[J_zᵀ ξ].",
+      "status": "unknown",
+      "mappingId": "claim-version:606ed17b-1fa7-45a0-ae55-ea9f11dc493d",
+      "file": "Paper/body.tex:167-168; appendix.tex",
+      "line": 242
+    },
+    {
+      "id": "mapping-claim:claim-version:9f2ed519-25b9-4760-9b04-b8ab5530e3f6",
+      "kind": "paper-claim",
+      "label": "prop:score-degree: ζ-Taylor decomposition of J_z into J^{[0]} (≤ 1 letter per term), J^{[k]} (≤ 2k+1 letters, total Cε²(C_att ε⁴)^k) and remainder; fixed ReLU pattern on B_ε.",
+      "status": "unknown",
+      "mappingId": "claim-version:9f2ed519-25b9-4760-9b04-b8ab5530e3f6",
+      "file": "Paper/body.tex"
+    },
+    {
+      "id": "mapping-claim:claim-version:d1f2b329-905f-4d0b-9035-dc9d83ec11d8",
+      "kind": "paper-claim",
+      "label": "Constants c₀, c, C depend only on a0, c_emb, K, number of heads (blocks fixed at 2).",
+      "status": "unknown",
+      "mappingId": "claim-version:d1f2b329-905f-4d0b-9035-dc9d83ec11d8",
+      "file": "Paper/appendix.tex:60-61, 227-228; body.tex",
+      "line": 127
+    },
+    {
+      "id": "mapping-claim:claim-version:de5a5f81-9506-4c43-9de2-ee9af58c0bc8",
+      "kind": "paper-claim",
+      "label": "(ii-b) n ≥ 2, ε ≤ cλ, θ ∈ B_ε ⇒ ‖∇_θ Φ_out(θ)‖ ≤ Cελ^n.",
+      "status": "unknown",
+      "mappingId": "claim-version:de5a5f81-9506-4c43-9de2-ee9af58c0bc8",
+      "file": "Paper/body.tex:196-197; eq:thm1-full appendix.tex",
+      "line": 502
+    },
+    {
+      "id": "mapping-claim:claim-version:e036b619-586c-4db2-aa12-61030ed70f7e",
+      "kind": "paper-claim",
+      "label": "(i) For all S ⊆ [n] and every H depending only on letters in S: ‖E[Hᵀ(y − u)]‖ ≤ λ^{n−|S|}‖H‖_{L²}.",
+      "status": "unknown",
+      "mappingId": "claim-version:e036b619-586c-4db2-aa12-61030ed70f7e",
+      "file": "Paper/body.tex:195, eq:credit-degree body.tex:178; proof lem:target-contraction appendix.tex",
+      "line": 264
+    },
+    {
+      "id": "mapping-obligation:obligation:2922a291-c30a-4c98-ad30-c381a0c7a950",
+      "kind": "obligation",
+      "label": "Credit equals gradient of the credit functional: ∇_θ E⟨z_θ, ξ⟩ = E[J_zᵀ ξ].",
+      "status": "open",
+      "mappingId": "obligation:2922a291-c30a-4c98-ad30-c381a0c7a950"
+    },
+    {
+      "id": "mapping-obligation:obligation:4a40c1fd-9f5f-478b-97d7-e59d5da19cf6",
+      "kind": "obligation",
+      "label": "Constants c₀, c, C depend only on a0, c_emb, K, number of heads (blocks fixed at 2).",
+      "status": "open",
+      "mappingId": "obligation:4a40c1fd-9f5f-478b-97d7-e59d5da19cf6"
+    },
+    {
+      "id": "mapping-obligation:obligation:798672cd-274e-4c8a-83c2-8c832c90be91",
+      "kind": "obligation",
+      "label": "prop:score-degree: ζ-Taylor decomposition of J_z into J^{[0]} (≤ 1 letter per term), J^{[k]} (≤ 2k+1 letters, total Cε²(C_att ε⁴)^k) and remainder; fixed ReLU pattern on B_ε.",
+      "status": "open",
+      "mappingId": "obligation:798672cd-274e-4c8a-83c2-8c832c90be91"
+    },
+    {
+      "id": "mapping-obligation:obligation:7b0acf34-6ae8-4f89-88ab-c3389a253a1d",
+      "kind": "obligation",
+      "label": "(i) For all S ⊆ [n] and every H depending only on letters in S: ‖E[Hᵀ(y − u)]‖ ≤ λ^{n−|S|}‖H‖_{L²}.",
+      "status": "open",
+      "mappingId": "obligation:7b0acf34-6ae8-4f89-88ab-c3389a253a1d"
+    },
+    {
+      "id": "mapping-obligation:obligation:91b9ddb4-a4fc-4fce-b83b-9e917010d517",
+      "kind": "obligation",
+      "label": "(ii-b) n ≥ 2, ε ≤ cλ, θ ∈ B_ε ⇒ ‖∇_θ Φ_out(θ)‖ ≤ Cελ^n.",
+      "status": "open",
+      "mappingId": "obligation:91b9ddb4-a4fc-4fce-b83b-9e917010d517"
+    },
+    {
+      "id": "mapping-obligation:obligation:b765b26c-f68c-4988-9dcd-9db340759ae5",
+      "kind": "obligation",
+      "label": "(ii-a) n ≥ 2, ε² ≤ cλ, θ ∈ B_ε ⇒ ‖E[J_scoreᵀ(y − u)]‖ ≤ Cε⁶λ^{n−3}.",
+      "status": "open",
+      "mappingId": "obligation:b765b26c-f68c-4988-9dcd-9db340759ae5"
+    },
+    {
+      "id": "mapping-obligation:obligation:cc476c88-5165-43d5-89cb-08245fe06d8f",
+      "kind": "obligation",
+      "label": "eq:horizon: ‖E[G | F_S]‖² = (1/K)Σ_{j=1}^{K−1}|ρ_j|^{2(n−|S|)} ≤ (1 − 1/K)λ^{2(n−|S|)} (pointwise in the conditioning letters).",
+      "status": "open",
+      "mappingId": "obligation:cc476c88-5165-43d5-89cb-08245fe06d8f"
+    },
+    {
+      "id": "mapping-target:target-version:f44cf09d-3022-4a66-82e7-6810c66359a3",
+      "kind": "paper-target",
+      "label": "target-version:f44cf09d-3022-4a66-82e7-6810c66359a3",
+      "status": "target",
+      "mappingId": "target-version:f44cf09d-3022-4a66-82e7-6810c66359a3"
+    },
+    {
+      "id": "paper:appendix.tex:227",
+      "kind": "paper",
+      "label": "appendix.tex:227",
+      "file": "appendix.tex",
+      "line": 227,
+      "status": "external",
+      "paperRefs": [
+        "appendix.tex:227"
+      ]
+    },
+    {
+      "id": "paper:appendix.tex:55",
+      "kind": "paper",
+      "label": "appendix.tex:55",
+      "file": "appendix.tex",
+      "line": 55,
+      "status": "external",
+      "paperRefs": [
+        "appendix.tex:55"
+      ]
+    },
+    {
+      "id": "paper:ass:arch",
+      "kind": "paper",
+      "label": "ass:arch",
+      "status": "external",
+      "paperRefs": [
+        "ass:arch"
+      ]
+    },
+    {
+      "id": "paper:ass:arch:",
+      "kind": "paper",
+      "label": "ass:arch:",
+      "status": "external",
+      "paperRefs": [
+        "ass:arch:"
+      ]
+    },
+    {
+      "id": "paper:ass:init",
+      "kind": "paper",
+      "label": "ass:init",
+      "status": "external",
+      "paperRefs": [
+        "ass:init"
+      ]
+    },
+    {
+      "id": "paper:ass:task",
+      "kind": "paper",
+      "label": "ass:task",
+      "status": "external",
+      "paperRefs": [
+        "ass:task"
+      ]
+    },
+    {
+      "id": "paper:def:credit",
+      "kind": "paper",
+      "label": "def:credit",
+      "status": "external",
+      "paperRefs": [
+        "def:credit"
+      ]
+    },
+    {
+      "id": "paper:def:lambda",
+      "kind": "paper",
+      "label": "def:lambda",
+      "status": "external",
+      "paperRefs": [
+        "def:lambda"
+      ]
+    },
+    {
+      "id": "paper:def:losses",
+      "kind": "paper",
+      "label": "def:losses",
+      "status": "external",
+      "paperRefs": [
+        "def:losses"
+      ]
+    },
+    {
+      "id": "paper:def:task",
+      "kind": "paper",
+      "label": "def:task",
+      "status": "external",
+      "paperRefs": [
+        "def:task"
+      ]
+    },
+    {
+      "id": "paper:direct_proofs/conditional_outcome.tex:29",
+      "kind": "paper",
+      "label": "direct_proofs/conditional_outcome.tex:29",
+      "file": "direct_proofs/conditional_outcome.tex",
+      "line": 29,
+      "status": "external",
+      "paperRefs": [
+        "direct_proofs/conditional_outcome.tex:29"
+      ]
+    },
+    {
+      "id": "paper:eq:credit-degree",
+      "kind": "paper",
+      "label": "eq:credit-degree",
+      "status": "external",
+      "paperRefs": [
+        "eq:credit-degree"
+      ]
+    },
+    {
+      "id": "paper:eq:score-split",
+      "kind": "paper",
+      "label": "eq:score-split",
+      "status": "external",
+      "paperRefs": [
+        "eq:score-split"
+      ]
+    },
+    {
+      "id": "paper:eq:thm1-full",
+      "kind": "paper",
+      "label": "eq:thm1-full",
+      "status": "external",
+      "paperRefs": [
+        "eq:thm1-full"
+      ]
+    },
+    {
+      "id": "paper:lem:score-sum",
+      "kind": "paper",
+      "label": "lem:score-sum",
+      "status": "external",
+      "paperRefs": [
+        "lem:score-sum"
+      ]
+    },
+    {
+      "id": "paper:lem:target-contraction",
+      "kind": "paper",
+      "label": "lem:target-contraction",
+      "status": "external",
+      "paperRefs": [
+        "lem:target-contraction"
+      ]
+    },
+    {
+      "id": "paper:Paper/appendix.tex:107",
+      "kind": "paper",
+      "label": "Paper/appendix.tex:107",
+      "file": "Paper/appendix.tex",
+      "line": 107,
+      "status": "external",
+      "paperRefs": [
+        "Paper/appendix.tex:107"
+      ]
+    },
+    {
+      "id": "paper:Paper/appendix.tex:26",
+      "kind": "paper",
+      "label": "Paper/appendix.tex:26",
+      "file": "Paper/appendix.tex",
+      "line": 26,
+      "status": "external",
+      "paperRefs": [
+        "Paper/appendix.tex:26"
+      ]
+    },
+    {
+      "id": "paper:Paper/appendix.tex:264",
+      "kind": "paper",
+      "label": "Paper/appendix.tex:264",
+      "file": "Paper/appendix.tex",
+      "line": 264,
+      "status": "external",
+      "paperRefs": [
+        "Paper/appendix.tex:264"
+      ]
+    },
+    {
+      "id": "paper:Paper/appendix.tex:298",
+      "kind": "paper",
+      "label": "Paper/appendix.tex:298",
+      "file": "Paper/appendix.tex",
+      "line": 298,
+      "status": "external",
+      "paperRefs": [
+        "Paper/appendix.tex:298"
+      ]
+    },
+    {
+      "id": "paper:Paper/appendix.tex:34",
+      "kind": "paper",
+      "label": "Paper/appendix.tex:34",
+      "file": "Paper/appendix.tex",
+      "line": 34,
+      "status": "external",
+      "paperRefs": [
+        "Paper/appendix.tex:34"
+      ]
+    },
+    {
+      "id": "paper:Paper/appendix.tex:43",
+      "kind": "paper",
+      "label": "Paper/appendix.tex:43",
+      "file": "Paper/appendix.tex",
+      "line": 43,
+      "status": "external",
+      "paperRefs": [
+        "Paper/appendix.tex:43"
+      ]
+    },
+    {
+      "id": "paper:Paper/appendix.tex:494",
+      "kind": "paper",
+      "label": "Paper/appendix.tex:494",
+      "file": "Paper/appendix.tex",
+      "line": 494,
+      "status": "external",
+      "paperRefs": [
+        "Paper/appendix.tex:494"
+      ]
+    },
+    {
+      "id": "paper:Paper/appendix.tex:502",
+      "kind": "paper",
+      "label": "Paper/appendix.tex:502",
+      "file": "Paper/appendix.tex",
+      "line": 502,
+      "status": "external",
+      "paperRefs": [
+        "Paper/appendix.tex:502"
+      ]
+    },
+    {
+      "id": "paper:Paper/appendix.tex:60",
+      "kind": "paper",
+      "label": "Paper/appendix.tex:60",
+      "file": "Paper/appendix.tex",
+      "line": 60,
+      "status": "external",
+      "paperRefs": [
+        "Paper/appendix.tex:60"
+      ]
+    },
+    {
+      "id": "paper:Paper/appendix.tex:76",
+      "kind": "paper",
+      "label": "Paper/appendix.tex:76",
+      "file": "Paper/appendix.tex",
+      "line": 76,
+      "status": "external",
+      "paperRefs": [
+        "Paper/appendix.tex:76"
+      ]
+    },
+    {
+      "id": "paper:Paper/appendix.tex:95",
+      "kind": "paper",
+      "label": "Paper/appendix.tex:95",
+      "file": "Paper/appendix.tex",
+      "line": 95,
+      "status": "external",
+      "paperRefs": [
+        "Paper/appendix.tex:95"
+      ]
+    },
+    {
+      "id": "paper:Paper/body.tex:163",
+      "kind": "paper",
+      "label": "Paper/body.tex:163",
+      "file": "Paper/body.tex",
+      "line": 163,
+      "status": "external",
+      "paperRefs": [
+        "Paper/body.tex:163"
+      ]
+    },
+    {
+      "id": "paper:Paper/body.tex:178",
+      "kind": "paper",
+      "label": "Paper/body.tex:178",
+      "file": "Paper/body.tex",
+      "line": 178,
+      "status": "external",
+      "paperRefs": [
+        "Paper/body.tex:178"
+      ]
+    },
+    {
+      "id": "paper:Paper/body.tex:191",
+      "kind": "paper",
+      "label": "Paper/body.tex:191",
+      "file": "Paper/body.tex",
+      "line": 191,
+      "status": "external",
+      "paperRefs": [
+        "Paper/body.tex:191",
+        "thm:main"
+      ]
+    },
+    {
+      "id": "paper:Paper/body.tex:78",
+      "kind": "paper",
+      "label": "Paper/body.tex:78",
+      "file": "Paper/body.tex",
+      "line": 78,
+      "status": "external",
+      "paperRefs": [
+        "Paper/body.tex:78"
+      ]
+    },
+    {
+      "id": "paper:Paper/body.tex:89",
+      "kind": "paper",
+      "label": "Paper/body.tex:89",
+      "file": "Paper/body.tex",
+      "line": 89,
+      "status": "external",
+      "paperRefs": [
+        "Paper/body.tex:89"
+      ]
+    },
+    {
+      "id": "paper:prop:score-degree",
+      "kind": "paper",
+      "label": "prop:score-degree",
+      "status": "external",
+      "paperRefs": [
+        "prop:score-degree"
+      ]
+    },
+    {
+      "id": "paper:rem:norms",
+      "kind": "paper",
+      "label": "rem:norms",
+      "status": "external",
+      "paperRefs": [
+        "rem:norms"
+      ]
+    },
+    {
+      "id": "paper:thm:main",
+      "kind": "paper",
+      "label": "thm:main",
+      "status": "external",
+      "paperRefs": [
+        "thm:main"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "file:lean/Trace/Model/Prelude.lean",
+      "to": "paper:appendix.tex:227",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Prelude.lean->paper:appendix.tex:227"
+    },
+    {
+      "from": "file:lean/Trace/Model/Prelude.lean",
+      "to": "paper:appendix.tex:55",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Prelude.lean->paper:appendix.tex:55"
+    },
+    {
+      "from": "file:lean/Trace/Model/Prelude.lean",
+      "to": "paper:ass:arch",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Prelude.lean->paper:ass:arch"
+    },
+    {
+      "from": "file:lean/Trace/Model/Prelude.lean",
+      "to": "paper:ass:arch:",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Prelude.lean->paper:ass:arch:"
+    },
+    {
+      "from": "file:lean/Trace/Model/Prelude.lean",
+      "to": "paper:ass:init",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Prelude.lean->paper:ass:init"
+    },
+    {
+      "from": "file:lean/Trace/Model/Prelude.lean",
+      "to": "paper:ass:task",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Prelude.lean->paper:ass:task"
+    },
+    {
+      "from": "file:lean/Trace/Model/Prelude.lean",
+      "to": "paper:def:credit",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Prelude.lean->paper:def:credit"
+    },
+    {
+      "from": "file:lean/Trace/Model/Prelude.lean",
+      "to": "paper:def:lambda",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Prelude.lean->paper:def:lambda"
+    },
+    {
+      "from": "file:lean/Trace/Model/Prelude.lean",
+      "to": "paper:def:losses",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Prelude.lean->paper:def:losses"
+    },
+    {
+      "from": "file:lean/Trace/Model/Prelude.lean",
+      "to": "paper:def:task",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Prelude.lean->paper:def:task"
+    },
+    {
+      "from": "file:lean/Trace/Model/Prelude.lean",
+      "to": "paper:direct_proofs/conditional_outcome.tex:29",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Prelude.lean->paper:direct_proofs/conditional_outcome.tex:29"
+    },
+    {
+      "from": "file:lean/Trace/Model/Prelude.lean",
+      "to": "paper:eq:credit-degree",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Prelude.lean->paper:eq:credit-degree"
+    },
+    {
+      "from": "file:lean/Trace/Model/Prelude.lean",
+      "to": "paper:eq:score-split",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Prelude.lean->paper:eq:score-split"
+    },
+    {
+      "from": "file:lean/Trace/Model/Prelude.lean",
+      "to": "paper:lem:target-contraction",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Prelude.lean->paper:lem:target-contraction"
+    },
+    {
+      "from": "file:lean/Trace/Model/Prelude.lean",
+      "to": "paper:Paper/appendix.tex:107",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Prelude.lean->paper:Paper/appendix.tex:107"
+    },
+    {
+      "from": "file:lean/Trace/Model/Prelude.lean",
+      "to": "paper:Paper/appendix.tex:26",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Prelude.lean->paper:Paper/appendix.tex:26"
+    },
+    {
+      "from": "file:lean/Trace/Model/Prelude.lean",
+      "to": "paper:Paper/appendix.tex:298",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Prelude.lean->paper:Paper/appendix.tex:298"
+    },
+    {
+      "from": "file:lean/Trace/Model/Prelude.lean",
+      "to": "paper:Paper/appendix.tex:34",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Prelude.lean->paper:Paper/appendix.tex:34"
+    },
+    {
+      "from": "file:lean/Trace/Model/Prelude.lean",
+      "to": "paper:Paper/appendix.tex:43",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Prelude.lean->paper:Paper/appendix.tex:43"
+    },
+    {
+      "from": "file:lean/Trace/Model/Prelude.lean",
+      "to": "paper:Paper/appendix.tex:76",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Prelude.lean->paper:Paper/appendix.tex:76"
+    },
+    {
+      "from": "file:lean/Trace/Model/Prelude.lean",
+      "to": "paper:Paper/appendix.tex:95",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Prelude.lean->paper:Paper/appendix.tex:95"
+    },
+    {
+      "from": "file:lean/Trace/Model/Prelude.lean",
+      "to": "paper:Paper/body.tex:163",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Prelude.lean->paper:Paper/body.tex:163"
+    },
+    {
+      "from": "file:lean/Trace/Model/Prelude.lean",
+      "to": "paper:Paper/body.tex:178",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Prelude.lean->paper:Paper/body.tex:178"
+    },
+    {
+      "from": "file:lean/Trace/Model/Prelude.lean",
+      "to": "paper:Paper/body.tex:191",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Prelude.lean->paper:Paper/body.tex:191"
+    },
+    {
+      "from": "file:lean/Trace/Model/Prelude.lean",
+      "to": "paper:Paper/body.tex:78",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Prelude.lean->paper:Paper/body.tex:78"
+    },
+    {
+      "from": "file:lean/Trace/Model/Prelude.lean",
+      "to": "paper:Paper/body.tex:89",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Prelude.lean->paper:Paper/body.tex:89"
+    },
+    {
+      "from": "file:lean/Trace/Model/Prelude.lean",
+      "to": "paper:prop:score-degree",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Prelude.lean->paper:prop:score-degree"
+    },
+    {
+      "from": "file:lean/Trace/Model/Prelude.lean",
+      "to": "paper:rem:norms",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Prelude.lean->paper:rem:norms"
+    },
+    {
+      "from": "file:lean/Trace/Model/Prelude.lean",
+      "to": "paper:thm:main",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Prelude.lean->paper:thm:main"
+    },
+    {
+      "from": "file:lean/Trace/Model/Theorem.lean",
+      "to": "paper:ass:arch",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Theorem.lean->paper:ass:arch"
+    },
+    {
+      "from": "file:lean/Trace/Model/Theorem.lean",
+      "to": "paper:ass:init",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Theorem.lean->paper:ass:init"
+    },
+    {
+      "from": "file:lean/Trace/Model/Theorem.lean",
+      "to": "paper:ass:task",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Theorem.lean->paper:ass:task"
+    },
+    {
+      "from": "file:lean/Trace/Model/Theorem.lean",
+      "to": "paper:eq:credit-degree",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Theorem.lean->paper:eq:credit-degree"
+    },
+    {
+      "from": "file:lean/Trace/Model/Theorem.lean",
+      "to": "paper:eq:thm1-full",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Theorem.lean->paper:eq:thm1-full"
+    },
+    {
+      "from": "file:lean/Trace/Model/Theorem.lean",
+      "to": "paper:lem:score-sum",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Theorem.lean->paper:lem:score-sum"
+    },
+    {
+      "from": "file:lean/Trace/Model/Theorem.lean",
+      "to": "paper:lem:target-contraction",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Theorem.lean->paper:lem:target-contraction"
+    },
+    {
+      "from": "file:lean/Trace/Model/Theorem.lean",
+      "to": "paper:Paper/appendix.tex:264",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Theorem.lean->paper:Paper/appendix.tex:264"
+    },
+    {
+      "from": "file:lean/Trace/Model/Theorem.lean",
+      "to": "paper:Paper/appendix.tex:494",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Theorem.lean->paper:Paper/appendix.tex:494"
+    },
+    {
+      "from": "file:lean/Trace/Model/Theorem.lean",
+      "to": "paper:Paper/appendix.tex:502",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Theorem.lean->paper:Paper/appendix.tex:502"
+    },
+    {
+      "from": "file:lean/Trace/Model/Theorem.lean",
+      "to": "paper:Paper/appendix.tex:60",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Theorem.lean->paper:Paper/appendix.tex:60"
+    },
+    {
+      "from": "file:lean/Trace/Model/Theorem.lean",
+      "to": "paper:Paper/body.tex:191",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Theorem.lean->paper:Paper/body.tex:191"
+    },
+    {
+      "from": "file:lean/Trace/Model/Theorem.lean",
+      "to": "paper:thm:main",
+      "kind": "cites",
+      "id": "cites:file:lean/Trace/Model/Theorem.lean->paper:thm:main"
+    },
+    {
+      "from": "mapping-target:target-version:f44cf09d-3022-4a66-82e7-6810c66359a3",
+      "to": "mapping-claim:claim-version:3939d1d1-a23f-4c2d-9e17-f4d371f14677",
+      "kind": "contains",
+      "id": "contains:mapping-target:target-version:f44cf09d-3022-4a66-82e7-6810c66359a3->mapping-claim:claim-version:3939d1d1-a23f-4c2d-9e17-f4d371f14677"
+    },
+    {
+      "from": "mapping-target:target-version:f44cf09d-3022-4a66-82e7-6810c66359a3",
+      "to": "mapping-claim:claim-version:5d83901a-b3d1-446c-ae56-5282c5ef0c09",
+      "kind": "contains",
+      "id": "contains:mapping-target:target-version:f44cf09d-3022-4a66-82e7-6810c66359a3->mapping-claim:claim-version:5d83901a-b3d1-446c-ae56-5282c5ef0c09"
+    },
+    {
+      "from": "mapping-target:target-version:f44cf09d-3022-4a66-82e7-6810c66359a3",
+      "to": "mapping-claim:claim-version:606ed17b-1fa7-45a0-ae55-ea9f11dc493d",
+      "kind": "contains",
+      "id": "contains:mapping-target:target-version:f44cf09d-3022-4a66-82e7-6810c66359a3->mapping-claim:claim-version:606ed17b-1fa7-45a0-ae55-ea9f11dc493d"
+    },
+    {
+      "from": "mapping-target:target-version:f44cf09d-3022-4a66-82e7-6810c66359a3",
+      "to": "mapping-claim:claim-version:9f2ed519-25b9-4760-9b04-b8ab5530e3f6",
+      "kind": "contains",
+      "id": "contains:mapping-target:target-version:f44cf09d-3022-4a66-82e7-6810c66359a3->mapping-claim:claim-version:9f2ed519-25b9-4760-9b04-b8ab5530e3f6"
+    },
+    {
+      "from": "mapping-target:target-version:f44cf09d-3022-4a66-82e7-6810c66359a3",
+      "to": "mapping-claim:claim-version:d1f2b329-905f-4d0b-9035-dc9d83ec11d8",
+      "kind": "contains",
+      "id": "contains:mapping-target:target-version:f44cf09d-3022-4a66-82e7-6810c66359a3->mapping-claim:claim-version:d1f2b329-905f-4d0b-9035-dc9d83ec11d8"
+    },
+    {
+      "from": "mapping-target:target-version:f44cf09d-3022-4a66-82e7-6810c66359a3",
+      "to": "mapping-claim:claim-version:de5a5f81-9506-4c43-9de2-ee9af58c0bc8",
+      "kind": "contains",
+      "id": "contains:mapping-target:target-version:f44cf09d-3022-4a66-82e7-6810c66359a3->mapping-claim:claim-version:de5a5f81-9506-4c43-9de2-ee9af58c0bc8"
+    },
+    {
+      "from": "mapping-target:target-version:f44cf09d-3022-4a66-82e7-6810c66359a3",
+      "to": "mapping-claim:claim-version:e036b619-586c-4db2-aa12-61030ed70f7e",
+      "kind": "contains",
+      "id": "contains:mapping-target:target-version:f44cf09d-3022-4a66-82e7-6810c66359a3->mapping-claim:claim-version:e036b619-586c-4db2-aa12-61030ed70f7e"
+    },
+    {
+      "from": "lean:Trace.Arch",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Arch->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.Arch.dh",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Arch.dh->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.Arch.dmlp",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Arch.dmlp->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.Arch.dres",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Arch.dres->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.Arch.mk.noConfusion",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Arch.mk.noConfusion->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.Arch.vis_causal",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Arch.vis_causal->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.Arch.vis_nonempty",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Arch.vis_nonempty->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.Arch.vis",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Arch.vis->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.attnWeight",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.attnWeight->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.block",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.block->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.embed",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.embed->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.featureCredit",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.featureCredit->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.initBall",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.initBall->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.InitHyp",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.InitHyp->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.InitHyp.bIn_ge_one",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.InitHyp.bIn_ge_one->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.InitHyp.bIn_norm_le",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.InitHyp.bIn_norm_le->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.InitHyp.posEmb_le",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.InitHyp.posEmb_le->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.InitHyp.readout_le",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.InitHyp.readout_le->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.InitHyp.tokEmb_le",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.InitHyp.tokEmb_le->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.InitHyp.valueEmb_sigmaMin",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.InitHyp.valueEmb_sigmaMin->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wIn_le",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.InitHyp.wIn_le->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wK_le",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.InitHyp.wK_le->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wOut_le",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.InitHyp.wOut_le->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wQ_le",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.InitHyp.wQ_le->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wV_le",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.InitHyp.wV_le->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.logits",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.logits->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#modelClosure__1»",
+      "to": "file:lean/Trace/Meta/ModelClosure.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#modelClosure__1»->file:lean/Trace/Meta/ModelClosure.lean"
+    },
+    {
+      "from": "lean:Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#modelClosureOfType__1»",
+      "to": "file:lean/Trace/Meta/ModelClosure.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#modelClosureOfType__1»->file:lean/Trace/Meta/ModelClosure.lean"
+    },
+    {
+      "from": "lean:Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#statementSide__1»",
+      "to": "file:lean/Trace/Meta/ModelClosure.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#statementSide__1»->file:lean/Trace/Meta/ModelClosure.lean"
+    },
+    {
+      "from": "lean:Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#surplusIn_From__1»",
+      "to": "file:lean/Trace/Meta/ModelClosure.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#surplusIn_From__1»->file:lean/Trace/Meta/ModelClosure.lean"
+    },
+    {
+      "from": "lean:Trace.Meta.«command#modelClosure_»",
+      "to": "file:lean/Trace/Meta/ModelClosure.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Meta.«command#modelClosure_»->file:lean/Trace/Meta/ModelClosure.lean"
+    },
+    {
+      "from": "lean:Trace.Meta.«command#modelClosureOfType_»",
+      "to": "file:lean/Trace/Meta/ModelClosure.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Meta.«command#modelClosureOfType_»->file:lean/Trace/Meta/ModelClosure.lean"
+    },
+    {
+      "from": "lean:Trace.Meta.«command#statementSide_»",
+      "to": "file:lean/Trace/Meta/ModelClosure.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Meta.«command#statementSide_»->file:lean/Trace/Meta/ModelClosure.lean"
+    },
+    {
+      "from": "lean:Trace.Meta.«command#surplusIn_From_»",
+      "to": "file:lean/Trace/Meta/ModelClosure.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Meta.«command#surplusIn_From_»->file:lean/Trace/Meta/ModelClosure.lean"
+    },
+    {
+      "from": "lean:Trace.Meta.admittedOutsideModel",
+      "to": "file:lean/Trace/Meta/ModelClosure.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Meta.admittedOutsideModel->file:lean/Trace/Meta/ModelClosure.lean"
+    },
+    {
+      "from": "lean:Trace.Meta.autoGenerated",
+      "to": "file:lean/Trace/Meta/ModelClosure.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Meta.autoGenerated->file:lean/Trace/Meta/ModelClosure.lean"
+    },
+    {
+      "from": "lean:Trace.Meta.closureAux",
+      "to": "file:lean/Trace/Meta/ModelClosure.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Meta.closureAux->file:lean/Trace/Meta/ModelClosure.lean"
+    },
+    {
+      "from": "lean:Trace.Meta.isAutoGenerated",
+      "to": "file:lean/Trace/Meta/ModelClosure.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Meta.isAutoGenerated->file:lean/Trace/Meta/ModelClosure.lean"
+    },
+    {
+      "from": "lean:Trace.Meta.moduleOf",
+      "to": "file:lean/Trace/Meta/ModelClosure.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Meta.moduleOf->file:lean/Trace/Meta/ModelClosure.lean"
+    },
+    {
+      "from": "lean:Trace.Meta.outsideModel",
+      "to": "file:lean/Trace/Meta/ModelClosure.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Meta.outsideModel->file:lean/Trace/Meta/ModelClosure.lean"
+    },
+    {
+      "from": "lean:Trace.Meta.relationConstants",
+      "to": "file:lean/Trace/Meta/ModelClosure.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Meta.relationConstants->file:lean/Trace/Meta/ModelClosure.lean"
+    },
+    {
+      "from": "lean:Trace.Meta.resourceOperators",
+      "to": "file:lean/Trace/Meta/ModelClosure.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Meta.resourceOperators->file:lean/Trace/Meta/ModelClosure.lean"
+    },
+    {
+      "from": "lean:Trace.Meta.underBinders",
+      "to": "file:lean/Trace/Meta/ModelClosure.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Meta.underBinders->file:lean/Trace/Meta/ModelClosure.lean"
+    },
+    {
+      "from": "lean:Trace.mixrate",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.mixrate->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.opNorm",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.opNorm->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.outcomeCredit",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.outcomeCredit->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.outcomeFunctional",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.outcomeFunctional->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.ParamIdx",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.ParamIdx->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.Params",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Params->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.Params.bIn",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Params.bIn->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.Params.posEmb",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Params.posEmb->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.Params.readout",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Params.readout->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.Params.tokEmb",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Params.tokEmb->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.Params.valueEmb",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Params.valueEmb->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.Params.wIn",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Params.wIn->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.Params.wK",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Params.wK->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.Params.wOut",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Params.wOut->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.Params.wQ",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Params.wQ->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.Params.wV",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Params.wV->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.Prior",
+      "to": "file:lean/Trace/Model/Prior.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Prior->file:lean/Trace/Model/Prior.lean"
+    },
+    {
+      "from": "lean:Trace.Proof.unseenLettersContraction",
+      "to": "file:lean/Trace/Analysis/Contraction.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Proof.unseenLettersContraction->file:lean/Trace/Analysis/Contraction.lean"
+    },
+    {
+      "from": "lean:Trace.Proof.unseenLettersOutcomeCredit",
+      "to": "file:lean/Trace/Analysis/OutcomeCredit.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Proof.unseenLettersOutcomeCredit->file:lean/Trace/Analysis/OutcomeCredit.lean"
+    },
+    {
+      "from": "lean:Trace.Proof.unseenLettersScoreCredit",
+      "to": "file:lean/Trace/Analysis/ScoreCredit.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Proof.unseenLettersScoreCredit->file:lean/Trace/Analysis/ScoreCredit.lean"
+    },
+    {
+      "from": "lean:Trace.score",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.score->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.scoreCredit",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.scoreCredit->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.scoreFunctional",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.scoreFunctional->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.Task",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Task->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.Task.answer",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Task.answer->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.Task.Ex",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Task.Ex->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.Task.l2Norm",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Task.l2Norm->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.Task.letterWeight",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Task.letterWeight->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.Task.mk.noConfusion",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Task.mk.noConfusion->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.Task.outcomePrompt",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Task.outcomePrompt->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.Task.p",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Task.p->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.Task.s0",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Task.s0->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.Task.targetSignal",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Task.targetSignal->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.Task.wstar",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Task.wstar->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.Task.μ",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Task.μ->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.Token",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Token->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.Token.colon",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Token.colon->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.Token.letter",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Token.letter->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.Token.sep",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Token.sep->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.Token.value",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.Token.value->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_contraction",
+      "to": "file:lean/Trace/Model/Theorem.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.unseen_letters_contraction->file:lean/Trace/Model/Theorem.lean"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_erase_outcome_credit",
+      "to": "file:lean/Trace/Model/Theorem.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.unseen_letters_erase_outcome_credit->file:lean/Trace/Model/Theorem.lean"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_outcome_credit",
+      "to": "file:lean/Trace/Model/Theorem.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.unseen_letters_outcome_credit->file:lean/Trace/Model/Theorem.lean"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_score_credit",
+      "to": "file:lean/Trace/Model/Theorem.lean",
+      "kind": "declared-in",
+      "id": "declared-in:lean:Trace.unseen_letters_score_credit->file:lean/Trace/Model/Theorem.lean"
+    },
+    {
+      "from": "lean:Trace.Arch.dh",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Arch.dh->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.Arch.dmlp",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Arch.dmlp->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.Arch.dres",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Arch.dres->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.Arch.mk.noConfusion",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Arch.mk.noConfusion->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.Arch.vis_causal",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Arch.vis_causal->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.Arch.vis_causal",
+      "to": "lean:Trace.Arch.vis",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Arch.vis_causal->lean:Trace.Arch.vis"
+    },
+    {
+      "from": "lean:Trace.Arch.vis_nonempty",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Arch.vis_nonempty->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.Arch.vis_nonempty",
+      "to": "lean:Trace.Arch.vis",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Arch.vis_nonempty->lean:Trace.Arch.vis"
+    },
+    {
+      "from": "lean:Trace.Arch.vis",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Arch.vis->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.attnWeight",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.attnWeight->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.attnWeight",
+      "to": "lean:Trace.Arch.dres",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.attnWeight->lean:Trace.Arch.dres"
+    },
+    {
+      "from": "lean:Trace.attnWeight",
+      "to": "lean:Trace.Arch.vis",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.attnWeight->lean:Trace.Arch.vis"
+    },
+    {
+      "from": "lean:Trace.attnWeight",
+      "to": "lean:Trace.Params",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.attnWeight->lean:Trace.Params"
+    },
+    {
+      "from": "lean:Trace.attnWeight",
+      "to": "lean:Trace.score",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.attnWeight->lean:Trace.score"
+    },
+    {
+      "from": "lean:Trace.block",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.block->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.block",
+      "to": "lean:Trace.Arch.dmlp",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.block->lean:Trace.Arch.dmlp"
+    },
+    {
+      "from": "lean:Trace.block",
+      "to": "lean:Trace.Arch.dres",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.block->lean:Trace.Arch.dres"
+    },
+    {
+      "from": "lean:Trace.block",
+      "to": "lean:Trace.Arch.vis",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.block->lean:Trace.Arch.vis"
+    },
+    {
+      "from": "lean:Trace.block",
+      "to": "lean:Trace.attnWeight",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.block->lean:Trace.attnWeight"
+    },
+    {
+      "from": "lean:Trace.block",
+      "to": "lean:Trace.Params",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.block->lean:Trace.Params"
+    },
+    {
+      "from": "lean:Trace.block",
+      "to": "lean:Trace.Params.bIn",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.block->lean:Trace.Params.bIn"
+    },
+    {
+      "from": "lean:Trace.block",
+      "to": "lean:Trace.Params.wIn",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.block->lean:Trace.Params.wIn"
+    },
+    {
+      "from": "lean:Trace.block",
+      "to": "lean:Trace.Params.wOut",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.block->lean:Trace.Params.wOut"
+    },
+    {
+      "from": "lean:Trace.block",
+      "to": "lean:Trace.Params.wV",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.block->lean:Trace.Params.wV"
+    },
+    {
+      "from": "lean:Trace.embed",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.embed->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.embed",
+      "to": "lean:Trace.Arch.dres",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.embed->lean:Trace.Arch.dres"
+    },
+    {
+      "from": "lean:Trace.embed",
+      "to": "lean:Trace.Params",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.embed->lean:Trace.Params"
+    },
+    {
+      "from": "lean:Trace.embed",
+      "to": "lean:Trace.Params.posEmb",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.embed->lean:Trace.Params.posEmb"
+    },
+    {
+      "from": "lean:Trace.embed",
+      "to": "lean:Trace.Params.tokEmb",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.embed->lean:Trace.Params.tokEmb"
+    },
+    {
+      "from": "lean:Trace.embed",
+      "to": "lean:Trace.Task",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.embed->lean:Trace.Task"
+    },
+    {
+      "from": "lean:Trace.embed",
+      "to": "lean:Trace.Task.outcomePrompt",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.embed->lean:Trace.Task.outcomePrompt"
+    },
+    {
+      "from": "lean:Trace.featureCredit",
+      "to": "lean:Trace.Task",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.featureCredit->lean:Trace.Task"
+    },
+    {
+      "from": "lean:Trace.featureCredit",
+      "to": "lean:Trace.Task.Ex",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.featureCredit->lean:Trace.Task.Ex"
+    },
+    {
+      "from": "lean:Trace.featureCredit",
+      "to": "lean:Trace.Task.targetSignal",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.featureCredit->lean:Trace.Task.targetSignal"
+    },
+    {
+      "from": "lean:Trace.initBall",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.initBall->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.initBall",
+      "to": "lean:Trace.Arch.dh",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.initBall->lean:Trace.Arch.dh"
+    },
+    {
+      "from": "lean:Trace.initBall",
+      "to": "lean:Trace.Arch.dmlp",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.initBall->lean:Trace.Arch.dmlp"
+    },
+    {
+      "from": "lean:Trace.initBall",
+      "to": "lean:Trace.Arch.dres",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.initBall->lean:Trace.Arch.dres"
+    },
+    {
+      "from": "lean:Trace.initBall",
+      "to": "lean:Trace.ParamIdx",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.initBall->lean:Trace.ParamIdx"
+    },
+    {
+      "from": "lean:Trace.initBall",
+      "to": "lean:Trace.Params",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.initBall->lean:Trace.Params"
+    },
+    {
+      "from": "lean:Trace.initBall",
+      "to": "lean:Trace.Token",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.initBall->lean:Trace.Token"
+    },
+    {
+      "from": "lean:Trace.InitHyp",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.InitHyp",
+      "to": "lean:Trace.Params",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp->lean:Trace.Params"
+    },
+    {
+      "from": "lean:Trace.InitHyp.bIn_ge_one",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.bIn_ge_one->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.InitHyp.bIn_ge_one",
+      "to": "lean:Trace.Arch.dmlp",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.bIn_ge_one->lean:Trace.Arch.dmlp"
+    },
+    {
+      "from": "lean:Trace.InitHyp.bIn_ge_one",
+      "to": "lean:Trace.InitHyp",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.bIn_ge_one->lean:Trace.InitHyp"
+    },
+    {
+      "from": "lean:Trace.InitHyp.bIn_ge_one",
+      "to": "lean:Trace.Params",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.bIn_ge_one->lean:Trace.Params"
+    },
+    {
+      "from": "lean:Trace.InitHyp.bIn_ge_one",
+      "to": "lean:Trace.Params.bIn",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.bIn_ge_one->lean:Trace.Params.bIn"
+    },
+    {
+      "from": "lean:Trace.InitHyp.bIn_norm_le",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.bIn_norm_le->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.InitHyp.bIn_norm_le",
+      "to": "lean:Trace.Arch.dmlp",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.bIn_norm_le->lean:Trace.Arch.dmlp"
+    },
+    {
+      "from": "lean:Trace.InitHyp.bIn_norm_le",
+      "to": "lean:Trace.InitHyp",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.bIn_norm_le->lean:Trace.InitHyp"
+    },
+    {
+      "from": "lean:Trace.InitHyp.bIn_norm_le",
+      "to": "lean:Trace.Params",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.bIn_norm_le->lean:Trace.Params"
+    },
+    {
+      "from": "lean:Trace.InitHyp.bIn_norm_le",
+      "to": "lean:Trace.Params.bIn",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.bIn_norm_le->lean:Trace.Params.bIn"
+    },
+    {
+      "from": "lean:Trace.InitHyp.posEmb_le",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.posEmb_le->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.InitHyp.posEmb_le",
+      "to": "lean:Trace.Arch.dres",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.posEmb_le->lean:Trace.Arch.dres"
+    },
+    {
+      "from": "lean:Trace.InitHyp.posEmb_le",
+      "to": "lean:Trace.InitHyp",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.posEmb_le->lean:Trace.InitHyp"
+    },
+    {
+      "from": "lean:Trace.InitHyp.posEmb_le",
+      "to": "lean:Trace.opNorm",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.posEmb_le->lean:Trace.opNorm"
+    },
+    {
+      "from": "lean:Trace.InitHyp.posEmb_le",
+      "to": "lean:Trace.Params",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.posEmb_le->lean:Trace.Params"
+    },
+    {
+      "from": "lean:Trace.InitHyp.posEmb_le",
+      "to": "lean:Trace.Params.posEmb",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.posEmb_le->lean:Trace.Params.posEmb"
+    },
+    {
+      "from": "lean:Trace.InitHyp.readout_le",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.readout_le->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.InitHyp.readout_le",
+      "to": "lean:Trace.Arch.dres",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.readout_le->lean:Trace.Arch.dres"
+    },
+    {
+      "from": "lean:Trace.InitHyp.readout_le",
+      "to": "lean:Trace.InitHyp",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.readout_le->lean:Trace.InitHyp"
+    },
+    {
+      "from": "lean:Trace.InitHyp.readout_le",
+      "to": "lean:Trace.opNorm",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.readout_le->lean:Trace.opNorm"
+    },
+    {
+      "from": "lean:Trace.InitHyp.readout_le",
+      "to": "lean:Trace.Params",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.readout_le->lean:Trace.Params"
+    },
+    {
+      "from": "lean:Trace.InitHyp.readout_le",
+      "to": "lean:Trace.Params.readout",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.readout_le->lean:Trace.Params.readout"
+    },
+    {
+      "from": "lean:Trace.InitHyp.tokEmb_le",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.tokEmb_le->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.InitHyp.tokEmb_le",
+      "to": "lean:Trace.Arch.dres",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.tokEmb_le->lean:Trace.Arch.dres"
+    },
+    {
+      "from": "lean:Trace.InitHyp.tokEmb_le",
+      "to": "lean:Trace.InitHyp",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.tokEmb_le->lean:Trace.InitHyp"
+    },
+    {
+      "from": "lean:Trace.InitHyp.tokEmb_le",
+      "to": "lean:Trace.opNorm",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.tokEmb_le->lean:Trace.opNorm"
+    },
+    {
+      "from": "lean:Trace.InitHyp.tokEmb_le",
+      "to": "lean:Trace.Params",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.tokEmb_le->lean:Trace.Params"
+    },
+    {
+      "from": "lean:Trace.InitHyp.tokEmb_le",
+      "to": "lean:Trace.Params.tokEmb",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.tokEmb_le->lean:Trace.Params.tokEmb"
+    },
+    {
+      "from": "lean:Trace.InitHyp.tokEmb_le",
+      "to": "lean:Trace.Token",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.tokEmb_le->lean:Trace.Token"
+    },
+    {
+      "from": "lean:Trace.InitHyp.valueEmb_sigmaMin",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.valueEmb_sigmaMin->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.InitHyp.valueEmb_sigmaMin",
+      "to": "lean:Trace.Arch.dres",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.valueEmb_sigmaMin->lean:Trace.Arch.dres"
+    },
+    {
+      "from": "lean:Trace.InitHyp.valueEmb_sigmaMin",
+      "to": "lean:Trace.InitHyp",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.valueEmb_sigmaMin->lean:Trace.InitHyp"
+    },
+    {
+      "from": "lean:Trace.InitHyp.valueEmb_sigmaMin",
+      "to": "lean:Trace.Params",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.valueEmb_sigmaMin->lean:Trace.Params"
+    },
+    {
+      "from": "lean:Trace.InitHyp.valueEmb_sigmaMin",
+      "to": "lean:Trace.Params.valueEmb",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.valueEmb_sigmaMin->lean:Trace.Params.valueEmb"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wIn_le",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.wIn_le->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wIn_le",
+      "to": "lean:Trace.Arch.dmlp",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.wIn_le->lean:Trace.Arch.dmlp"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wIn_le",
+      "to": "lean:Trace.Arch.dres",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.wIn_le->lean:Trace.Arch.dres"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wIn_le",
+      "to": "lean:Trace.InitHyp",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.wIn_le->lean:Trace.InitHyp"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wIn_le",
+      "to": "lean:Trace.opNorm",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.wIn_le->lean:Trace.opNorm"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wIn_le",
+      "to": "lean:Trace.Params",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.wIn_le->lean:Trace.Params"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wIn_le",
+      "to": "lean:Trace.Params.wIn",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.wIn_le->lean:Trace.Params.wIn"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wK_le",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.wK_le->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wK_le",
+      "to": "lean:Trace.Arch.dh",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.wK_le->lean:Trace.Arch.dh"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wK_le",
+      "to": "lean:Trace.Arch.dres",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.wK_le->lean:Trace.Arch.dres"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wK_le",
+      "to": "lean:Trace.InitHyp",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.wK_le->lean:Trace.InitHyp"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wK_le",
+      "to": "lean:Trace.opNorm",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.wK_le->lean:Trace.opNorm"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wK_le",
+      "to": "lean:Trace.Params",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.wK_le->lean:Trace.Params"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wK_le",
+      "to": "lean:Trace.Params.wK",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.wK_le->lean:Trace.Params.wK"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wOut_le",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.wOut_le->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wOut_le",
+      "to": "lean:Trace.Arch.dmlp",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.wOut_le->lean:Trace.Arch.dmlp"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wOut_le",
+      "to": "lean:Trace.Arch.dres",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.wOut_le->lean:Trace.Arch.dres"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wOut_le",
+      "to": "lean:Trace.InitHyp",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.wOut_le->lean:Trace.InitHyp"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wOut_le",
+      "to": "lean:Trace.opNorm",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.wOut_le->lean:Trace.opNorm"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wOut_le",
+      "to": "lean:Trace.Params",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.wOut_le->lean:Trace.Params"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wOut_le",
+      "to": "lean:Trace.Params.wOut",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.wOut_le->lean:Trace.Params.wOut"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wQ_le",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.wQ_le->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wQ_le",
+      "to": "lean:Trace.Arch.dh",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.wQ_le->lean:Trace.Arch.dh"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wQ_le",
+      "to": "lean:Trace.Arch.dres",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.wQ_le->lean:Trace.Arch.dres"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wQ_le",
+      "to": "lean:Trace.InitHyp",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.wQ_le->lean:Trace.InitHyp"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wQ_le",
+      "to": "lean:Trace.opNorm",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.wQ_le->lean:Trace.opNorm"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wQ_le",
+      "to": "lean:Trace.Params",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.wQ_le->lean:Trace.Params"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wQ_le",
+      "to": "lean:Trace.Params.wQ",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.wQ_le->lean:Trace.Params.wQ"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wV_le",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.wV_le->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wV_le",
+      "to": "lean:Trace.Arch.dres",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.wV_le->lean:Trace.Arch.dres"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wV_le",
+      "to": "lean:Trace.InitHyp",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.wV_le->lean:Trace.InitHyp"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wV_le",
+      "to": "lean:Trace.opNorm",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.wV_le->lean:Trace.opNorm"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wV_le",
+      "to": "lean:Trace.Params",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.wV_le->lean:Trace.Params"
+    },
+    {
+      "from": "lean:Trace.InitHyp.wV_le",
+      "to": "lean:Trace.Params.wV",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.InitHyp.wV_le->lean:Trace.Params.wV"
+    },
+    {
+      "from": "lean:Trace.logits",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.logits->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.logits",
+      "to": "lean:Trace.Arch.dres",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.logits->lean:Trace.Arch.dres"
+    },
+    {
+      "from": "lean:Trace.logits",
+      "to": "lean:Trace.block",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.logits->lean:Trace.block"
+    },
+    {
+      "from": "lean:Trace.logits",
+      "to": "lean:Trace.embed",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.logits->lean:Trace.embed"
+    },
+    {
+      "from": "lean:Trace.logits",
+      "to": "lean:Trace.Params",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.logits->lean:Trace.Params"
+    },
+    {
+      "from": "lean:Trace.logits",
+      "to": "lean:Trace.Params.readout",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.logits->lean:Trace.Params.readout"
+    },
+    {
+      "from": "lean:Trace.logits",
+      "to": "lean:Trace.Task",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.logits->lean:Trace.Task"
+    },
+    {
+      "from": "lean:Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#modelClosure__1»",
+      "to": "lean:Trace.Meta.closureAux",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#modelClosure__1»->lean:Trace.Meta.closureAux"
+    },
+    {
+      "from": "lean:Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#modelClosure__1»",
+      "to": "lean:Trace.Meta.outsideModel",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#modelClosure__1»->lean:Trace.Meta.outsideModel"
+    },
+    {
+      "from": "lean:Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#modelClosureOfType__1»",
+      "to": "lean:Trace.Meta.closureAux",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#modelClosureOfType__1»->lean:Trace.Meta.closureAux"
+    },
+    {
+      "from": "lean:Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#modelClosureOfType__1»",
+      "to": "lean:Trace.Meta.outsideModel",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#modelClosureOfType__1»->lean:Trace.Meta.outsideModel"
+    },
+    {
+      "from": "lean:Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#statementSide__1»",
+      "to": "lean:Trace.Meta.closureAux",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#statementSide__1»->lean:Trace.Meta.closureAux"
+    },
+    {
+      "from": "lean:Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#statementSide__1»",
+      "to": "lean:Trace.Meta.moduleOf",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#statementSide__1»->lean:Trace.Meta.moduleOf"
+    },
+    {
+      "from": "lean:Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#statementSide__1»",
+      "to": "lean:Trace.Meta.relationConstants",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#statementSide__1»->lean:Trace.Meta.relationConstants"
+    },
+    {
+      "from": "lean:Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#statementSide__1»",
+      "to": "lean:Trace.Meta.resourceOperators",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#statementSide__1»->lean:Trace.Meta.resourceOperators"
+    },
+    {
+      "from": "lean:Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#statementSide__1»",
+      "to": "lean:Trace.Meta.underBinders",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#statementSide__1»->lean:Trace.Meta.underBinders"
+    },
+    {
+      "from": "lean:Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#surplusIn_From__1»",
+      "to": "lean:Trace.Meta.closureAux",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#surplusIn_From__1»->lean:Trace.Meta.closureAux"
+    },
+    {
+      "from": "lean:Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#surplusIn_From__1»",
+      "to": "lean:Trace.Meta.isAutoGenerated",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#surplusIn_From__1»->lean:Trace.Meta.isAutoGenerated"
+    },
+    {
+      "from": "lean:Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#surplusIn_From__1»",
+      "to": "lean:Trace.Meta.moduleOf",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Meta.«_aux_Trace_Meta_ModelClosure___elabRules_Trace_Meta_command#surplusIn_From__1»->lean:Trace.Meta.moduleOf"
+    },
+    {
+      "from": "lean:Trace.Meta.isAutoGenerated",
+      "to": "lean:Trace.Meta.autoGenerated",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Meta.isAutoGenerated->lean:Trace.Meta.autoGenerated"
+    },
+    {
+      "from": "lean:Trace.Meta.outsideModel",
+      "to": "lean:Trace.Meta.admittedOutsideModel",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Meta.outsideModel->lean:Trace.Meta.admittedOutsideModel"
+    },
+    {
+      "from": "lean:Trace.Meta.outsideModel",
+      "to": "lean:Trace.Meta.moduleOf",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Meta.outsideModel->lean:Trace.Meta.moduleOf"
+    },
+    {
+      "from": "lean:Trace.outcomeCredit",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.outcomeCredit->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.outcomeCredit",
+      "to": "lean:Trace.Arch.dh",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.outcomeCredit->lean:Trace.Arch.dh"
+    },
+    {
+      "from": "lean:Trace.outcomeCredit",
+      "to": "lean:Trace.Arch.dmlp",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.outcomeCredit->lean:Trace.Arch.dmlp"
+    },
+    {
+      "from": "lean:Trace.outcomeCredit",
+      "to": "lean:Trace.Arch.dres",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.outcomeCredit->lean:Trace.Arch.dres"
+    },
+    {
+      "from": "lean:Trace.outcomeCredit",
+      "to": "lean:Trace.outcomeFunctional",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.outcomeCredit->lean:Trace.outcomeFunctional"
+    },
+    {
+      "from": "lean:Trace.outcomeCredit",
+      "to": "lean:Trace.ParamIdx",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.outcomeCredit->lean:Trace.ParamIdx"
+    },
+    {
+      "from": "lean:Trace.outcomeCredit",
+      "to": "lean:Trace.Params",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.outcomeCredit->lean:Trace.Params"
+    },
+    {
+      "from": "lean:Trace.outcomeCredit",
+      "to": "lean:Trace.Task",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.outcomeCredit->lean:Trace.Task"
+    },
+    {
+      "from": "lean:Trace.outcomeCredit",
+      "to": "lean:Trace.Token",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.outcomeCredit->lean:Trace.Token"
+    },
+    {
+      "from": "lean:Trace.outcomeFunctional",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.outcomeFunctional->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.outcomeFunctional",
+      "to": "lean:Trace.logits",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.outcomeFunctional->lean:Trace.logits"
+    },
+    {
+      "from": "lean:Trace.outcomeFunctional",
+      "to": "lean:Trace.Params",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.outcomeFunctional->lean:Trace.Params"
+    },
+    {
+      "from": "lean:Trace.outcomeFunctional",
+      "to": "lean:Trace.Task",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.outcomeFunctional->lean:Trace.Task"
+    },
+    {
+      "from": "lean:Trace.outcomeFunctional",
+      "to": "lean:Trace.Task.Ex",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.outcomeFunctional->lean:Trace.Task.Ex"
+    },
+    {
+      "from": "lean:Trace.outcomeFunctional",
+      "to": "lean:Trace.Task.targetSignal",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.outcomeFunctional->lean:Trace.Task.targetSignal"
+    },
+    {
+      "from": "lean:Trace.ParamIdx",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.ParamIdx->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.ParamIdx",
+      "to": "lean:Trace.Arch.dh",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.ParamIdx->lean:Trace.Arch.dh"
+    },
+    {
+      "from": "lean:Trace.ParamIdx",
+      "to": "lean:Trace.Arch.dmlp",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.ParamIdx->lean:Trace.Arch.dmlp"
+    },
+    {
+      "from": "lean:Trace.ParamIdx",
+      "to": "lean:Trace.Arch.dres",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.ParamIdx->lean:Trace.Arch.dres"
+    },
+    {
+      "from": "lean:Trace.ParamIdx",
+      "to": "lean:Trace.Token",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.ParamIdx->lean:Trace.Token"
+    },
+    {
+      "from": "lean:Trace.Params",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.Params",
+      "to": "lean:Trace.ParamIdx",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params->lean:Trace.ParamIdx"
+    },
+    {
+      "from": "lean:Trace.Params.bIn",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.bIn->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.Params.bIn",
+      "to": "lean:Trace.Arch.dh",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.bIn->lean:Trace.Arch.dh"
+    },
+    {
+      "from": "lean:Trace.Params.bIn",
+      "to": "lean:Trace.Arch.dmlp",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.bIn->lean:Trace.Arch.dmlp"
+    },
+    {
+      "from": "lean:Trace.Params.bIn",
+      "to": "lean:Trace.Arch.dres",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.bIn->lean:Trace.Arch.dres"
+    },
+    {
+      "from": "lean:Trace.Params.bIn",
+      "to": "lean:Trace.ParamIdx",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.bIn->lean:Trace.ParamIdx"
+    },
+    {
+      "from": "lean:Trace.Params.bIn",
+      "to": "lean:Trace.Params",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.bIn->lean:Trace.Params"
+    },
+    {
+      "from": "lean:Trace.Params.bIn",
+      "to": "lean:Trace.Token",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.bIn->lean:Trace.Token"
+    },
+    {
+      "from": "lean:Trace.Params.posEmb",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.posEmb->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.Params.posEmb",
+      "to": "lean:Trace.Arch.dh",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.posEmb->lean:Trace.Arch.dh"
+    },
+    {
+      "from": "lean:Trace.Params.posEmb",
+      "to": "lean:Trace.Arch.dmlp",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.posEmb->lean:Trace.Arch.dmlp"
+    },
+    {
+      "from": "lean:Trace.Params.posEmb",
+      "to": "lean:Trace.Arch.dres",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.posEmb->lean:Trace.Arch.dres"
+    },
+    {
+      "from": "lean:Trace.Params.posEmb",
+      "to": "lean:Trace.ParamIdx",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.posEmb->lean:Trace.ParamIdx"
+    },
+    {
+      "from": "lean:Trace.Params.posEmb",
+      "to": "lean:Trace.Params",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.posEmb->lean:Trace.Params"
+    },
+    {
+      "from": "lean:Trace.Params.posEmb",
+      "to": "lean:Trace.Token",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.posEmb->lean:Trace.Token"
+    },
+    {
+      "from": "lean:Trace.Params.readout",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.readout->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.Params.readout",
+      "to": "lean:Trace.Arch.dh",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.readout->lean:Trace.Arch.dh"
+    },
+    {
+      "from": "lean:Trace.Params.readout",
+      "to": "lean:Trace.Arch.dmlp",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.readout->lean:Trace.Arch.dmlp"
+    },
+    {
+      "from": "lean:Trace.Params.readout",
+      "to": "lean:Trace.Arch.dres",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.readout->lean:Trace.Arch.dres"
+    },
+    {
+      "from": "lean:Trace.Params.readout",
+      "to": "lean:Trace.ParamIdx",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.readout->lean:Trace.ParamIdx"
+    },
+    {
+      "from": "lean:Trace.Params.readout",
+      "to": "lean:Trace.Params",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.readout->lean:Trace.Params"
+    },
+    {
+      "from": "lean:Trace.Params.readout",
+      "to": "lean:Trace.Token",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.readout->lean:Trace.Token"
+    },
+    {
+      "from": "lean:Trace.Params.tokEmb",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.tokEmb->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.Params.tokEmb",
+      "to": "lean:Trace.Arch.dh",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.tokEmb->lean:Trace.Arch.dh"
+    },
+    {
+      "from": "lean:Trace.Params.tokEmb",
+      "to": "lean:Trace.Arch.dmlp",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.tokEmb->lean:Trace.Arch.dmlp"
+    },
+    {
+      "from": "lean:Trace.Params.tokEmb",
+      "to": "lean:Trace.Arch.dres",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.tokEmb->lean:Trace.Arch.dres"
+    },
+    {
+      "from": "lean:Trace.Params.tokEmb",
+      "to": "lean:Trace.ParamIdx",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.tokEmb->lean:Trace.ParamIdx"
+    },
+    {
+      "from": "lean:Trace.Params.tokEmb",
+      "to": "lean:Trace.Params",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.tokEmb->lean:Trace.Params"
+    },
+    {
+      "from": "lean:Trace.Params.tokEmb",
+      "to": "lean:Trace.Token",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.tokEmb->lean:Trace.Token"
+    },
+    {
+      "from": "lean:Trace.Params.valueEmb",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.valueEmb->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.Params.valueEmb",
+      "to": "lean:Trace.Arch.dres",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.valueEmb->lean:Trace.Arch.dres"
+    },
+    {
+      "from": "lean:Trace.Params.valueEmb",
+      "to": "lean:Trace.Params",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.valueEmb->lean:Trace.Params"
+    },
+    {
+      "from": "lean:Trace.Params.valueEmb",
+      "to": "lean:Trace.Params.tokEmb",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.valueEmb->lean:Trace.Params.tokEmb"
+    },
+    {
+      "from": "lean:Trace.Params.valueEmb",
+      "to": "lean:Trace.Token.value",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.valueEmb->lean:Trace.Token.value"
+    },
+    {
+      "from": "lean:Trace.Params.wIn",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.wIn->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.Params.wIn",
+      "to": "lean:Trace.Arch.dh",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.wIn->lean:Trace.Arch.dh"
+    },
+    {
+      "from": "lean:Trace.Params.wIn",
+      "to": "lean:Trace.Arch.dmlp",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.wIn->lean:Trace.Arch.dmlp"
+    },
+    {
+      "from": "lean:Trace.Params.wIn",
+      "to": "lean:Trace.Arch.dres",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.wIn->lean:Trace.Arch.dres"
+    },
+    {
+      "from": "lean:Trace.Params.wIn",
+      "to": "lean:Trace.ParamIdx",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.wIn->lean:Trace.ParamIdx"
+    },
+    {
+      "from": "lean:Trace.Params.wIn",
+      "to": "lean:Trace.Params",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.wIn->lean:Trace.Params"
+    },
+    {
+      "from": "lean:Trace.Params.wIn",
+      "to": "lean:Trace.Token",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.wIn->lean:Trace.Token"
+    },
+    {
+      "from": "lean:Trace.Params.wK",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.wK->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.Params.wK",
+      "to": "lean:Trace.Arch.dh",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.wK->lean:Trace.Arch.dh"
+    },
+    {
+      "from": "lean:Trace.Params.wK",
+      "to": "lean:Trace.Arch.dmlp",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.wK->lean:Trace.Arch.dmlp"
+    },
+    {
+      "from": "lean:Trace.Params.wK",
+      "to": "lean:Trace.Arch.dres",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.wK->lean:Trace.Arch.dres"
+    },
+    {
+      "from": "lean:Trace.Params.wK",
+      "to": "lean:Trace.ParamIdx",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.wK->lean:Trace.ParamIdx"
+    },
+    {
+      "from": "lean:Trace.Params.wK",
+      "to": "lean:Trace.Params",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.wK->lean:Trace.Params"
+    },
+    {
+      "from": "lean:Trace.Params.wK",
+      "to": "lean:Trace.Token",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.wK->lean:Trace.Token"
+    },
+    {
+      "from": "lean:Trace.Params.wOut",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.wOut->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.Params.wOut",
+      "to": "lean:Trace.Arch.dh",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.wOut->lean:Trace.Arch.dh"
+    },
+    {
+      "from": "lean:Trace.Params.wOut",
+      "to": "lean:Trace.Arch.dmlp",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.wOut->lean:Trace.Arch.dmlp"
+    },
+    {
+      "from": "lean:Trace.Params.wOut",
+      "to": "lean:Trace.Arch.dres",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.wOut->lean:Trace.Arch.dres"
+    },
+    {
+      "from": "lean:Trace.Params.wOut",
+      "to": "lean:Trace.ParamIdx",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.wOut->lean:Trace.ParamIdx"
+    },
+    {
+      "from": "lean:Trace.Params.wOut",
+      "to": "lean:Trace.Params",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.wOut->lean:Trace.Params"
+    },
+    {
+      "from": "lean:Trace.Params.wOut",
+      "to": "lean:Trace.Token",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.wOut->lean:Trace.Token"
+    },
+    {
+      "from": "lean:Trace.Params.wQ",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.wQ->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.Params.wQ",
+      "to": "lean:Trace.Arch.dh",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.wQ->lean:Trace.Arch.dh"
+    },
+    {
+      "from": "lean:Trace.Params.wQ",
+      "to": "lean:Trace.Arch.dmlp",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.wQ->lean:Trace.Arch.dmlp"
+    },
+    {
+      "from": "lean:Trace.Params.wQ",
+      "to": "lean:Trace.Arch.dres",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.wQ->lean:Trace.Arch.dres"
+    },
+    {
+      "from": "lean:Trace.Params.wQ",
+      "to": "lean:Trace.ParamIdx",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.wQ->lean:Trace.ParamIdx"
+    },
+    {
+      "from": "lean:Trace.Params.wQ",
+      "to": "lean:Trace.Params",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.wQ->lean:Trace.Params"
+    },
+    {
+      "from": "lean:Trace.Params.wQ",
+      "to": "lean:Trace.Token",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.wQ->lean:Trace.Token"
+    },
+    {
+      "from": "lean:Trace.Params.wV",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.wV->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.Params.wV",
+      "to": "lean:Trace.Arch.dh",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.wV->lean:Trace.Arch.dh"
+    },
+    {
+      "from": "lean:Trace.Params.wV",
+      "to": "lean:Trace.Arch.dmlp",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.wV->lean:Trace.Arch.dmlp"
+    },
+    {
+      "from": "lean:Trace.Params.wV",
+      "to": "lean:Trace.Arch.dres",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.wV->lean:Trace.Arch.dres"
+    },
+    {
+      "from": "lean:Trace.Params.wV",
+      "to": "lean:Trace.ParamIdx",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.wV->lean:Trace.ParamIdx"
+    },
+    {
+      "from": "lean:Trace.Params.wV",
+      "to": "lean:Trace.Params",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.wV->lean:Trace.Params"
+    },
+    {
+      "from": "lean:Trace.Params.wV",
+      "to": "lean:Trace.Token",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Params.wV->lean:Trace.Token"
+    },
+    {
+      "from": "lean:Trace.Proof.unseenLettersContraction",
+      "to": "lean:Trace.featureCredit",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Proof.unseenLettersContraction->lean:Trace.featureCredit"
+    },
+    {
+      "from": "lean:Trace.Proof.unseenLettersContraction",
+      "to": "lean:Trace.mixrate",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Proof.unseenLettersContraction->lean:Trace.mixrate"
+    },
+    {
+      "from": "lean:Trace.Proof.unseenLettersContraction",
+      "to": "lean:Trace.Prior",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Proof.unseenLettersContraction->lean:Trace.Prior"
+    },
+    {
+      "from": "lean:Trace.Proof.unseenLettersContraction",
+      "to": "lean:Trace.Task",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Proof.unseenLettersContraction->lean:Trace.Task"
+    },
+    {
+      "from": "lean:Trace.Proof.unseenLettersContraction",
+      "to": "lean:Trace.Task.l2Norm",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Proof.unseenLettersContraction->lean:Trace.Task.l2Norm"
+    },
+    {
+      "from": "lean:Trace.Proof.unseenLettersContraction",
+      "to": "lean:Trace.Task.p",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Proof.unseenLettersContraction->lean:Trace.Task.p"
+    },
+    {
+      "from": "lean:Trace.Proof.unseenLettersOutcomeCredit",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Proof.unseenLettersOutcomeCredit->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.Proof.unseenLettersOutcomeCredit",
+      "to": "lean:Trace.initBall",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Proof.unseenLettersOutcomeCredit->lean:Trace.initBall"
+    },
+    {
+      "from": "lean:Trace.Proof.unseenLettersOutcomeCredit",
+      "to": "lean:Trace.InitHyp",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Proof.unseenLettersOutcomeCredit->lean:Trace.InitHyp"
+    },
+    {
+      "from": "lean:Trace.Proof.unseenLettersOutcomeCredit",
+      "to": "lean:Trace.mixrate",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Proof.unseenLettersOutcomeCredit->lean:Trace.mixrate"
+    },
+    {
+      "from": "lean:Trace.Proof.unseenLettersOutcomeCredit",
+      "to": "lean:Trace.outcomeCredit",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Proof.unseenLettersOutcomeCredit->lean:Trace.outcomeCredit"
+    },
+    {
+      "from": "lean:Trace.Proof.unseenLettersOutcomeCredit",
+      "to": "lean:Trace.outcomeFunctional",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Proof.unseenLettersOutcomeCredit->lean:Trace.outcomeFunctional"
+    },
+    {
+      "from": "lean:Trace.Proof.unseenLettersOutcomeCredit",
+      "to": "lean:Trace.ParamIdx",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Proof.unseenLettersOutcomeCredit->lean:Trace.ParamIdx"
+    },
+    {
+      "from": "lean:Trace.Proof.unseenLettersOutcomeCredit",
+      "to": "lean:Trace.Params",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Proof.unseenLettersOutcomeCredit->lean:Trace.Params"
+    },
+    {
+      "from": "lean:Trace.Proof.unseenLettersOutcomeCredit",
+      "to": "lean:Trace.Prior",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Proof.unseenLettersOutcomeCredit->lean:Trace.Prior"
+    },
+    {
+      "from": "lean:Trace.Proof.unseenLettersOutcomeCredit",
+      "to": "lean:Trace.Task",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Proof.unseenLettersOutcomeCredit->lean:Trace.Task"
+    },
+    {
+      "from": "lean:Trace.Proof.unseenLettersOutcomeCredit",
+      "to": "lean:Trace.Task.p",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Proof.unseenLettersOutcomeCredit->lean:Trace.Task.p"
+    },
+    {
+      "from": "lean:Trace.Proof.unseenLettersScoreCredit",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Proof.unseenLettersScoreCredit->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.Proof.unseenLettersScoreCredit",
+      "to": "lean:Trace.initBall",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Proof.unseenLettersScoreCredit->lean:Trace.initBall"
+    },
+    {
+      "from": "lean:Trace.Proof.unseenLettersScoreCredit",
+      "to": "lean:Trace.InitHyp",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Proof.unseenLettersScoreCredit->lean:Trace.InitHyp"
+    },
+    {
+      "from": "lean:Trace.Proof.unseenLettersScoreCredit",
+      "to": "lean:Trace.mixrate",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Proof.unseenLettersScoreCredit->lean:Trace.mixrate"
+    },
+    {
+      "from": "lean:Trace.Proof.unseenLettersScoreCredit",
+      "to": "lean:Trace.ParamIdx",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Proof.unseenLettersScoreCredit->lean:Trace.ParamIdx"
+    },
+    {
+      "from": "lean:Trace.Proof.unseenLettersScoreCredit",
+      "to": "lean:Trace.Params",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Proof.unseenLettersScoreCredit->lean:Trace.Params"
+    },
+    {
+      "from": "lean:Trace.Proof.unseenLettersScoreCredit",
+      "to": "lean:Trace.Prior",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Proof.unseenLettersScoreCredit->lean:Trace.Prior"
+    },
+    {
+      "from": "lean:Trace.Proof.unseenLettersScoreCredit",
+      "to": "lean:Trace.scoreCredit",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Proof.unseenLettersScoreCredit->lean:Trace.scoreCredit"
+    },
+    {
+      "from": "lean:Trace.Proof.unseenLettersScoreCredit",
+      "to": "lean:Trace.scoreFunctional",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Proof.unseenLettersScoreCredit->lean:Trace.scoreFunctional"
+    },
+    {
+      "from": "lean:Trace.Proof.unseenLettersScoreCredit",
+      "to": "lean:Trace.Task",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Proof.unseenLettersScoreCredit->lean:Trace.Task"
+    },
+    {
+      "from": "lean:Trace.Proof.unseenLettersScoreCredit",
+      "to": "lean:Trace.Task.p",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Proof.unseenLettersScoreCredit->lean:Trace.Task.p"
+    },
+    {
+      "from": "lean:Trace.score",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.score->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.score",
+      "to": "lean:Trace.Arch.dh",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.score->lean:Trace.Arch.dh"
+    },
+    {
+      "from": "lean:Trace.score",
+      "to": "lean:Trace.Arch.dres",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.score->lean:Trace.Arch.dres"
+    },
+    {
+      "from": "lean:Trace.score",
+      "to": "lean:Trace.Params",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.score->lean:Trace.Params"
+    },
+    {
+      "from": "lean:Trace.score",
+      "to": "lean:Trace.Params.wK",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.score->lean:Trace.Params.wK"
+    },
+    {
+      "from": "lean:Trace.score",
+      "to": "lean:Trace.Params.wQ",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.score->lean:Trace.Params.wQ"
+    },
+    {
+      "from": "lean:Trace.scoreCredit",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.scoreCredit->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.scoreCredit",
+      "to": "lean:Trace.Arch.dh",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.scoreCredit->lean:Trace.Arch.dh"
+    },
+    {
+      "from": "lean:Trace.scoreCredit",
+      "to": "lean:Trace.Arch.dmlp",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.scoreCredit->lean:Trace.Arch.dmlp"
+    },
+    {
+      "from": "lean:Trace.scoreCredit",
+      "to": "lean:Trace.Arch.dres",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.scoreCredit->lean:Trace.Arch.dres"
+    },
+    {
+      "from": "lean:Trace.scoreCredit",
+      "to": "lean:Trace.ParamIdx",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.scoreCredit->lean:Trace.ParamIdx"
+    },
+    {
+      "from": "lean:Trace.scoreCredit",
+      "to": "lean:Trace.Params",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.scoreCredit->lean:Trace.Params"
+    },
+    {
+      "from": "lean:Trace.scoreCredit",
+      "to": "lean:Trace.scoreFunctional",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.scoreCredit->lean:Trace.scoreFunctional"
+    },
+    {
+      "from": "lean:Trace.scoreCredit",
+      "to": "lean:Trace.Task",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.scoreCredit->lean:Trace.Task"
+    },
+    {
+      "from": "lean:Trace.scoreCredit",
+      "to": "lean:Trace.Token",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.scoreCredit->lean:Trace.Token"
+    },
+    {
+      "from": "lean:Trace.scoreFunctional",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.scoreFunctional->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.scoreFunctional",
+      "to": "lean:Trace.logits",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.scoreFunctional->lean:Trace.logits"
+    },
+    {
+      "from": "lean:Trace.scoreFunctional",
+      "to": "lean:Trace.Params",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.scoreFunctional->lean:Trace.Params"
+    },
+    {
+      "from": "lean:Trace.scoreFunctional",
+      "to": "lean:Trace.Task",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.scoreFunctional->lean:Trace.Task"
+    },
+    {
+      "from": "lean:Trace.scoreFunctional",
+      "to": "lean:Trace.Task.Ex",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.scoreFunctional->lean:Trace.Task.Ex"
+    },
+    {
+      "from": "lean:Trace.scoreFunctional",
+      "to": "lean:Trace.Task.targetSignal",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.scoreFunctional->lean:Trace.Task.targetSignal"
+    },
+    {
+      "from": "lean:Trace.Task.answer",
+      "to": "lean:Trace.Task",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Task.answer->lean:Trace.Task"
+    },
+    {
+      "from": "lean:Trace.Task.answer",
+      "to": "lean:Trace.Task.s0",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Task.answer->lean:Trace.Task.s0"
+    },
+    {
+      "from": "lean:Trace.Task.answer",
+      "to": "lean:Trace.Task.wstar",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Task.answer->lean:Trace.Task.wstar"
+    },
+    {
+      "from": "lean:Trace.Task.Ex",
+      "to": "lean:Trace.Task",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Task.Ex->lean:Trace.Task"
+    },
+    {
+      "from": "lean:Trace.Task.Ex",
+      "to": "lean:Trace.Task.letterWeight",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Task.Ex->lean:Trace.Task.letterWeight"
+    },
+    {
+      "from": "lean:Trace.Task.l2Norm",
+      "to": "lean:Trace.Task",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Task.l2Norm->lean:Trace.Task"
+    },
+    {
+      "from": "lean:Trace.Task.l2Norm",
+      "to": "lean:Trace.Task.Ex",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Task.l2Norm->lean:Trace.Task.Ex"
+    },
+    {
+      "from": "lean:Trace.Task.letterWeight",
+      "to": "lean:Trace.Task",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Task.letterWeight->lean:Trace.Task"
+    },
+    {
+      "from": "lean:Trace.Task.letterWeight",
+      "to": "lean:Trace.Task.μ",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Task.letterWeight->lean:Trace.Task.μ"
+    },
+    {
+      "from": "lean:Trace.Task.mk.noConfusion",
+      "to": "lean:Trace.Task",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Task.mk.noConfusion->lean:Trace.Task"
+    },
+    {
+      "from": "lean:Trace.Task.outcomePrompt",
+      "to": "lean:Trace.Task",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Task.outcomePrompt->lean:Trace.Task"
+    },
+    {
+      "from": "lean:Trace.Task.outcomePrompt",
+      "to": "lean:Trace.Task.s0",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Task.outcomePrompt->lean:Trace.Task.s0"
+    },
+    {
+      "from": "lean:Trace.Task.outcomePrompt",
+      "to": "lean:Trace.Task.wstar",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Task.outcomePrompt->lean:Trace.Task.wstar"
+    },
+    {
+      "from": "lean:Trace.Task.outcomePrompt",
+      "to": "lean:Trace.Token",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Task.outcomePrompt->lean:Trace.Token"
+    },
+    {
+      "from": "lean:Trace.Task.outcomePrompt",
+      "to": "lean:Trace.Token.colon",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Task.outcomePrompt->lean:Trace.Token.colon"
+    },
+    {
+      "from": "lean:Trace.Task.outcomePrompt",
+      "to": "lean:Trace.Token.letter",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Task.outcomePrompt->lean:Trace.Token.letter"
+    },
+    {
+      "from": "lean:Trace.Task.outcomePrompt",
+      "to": "lean:Trace.Token.sep",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Task.outcomePrompt->lean:Trace.Token.sep"
+    },
+    {
+      "from": "lean:Trace.Task.outcomePrompt",
+      "to": "lean:Trace.Token.value",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Task.outcomePrompt->lean:Trace.Token.value"
+    },
+    {
+      "from": "lean:Trace.Task.p",
+      "to": "lean:Trace.Task",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Task.p->lean:Trace.Task"
+    },
+    {
+      "from": "lean:Trace.Task.p",
+      "to": "lean:Trace.Task.wstar",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Task.p->lean:Trace.Task.wstar"
+    },
+    {
+      "from": "lean:Trace.Task.p",
+      "to": "lean:Trace.Task.μ",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Task.p->lean:Trace.Task.μ"
+    },
+    {
+      "from": "lean:Trace.Task.s0",
+      "to": "lean:Trace.Task",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Task.s0->lean:Trace.Task"
+    },
+    {
+      "from": "lean:Trace.Task.targetSignal",
+      "to": "lean:Trace.Task",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Task.targetSignal->lean:Trace.Task"
+    },
+    {
+      "from": "lean:Trace.Task.targetSignal",
+      "to": "lean:Trace.Task.answer",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Task.targetSignal->lean:Trace.Task.answer"
+    },
+    {
+      "from": "lean:Trace.Task.wstar",
+      "to": "lean:Trace.Task",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Task.wstar->lean:Trace.Task"
+    },
+    {
+      "from": "lean:Trace.Task.μ",
+      "to": "lean:Trace.Task",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Task.μ->lean:Trace.Task"
+    },
+    {
+      "from": "lean:Trace.Token.colon",
+      "to": "lean:Trace.Token",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Token.colon->lean:Trace.Token"
+    },
+    {
+      "from": "lean:Trace.Token.letter",
+      "to": "lean:Trace.Token",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Token.letter->lean:Trace.Token"
+    },
+    {
+      "from": "lean:Trace.Token.sep",
+      "to": "lean:Trace.Token",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Token.sep->lean:Trace.Token"
+    },
+    {
+      "from": "lean:Trace.Token.value",
+      "to": "lean:Trace.Token",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.Token.value->lean:Trace.Token"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_contraction",
+      "to": "lean:Trace.featureCredit",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_contraction->lean:Trace.featureCredit"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_contraction",
+      "to": "lean:Trace.mixrate",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_contraction->lean:Trace.mixrate"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_contraction",
+      "to": "lean:Trace.Prior",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_contraction->lean:Trace.Prior"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_contraction",
+      "to": "lean:Trace.Proof.unseenLettersContraction",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_contraction->lean:Trace.Proof.unseenLettersContraction"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_contraction",
+      "to": "lean:Trace.Task",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_contraction->lean:Trace.Task"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_contraction",
+      "to": "lean:Trace.Task.l2Norm",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_contraction->lean:Trace.Task.l2Norm"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_contraction",
+      "to": "lean:Trace.Task.p",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_contraction->lean:Trace.Task.p"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_erase_outcome_credit",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_erase_outcome_credit->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_erase_outcome_credit",
+      "to": "lean:Trace.featureCredit",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_erase_outcome_credit->lean:Trace.featureCredit"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_erase_outcome_credit",
+      "to": "lean:Trace.initBall",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_erase_outcome_credit->lean:Trace.initBall"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_erase_outcome_credit",
+      "to": "lean:Trace.InitHyp",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_erase_outcome_credit->lean:Trace.InitHyp"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_erase_outcome_credit",
+      "to": "lean:Trace.mixrate",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_erase_outcome_credit->lean:Trace.mixrate"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_erase_outcome_credit",
+      "to": "lean:Trace.outcomeCredit",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_erase_outcome_credit->lean:Trace.outcomeCredit"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_erase_outcome_credit",
+      "to": "lean:Trace.outcomeFunctional",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_erase_outcome_credit->lean:Trace.outcomeFunctional"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_erase_outcome_credit",
+      "to": "lean:Trace.ParamIdx",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_erase_outcome_credit->lean:Trace.ParamIdx"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_erase_outcome_credit",
+      "to": "lean:Trace.Params",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_erase_outcome_credit->lean:Trace.Params"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_erase_outcome_credit",
+      "to": "lean:Trace.Prior",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_erase_outcome_credit->lean:Trace.Prior"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_erase_outcome_credit",
+      "to": "lean:Trace.scoreCredit",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_erase_outcome_credit->lean:Trace.scoreCredit"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_erase_outcome_credit",
+      "to": "lean:Trace.scoreFunctional",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_erase_outcome_credit->lean:Trace.scoreFunctional"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_erase_outcome_credit",
+      "to": "lean:Trace.Task",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_erase_outcome_credit->lean:Trace.Task"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_erase_outcome_credit",
+      "to": "lean:Trace.Task.l2Norm",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_erase_outcome_credit->lean:Trace.Task.l2Norm"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_erase_outcome_credit",
+      "to": "lean:Trace.Task.p",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_erase_outcome_credit->lean:Trace.Task.p"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_erase_outcome_credit",
+      "to": "lean:Trace.unseen_letters_contraction",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_erase_outcome_credit->lean:Trace.unseen_letters_contraction"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_erase_outcome_credit",
+      "to": "lean:Trace.unseen_letters_outcome_credit",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_erase_outcome_credit->lean:Trace.unseen_letters_outcome_credit"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_erase_outcome_credit",
+      "to": "lean:Trace.unseen_letters_score_credit",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_erase_outcome_credit->lean:Trace.unseen_letters_score_credit"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_outcome_credit",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_outcome_credit->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_outcome_credit",
+      "to": "lean:Trace.initBall",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_outcome_credit->lean:Trace.initBall"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_outcome_credit",
+      "to": "lean:Trace.InitHyp",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_outcome_credit->lean:Trace.InitHyp"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_outcome_credit",
+      "to": "lean:Trace.mixrate",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_outcome_credit->lean:Trace.mixrate"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_outcome_credit",
+      "to": "lean:Trace.outcomeCredit",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_outcome_credit->lean:Trace.outcomeCredit"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_outcome_credit",
+      "to": "lean:Trace.outcomeFunctional",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_outcome_credit->lean:Trace.outcomeFunctional"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_outcome_credit",
+      "to": "lean:Trace.ParamIdx",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_outcome_credit->lean:Trace.ParamIdx"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_outcome_credit",
+      "to": "lean:Trace.Params",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_outcome_credit->lean:Trace.Params"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_outcome_credit",
+      "to": "lean:Trace.Prior",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_outcome_credit->lean:Trace.Prior"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_outcome_credit",
+      "to": "lean:Trace.Proof.unseenLettersOutcomeCredit",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_outcome_credit->lean:Trace.Proof.unseenLettersOutcomeCredit"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_outcome_credit",
+      "to": "lean:Trace.Task",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_outcome_credit->lean:Trace.Task"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_outcome_credit",
+      "to": "lean:Trace.Task.p",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_outcome_credit->lean:Trace.Task.p"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_score_credit",
+      "to": "lean:Trace.Arch",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_score_credit->lean:Trace.Arch"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_score_credit",
+      "to": "lean:Trace.initBall",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_score_credit->lean:Trace.initBall"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_score_credit",
+      "to": "lean:Trace.InitHyp",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_score_credit->lean:Trace.InitHyp"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_score_credit",
+      "to": "lean:Trace.mixrate",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_score_credit->lean:Trace.mixrate"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_score_credit",
+      "to": "lean:Trace.ParamIdx",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_score_credit->lean:Trace.ParamIdx"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_score_credit",
+      "to": "lean:Trace.Params",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_score_credit->lean:Trace.Params"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_score_credit",
+      "to": "lean:Trace.Prior",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_score_credit->lean:Trace.Prior"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_score_credit",
+      "to": "lean:Trace.Proof.unseenLettersScoreCredit",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_score_credit->lean:Trace.Proof.unseenLettersScoreCredit"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_score_credit",
+      "to": "lean:Trace.scoreCredit",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_score_credit->lean:Trace.scoreCredit"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_score_credit",
+      "to": "lean:Trace.scoreFunctional",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_score_credit->lean:Trace.scoreFunctional"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_score_credit",
+      "to": "lean:Trace.Task",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_score_credit->lean:Trace.Task"
+    },
+    {
+      "from": "lean:Trace.unseen_letters_score_credit",
+      "to": "lean:Trace.Task.p",
+      "kind": "depends-on",
+      "id": "depends-on:lean:Trace.unseen_letters_score_credit->lean:Trace.Task.p"
+    },
+    {
+      "from": "lean:Trace.Proof.unseenLettersContraction",
+      "to": "lean:Trace.unseen_letters_contraction",
+      "kind": "discharges",
+      "label": "proof-side declaration discharges audit-surface wrapper",
+      "id": "discharges:lean:Trace.Proof.unseenLettersContraction->lean:Trace.unseen_letters_contraction"
+    },
+    {
+      "from": "lean:Trace.Proof.unseenLettersOutcomeCredit",
+      "to": "lean:Trace.unseen_letters_outcome_credit",
+      "kind": "discharges",
+      "label": "proof-side declaration discharges audit-surface wrapper",
+      "id": "discharges:lean:Trace.Proof.unseenLettersOutcomeCredit->lean:Trace.unseen_letters_outcome_credit"
+    },
+    {
+      "from": "lean:Trace.Proof.unseenLettersScoreCredit",
+      "to": "lean:Trace.unseen_letters_score_credit",
+      "kind": "discharges",
+      "label": "proof-side declaration discharges audit-surface wrapper",
+      "id": "discharges:lean:Trace.Proof.unseenLettersScoreCredit->lean:Trace.unseen_letters_score_credit"
+    },
+    {
+      "from": "file:lean/Trace/Analysis/Contraction.lean",
+      "to": "file:lean/Trace/Meta/ModelClosure.lean",
+      "kind": "imports",
+      "id": "imports:file:lean/Trace/Analysis/Contraction.lean->file:lean/Trace/Meta/ModelClosure.lean"
+    },
+    {
+      "from": "file:lean/Trace/Analysis/Contraction.lean",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "imports",
+      "id": "imports:file:lean/Trace/Analysis/Contraction.lean->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "file:lean/Trace/Analysis/Contraction.lean",
+      "to": "file:lean/Trace/Model/Prior.lean",
+      "kind": "imports",
+      "id": "imports:file:lean/Trace/Analysis/Contraction.lean->file:lean/Trace/Model/Prior.lean"
+    },
+    {
+      "from": "file:lean/Trace/Analysis/OutcomeCredit.lean",
+      "to": "file:lean/Trace/Meta/ModelClosure.lean",
+      "kind": "imports",
+      "id": "imports:file:lean/Trace/Analysis/OutcomeCredit.lean->file:lean/Trace/Meta/ModelClosure.lean"
+    },
+    {
+      "from": "file:lean/Trace/Analysis/OutcomeCredit.lean",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "imports",
+      "id": "imports:file:lean/Trace/Analysis/OutcomeCredit.lean->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "file:lean/Trace/Analysis/OutcomeCredit.lean",
+      "to": "file:lean/Trace/Model/Prior.lean",
+      "kind": "imports",
+      "id": "imports:file:lean/Trace/Analysis/OutcomeCredit.lean->file:lean/Trace/Model/Prior.lean"
+    },
+    {
+      "from": "file:lean/Trace/Analysis/ScoreCredit.lean",
+      "to": "file:lean/Trace/Meta/ModelClosure.lean",
+      "kind": "imports",
+      "id": "imports:file:lean/Trace/Analysis/ScoreCredit.lean->file:lean/Trace/Meta/ModelClosure.lean"
+    },
+    {
+      "from": "file:lean/Trace/Analysis/ScoreCredit.lean",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "imports",
+      "id": "imports:file:lean/Trace/Analysis/ScoreCredit.lean->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "file:lean/Trace/Analysis/ScoreCredit.lean",
+      "to": "file:lean/Trace/Model/Prior.lean",
+      "kind": "imports",
+      "id": "imports:file:lean/Trace/Analysis/ScoreCredit.lean->file:lean/Trace/Model/Prior.lean"
+    },
+    {
+      "from": "file:lean/Trace/Model/Theorem.lean",
+      "to": "file:lean/Trace/Analysis/Contraction.lean",
+      "kind": "imports",
+      "id": "imports:file:lean/Trace/Model/Theorem.lean->file:lean/Trace/Analysis/Contraction.lean"
+    },
+    {
+      "from": "file:lean/Trace/Model/Theorem.lean",
+      "to": "file:lean/Trace/Analysis/OutcomeCredit.lean",
+      "kind": "imports",
+      "id": "imports:file:lean/Trace/Model/Theorem.lean->file:lean/Trace/Analysis/OutcomeCredit.lean"
+    },
+    {
+      "from": "file:lean/Trace/Model/Theorem.lean",
+      "to": "file:lean/Trace/Analysis/ScoreCredit.lean",
+      "kind": "imports",
+      "id": "imports:file:lean/Trace/Model/Theorem.lean->file:lean/Trace/Analysis/ScoreCredit.lean"
+    },
+    {
+      "from": "file:lean/Trace/Model/Theorem.lean",
+      "to": "file:lean/Trace/Meta/ModelClosure.lean",
+      "kind": "imports",
+      "id": "imports:file:lean/Trace/Model/Theorem.lean->file:lean/Trace/Meta/ModelClosure.lean"
+    },
+    {
+      "from": "file:lean/Trace/Model/Theorem.lean",
+      "to": "file:lean/Trace/Model/Prelude.lean",
+      "kind": "imports",
+      "id": "imports:file:lean/Trace/Model/Theorem.lean->file:lean/Trace/Model/Prelude.lean"
+    },
+    {
+      "from": "file:lean/Trace/Model/Theorem.lean",
+      "to": "file:lean/Trace/Model/Prior.lean",
+      "kind": "imports",
+      "id": "imports:file:lean/Trace/Model/Theorem.lean->file:lean/Trace/Model/Prior.lean"
+    },
+    {
+      "from": "mapping-claim:claim-version:3939d1d1-a23f-4c2d-9e17-f4d371f14677",
+      "to": "mapping-obligation:obligation:cc476c88-5165-43d5-89cb-08245fe06d8f",
+      "kind": "requires",
+      "id": "requires:mapping-claim:claim-version:3939d1d1-a23f-4c2d-9e17-f4d371f14677->mapping-obligation:obligation:cc476c88-5165-43d5-89cb-08245fe06d8f"
+    },
+    {
+      "from": "mapping-claim:claim-version:5d83901a-b3d1-446c-ae56-5282c5ef0c09",
+      "to": "mapping-obligation:obligation:b765b26c-f68c-4988-9dcd-9db340759ae5",
+      "kind": "requires",
+      "id": "requires:mapping-claim:claim-version:5d83901a-b3d1-446c-ae56-5282c5ef0c09->mapping-obligation:obligation:b765b26c-f68c-4988-9dcd-9db340759ae5"
+    },
+    {
+      "from": "mapping-claim:claim-version:606ed17b-1fa7-45a0-ae55-ea9f11dc493d",
+      "to": "mapping-obligation:obligation:2922a291-c30a-4c98-ad30-c381a0c7a950",
+      "kind": "requires",
+      "id": "requires:mapping-claim:claim-version:606ed17b-1fa7-45a0-ae55-ea9f11dc493d->mapping-obligation:obligation:2922a291-c30a-4c98-ad30-c381a0c7a950"
+    },
+    {
+      "from": "mapping-claim:claim-version:9f2ed519-25b9-4760-9b04-b8ab5530e3f6",
+      "to": "mapping-obligation:obligation:798672cd-274e-4c8a-83c2-8c832c90be91",
+      "kind": "requires",
+      "id": "requires:mapping-claim:claim-version:9f2ed519-25b9-4760-9b04-b8ab5530e3f6->mapping-obligation:obligation:798672cd-274e-4c8a-83c2-8c832c90be91"
+    },
+    {
+      "from": "mapping-claim:claim-version:d1f2b329-905f-4d0b-9035-dc9d83ec11d8",
+      "to": "mapping-obligation:obligation:4a40c1fd-9f5f-478b-97d7-e59d5da19cf6",
+      "kind": "requires",
+      "id": "requires:mapping-claim:claim-version:d1f2b329-905f-4d0b-9035-dc9d83ec11d8->mapping-obligation:obligation:4a40c1fd-9f5f-478b-97d7-e59d5da19cf6"
+    },
+    {
+      "from": "mapping-claim:claim-version:de5a5f81-9506-4c43-9de2-ee9af58c0bc8",
+      "to": "mapping-obligation:obligation:91b9ddb4-a4fc-4fce-b83b-9e917010d517",
+      "kind": "requires",
+      "id": "requires:mapping-claim:claim-version:de5a5f81-9506-4c43-9de2-ee9af58c0bc8->mapping-obligation:obligation:91b9ddb4-a4fc-4fce-b83b-9e917010d517"
+    },
+    {
+      "from": "mapping-claim:claim-version:e036b619-586c-4db2-aa12-61030ed70f7e",
+      "to": "mapping-obligation:obligation:7b0acf34-6ae8-4f89-88ab-c3389a253a1d",
+      "kind": "requires",
+      "id": "requires:mapping-claim:claim-version:e036b619-586c-4db2-aa12-61030ed70f7e->mapping-obligation:obligation:7b0acf34-6ae8-4f89-88ab-c3389a253a1d"
+    }
+  ],
+  "attempts": [],
+  "feedback": [],
+  "recoveries": [],
+  "recoveryFindings": [],
+  "mappingDigest": "sha256-5b91b44728f9ef144f073956def2401dc858d19eb88a6b2f7c3dfd3ac6ec2ba1"
+}

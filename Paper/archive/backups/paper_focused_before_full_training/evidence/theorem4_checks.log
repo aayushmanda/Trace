@@ -1,0 +1,26 @@
+PASS  A. eps* implies all 11 inequalities on 1000 (p, d_h, gap, K) cases
+PASS  D. max p h*^4/(1-2p) <= 10
+PASS  D. max p^2 h*^6 <= (3/e)^6 and max sqrt(p) h* <= 2/e
+PASS  D. h* <= (1-2p)/p and h* <= 1/p
+PASS  D. sigma'(1) >= 1/6, sigma(-1/4)/2 >= 1/5, e^(-1/2)/4 >= 1/7
+PASS  D. tanh(x/2) >= x/4 on [0,2]; sigma(-z) >= e^(-z)/2 for z >= 0
+PASS  D. (1-p) - sqrt(p(1-p)) >= (1-2p)/2 and e^(-1/2)/4 (p/(1-p))^(1/4) >= p/7
+PASS  D. (log 2)^2/128 >= 1/267
+PASS  D. 6144*267 = 1640448 <= 1.7e6, 6144*32 = 196608 <= 2e5
+PASS  D. 33/8*3840 = 15840, 32*15840 = 506880 < 712^2 = 506944
+PASS  D. 3*4*1024/2 = 6144, 128*6*5 = 3840
+PASS  D. 7/2 <= 6 log 2 (T_1 absorbed for K >= 2)
+PASS  D. growth lemma: 80*6*17/2 = 4080, 3*4*5*267/2 = 8010, tanh^2(1/2) >= 1/5, 1/sqrt(267) >= 1/17
+PASS  D. floor lemma: (5/4)/20 + 1/16 = 1/8 and v^2 h*/20 >= eps^2 min(1,h*)/80
+PASS  B. dL/dc, dL/dg, dL/da match finite differences (K = 2,3,4,6,50; 7500 points)
+PASS  B. dL/dg = (dL/dc + tau err)/2
+PASS  B. phi = -dF/dm, 0 < phi < 1, phi >= sigma(-m)/2, phi >= (1-P)/2
+PASS  B. phi nonincreasing and phi(m-2x) <= e^{2x} phi(m)
+PASS  B. F(m;s) >= l(m) >= -m
+PASS  B. Drift (e): dL/dc <= 0 if h <= h*/2;  dL/dc <= -mu if h <= h*/4, |Delta| <= 1
+PASS  B. (dL/dc)^2 + (dL/dg)^2 >= tau^2(err0^2+err1^2)/3
+PASS  B. Levels (b), (c)
+PASS  C. count-readout gradient stays circulant and background-symmetric (K = 2,3,4,6)
+PASS  C. full-model loss and flow equal the reduced (c, g, s, a) system (K = 2,3,4,6; 240 points)
+
+0 failure(s)

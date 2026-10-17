@@ -1,0 +1,25 @@
+H=16 step 0 clock min 1 solved 0 routed 0/960 (2s)
+H=16 step 20000 clock min 20001 solved 416 routed 24/960 (4600s)
+H=16 step 40000 clock min 40001 solved 420 routed 26/960 (9153s)
+H=16 step 60000 clock min 60001 solved 420 routed 35/960 (13706s)
+H=16 step 80000 clock min 80001 solved 420 routed 37/960 (16330s)
+
+level/rho/bias/readout ('Cp', 0.0, 'gate', 'eps'): routed/total, T/. = tied CE flow routes or not, (solved)   eps -> 0.05 0.1 0.2 0.3 0.5 0.7 1 1.5
+  kappa=+1.00: 0/10T(0)  0/10T(0)  0/10T(0)  0/10T(0)  0/10T(0)  0/10T(0)  0/10T(0)  0/10T(3)
+  kappa=+0.00: 0/10T(3)  0/10T(2)  0/10T(4)  0/10T(4)  0/10T(4)  0/10T(4)  0/10T(5)  0/10T(5)
+  kappa=-1.00: 0/10.(3)  0/10.(2)  0/10.(2)  0/10.(4)  0/10.(4)  0/10T(4)  0/10T(4)  0/10T(3)
+
+level/rho/bias/readout ('Cp', 0.0, 'gate', 'one'): routed/total, T/. = tied CE flow routes or not, (solved)   eps -> 0.05 0.1 0.2 0.3 0.5 0.7 1 1.5
+  kappa=+1.00: 0/10T(0)  0/10T(0)  0/10T(0)  0/10T(0)  0/10T(0)  0/10T(0)  0/10T(0)  0/10T(3)
+  kappa=+0.00: 0/10T(4)  0/10T(5)  0/10T(4)  0/10T(4)  0/10T(4)  0/10T(4)  0/10T(5)  0/10T(5)
+  kappa=-1.00: 0/10.(2)  0/10.(4)  0/10.(4)  0/10.(3)  0/10.(4)  0/10T(4)  0/10T(4)  0/10T(2)
+
+level/rho/bias/readout ('Cp', 0.0, 'rand', 'eps'): routed/total, T/. = tied CE flow routes or not, (solved)   eps -> 0.05 0.1 0.2 0.3 0.5 0.7 1 1.5
+  kappa=+1.00: 4/10T(10)  3/10T(10)  3/10T(10)  2/10T(10)  2/10T(10)  3/10T(10)  2/10T(10)  2/10T(10)
+  kappa=+0.00: 0/10T(5)  0/10T(4)  0/10T(5)  0/10T(4)  0/10T(4)  0/10T(6)  0/10T(8)  1/10T(7)
+  kappa=-1.00: 0/10.(4)  0/10.(3)  0/10.(3)  0/10.(4)  0/10.(4)  0/10T(2)  0/10T(4)  0/10T(4)
+
+level/rho/bias/readout ('Cp', 0.0, 'rand', 'one'): routed/total, T/. = tied CE flow routes or not, (solved)   eps -> 0.05 0.1 0.2 0.3 0.5 0.7 1 1.5
+  kappa=+1.00: 2/10T(10)  3/10T(10)  6/10T(10)  2/10T(10)  2/10T(10)  3/10T(10)  2/10T(10)  1/10T(10)
+  kappa=+0.00: 0/10T(3)  0/10T(2)  0/10T(3)  0/10T(4)  0/10T(5)  0/10T(7)  0/10T(8)  1/10T(8)
+  kappa=-1.00: 0/10.(1)  0/10.(2)  0/10.(2)  0/10.(3)  0/10.(4)  0/10T(4)  0/10T(4)  0/10T(4)

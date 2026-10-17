@@ -1,0 +1,393 @@
+% !TEX root = main.tex
+% Main text: abstract through conclusion. Two theorems (time separation; separation not from capacity),
+% three lemmas and one proposition. General-K statements, constants and proofs are in the appendix.
+\begin{abstract}
+A Transformer can contain an exact program for counting the letters of a prompt, both one that writes only the
+final count and one that writes every running count. Do intermediate steps help because they add labels, or because
+they change which program gradient training reaches? We answer this for counting with $n$ hidden updates, where each
+letter is the query with probability $p<1/2$ and $\lambda=1-2p$. The mechanism is simple: a feature that reads $k$
+letters sees the final count only through a factor $\lambda^{n-k}$, while a displayed running count leaves a local
+signal of variance $1-\lambda^2$. We prove two separations.
+(1)~\emph{In time:} from the same small seed of a two-block Transformer, step training gives every transition a
+positive margin in time polynomial in $n$, while outcome training stays near chance for time $\lambda^{-n}$.
+(2)~\emph{Not from capacity:} in a model family that contains exact executors for both formats, from every seed in an
+explicit open set, step training reaches positive margins on every transition, while outcome training converges to a
+suboptimal minimum with accuracy $(1+\lambda^{n-1})/2$.
+Experiments confirm the $\lambda^{-n}$ plateau and the trap, and show that the advantage survives matched label budgets
+and learned attention routing.
+\end{abstract}
+
+% ===================================================================
+\section{Introduction}
+\label{sec:intro}
+
+Training on intermediate steps makes many reasoning tasks learnable
+\citep{nye2021scratchpads,wei2022cot,lightman2023verify}. Is that because steps give more labels, or because they
+change which program gradient descent can reach? We answer this for the simplest task where the question is
+non-trivial: counting how often a query letter occurs, modulo two.
+
+The task has one parameter that controls everything. Each letter is the query letter with probability $p<1/2$; write
+$\lambda=1-2p$. An outcome label is the parity of all $n$ letters, so a feature that reads only $k$ of them sees the
+label through $n-k$ letters it never observed, and each unseen letter multiplies the correlation by $\lambda$
+(\cref{fig:chain}). A step label is the next running count, which depends on one new letter only.
+
+\paragraph{Contributions.} We prove that this difference decides what training reaches, in two theorems that each
+compare the two formats from the same seed.
+
+\begin{center}\small
+\begin{tabular}{@{}p{0.34\linewidth}p{0.29\linewidth}p{0.29\linewidth}@{}}
+\toprule
+ & Step training & Outcome training\\
+\midrule
+\textbf{\Cref{thm:time}: separation in time} (two-block Transformer, same seed, same trained parameters) &
+positive margins in time $\operatorname{poly}(n)$ & near chance for time $\lambda^{-n}$\\
+\textbf{\Cref{thm:matched}: separation not from capacity} (one family containing both exact programs) &
+positive margins on every transition & converges to a one-letter trap\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\Cref{thm:time} shows that outcome training is exponentially slower. Its trained family cannot express the outcome
+program, so it leaves open that outcome training simply lacks capacity. \Cref{thm:matched} removes that explanation:
+the failure comes from the loss, not from what the model can represent. Experiments test both theorems and show that
+the advantage survives matched label budgets and learned attention routing (\cref{sec:experiments}).
+
+\paragraph{Relation to \citet{kim2024parity}.} Kim and Suzuki prove that a Transformer learns parity with
+teacher-forced chain of thought but not without it. Our setting differs in three ways. \emph{Task:} they
+use worst-case $k$-parity, which is hard for any gradient method by a statistical-query argument;
+counting with $p<1/2$ is a much easier target whose difficulty $\lambda$ can be tuned, so the fact that
+outcome training still stalls points to the supervision format rather than the hardness of the task.
+\emph{Architecture:} they use position-only attention, a fixed link function and one large gradient
+step; we analyse a two-block Transformer for the plateau and gradient flow on readouts and query--key
+strengths for the positive result. \emph{Kind of negative result:} theirs holds for every
+algorithm with an approximate gradient oracle, which is stronger in form than our gradient-flow
+plateau near small initialization. In exchange we obtain an explicit horizon dependence $\lambda^{-n}$,
+and a same-family trap that rules out the explanation that outcome training merely lacks capacity.
+
+% ===================================================================
+\section{Setup}
+\label{sec:setup}
+\label{sec:setting}
+
+\paragraph{Task.} A prompt has a start bit $s_0$, uniform on $\{0,1\}$, and letters $w_1,\ldots,w_n$ drawn
+i.i.d.\ from an alphabet in which the query letter $w^\star$ has probability $p\in(0,1/2)$. With
+$b_t=\mathbf 1[w_t=w^\star]$, the running count is
+\[
+ s_t=s_0+b_1+b_2+\cdots+b_t\pmod 2,\qquad t=1,\ldots,n .
+\]
+In sign form, put $S=(-1)^{s_0}$ and $C_t=(-1)^{b_t}$. Then
+\begin{equation}
+ (-1)^{s_n}=S\,C_1C_2\cdots C_n,\qquad \E[C_t]=1-2p=\lambda .
+ \label{eq:tracking}
+\end{equation}
+So the answer is a product of signs, as in parity, but each sign is biased towards $+1$. The
+\emph{contraction coefficient} $\lambda\in(0,1)$ is the only property of the task that enters our
+bounds. For counting modulo $K$ the same role is played by the largest modulus of a nontrivial
+Fourier coefficient of one letter, and the arguments below extend; we treat the binary case only.
+
+\begin{figure}[t]
+\centering
+\resizebox{\linewidth}{!}{\input{figures/counting_chain.tex}}
+\caption{\textbf{One counting process, two views of it.}
+(a)~Counting is a two-state Markov chain: each letter keeps the count with probability $1-p$ and flips it with probability $p$.
+(b)~Outcome supervision labels only $s_n$, so a feature that reads $k$ letters sees the label through
+$n-k$ unseen steps, and its correlation shrinks like $\mixrate^{n-k}$ (\cref{thm:main}). Step supervision
+displays the previous count and labels the next one, which keeps a rule signal of variance $1-\mixrate^2$
+(\cref{sec:credit}).}
+\label{fig:chain}
+\end{figure}
+
+\paragraph{Two formats.} Both formats see the same prompt. The \emph{outcome loss} $\Lout$ is the
+cross-entropy of the final count $s_n$. The \emph{step loss} $\Lstep$ is the teacher-forced cross-entropy of
+each transition: from a displayed count $s$ and the next letter $w$ to the next count $s'$, which is $s+1$ if $w=w^\star$
+and $s$ otherwise (mod $2$), averaged over the positions $t\ge2$.
+
+\paragraph{Model.} We use a Transformer with two causal attention/ReLU blocks, relative position
+biases, no LayerNorm and a linear readout; $\bm\theta$ denotes all parameters.
+
+\begin{proposition}[Both programs exist]
+\label{prop:represent}
+With widths linear in $n$, this architecture has parameters $\thstep$ and $\thout$ at which greedy decoding
+is correct on every prompt, in the step and the outcome format respectively (\cref{app:architectures}).
+\end{proposition}
+
+\paragraph{Initialization.} Our results for the full Transformer use \emph{small initialization}: all weights at scale
+$\varepsilon$ with zero readout, and MLP biases bounded away from zero so that the ReLU pattern is fixed
+near the seed (\cref{ass:arch,ass:init}). At the executor widths of \cref{prop:represent}, which grow linearly in $n$, keeping
+the ReLU pattern fixed needs $\varepsilon\le cn^{-1/2}$; this is why we assume $\varepsilon\le c\min(\lambda,n^{-1/2})$
+(\cref{rem:end-width}). Small initialization is the standard regime for gradient-flow analysis of feature learning, and it
+is where the plateau is visible; the experiments also leave it.
+Throughout, $c,C>0$ are constants that depend on the architecture but not on $n$, $\varepsilon$ or $\lambda$;
+they are listed in \cref{app:setup}.
+
+% ===================================================================
+\section{Why the two formats separate}
+\label{sec:credit}
+\label{sec:outcome}
+
+We measure how much information about the label reaches a parameter update. Write the model's
+output as one logit $z_{\bm\theta}$ (the difference of the two count logits) and fix the start bit.
+The \emph{outcome credit} is $\|\nabla_{\bm\theta}\E[z_{\bm\theta}\,(-1)^{s_n}]\|$: the part of the outcome
+gradient that depends on the answer (\cref{lem:gradient-split}).
+
+\paragraph{Each unseen letter costs a factor $\lambda$.} Let a feature $h$ read only the letters in a set $A$. Averaging
+over the other letters replaces each of their signs by its mean, so by \cref{eq:tracking}
+\begin{equation}
+ \E\bigl[(-1)^{s_n}\bigm| \text{letters in }A\bigr]=S\prod_{t\in A}C_t\cdot\lambda^{n-|A|},
+ \qquad\text{hence}\qquad
+ \bigl|\E[h\,(-1)^{s_n}]\bigr|\le\lambda^{n-|A|}\,\|h\|_{L^2}.
+ \label{eq:credit-degree}
+\end{equation}
+
+\paragraph{The network reads few letters at a time.} Expand the network in powers of its attention scores.
+With all scores zero, attention is uniform and each term reads at most one letter. We use only two facts
+about this expansion (\cref{prop:score-degree}): apart from a letter-free part of size $C\varepsilon$, the terms of
+order $k$ \emph{read at most $2k+1$ letters} and have \emph{total size at most $C\varepsilon^{2+4k}$}.
+
+\begin{lemma}[Outcome credit vanishes]
+\label{thm:main}
+With the start bit fixed, \cref{eq:credit-degree} holds for every letter set $A$ and every feature $h$ of
+those letters. If $\varepsilon\le c\min(\lambda,n^{-1/2})$, then near the seed
+\[
+ \bigl\|\nabla_{\bm\theta}\E[z_{\bm\theta}\,(-1)^{s_n}]\bigr\|\ \le\ C\,\varepsilon\,\lambda^{n}.
+\]
+\end{lemma}
+
+\emph{Sketch of proof.} The letter-free part sees the answer only through its mean $S\lambda^n$, giving credit
+$C\varepsilon\lambda^n$. An order-$k$ term reads at most $2k+1$ letters, so by \cref{eq:credit-degree} its credit is at most
+$C\varepsilon^2\lambda^{n-1}(\varepsilon^4/\lambda^2)^k$, a geometric series bounded by $C\varepsilon\lambda^n$ (\cref{app:credit-proof}).
+
+\paragraph{A displayed count leaves a local signal.} The displayed count alone predicts the next count with
+probabilities $(1-p,p)$. Let $S$ and $C$ be the signs of the displayed count and the current letter. In sign form the
+step label is $SC$, and its part not predicted by the displayed count is the \emph{rule signal} $S(C-\lambda)$, of variance
+$1-\lambda^2$. It is paid once, for one letter, whereas an outcome label pays $\lambda$ for every unseen letter. The two
+theorems below turn this difference in signal into a difference in what training reaches.
+
+% ===================================================================
+\section{Theorem 1: separation in time}
+\label{sec:step}
+\label{sec:time}
+
+\paragraph{One formula for both theorems.} In both theorems the step prediction has the form
+\begin{equation}
+ f=S\bigl(a+g\tanh(qk)\,C\bigr),
+ \label{eq:gate-logit}
+\end{equation}
+with a \emph{state readout} $a$ (trust the displayed count), a \emph{gate readout} $g$ (use the current letter) and a
+\emph{gate strength} $qk$, a product of query and key scales. The step label is $SC$, so the step program needs
+$g\tanh(qk)$ large; the outcome loss rewards it only through the weak factor of \cref{eq:binary-loss-mixture} below.
+Step training grows $g\tanh(qk)$; the two theorems show that outcome training does not.
+
+\paragraph{The seed.} In the two-block Transformer, the second block has a gate head that attends to the displayed count
+and the current letter, and its output reaches the logits through a count readout and a gate readout. With all other
+maps fixed, the step logit reduces exactly to \cref{eq:gate-logit} (\cref{lem:J-reduce}). Both readouts start at zero, the
+query and key scales start at size $\varepsilon$, and gradient flow trains the two readouts and the two scales. The seed is
+\emph{aligned} if its initial gate already points the right way ($q_0k_0<0$ in \cref{app:step-supplied-routing}); a random choice
+of the two signs is aligned with probability $\frac12$.
+
+\begin{theorem}[Separation in time]
+\label{thm:time}
+Start the two-block Transformer, with widths at most linear in $n$, from an aligned seed with $\varepsilon\le c\min(\lambda,n^{-1/2})$,
+and train the same parameters under each loss.
+\begin{thmparts}
+\item\label{thm:joint} \emph{Step training learns.} Every transition has positive margin for all $t\ge T_{\mathrm{step}}$, and $\Lstep\to0$, where
+\[
+ T_{\mathrm{step}}\le\frac{C_p}{\varepsilon^4}\,\sqrt{d}\,\log\frac{d}{\varepsilon},
+\]
+with $d$ the head width and $C_p$ depending only on $p$. At executor width ($d\asymp n$,
+$\varepsilon\asymp n^{-1/2}$) this is $O(n^{5/2}\log n)$.
+\item\label{thm:outcome-end} \emph{Outcome training stalls.} For all $t\le c\lambda^{-n}$,
+\[
+ \Lout(\bm\theta(t))\ \ge\ \log2-C\varepsilon^2\lambda^n
+ \qquad\text{and}\qquad
+ \Pr\nolimits_{\bm\theta(t)}(\text{correct answer})\ \le\ \tfrac12+C\varepsilon\lambda^{n/2}.
+\]
+This part holds for every small seed of \cref{ass:init}, even if every parameter of the Transformer is trained.
+\end{thmparts}
+\end{theorem}
+
+\emph{Sketch of (ii).} Along gradient flow, $\frac{d}{dt}\Lout=-\|\nabla\Lout\|^2$, so by Cauchy--Schwarz
+$\|\bm\theta(t)-\bm\theta_0\|^2\le t\,(\Lout(\bm\theta_0)-\Lout(\bm\theta(t)))$. Near the seed, \cref{thm:main} implies the loss can fall
+by at most $C\varepsilon^2\lambda^n$, so the flow travels at most $\sqrt{t\,C\varepsilon^2\lambda^n}$, which is smaller than the
+neighbourhood until $t$ is of order $\lambda^{-n}$ (\cref{app:end}). The seed above satisfies \cref{ass:init}
+(\cref{cor:joint-outcome}), so both parts start from the same point.
+
+\emph{Sketch of (i): why joint training succeeds.} The flow reduces exactly to the three numbers $a$, $g$, $qk$ of
+\cref{eq:gate-logit} (\cref{lem:J-reduce}). The count prior first gives $g$ a direction, and the gradient of $qk$ is proportional to
+$g$, which keeps an aligned gate aligned. A monotone balance between $g$ and $a$ then holds
+$g$ above a fixed floor (\cref{lem:J-align,lem:J-floor}), $|qk|$ grows exponentially to order one, and a gradient lower bound
+proportional to $\tanh^2(qk)$ gives positive margins after time $O(\varepsilon^{-4}\log\frac1\varepsilon)$ (\cref{lem:J-grow}). Measured solve
+times scale as $\varepsilon^{-4.0}$ to $\varepsilon^{-4.3}$, also from misaligned seeds, which first turn around (\cref{tab:J-ode}).
+
+% ===================================================================
+\section{Theorem 2: the separation is not from capacity}
+\label{sec:matched}
+\label{sec:two-path-trap}
+
+The trained family of \cref{thm:time} cannot express the outcome program, so a reader may suspect that outcome training
+fails for lack of capacity. We now fix one family that contains \emph{both} exact executors. The next identity shows where
+outcome training will be caught.
+
+\begin{lemma}[One-letter loss identity]
+\label{lem:binary-loss-mixture}
+For any predictor that reads only the start bit and the last letter, with $L_{\mathrm{sym}}$ the loss with random labels,
+\begin{equation}
+ L_{\mathrm{out}}=L_{\mathrm{sym}}+\lambda^{n-1}\bigl(L_{\mathrm{step}}-L_{\mathrm{sym}}\bigr).
+ \label{eq:binary-loss-mixture}
+\end{equation}
+\end{lemma}
+\emph{Proof.} The hidden product $\prod_{t<n}C_t$ is independent of the inputs and equals $\pm1$ with probability
+$(1\pm\lambda^{n-1})/2$; condition on it (\cref{app:contraction}). \hfill$\square$
+
+So the outcome loss is a $\lambda^{n-1}$-weak copy of the step loss. Its minimizer is a confident one-letter guess that is
+right with probability only $(1+\lambda^{n-1})/2$. Gradient flow is captured by exactly this guess.
+
+\paragraph{The family.} Routing is supplied: at transition $t$ the model sees the previous count, the current letter
+and the mean $u$ of the first $t$ bits; at the answer it sees $s_0$, the last letter and the mean of all bits. Writing $S$
+and $C$ for the signs of the displayed count and the current letter,
+\begin{equation}
+ f(S,C,u)=\underbrace{S\bigl(a+g\tanh(qk)\,C\bigr)}_{\text{gate path, as in \cref{eq:gate-logit}}}
+ \;+\;\underbrace{h_\phi(u,S)}_{\text{averaging path}},
+ \label{eq:two-path-model}
+\end{equation}
+with all parameters trained. The averaging path is a one-hidden-layer ReLU network $h_\phi(u,S)=\sum_iv_i\relu(w_iu+d_iS+b_i)$
+with $6(n+1)$ units, and $\phi=(v_i,w_i,d_i,b_i)_i$. Here $\tanh$ is the hyperbolic tangent, a rescaled sigmoid $\sigmoid$:
+\[
+ \tanh(x)=\frac{e^{x}-e^{-x}}{e^{x}+e^{-x}}=2\sigmoid(2x)-1\in(-1,1),\qquad \sigmoid(x)=\frac1{1+e^{-x}} .
+\]
+The gate path executes the step program; the averaging path can read the full count and executes the outcome program
+(\cref{prop:two-path-trap}). The experiments show that step training can also learn this routing (\cref{tab:reach}).
+
+\begin{theorem}[The separation is not from capacity]
+\label{thm:matched}
+For each $n$ there is an explicit set $\mathcal U_n$ of seeds, open among seeds with zero readouts ($a=g=v=0$) and
+nonempty for $n\ge n_0(p)$, such that from every seed in $\mathcal U_n$:
+\begin{thmparts}
+\item \emph{Step training learns:} after a time $O\bigl(p^{-2}\log(1/p)\,/\tanh^2(q_0k_0)\bigr)$, every transition has margin
+at least $1/2$, at all later times.
+\item \emph{Outcome training is trapped:} it converges to a local minimum with logits $\log\frac{1+\lambda^{n-1}}{1-\lambda^{n-1}}\,SC$, its loss
+never falls below the loss of that minimum, and its accuracy tends to
+\[
+ \frac{1+\lambda^{n-1}}2\ <\ 1 .
+\]
+\end{thmparts}
+\end{theorem}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/two_path_phase.pdf}
+\caption{\textbf{The same seeds, two losses.} Gradient flow of the two-path family (curves; dots are starting points),
+shown in the plane of the state readout $a$ and the gate contrast $g\tanh(qk)$, over level sets of the loss (gray).
+(a)~Under the step loss the contrast grows without bound and the margins become positive.
+(b)~Under the outcome loss every trajectory converges to the one-letter trap (star). Here $n=4$, so that the
+trap is visible; for larger $n$ it moves towards the origin.}
+\label{fig:two-path-phase}
+\end{figure}
+
+The seeds live in the reduced family and are not at small scale: the gate starts at order one while the averaging
+path starts small. $\mathcal U_n$ contains, for example, the seed $q_0=k_0=1$ with two active ReLUs of size about
+$p/\sqrt{n\log(1/p)}$ and an averaging path that ignores $S$, together with every small enough perturbation of it
+(\cref{lem:seed-set}); $n_0(1/4)=32$. The exact conditions are in \cref{app:matched-proof}.
+
+\emph{Sketch of proof.} \emph{Outcome half.} At zero readout the loss is $\log2$, only $O(\lambda^{2(n-1)})$ above the trap.
+Gradient flow turns a small loss gap into a short path, so the flow cannot leave the region where each ReLU keeps its
+sign. There the loss is a strictly convex function of four effective coefficients, and its only minimizer is the trap
+(\cref{app:random-trap-certificate}). \emph{Step half.} In the same region the averaging path is affine in $(u,S)$, so the step logit is
+\cref{eq:gate-logit} plus a small affine term. (a)~\emph{The gate grows:} $g\tanh(qk)$ increases at rate at least $\tanh^2(q_0k_0)$ times
+the current error rate.
+(b)~\emph{The state readout is bounded:} $a$ stays in $[0,\log\frac{1-p}p]$ up to small corrections.
+(c)~\emph{The averaging path stays small:} $h_\phi$ is driven only through its dependence on $S$, at a rate set by
+$\dot a$; since $a$ stays in a fixed interval, a conservation law keeps $h_\phi$ within a factor $O(1/p)$ of its initial size, so
+it never competes with the gate.
+(d)~\emph{Margins persist:} once the loss is below the smallest cell probability, no margin can turn negative again
+(\cref{app:matched-proof}).
+
+The outcome executor is in the family at zero loss, and the same gate path that outcome training leaves weak is driven to
+a margin by step training. With initialization, architecture and expressivity all matched, only the loss differs.
+
+% ===================================================================
+\suppressfloats[t]
+\section{Experiments}
+\label{sec:experiments}
+\label{sec:validation}
+
+We test both theorems with binary counting at $p=1/4$ ($\lambda=1/2$); protocols are in \cref{app:experiments}.
+
+\begin{figure}[t]
+\centering
+\resizebox{\linewidth}{!}{\input{figures/experiments.tex}}
+\caption{\textbf{Outcome training stalls on an exponential plateau; step training does not.}
+(a)~Full Transformer, $n=16$, zero readout, AdamW: median exact continuation accuracy and interquartile band over ten
+paired seeds. Both formats admit an exact executor (\cref{prop:represent}).
+(b)~Small initialization ($\varepsilon=0.002$): time for training to move a fixed distance from the seed, median and
+interquartile band over three draws; the dashed guide is $\lambda^{-n}$ (\cref{thm:outcome-end}).
+(c)~Outcome accuracy after $8$k updates in $20$ horizon--alphabet cells (means and seed ranges) against $\lambda^n$;
+the dashed curve is the accuracy $\frac{1+\lambda^n}2$ of the state-only prior.}
+\label{fig:experiments}
+\end{figure}
+
+\paragraph{Does \cref{thm:time} hold, and beyond its assumptions?} In the small-initialization regime the time to leave
+the seed grows from $10^4$ at $n=4$ to $3\times10^7$ at $n=14$, at least as fast as $\lambda^{-n}$, while the step exit time
+stays at $4.3$ for every $n$, and no ReLU changes sign (\cref{fig:experiments}b). Outside the theorem, a full Transformer
+trained with AdamW at $n=16$ solves $8$ of $10$ seeds with steps while outcome training stays at chance
+(\cref{fig:experiments}a). Across horizons and alphabets, outcome training learns the state-only prior
+$\frac{1+\lambda^n}2$ (Spearman $\rho=0.91$) and essentially nothing beyond it (median excess $0.2$ points,
+\cref{fig:experiments}c).
+
+\paragraph{Does \cref{thm:matched} hold?} We run population gradient descent (step sizes $1$, $\tfrac12$ and $\tfrac14$, giving the
+same results) in the two-path family from $12$ seeds that satisfy every condition of $\mathcal U_n$, checked numerically, at
+$n\in\{36,40,48,64\}$: perturbations of the explicit seed with nonzero state weights on all units. Every transition
+reaches margin $1/2$ by flow time $5$, far inside the theorem's upper bound ($T\approx265$ for these seeds); outcome
+training ends after flow time $2\times10^4$ at exactly the one-letter accuracy $(1+\lambda^{n-1})/2$, with no ReLU changing
+sign. Away from these seeds (Appendix, \cref{fig:two-path-sweep}), outcome training never escapes at $n=17$, and escapes
+at $n=6,8$ only when ReLU kinks start inside the input range: this is the initialization boundary of the trap.
+
+\paragraph{Is it just more labels, or supplied routing?} \input{sections/label_budget_result} Routing need not be
+supplied either: training query--key maps, relative biases and readout together from a random initialization solves $16$
+of $17$ step runs (the last reaches $99.95\%$), while matched outcome runs solve none within $300$k updates
+(\cref{tab:reach}).
+
+\begin{table}[t]
+\caption{\textbf{Step training learns the routing; outcome training under the same protocol does not.}
+Scores, relative bias and readout are trained by full-batch gradient descent from $\varepsilon=0.3$, with the same seeds for both
+formats. Solved: every held-out prediction correct.}
+\label{tab:reach}
+\centering\small
+\begin{tabular}{@{}rcccc@{}}
+\toprule
+ & \multicolumn{2}{c}{Step} & \multicolumn{2}{c}{Outcome (300k updates)}\\
+\cmidrule(lr){2-3}\cmidrule(l){4-5}
+$n$ & Solved & Updates to solve, median (range) & Solved & Answer accuracy (\%)\\
+\midrule
+6  & 5/5 & 44k (41--78k)   & 0/5 & 50--94\\
+8  & 5/5 & 61k (46--99k)   & 0/5 & 50--55\\
+12 & 4/5 & 77k (42--103k)  & 0/5 & 50\\
+16 & 2/2 & 237k (208--266k) & 0/2 & 50--51\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ===================================================================
+\section{Related work and limitations}
+\label{sec:related}
+\label{sec:conclusion}
+
+\paragraph{Related work.} Intermediate supervision has been studied through decomposition, locality,
+expressivity and sample complexity
+\citep{wies2023subtask,prystawski2023think,abbe2024globality,feng2023towards,merrill2024expressive,malach2023autoregressive,hanneke2026samplecomplexityautoregressivereasoning,wen2024sparse};
+we fix the target and architecture and follow the gradient instead. Our credit bound is in the spirit of
+failures of gradient learning for orthogonal targets \citep{shalevshwartz2017failures} and of
+initialization-dependent parity learning \citep{abbe2025parities}, and is related to staircase and low-degree
+analyses \citep{abbe2021staircase,abbe2023sgd,panigrahi2025progressive}; the new ingredient is a Transformer score
+expansion that bounds how many letters each term reads. \citet{makkuva2025attention,makkuva2024local}
+characterize good and bad minima of single-layer Transformers on Markov chains. \Citet{kim2024parity} are
+discussed in \cref{sec:intro}. Counting is a cyclic automaton whose shallow shortcuts exist
+\citep{liu2023automata}; we show that existence does not mean training finds them.
+
+\paragraph{Limitations.} The full-Transformer results hold near small initialization; outside it we have experiments,
+and one counterexample: for counting modulo $3$ at $n=8$, where $\lambda^{-8}\approx27$ is modest, two of three AdamW
+outcome runs solve the task. \Cref{thm:joint} trains readouts and query--key strengths with routing
+supplied; learned routing is only measured (\cref{tab:reach}). We treat binary counting; the contraction argument extends
+to counting modulo $K$ with $\lambda$ the largest nontrivial Fourier modulus of one letter. \Cref{thm:matched} supplies routing and averaging and needs
+$n\ge n_0(p)$; its seed conditions are sufficient, not necessary. Learning routing and unrestricted features jointly from
+random weights remains open.

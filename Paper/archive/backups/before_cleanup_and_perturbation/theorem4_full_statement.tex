@@ -1,0 +1,31 @@
+% !TEX root = main.tex
+\paragraph{Complete statement.}\label{app:J-full-statement}
+The supplied seed and its Euclidean trained family are specified in
+\cref{app:step-supplied-routing}; the clean model and aligned initialization
+are specified in \cref{app:J-clean}. The useful-site biases are zero,
+readouts start at zero, and $\varepsilon/2\le|q_0|,|k_0|,|v|\le2\varepsilon$.
+\begin{restated}{Theorem 4 (complete quantitative statement)}
+\textnormal{(i) Supplied routing.} Count modulo $K\ge2$ with $n\ge2$ letters and a query of probability $p\in(0,1)$, $p\neq\tfrac{1}{2}$, and let $h^\star=|\log\tfrac{1-p}{p}|$,
+$p_{\min}=\min(p,1-p)$ and $\mathrm{gap}\in(0,1]$. Call the initialization \emph{aligned} if $q(0)k(0)(1-2p)<0$ and \emph{misaligned} otherwise.
+For $\initscale$ below the explicit threshold in \cref{app:J-constants}, and in the misaligned case
+$|\qkbalance|\ge\mathrm{gap}\,\initscale^2$ with $\qkbalance=q(0)^2-k(0)^2$, joint gradient flow on $\Lstep$ gives
+every prediction positive margin against all $K-1$ other counts at every time $t\ge T$, and $\Lstep\to0$, where, with an absolute constant $C$,
+$\gamma=\mathrm{gap}$ (misaligned) or $\gamma=1$ (aligned),
+\[
+ T\le\frac{C}{\initscale^4}\Bigl(\frac{\sqrt{d_{\mathrm h}}\,\log\frac{d_{\mathrm h}}{\initscale}}{p_{\min}\min\{1,h^\star\}\,\gamma}+\frac{K\log K}{p_{\min}^2}\Bigr).
+\]
+$T$ depends on $n$ only through $d_{\mathrm h}$ (any $d_{\mathrm h}\ge1$ is allowed).
+The scalar-magnitude probability bound is given in the proof in \cref{app:joint}.
+
+\textnormal{(ii) Clean binary routing.} Use the clean score model in \cref{eq:J-clean-scores} with the aligned initialization above.
+For $\initscale$ below the explicit threshold in \cref{eq:CR-scale}, the same simultaneous flow
+enters $-a\ge x_\star$, $me^{-B}\le1$, where $x_\star\ge1$ is defined in \cref{eq:CR-constants}.
+This region gives the two useful sites at least half the attention mass and persists until every binary transition has
+strictly positive margin. Those margins remain positive at all subsequent times. The explicit bound in \cref{eq:CR-time} gives
+\[
+ T\le\initscale^{-4}\operatorname{poly}\!\left(m,d_{\mathrm h},p^{-1},
+ \min\{1,h^\star\}^{-1},\log\frac1{\initscale}\right).
+\]
+The conclusion allows $\delta=0$. Independent Euclidean distractor biases initialized in $[0,1]$ obey the same time bound
+(\cref{cor:CR-independent}); within the family, Gaussian scalar perturbations are covered in \cref{app:CR-independent}.
+\end{restated}

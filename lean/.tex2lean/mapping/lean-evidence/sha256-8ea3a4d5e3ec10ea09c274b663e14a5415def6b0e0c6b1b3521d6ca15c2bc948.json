@@ -1,0 +1,229 @@
+{
+  "schema": "tex2lean.lean-evidence/1",
+  "sourceFingerprint": "sha256:8e8b3ac32ff795cc86e5fb092e6626b7b2ef98916f0be43844cf724dfda77175",
+  "buildFingerprint": "sha256:8e8b3ac32ff795cc86e5fb092e6626b7b2ef98916f0be43844cf724dfda77175",
+  "dependencyFingerprint": "sha256:8e8b3ac32ff795cc86e5fb092e6626b7b2ef98916f0be43844cf724dfda77175",
+  "toolchainDigest": "sha256-edce9c835ba8fd16fe32ec9b058ad81953b387a35723e2b323136c37f33fd4fa",
+  "interfaceReceipts": [
+    {
+      "bindingId": "binding:4a9bc6d8-c316-467a-954e-c9eaa4f5801c",
+      "declaration": "Trace.unseen_letters_erase_outcome_credit",
+      "receiptDigest": "sha256-125d0256d7797cd6a360ee7211c6ad367ff41c0ed913d4698014fd85b5231645",
+      "receipt": {
+        "sourceSignatureDigest": "sha256-062dc273067b4cea6730aed7b15caf6176780bfa459026bc0d014ffdd1885a08",
+        "elaboratedTypeDigest": "sha256-a830f3bd51797499c3fa08458b7ca812bdba6ea13f848534bbabded7a5672dcf",
+        "semanticRootPolicyId": "project-type-closure/1",
+        "semanticRootDigests": [
+          {
+            "declaration": "Trace.Arch",
+            "valueDigest": "sha256-82c6dc8d0219cc095158b4949ded44da6431c1805bcd812e2e155c0cfd9fff99"
+          },
+          {
+            "declaration": "Trace.Arch.dh",
+            "valueDigest": "sha256-20337df7b7d9e2663353cf201231dea05921d6aa93b041227e8a6b6c35e45c24"
+          },
+          {
+            "declaration": "Trace.Arch.dmlp",
+            "valueDigest": "sha256-96a022b982f4946ccec1fd96e4f80ed4407f58ba1b817888c1faf216a96d585c"
+          },
+          {
+            "declaration": "Trace.Arch.dres",
+            "valueDigest": "sha256-2afa67d1d4830ef108f403e928ddb89b645a0b228a60540cf7d926b942d01dd1"
+          },
+          {
+            "declaration": "Trace.Arch.vis",
+            "valueDigest": "sha256-d22597b201847fb758532e975708afbc1d7293376768f558a9f256d32c3028d3"
+          },
+          {
+            "declaration": "Trace.attnWeight",
+            "valueDigest": "sha256-613446de52edf8865a96b2e88259e7ca010da49e730e1e82acf2b20e33118dd1"
+          },
+          {
+            "declaration": "Trace.block",
+            "valueDigest": "sha256-78bad57cef207257cfac4aca8215b60d2caf16e7bae7017c3af41ad5717e5a6d"
+          },
+          {
+            "declaration": "Trace.embed",
+            "valueDigest": "sha256-f361eccec609dca59b7aa0fc643e7cf2bb034ff722feaf8f5725f6896b8eb214"
+          },
+          {
+            "declaration": "Trace.featureCredit",
+            "valueDigest": "sha256-6a6826db447e1b9a1263f45391287b15c19ff70506f468c2d9cd93cd0a768a2e"
+          },
+          {
+            "declaration": "Trace.initBall",
+            "valueDigest": "sha256-9d4d352014bf89bb34d6857d0582b58c3a9b6f174d88dbca0b0b4bfd1ea131f3"
+          },
+          {
+            "declaration": "Trace.initBall._proof_1",
+            "valueDigest": "sha256-c72b56af6f60400ee652943b51438d1c09906249f48188afc5e2b271d06b55c0"
+          },
+          {
+            "declaration": "Trace.initBall._proof_2",
+            "valueDigest": "sha256-af4ea609f378449489bec3636e37d2c1de05f045b3eed8fe16fe69d6a4952c01"
+          },
+          {
+            "declaration": "Trace.InitHyp",
+            "valueDigest": "sha256-c74f45386a10e5d584ca35f2a1d59850bf03a60dc8f99e57db8b328d22239ebc"
+          },
+          {
+            "declaration": "Trace.logits",
+            "valueDigest": "sha256-33f21310aa13dd4677e80cc77768f7a8b1c40edd4a6113187473f36c38c5baa2"
+          },
+          {
+            "declaration": "Trace.logits._proof_1",
+            "valueDigest": "sha256-df81c603c52236faebe7df5903714752e65df0960e25b2a8725dfc96a6570c2b"
+          },
+          {
+            "declaration": "Trace.mixrate",
+            "valueDigest": "sha256-10b49087eca0ea3a52dc0d666fce26aa5b069caf05f358a49a3f7a33ba04e3f0"
+          },
+          {
+            "declaration": "Trace.mixrate._proof_1",
+            "valueDigest": "sha256-fe61b37ab6b3af63f326a18386656bd0e872f1cca0d45aa2af09fdb11952576c"
+          },
+          {
+            "declaration": "Trace.outcomeCredit",
+            "valueDigest": "sha256-405ec907483752b64a4c9e62df7961c90b20ae61a8b773bffb862d8944602cf3"
+          },
+          {
+            "declaration": "Trace.outcomeFunctional",
+            "valueDigest": "sha256-f4422a49faec7085766a643d819108271df723b2ea0c2dceb45a672d6e1caecf"
+          },
+          {
+            "declaration": "Trace.ParamIdx",
+            "valueDigest": "sha256-f3b475acb003ebf335a46a3781591c24be5a60f9e86f6b9996a4864ce098fc7e"
+          },
+          {
+            "declaration": "Trace.Params",
+            "valueDigest": "sha256-41501f77fc3cb8f5ccf30bc967afbc3d1bfcc12ed80193ee38a94a747120c242"
+          },
+          {
+            "declaration": "Trace.Params.bIn",
+            "valueDigest": "sha256-1a059f8dec0ac6a4c255d66899bf248274257203cc52ae7e9d2bd6debbb0031b"
+          },
+          {
+            "declaration": "Trace.Params.posEmb",
+            "valueDigest": "sha256-02f095fb9df77e386c08d6fa75d9dcbb73afdfa7e032f2cb0f02b65a1ad4290c"
+          },
+          {
+            "declaration": "Trace.Params.readout",
+            "valueDigest": "sha256-6bb07a2608aac8afb08df4b5f7b1dfc805c8ff88a55b72569556c2d66ae34e33"
+          },
+          {
+            "declaration": "Trace.Params.tokEmb",
+            "valueDigest": "sha256-1da72b1400793beb792b3dffb18f5949dc5bc47f383e45c17d182fa8fc0b1085"
+          },
+          {
+            "declaration": "Trace.Params.wIn",
+            "valueDigest": "sha256-d01d6f74ece6732ecfa39ef589474c24258701deacb3a334cc647f6a7bf84b71"
+          },
+          {
+            "declaration": "Trace.Params.wK",
+            "valueDigest": "sha256-d0a3e55e3e5972ece2978df9395bb790839eeb0d53d34c823f1c2d1e1f47b871"
+          },
+          {
+            "declaration": "Trace.Params.wOut",
+            "valueDigest": "sha256-ec8c660fed11cacb25008830fb8999ce7cda23d6ba14e8c0486ee93aa25ef2d9"
+          },
+          {
+            "declaration": "Trace.Params.wQ",
+            "valueDigest": "sha256-7de7d4c477dc4b438ba3118ec90acdbd6c2798406a77c9ae77d0bc16cb288af1"
+          },
+          {
+            "declaration": "Trace.Params.wV",
+            "valueDigest": "sha256-7004e0d40aba83b1ba3469562ca102c72ce5a090a32b3ccf1ddecbed1cd65088"
+          },
+          {
+            "declaration": "Trace.Prior",
+            "valueDigest": "sha256-79e37ef3ce67cce804b0ed7122a8f995bf32b6c96cec5f04e7db6530a2d2581c"
+          },
+          {
+            "declaration": "Trace.score",
+            "valueDigest": "sha256-95efc7fb8779ff50243fe3b8f76860725ba1c6ea6ab06c99c9d9179341766afe"
+          },
+          {
+            "declaration": "Trace.scoreCredit",
+            "valueDigest": "sha256-470c46ccf3c189b2ba44f1d23800417e6a0b91e488a1ba7c70c6b6cb0fec63d6"
+          },
+          {
+            "declaration": "Trace.scoreFunctional",
+            "valueDigest": "sha256-a98be44e802bb22af4308d4228867baaf664f2bdf8780e1a8efb826beebc27a6"
+          },
+          {
+            "declaration": "Trace.Task",
+            "valueDigest": "sha256-19c26d665ee5eeb49dd10ffa2db114488967d91956d033ffdb797b64bce372b4"
+          },
+          {
+            "declaration": "Trace.Task.answer",
+            "valueDigest": "sha256-653ecce86abc39beddd20409e475990af4a331eb4f1e446a40c5d48d8513d91a"
+          },
+          {
+            "declaration": "Trace.Task.Ex",
+            "valueDigest": "sha256-4398406cc32988119f488b1ef6b2b39adb7ef82d377f2b645d7b63e8f159baef"
+          },
+          {
+            "declaration": "Trace.Task.l2Norm",
+            "valueDigest": "sha256-29b35b1ca8781b881fa2dffa4bfa620ca988fbe61a949aacd858194a972f045b"
+          },
+          {
+            "declaration": "Trace.Task.letterWeight",
+            "valueDigest": "sha256-90e10e4a922bfa5e8d2db3c86cc9febe9ace23c9ff9550b63a8bf0194ca5e297"
+          },
+          {
+            "declaration": "Trace.Task.outcomePrompt",
+            "valueDigest": "sha256-04a686726e01bc3128c4fcdaa3d92b948dde48aa37071699661238a67916e414"
+          },
+          {
+            "declaration": "Trace.Task.p",
+            "valueDigest": "sha256-a66a1adfc36c36b548f2e7622cb5726dea90340496ebb4b132ac8b5e5bbc3a10"
+          },
+          {
+            "declaration": "Trace.Task.s0",
+            "valueDigest": "sha256-0c9b88006d353c241524ddfaf332b01c4642beec3b2777131f1ffbdf44540da3"
+          },
+          {
+            "declaration": "Trace.Task.targetSignal",
+            "valueDigest": "sha256-a02053cd937b705f17aab322162a780a5bbe780351b4c3a7f5d9d44743fb5199"
+          },
+          {
+            "declaration": "Trace.Task.wstar",
+            "valueDigest": "sha256-1711e16045aa3c0f809205ca1e30686a3c9f4ccc6f90c6d2b4a0990e65c945f5"
+          },
+          {
+            "declaration": "Trace.Task.μ",
+            "valueDigest": "sha256-253eaca7700e859e785e3cfabac23b1e6fc7ed07b706313fb66f6b9078093235"
+          },
+          {
+            "declaration": "Trace.Token",
+            "valueDigest": "sha256-0259ebd3a9f93d2329901bf53700b742c50dfbe6ad3e04b4360d8edf508ac3af"
+          },
+          {
+            "declaration": "Trace.Token.colon",
+            "valueDigest": "sha256-347092f1f58abe7bb1dd0ef19c53d239faeffa4856176b9221b002c588e2b372"
+          },
+          {
+            "declaration": "Trace.Token.letter",
+            "valueDigest": "sha256-0b6dee988e63bc4e249c59cfaa6b9c61585c549b1f63750c144c4a73ef7f0a55"
+          },
+          {
+            "declaration": "Trace.Token.sep",
+            "valueDigest": "sha256-0bdc562cbfac719da59e37cf3ff9630ac19c80454538b66820e4ff5fde692cfe"
+          },
+          {
+            "declaration": "Trace.Token.sep._proof_1",
+            "valueDigest": "sha256-47a9d0a4ce993f4d7c348fe06923851ee42612fffa84f6b01de445e412d7ac91"
+          },
+          {
+            "declaration": "Trace.Token.value",
+            "valueDigest": "sha256-2fe9f7239c05b8b782df113c945ee06afb6c0dc1a5bb0d163f86a99c15a0e313"
+          }
+        ],
+        "leanVersion": "4.33.0",
+        "toolchainDigest": "sha256-edce9c835ba8fd16fe32ec9b058ad81953b387a35723e2b323136c37f33fd4fa",
+        "optionsDigest": "sha256-b01d333a0ba6076a37c01762a8978eb2d2bebd220d8530e524078067d340079e"
+      }
+    }
+  ],
+  "relationEvidence": []
+}

@@ -1,0 +1,40 @@
+%% Figure 3 (pgfplots). Data: results/theorem_regime/both_zero_seed[0-2].json (sigma = 0.002; median and interquartile band over
+%% three draws) and results/paper/lambda_grid (20 cells x 3 seeds; cell means with full seed ranges). Spearman rho on cell means.
+\definecolor{stepc}{HTML}{0072B2}\definecolor{outc}{HTML}{D55E00}\definecolor{theoc}{HTML}{009E73}
+\definecolor{mutedc}{HTML}{6E6E6E}\definecolor{errc}{HTML}{EDB79C}
+\begin{tikzpicture}
+\pgfplotsset{every axis/.style={width=0.4\linewidth, height=4.9cm, axis line style={black!80}, tick style={black!80},
+  tick label style={font=\footnotesize}, label style={font=\small}, title style={font=\small, at={(0,1)}, anchor=south west, xshift=-2pt},
+  axis x line*=bottom, axis y line*=left}, every axis plot/.append style={line width=1pt}}
+\begin{semilogyaxis}[name=pa, title={\textbf{(a)} Plateau duration}, xlabel={Horizon $n$}, ylabel={Displacement time $\tau(0.1)$},
+  xmin=3.6, xmax=14.4, xtick={4,8,14}, ymin=3, ymax=1e8, ytick={1e1,1e3,1e5,1e7}, ymajorgrids, major grid style={black!12}]
+  \addplot[draw=none, fill=outc, fill opacity=0.18, forget plot] coordinates {(4,10638.7) (6,53401.7) (8,257804) (10,1.17632e+06) (12,5.46642e+06) (14,2.47378e+07) (14,3.29507e+07) (12,6.99489e+06) (10,1.54461e+06) (8,332934) (6,68528) (4,13708.5)};
+  \addplot[draw=none, fill=stepc, fill opacity=0.18, forget plot] coordinates {(4,4.2576) (6,4.25798) (8,4.25824) (10,4.25841) (12,4.25855) (14,4.25866) (14,4.94345) (12,4.94354) (10,4.94365) (8,4.9438) (6,4.94399) (4,4.9443)};
+  \addplot[outc, mark=*, mark size=1.8pt] coordinates {(4,12013.4) (6,60575.1) (8,290310) (10,1.30468e+06) (12,6.1887e+06) (14,2.74812e+07)};
+  \addplot[stepc, mark=square*, mark size=1.7pt] coordinates {(4,4.33272) (6,4.3327) (8,4.33268) (10,4.33266) (12,4.33266) (14,4.33265)};
+  \addplot[theoc, dashed, line width=0.9pt] coordinates {(4,12013.4) (6,48053.5) (8,192214) (10,768856) (12,3.07542e+06) (14,1.23017e+07)};
+  \node[anchor=west, font=\footnotesize, text=outc] at (axis cs:4,4e6) {Outcome};
+  \node[anchor=north east, font=\footnotesize, text=theoc] at (axis cs:14,1.538e+06) {$\mixrate^{-n}$};
+  \node[anchor=south, font=\footnotesize, text=stepc] at (axis cs:10,13) {Step};
+\end{semilogyaxis}
+\begin{semilogxaxis}[name=pb, at={(pa.east)}, anchor=west, xshift=1.75cm, title={\textbf{(b)} Answer bias},
+  xlabel={Remaining bias $\mixrate^n$}, ylabel={Outcome accuracy (\%)}, xmin=1e-5, xmax=0.8, xtick={1e-5,1e-3,1e-1},
+  ymin=0, ymax=103, ytick={0,50,100}, ymajorgrids, major grid style={black!12}]
+  \addplot[mutedc, densely dashed, line width=0.8pt, domain=1e-5:0.8, samples=2] {50};
+  \addplot[theoc, dashed, line width=1pt, domain=1e-5:0.7, samples=120] {50*(1+x)};
+  \addplot[only marks, outc, mark=*, mark size=1.6pt, error bars/.cd, y dir=both, y explicit, error bar style={errc, line width=0.8pt},
+    error mark=none] coordinates {(0.015625,49.6) += (0,0.1) -= (0,0.1) (0.0877915,57.33) += (0,2.467) -= (0,1.633) (0.262144,70.33) += (0,5.667) -= (0,6.233) (0.531441,79.03) += (0,2.167) -= (0,1.933) (0.00390625,51.17) += (0,3.833) -= (0,2.367) (0.0390184,51.27) += (0,1.833) -= (0,2.167) (0.167772,61.73) += (0,3.967) -= (0,3.233) (0.430467,70.93) += (0,0.6667) -= (0,0.5333) (0.000976562,50.07) += (0,0.3333) -= (0,0.5667) (0.0173415,50.57) += (0,0.4333) -= (0,0.8667) (0.107374,55.37) += (0,1.233) -= (0,0.9667) (0.348678,71.13) += (0,2.667) -= (0,2.233) (0.000244141,50.37) += (0,0.5333) -= (0,0.9667) (0.00770735,51.93) += (0,1.467) -= (0,1.433) (0.0687195,51.53) += (0,4.367) -= (0,2.833) (0.28243,64.4) += (0,1.7) -= (0,1.7) (1.52588e-05,50.4) += (0,1.2) -= (0,1.1) (0.00152244,50.2) += (0,1) -= (0,1.3) (0.0281475,50.47) += (0,2.233) -= (0,2.967) (0.185302,57.23) += (0,1.867) -= (0,2.733)};
+  \node[anchor=north west, font=\footnotesize] at (rel axis cs:0.03,0.98) {Spearman $\rho=0.91$};
+  \node[anchor=north west, font=\footnotesize, text=theoc] at (rel axis cs:0.03,0.8) {State-only prior};
+  \node[anchor=north west, font=\scriptsize, text=mutedc] at (rel axis cs:0.03,0.46) {Chance};
+\end{semilogxaxis}
+\begin{semilogxaxis}[name=pc, at={(pb.east)}, anchor=west, xshift=1.75cm, title={\textbf{(c)} Above the prior},
+  xlabel={Remaining bias $\mixrate^n$}, ylabel={Above prior (points)}, xmin=1e-5, xmax=0.8, xtick={1e-5,1e-3,1e-1},
+  ymin=-25, ymax=25, ytick={-20,0,20}, ymajorgrids, major grid style={black!12}]
+  \addplot[theoc, dashed, line width=1pt, domain=1e-5:0.8, samples=2] {0};
+  \addplot[only marks, outc, mark=*, mark size=1.6pt, error bars/.cd, y dir=both, y explicit, error bar style={errc, line width=0.8pt},
+    error mark=none] coordinates {(0.015625,-1.181) += (0,0.1) -= (0,0.1) (0.0877915,2.944) += (0,2.467) -= (0,1.633) (0.262144,7.226) += (0,5.667) -= (0,6.233) (0.531441,2.461) += (0,2.167) -= (0,1.933) (0.00390625,0.9714) += (0,3.833) -= (0,2.367) (0.0390184,-0.6843) += (0,1.833) -= (0,2.167) (0.167772,3.345) += (0,3.967) -= (0,3.233) (0.430467,-0.59) += (0,0.6667) -= (0,0.5333) (0.000976562,0.01784) += (0,0.3333) -= (0,0.5667) (0.0173415,-0.3004) += (0,0.4333) -= (0,0.8667) (0.107374,-0.002042) += (0,1.233) -= (0,0.9667) (0.348678,3.699) += (0,2.667) -= (0,2.233) (0.000244141,0.3545) += (0,0.5333) -= (0,0.9667) (0.00770735,1.548) += (0,1.467) -= (0,1.433) (0.0687195,-1.903) += (0,4.367) -= (0,2.833) (0.28243,0.2785) += (0,1.7) -= (0,1.7) (1.52588e-05,0.3992) += (0,1.2) -= (0,1.1) (0.00152244,0.1239) += (0,1) -= (0,1.3) (0.0281475,-0.9407) += (0,2.233) -= (0,2.967) (0.185302,-2.032) += (0,1.867) -= (0,2.733)};
+  \node[anchor=north west, font=\footnotesize] at (rel axis cs:0.03,0.98) {Spearman $\rho=0.15$};
+  \node[anchor=north west, font=\footnotesize, text=theoc] at (rel axis cs:0.03,0.4) {State-only prior};
+\end{semilogxaxis}
+\end{tikzpicture}

@@ -1,0 +1,95 @@
+% Let the class load cleveref with alias counters, so lemmas and corollaries are named correctly.
+\PassOptionsToPackage{cleveref}{jmlrutils}
+\PassOptionsToPackage{capitalize,noabbrev}{cleveref}
+\documentclass[anon,12pt]{colt2025} % Anonymized submission
+%\documentclass[final,12pt]{colt2025} % Camera-ready, with author names
+
+% colt2025 (jmlr, pmlr) already loads amsmath, amssymb, natbib, graphicx, url, xcolor,
+% algorithm2e, hyperref and nameref, and defines theorem, lemma, proposition, corollary,
+% definition, remark and proof. It rejects amsthm, so no amsthm-based packages are used.
+\usepackage{times}
+\usepackage[T1]{fontenc}
+\usepackage{booktabs}
+\usepackage{microtype}
+\usepackage{mathtools,bm}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,decorations.pathreplacing,calc}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage{colortbl}
+\usepackage{xspace}
+\usepackage{needspace}
+
+\title[Cancelled Credit]{Cancelled Credit: Matched Data Laws and Polynomially Slower Attention Training}
+
+\coltauthor{%
+ \Name{Anonymous Author} \Email{anonymous@example.com}\\
+ \addr Anonymous Institution%
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Theorem environments. theorem, lemma, proposition, corollary, definition and
+% remark come from the class; assumption is added on the shared counter.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newtheorem{assumption}[theorem]{Assumption}
+\crefname{assumption}{Assumption}{Assumptions}
+\Crefname{assumption}{Assumption}{Assumptions}
+\crefname{lemma}{Lemma}{Lemmas}
+\crefname{proposition}{Proposition}{Propositions}
+\crefname{corollary}{Corollary}{Corollaries}
+\crefname{definition}{Definition}{Definitions}
+\crefname{remark}{Remark}{Remarks}
+% The class proof environment takes no title; allow \begin{proof}[Proof of ...].
+\makeatletter
+\renewenvironment{proof}[1][\proofname]{\par\noindent{\bfseries\upshape #1.\ }}{\jmlrQED}
+\makeatother
+\providecommand{\qedhere}{}
+% Main results are stated as ordinary theorems.
+\newenvironment{mainresult}{}{}
+\newenvironment{restated}[1]{\par\medskip\noindent\textbf{#1 (restated).}\ \itshape\ignorespaces}{\par\medskip}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Math macros
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\E}{\mathbb E}
+\newcommand{\proofstep}[1]{\par\smallskip\noindent\textbf{#1}\enspace}
+\newcommand{\softmax}{\operatorname{softmax}}
+\newcommand{\relu}{\operatorname{ReLU}}
+\newcommand{\pd}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\dv}[2]{\frac{d #1}{d #2}}
+\newcommand{\ddt}[1]{\dv{#1}{t}}
+\newcommand{\Dlaw}[1]{\mathcal D_{#1}}
+\newcommand{\Tr}{T}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Figure and table helpers
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\paperfig}[2][]{%
+  \IfFileExists{#2}{\includegraphics[#1]{#2}}{%
+    \fbox{\parbox[c][2.6cm][c]{0.86\linewidth}{\centering Figure placeholder: \texttt{\detokenize{#2}}}}}}
+\definecolor{lightmauve}{rgb}{0.7,0.7,.9}
+\definecolor{royalazure}{rgb}{0.0,0.22,0.66}
+\newcommand{\tabemph}[1]{\cellcolor{lightmauve!30}\textcolor{black!50!royalazure}{#1}}
+% Shrink a box to the text width only when it is wider.
+\newsavebox{\fitbox}
+\newcommand{\fitwidth}[1]{\sbox{\fitbox}{#1}\ifdim\wd\fitbox>\linewidth\resizebox{\linewidth}{!}{\usebox{\fitbox}}\else\usebox{\fitbox}\fi}
+
+% Let paragraphs with long file names or inline formulas stretch rather than overflow.
+\setlength{\emergencystretch}{2.5em}
+
+\begin{document}
+
+\maketitle
+
+\input{body}            % abstract through conclusion
+
+\bibliography{main}
+
+\appendix
+\crefalias{section}{appendix}
+
+\input{appendix}
+
+\end{document}

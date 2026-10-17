@@ -1,0 +1,235 @@
+\paragraph{The perturbed gate.} Without a value perturbation the readout features are those of \cref{lem:J-features};
+only the gate changes.
+
+\begin{lemma}[Perturbed gate]
+\label{lem:perturbed-gate}
+Under \cref{eq:planted-perturbation}, let $\bm\delta_s=\bm\Delta_Q\hat{\bm e}^{\mathrm c}_s$, $\beta_s=\langle\hat{\bm e}_{\mathrm h},\bm\delta_s\rangle$,
+$\gamma_s=\langle\bm\delta_s,\bm\Delta_K\hat{\bm e}_\ell\rangle$, $\alpha_s=\langle\hat{\bm e}_{\mathrm h},\bm\Delta_K(\hat{\bm e}_0-\hat{\bm e}^{\mathrm c}_s)\rangle$,
+$\omega_s=\langle\bm\delta_s,\bm\Delta_K(\hat{\bm e}_0-\hat{\bm e}^{\mathrm c}_s)\rangle$ and $\kappa=\initscale^2/\sqrt{d_{\mathrm h}}$. The prediction of $s_t$ with
+$s_{t-1}=s$ and $b_t=b$ has logits $\initscale\mathbf U\bm e_s+\initscale v\,r^s_b\,\mathbf W\bm e_s$, where
+\begin{equation}
+ r^s_b=\sigma\bigl(-(-1)^ba_s-o_s\bigr),\qquad a_s=\kappa\bigl(k(q+\beta_s)+\gamma_s\bigr),\qquad o_s=\kappa(q\alpha_s+\omega_s),
+ \label{eq:perturbed-gate}
+\end{equation}
+and
+\begin{equation}
+ r^s_0-r^s_1=\frac{\sinh(-a_s)}{\cosh a_s+\cosh o_s}.
+ \label{eq:perturbed-contrast}
+\end{equation}
+With operator norms, $|\beta_s|\le\|\bm\Delta_Q\|$, $|\gamma_s|\le\|\bm\Delta_Q\|\|\bm\Delta_K\|$, $|\alpha_s|\le\sqrt2\|\bm\Delta_K\|$ and
+$|\omega_s|\le\sqrt2\|\bm\Delta_Q\|\|\bm\Delta_K\|$.
+\end{lemma}
+
+\begin{proof}
+As in \cref{lem:J-features}, block $1$ and the MLPs add zero. Since $\bm\Pi_Q\hat{\bm e}^{\mathrm c}_s=\hat{\bm e}_{\mathrm h}$,
+$\bm\Pi_K\hat{\bm e}^{\mathrm c}_s=0$ and $\bm\Pi_K(\hat{\bm e}_0+(-1)^b\hat{\bm e}_\ell)=(-1)^b\hat{\bm e}_{\mathrm h}$, the query at $i_t$ and the
+two keys are
+\[
+ \initscale(q\hat{\bm e}_{\mathrm h}+\bm\delta_s),\qquad \mathrm{key}_{i_t}=\initscale\bm\Delta_K\hat{\bm e}^{\mathrm c}_s,\qquad
+ \mathrm{key}_{j_t}=\initscale\bigl((-1)^b(k\hat{\bm e}_{\mathrm h}+\bm\Delta_K\hat{\bm e}_\ell)+\bm\Delta_K\hat{\bm e}_0\bigr).
+\]
+The score difference $\mathrm{score}(j_t)-\mathrm{score}(i_t)$ is $\frac{\initscale^2}{\sqrt{d_{\mathrm h}}}$ times the inner product of the query with
+$\mathrm{key}_{j_t}-\mathrm{key}_{i_t}$, which is $(-1)^ba_s+o_s$ because $\langle\hat{\bm e}_{\mathrm h},\bm\Delta_K\hat{\bm e}_\ell\rangle=\langle\bm\Delta_K,\bm\Pi_K\rangle_F=0$.
+So $i_t$ gets weight $r^s_b$. The values are $\initscale v\hat{\bm e}^{\mathrm g}_s$ at $i_t$ and $0$ at $j_t$, so the residual and logits are those of
+\cref{lem:J-features} with $r_b$ replaced by $r^s_b$. For \cref{eq:perturbed-contrast}, put $x=-a_s$, $o=o_s$; then
+$\sigma(x-o)-\sigma(-x-o)=\frac{e^{x-o}-e^{-x-o}}{(1+e^{x-o})(1+e^{-x-o})}=\frac{2e^{-o}\sinh x}{2e^{-o}(\cosh x+\cosh o)}$. The bounds use
+$\|\bm\delta_s\|\le\|\bm\Delta_Q\|$ and $\|\hat{\bm e}_0-\hat{\bm e}^{\mathrm c}_s\|=\sqrt2$.
+\end{proof}
+
+By \cref{eq:perturbed-contrast}, a state's letter contrast is positive exactly when $a_s<0$, whatever the offset; when $|o_s|\le|a_s|$ it is at
+least $\frac12\tanh|a_s|$. The following source refinement controls $a_s$ and $o_s$ state by state, relative to the planted strength
+\[
+ X:=\kappa\,q|k|.
+\]
+
+\paragraph{Setting of the fixed-perturbation guarantee.} $K=2$, $0<p<\frac12$, $h^\star=\log\frac{1-p}{p}$, an aligned start $q(0)k(0)<0$ with
+$\frac{\initscale}{2}\le|q(0)|,|k(0)|,|v|\le2\initscale$, zero readouts, and
+\begin{equation}
+ \|\bm\Delta_Q\|\le\tfrac18|q(0)|,\qquad \|\bm\Delta_K\|\le\tfrac18|k(0)|,\qquad 0<\initscale\le p .
+ \label{eq:perturbed-radius}
+\end{equation}
+Since $\|\bm\Pi_Q\|_F=\sqrt2$ and $\|\bm\Pi_K\|_F=1$, the Frobenius condition $\|\bm\Delta_X\|_F\le\rho\,|x_0|\,\|\bm\Pi_X\|_F$ implies
+\cref{eq:perturbed-radius} for $\rho\le\frac{1}{8\sqrt2}$. Changing the signs of $\mathbf W_Q$ and $\mathbf W_K$ together, perturbations included, leaves every score
+and \cref{eq:perturbed-radius} unchanged, so we take $q(0)>0>k(0)$; write $\delta=\|\bm\Delta_Q\|$ and $\eta_K=\|\bm\Delta_K\|$.
+
+\begin{lemma}[Reduced flow for $K=2$]
+\label{lem:perturbed-reduce}
+Let $c_s=\initscale(U_{ss}-U_{s+1,s})$ and $g=2\initscale vw$. The step loss is
+$L=\frac12\sum_{s\in\{0,1\}}L_s$ with $L_s=(1-p)\,\ell(m_{s0})+p\,\ell(m_{s1})$, $\ell(m)=\log(1+e^{-m})$, and margins
+$m_{s0}=c_s+g\,r^s_0$, $m_{s1}=-c_s-g\,r^s_1$. With $E_{s0}=(1-p)\sigma(-m_{s0})$, $E_{s1}=p\,\sigma(-m_{s1})$,
+$\Lambda_s=E_{s0}r^s_0(1-r^s_0)+E_{s1}r^s_1(1-r^s_1)$ and $\Gamma_s=E_{s0}r^s_0(1-r^s_0)-E_{s1}r^s_1(1-r^s_1)$, the flow is
+\begin{gather*}
+ \ddt{c_s}=\initscale^2(E_{s0}-E_{s1}),\qquad \ddt{g}=\frac{\initscale^2v^2}{2}\sum_s\bigl(E_{s0}r^s_0-E_{s1}r^s_1\bigr),\\
+ \ddt{q}=-\frac{\kappa g}{2}\sum_s\bigl(\Lambda_sk+\Gamma_s\alpha_s\bigr),\qquad \ddt{k}=-\frac{\kappa g}{2}\sum_s\Lambda_s(q+\beta_s),
+\end{gather*}
+and the other two coordinates of $\mathbf U$ receive no gradient.
+\end{lemma}
+
+\begin{proof}
+For $K=2$ the cross-entropy depends only on the difference of the two logits, which by \cref{lem:perturbed-gate} is $c_s+g\,r^s_b$ for the
+prediction from state $s$; the target is $s+b$. The pair $(s_{t-1},b_t)$ is uniform $\times$ Bernoulli$(p)$ for every $t\ge2$, which gives $L$.
+The coordinates $U_{ss}+U_{s+1,s}$ do not enter $L$. On $\mathbf U$ the Frobenius gradient gives $\ddt{c_s}=-2\initscale^2\pd{L}{c_s}$, and
+$\|w(\mathbf I-\mathbf R)\|_F^2=4w^2$ gives $\ddt{g}=-\initscale^2v^2\pd{L}{g}$. Differentiating, $\pd{L_s}{c_s}=E_{s1}-E_{s0}$,
+$\pd{L_s}{g}=E_{s1}r^s_1-E_{s0}r^s_0$, $\pd{L_s}{a_s}=g\Lambda_s$ and $\pd{L_s}{o_s}=g\Gamma_s$; with $\pd{a_s}{q}=\kappa k$, $\pd{a_s}{k}=\kappa(q+\beta_s)$,
+$\pd{o_s}{q}=\kappa\alpha_s$ and $\pd{o_s}{k}=0$ this gives the gate equations.
+\end{proof}
+
+Note that $q^2-k^2$ is not conserved and $r^s_0+r^s_1\ne1$ when $o_s\ne0$; the next three lemmas replace the uses of these facts in
+\cref{lem:J-align,lem:J-floor}.
+
+\begin{lemma}[Statewise invariant region]
+\label{lem:perturbed-invariant}
+For all $t>0$: $q$ is nondecreasing and $k$ nonincreasing, so $q\ge q(0)$, $|k|\ge|k(0)|$ and $X$ is nondecreasing; $g>0$; and $c_s<h^\star$
+for both $s$. Moreover, for both $s$,
+\begin{equation}
+ \begin{gathered}
+ \tfrac{55}{64}X\le-a_s\le\tfrac{73}{64}X,\qquad |o_s|\le\tfrac{9\sqrt2}{64}X\le\tfrac15X,\\
+ r^s_0\ge\tfrac12\ge r^s_1,\qquad r^s_0-r^s_1\ge\tfrac12\tanh|a_s|>0.
+ \end{gathered}
+ \label{eq:perturbed-gate-bounds}
+\end{equation}
+The flow exists for all $t\ge0$.
+\end{lemma}
+
+\begin{proof}
+\emph{Gate bounds.} Wherever $q\ge q(0)\ge8\delta$ and $|k|\ge|k(0)|\ge8\eta_K$, \cref{lem:perturbed-gate} gives
+$-a_s=\kappa(|k|(q+\beta_s)-\gamma_s)\in\kappa q|k|\,[1-\frac18-\frac1{64},\,1+\frac18+\frac1{64}]$ and
+$|o_s|\le\kappa\sqrt2\eta_K(q+\delta)\le\kappa\sqrt2\frac{|k|}8\cdot\frac{9q}8$, which is \cref{eq:perturbed-gate-bounds} for $a_s,o_s$. Then $|o_s|<|a_s|$,
+so $r^s_0=\sigma(|a_s|-o_s)\ge\frac12\ge\sigma(-|a_s|-o_s)=r^s_1$, and \cref{eq:perturbed-contrast} with $\cosh o_s\le\cosh a_s$ gives the contrast bound.
+
+\emph{Gate monotonicity on intervals with $g\ge0$.} Since $|\Gamma_s|\le\Lambda_s$, $|\alpha_s|\le\sqrt2\eta_K$ and $k<0$,
+\[
+ \begin{aligned}
+ \ddt{q}&=\frac{\kappa g}{2}\sum_s\bigl(\Lambda_s|k|-\Gamma_s\alpha_s\bigr)
+ \ge\frac{\kappa g}{2}\bigl(|k|-\sqrt2\eta_K\bigr)\sum_s\Lambda_s,\\
+ \ddt{|k|}&=\frac{\kappa g}{2}\sum_s\Lambda_s(q+\beta_s)
+ \ge\frac{\kappa g}{2}(q-\delta)\sum_s\Lambda_s.
+ \end{aligned}
+\]
+Both are nonnegative while $|k|>\sqrt2\eta_K$ and $q>\delta$. These strict conditions hold at $t=0$, and by the displayed signs they cannot first fail
+inside an interval on which $g\ge0$; so on any such interval $q\ge q(0)$, $|k|\ge|k(0)|$, both are monotone, and the gate bounds hold.
+
+\emph{Readout region.} At $t=0$, $g=0$, $c_s=0$ and $E_{s0}=\frac{1-p}2>\frac p2=E_{s1}$, so $\ddt{g}(0)>0$ by $r^s_0>r^s_1$; hence
+$t^\ast=\inf\{t>0:g(t)\le0\text{ or }\max_sc_s(t)\ge h^\star\}>0$. Suppose $t^\ast<\infty$; on $[0,t^\ast]$, $g\ge0$ and the gate bounds hold.
+If $g(t^\ast)=0$, then $\ddt{g}(t^\ast)\le0$. But at $g=0$, $E_{s0}r^s_0-E_{s1}r^s_1=(1-p)\sigma(-c_s)r^s_0-p\,\sigma(c_s)r^s_1>0$, because
+$p\,\sigma(c_s)\le(1-p)\sigma(-c_s)$ for $c_s\le h^\star$ and $r^s_0>r^s_1$; a contradiction. Otherwise $g(t^\ast)>0$ and $c_s(t^\ast)=h^\star$ for some
+$s$, so $\ddt{c_s}(t^\ast)\ge0$. But $\sigma(-h^\star)=p$, so $E_{s0}=(1-p)\sigma(-h^\star-gr^s_0)<p(1-p)\le p\,\sigma(h^\star+gr^s_1)=E_{s1}$, a contradiction.
+So $t^\ast=\infty$.
+
+\emph{Existence.} $|\ddt{c_s}|\le\initscale^2$ and $|\ddt{g}|\le\initscale^2v^2$, so $c_s,g$ grow at most linearly; given $g$, the $(q,k)$ equations are
+linear-growth, so Gr\"onwall excludes blow-up in finite time.
+\end{proof}
+
+\begin{lemma}[Balance and readout floor]
+\label{lem:perturbed-floor}
+Let $Q=g-\frac{v^2}4(c_0+c_1)$, $\mu=\frac{p(1-2p)}3$, $g_{\mathrm{low}}=\frac{v^2h^\star}{16}$ and $T_h=\frac{h^\star}{2\initscale^2\mu}$.
+On every interval $[0,t]$ on which $X\le1$, $Q$ is nondecreasing and $Q\ge0$, and $g(t)\ge g_{\mathrm{low}}$ if $t\ge T_h$.
+\end{lemma}
+
+\begin{proof}
+\emph{Balance.} Write $E_{s0}r^s_0-E_{s1}r^s_1=\bar r_s(E_{s0}-E_{s1})+\frac12(r^s_0-r^s_1)(E_{s0}+E_{s1})$ with $\bar r_s=\frac12(r^s_0+r^s_1)$.
+Since $|\partial_o(\sigma(-a-o)+\sigma(a-o))|\le\frac12$, $|\bar r_s-\frac12|\le\frac{|o_s|}4$, and so
+\[
+ \begin{aligned}
+ \ddt{Q}&=\frac{\initscale^2v^2}2\sum_s\Bigl[
+ \bigl(\bar r_s-\tfrac12\bigr)(E_{s0}-E_{s1})
+ +\tfrac12(r^s_0-r^s_1)(E_{s0}+E_{s1})\Bigr]\\
+ &\ge\frac{\initscale^2v^2}4\sum_s(E_{s0}+E_{s1})
+ \Bigl(r^s_0-r^s_1-\frac{|o_s|}2\Bigr).
+ \end{aligned}
+\]
+For $X\le1$, \cref{eq:perturbed-gate-bounds} gives $|a_s|\le\frac{73}{64}$, so $r^s_0-r^s_1\ge\frac12\tanh|a_s|\ge0.35\,|a_s|\ge0.3X\ge\frac{|o_s|}2$.
+Hence $\ddt{Q}\ge0$, and $Q(0)=0$.
+
+\emph{Floor.} For $c\le h^\star$, $0\le g\le1$ and $r_0,r_1\in[0,1]$, $E_0-E_1\ge f(c+g)$ with $f(y)=(1-p)\sigma(-y)-p\,\sigma(y)$, which is
+decreasing, has $|\dd{f}{y}|\le\frac14$, $f(h^\star)=0$, and
+$f(\frac{h^\star}2)=\frac{\sqrt{p(1-p)}(1-2p)}{1+2\sqrt{p(1-p)}}\ge\mu$. So $\ddt{c_s}\ge\initscale^2\mu$ when $c_s+g\le\frac{h^\star}2$, and
+$\ddt{c_s}\ge-\frac{\initscale^2g}4$ always. By \cref{eq:perturbed-radius} and $h^\star\le\frac{1-2p}{p}$,
+$g_{\mathrm{low}}\le\frac{\initscale^2h^\star}4\le\min\{1,\frac{3h^\star}8,2\mu\}$.
+
+Suppose $t\ge T_h$, $X\le1$ on $[0,t]$ and $g(t)<g_{\mathrm{low}}$. Let $s_0=\sup\{s'\le t:g(s')\ge g_{\mathrm{low}}\}$, or $s_0=0$ if there is none.
+On $(s_0,t]$, $g<g_{\mathrm{low}}$ and $Q\ge0$ give $c_0+c_1\le\frac{4g}{v^2}<\frac{h^\star}4$. Some state then has $c_s<\frac{h^\star}8$ and
+$c_s+g<\frac{h^\star}2$, so with the other state's lower bound
+\[
+ \ddt{}(c_0+c_1)\ge\initscale^2\bigl(\mu-\tfrac{g_{\mathrm{low}}}4\bigr)\ge\tfrac12\initscale^2\mu,\qquad
+ \ddt{g}=\ddt{Q}+\tfrac{v^2}4\ddt{}(c_0+c_1)>0 .
+\]
+If $s_0>0$, then $g(s_0)=g_{\mathrm{low}}$ and $g$ increases on $(s_0,t]$, contradicting $g(t)<g_{\mathrm{low}}$. If $s_0=0$, then
+$c_0+c_1\ge\frac12\initscale^2\mu\,T_h=\frac{h^\star}4$ at $t$, a contradiction.
+\end{proof}
+
+\begin{lemma}[Error floor and gate growth]
+\label{lem:perturbed-grow}
+Let $z=\frac p4\log2$ and $e_\ast=\frac{p^2}{12}$. If $L>z$, then $\sum_{s,b}E_{sb}\ge e_\ast$. If moreover $t\ge T_h$ and $X\le1$, then
+$\ddt{X}\ge\frac{\kappa\,g_{\mathrm{low}}\,p^2}{105}\,X$.
+\end{lemma}
+
+\begin{proof}
+Each of the four (state, letter) cases has weight $w_{sb}=\frac{\pi_b}2\in[\frac p2,\frac12]$. If $L>z$, some case has $w_{sb}\ell(m_{sb})\ge\frac L4$,
+so $\ell(m_{sb})>\frac z2$; since $\sigma(-m)=1-e^{-\ell(m)}$ and $\frac z2<0.05$, $E_{sb}\ge p(1-e^{-z/2})\ge0.97\,p\frac z2\ge e_\ast$.
+
+For the growth, \cref{lem:perturbed-invariant} gives $|k|-\sqrt2\eta_K\ge(1-\frac{\sqrt2}8)|k|$ and $q-\delta\ge\frac78q$, so
+\[
+ \ddt{(q|k|)}=|k|\ddt{q}+q\ddt{|k|}\ge\frac{\kappa g}2\cdot\frac45(q^2+k^2)\sum_s\Lambda_s\ge\frac45\kappa g\,q|k|\sum_s\Lambda_s .
+\]
+For $X\le1$ every attention argument satisfies $|a_s|+|o_s|\le\frac{73+9\sqrt2}{64}<1.34$, so $r(1-r)\ge\dd{\sigma(x)}{x}\big|_{x=1.34}\ge\frac17$ and
+$\sum_s\Lambda_s\ge\frac17\sum_{s,b}E_{sb}\ge\frac{e_\ast}7$. With $g\ge g_{\mathrm{low}}$ from \cref{lem:perturbed-floor},
+$\ddt{X}\ge\frac45\cdot\frac17\cdot\frac{p^2}{12}\kappa g_{\mathrm{low}}X$.
+\end{proof}
+
+\begin{lemma}[Statewise descent]
+\label{lem:perturbed-descent}
+If $X\ge1$, then $\ddt{L}\le-\frac{\initscale^4}{6732}\bigl(\sum_{s,b}E_{sb}\bigr)^2$.
+\end{lemma}
+
+\begin{proof}
+The readout part of the flow alone dissipates $2\initscale^2\sum_s(\pd{L}{c_s})^2+\initscale^2v^2(\pd{L}{g})^2
+=\frac{\initscale^2}2D^2+\frac{\initscale^2v^2}4G^2$, with $D^2=\sum_s(E_{s0}-E_{s1})^2$ and $G=\sum_s(E_{s0}r^s_0-E_{s1}r^s_1)$; the gate part only adds
+dissipation. For $X\ge1$, \cref{eq:perturbed-gate-bounds} gives $r^s_0-r^s_1\ge b:=\frac12\tanh\frac{55}{64}\ge\frac13$. Write $S_0=\sum_sE_{s0}$.
+Since $E_{s0}r^s_0-E_{s1}r^s_1=E_{s0}(r^s_0-r^s_1)+r^s_1(E_{s0}-E_{s1})$, $G\ge bS_0-\sqrt2D$. If $D\ge\frac{bS_0}{2\sqrt2}$ the first term is at least
+$\frac{\initscale^2b^2S_0^2}{16}$; otherwise $G\ge\frac{bS_0}2$ and the second is at least $\frac{\initscale^2v^2b^2S_0^2}{16}$. As $v^2\le1$, the dissipation is at
+least $\frac{\initscale^2v^2b^2}{16}\max\{S_0,D\}^2$, and $\sum_{s,b}E_{sb}\le2S_0+\sqrt2D\le(2+\sqrt2)\max\{S_0,D\}$. Use $v^2\ge\frac{\initscale^2}4$ and
+$b^2\ge\frac19$.
+\end{proof}
+
+\begin{proof}[Proof of the fixed binary refinement]
+By \cref{lem:perturbed-invariant} the flow exists, stays in the aligned region and $X$ is nondecreasing, with
+$X(0)\ge\frac{\initscale^4}{4\sqrt{d_{\mathrm h}}}$ and $X(0)\le\frac{4\initscale^4}{\sqrt{d_{\mathrm h}}}<1$. Let $t_3=\inf\{t:L(t)\le z\}$.
+
+\emph{Growth.} Let $t_1=\inf\{t:X(t)\ge1\}$. On $[T_h,\min\{t_1,t_3\})$, \cref{lem:perturbed-grow} gives exponential growth of $X$ at rate
+$\frac{\kappa g_{\mathrm{low}}p^2}{105}\ge\frac{\initscale^4h^\star p^2}{6720\sqrt{d_{\mathrm h}}}$, so
+$\min\{t_1,t_3\}\le T_h+\frac{6720\sqrt{d_{\mathrm h}}}{\initscale^4h^\star p^2}\log\frac{4\sqrt{d_{\mathrm h}}}{\initscale^4}$.
+
+\emph{Descent.} If $t_1<t_3$, then $X\ge1$ on $[t_1,\infty)$, and \cref{lem:perturbed-descent,lem:perturbed-grow} give
+$\ddt{L}\le-\frac{\initscale^4e_\ast^2}{6732}$ while $L>z$; since $L(t_1)\le\log2$, $t_3-t_1\le\frac{6732\cdot144\log2}{\initscale^4p^4}$.
+
+\emph{Margins.} If $L\le z$, every case has $\ell(m_{sb})\le\frac{z}{w_{sb}}\le\frac{\log2}2<\log2$, so every margin is positive; $L$ never increases,
+so this persists for all $t\ge t_3$. After $t_3$, all margins are positive, so
+$\ell(m)\le2\sigma(-m)$ and $L\le\sum_{s,b}E_{sb}$.
+If $t_1<\infty$, put $t_4=\max\{t_1,t_3\}$. For $t\ge t_4$,
+\cref{lem:perturbed-descent} applies and gives
+\[
+ \ddt{L}\le-\frac{\initscale^4}{6732}L^2,\qquad
+ L(t)\le\frac{6732}{\initscale^4(t-t_4)}\longrightarrow0
+ \quad(t>t_4).
+\]
+Otherwise $X<1$ for all time. If the nonincreasing loss had limit
+$L_\infty>0$, then for $t\ge\max\{T_h,t_3\}$,
+\cref{lem:perturbed-floor} and the growth calculation in
+\cref{lem:perturbed-grow} would give
+\[
+ \sum_s\Lambda_s\ge\frac17\sum_{s,b}E_{sb}\ge\frac{L_\infty}{7},\qquad
+ \ddt{X}\ge\frac{4\kappa g_{\mathrm{low}}L_\infty}{35}X.
+\]
+Exponential growth contradicts $X<1$. Hence $L_\infty=0$ in this case too.
+
+\emph{Time.} $T_h=\frac{3h^\star}{2\initscale^2p(1-2p)}\le\frac{3}{2\initscale^2p^2}$, so
+\[
+ t_3\le\frac{3}{2\initscale^2p^2}+\frac{6720\sqrt{d_{\mathrm h}}}{\initscale^4h^\star p^2}\log\frac{4\sqrt{d_{\mathrm h}}}{\initscale^4}+\frac{7\cdot10^5}{\initscale^4p^4}
+ \le\frac{C}{\initscale^4}\Bigl(\frac{\sqrt{d_{\mathrm h}}\log\frac{d_{\mathrm h}}{\initscale}}{p^2\min\{1,h^\star\}}+\frac1{p^4}\Bigr).\qedhere
+\]
+\end{proof}
+
+The radius in \cref{eq:perturbed-radius} is a constant: it does not shrink with $\initscale$, $d_{\mathrm h}$ or $n$. The fixed perturbation is also
+relatively suppressed during training, since $q$ and $|k|$ only grow.
+

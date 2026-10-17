@@ -1,0 +1,137 @@
+% !TEX root = main.tex
+% Shared identities for the three separate step-learning settings in Appendix D.
+\providecommand{\LRstep}{L_{\mathrm{step}}}
+\providecommand{\LRout}{L_{\mathrm{out}}}
+\providecommand{\LRsig}{\sigma}
+\providecommand{\LRnorm}[1]{\left\lVert #1\right\rVert}
+\providecommand{\LRinner}[2]{\left\langle #1,#2\right\rangle}
+\theoremstyle{plain}
+\newtheorem{lrlemma}[lemma]{Lemma}
+\newtheorem{lrproposition}[proposition]{Proposition}
+\newtheorem{lrtheorem}[theorem]{Theorem}
+\newtheorem{lrremark}[remark]{Remark}
+\crefname{lrlemma}{Lemma}{Lemmas}
+\crefname{lrproposition}{Proposition}{Propositions}
+\crefname{lrtheorem}{Theorem}{Theorems}
+\crefname{lrremark}{Remark}{Remarks}
+
+\subsection{Shared setup and gradient identities}
+\label{app:weak-routing-initial}
+
+All three settings use the step loss and innovation defined in
+\cref{def:losses,sec:credit}. The exact readout and bootstrap identities below
+apply to any hidden representation with a linear readout. For the additional
+positional identities and the full-prefix model, consider binary counting
+$K=2$, with independent
+$b_j\sim\operatorname{Bernoulli}(p)$, $0<p<1/2$, and uniform $s_0$.
+The full-prefix result uses $p=1/4$; the supplied-routing result retains
+its own general-$K$ assumptions. As in the main paper, the input
+contains the prompt letters and the displayed running counts, and the
+prediction at $i_t$ for $s_t$ sees $s_{t-1}$; the associated prompt-letter
+site is $j_t$ and
+\begin{equation}\label{eq:lr-constant-lag}
+ i_t-j_t=n,\qquad t=2,\ldots,n.
+\end{equation}
+The attention distribution is normalized over the \emph{whole visible causal
+prefix}, including query, separator, and displayed-state sites.  We write
+$\omega_t=1/(n-1)$ and $\chi=p(1-p)$.
+
+For a one-head Block 2 with hidden parameters $\phi$ and readout
+$V$, let $h_t=h_\phi(x_t)$, $z_t=Vh_t$, and
+\begin{equation}
+ q_s=(1-p)e_s+pe_{s\oplus1},\qquad
+ g_t=e_{s_t}-q_{s_{t-1}}=(b_t-p)(e_{s_{t-1}\oplus1}-e_{s_{t-1}}).
+\end{equation}
+The state $s_{t-1}$ is independent of the entire prompt-bit vector: this
+follows from uniformity of $s_0$.  Consequently,
+\begin{equation}\label{eq:lr-innovation-cov}
+ \mathbb E[(b_t-p)(b_j-p)]=\chi\mathbf 1\{j=t\}.
+\end{equation}
+For fixed $p=1/4$, the right side is a positive constant, unlike the
+outcome-correlation factor $\lambda^n$.
+
+\begin{lrlemma}[Exact target decomposition and readout rule credit]
+\label{lem:lr-decomposition}
+For population step cross-entropy and arbitrary logits,
+\begin{equation}\label{eq:lr-kl-decomp}
+ \LRstep=H(p)+\mathbb E\operatorname{KL}
+ (q_{s_{t-1}}\Vert\operatorname{softmax}(z_t))
+ -\Phi_{\mathrm{rule}},\qquad
+ \Phi_{\mathrm{rule}}=\mathbb E\LRinner{g_t}{z_t}.
+\end{equation}
+Writing $C(\phi)=\mathbb E[g_t h_t^\top]$, one has
+$\nabla_V\Phi_{\mathrm{rule}}=C(\phi)$.  At an exact state-only predictor
+$\operatorname{softmax}(z_t)=q_{s_{t-1}}$, one has
+$\nabla_V\LRstep=-C(\phi)$.
+\end{lrlemma}
+\begin{proof}
+The conditional expected label is $q_{s_{t-1}}$ and the centered
+innovation is $g_t$.  Expanding cross-entropy as log-sum-exp minus the
+target logit gives \eqref{eq:lr-kl-decomp}.  The readout derivatives follow
+from $z_t=Vh_t$ and the usual softmax cross-entropy gradient.
+\end{proof}
+
+\begin{lrlemma}[Exact zero-readout bootstrap]
+\label{lem:lr-zero-bootstrap}
+Let $u=(1/2,1/2)$ and
+$M(\phi)=\mathbb E[(e_{s_t}-u)h_\phi^\top]$.
+Under \emph{unit-mobility Euclidean gradient flow} of $(\phi,V)$ with
+$V(0)=0$, at any initial parameter point with a locally continuously differentiable hidden map,
+\begin{equation}\label{eq:lr-zero-boot}
+ \dot V(0)=M(\phi_0),\qquad \dot\phi(0)=0,\qquad
+ \ddot\phi(0)=\nabla_\phi\frac12\LRnorm{M(\phi_0)}_F^2.
+\end{equation}
+For a group of hidden parameters trained with constant mobility $\nu_G$,
+with unit readout mobility, its initial acceleration is $\nu_G$ times the corresponding component of
+the final gradient.
+\end{lrlemma}
+\begin{proof}
+At $V=0$, predicted probabilities are $u$, so the readout velocity is
+$M$.  The gradient into $\phi$ has a factor $V$ and vanishes initially.
+Differentiating the hidden gradient-flow equation at time zero leaves
+$(D_\phi M)^\top M$, which is the gradient of $\LRnorm{M}^2/2$.
+\end{proof}
+
+For reference, if $P(\phi)=\mathbb E[(q_{s_{t-1}}-u)h_\phi^\top]$ is nonzero,
+then the prior-orthogonalized rule feature
+\begin{equation}
+ R(\phi)=C(\phi)-\frac{\LRinner{C(\phi)}{P(\phi)}_F}
+ {\LRnorm{P(\phi)}_F^2}P(\phi)
+\end{equation}
+satisfies
+$\left.\frac{d}{dt}\LRinner{V(t)}{R(\phi(t))}_F\right|_{t=0}
+=\LRnorm{R(\phi_0)}_F^2$.
+This is an \emph{initial readout-alignment identity}, not a long-time
+non-collapse theorem.
+
+\begin{lrlemma}[Exact positional QK geometry]
+\label{lem:lr-qk-geometry}
+For the reduced positional projections $Q,K$ and
+$S=QK^\top/\sqrt{d_h}$, let $G=\nabla_S\LRstep$.
+When the positional embeddings are mutually orthogonal vectors
+$\varepsilon e_i$ and the underlying positional QK matrix blocks share
+mobility $\nu_Q$,
+\begin{align}
+ \dot Q&=-\frac{\nu_Q\varepsilon^2}{\sqrt{d_h}}GK,
+ &\dot K&=-\frac{\nu_Q\varepsilon^2}{\sqrt{d_h}}G^\top Q,\label{eq:lr-qk-flow}\\
+ \dot S&=-\frac{\nu_Q\varepsilon^2}{d_h}
+ (QQ^\top G+GKK^\top),\label{eq:lr-qk-scoreflow}\\
+ \frac{d}{dt}(Q^\top Q-K^\top K)&=0.\label{eq:lr-balanced-conservation}
+\end{align}
+These identities hold as readout and MLP parameters evolve, provided the
+query/key dependence on the positional projections remains as stated.
+\end{lrlemma}
+\begin{proof}
+Apply the chain rule to $QK^\top/\sqrt{d_h}$.  The one-hot positional
+features supply the identical mobility factor $\nu_Q\varepsilon^2$ for
+each projected row.  Substituting the two velocities in
+$\frac{d}{dt}(Q^\top Q-K^\top K)$ cancels the four terms pairwise.
+\end{proof}
+
+In particular, if the conserved difference
+$Q_0^\top Q_0-K_0^\top K_0$ has at least $n-1$ eigenvalues at least
+$\mu>0$, the supervised-query Gram matrix $Q(t)Q(t)^\top$ has its
+smallest eigenvalue at least $\mu$ as long as its number of rows is $n-1$.
+This is a \emph{conditional} conditioning mechanism, not a conclusion for
+arbitrarily initialized full Transformer QKV.
+

@@ -1,0 +1,42 @@
+tectonic -X compile --outdir . --keep-logs main.tex
+note: "version 2" Tectonic command-line interface activated
+note: Running TeX ...
+warning: lineno.sty:296: Invalid UTF-8 byte or sequence at line 296 replaced by U+FFFD.
+warning: algorithm.sty:11: 
+Invalid UTF-8 byte or sequence at line 11 replaced by U+FFFD.
+warning: body:3: Underfull \hbox (badness 1968) in paragraph at lines 2--3
+warning: sections/outcome:51: Underfull \hbox (badness 1281) in paragraph at lines 48--51
+warning: sections/outcome:223: Underfull \hbox (badness 5147) in paragraph at lines 219--223
+warning: sections/outcome:223: Underfull \hbox (badness 1024) in paragraph at lines 219--223
+warning: sections/process:59: Underfull \hbox (badness 1342) in paragraph at lines 56--59
+note: Running BibTeX on main.aux ...
+note: Rerunning TeX because bibtex was run ...
+warning: lineno.sty:296: Invalid UTF-8 byte or sequence at line 296 replaced by U+FFFD.
+warning: algorithm.sty:11: 
+Invalid UTF-8 byte or sequence at line 11 replaced by U+FFFD.
+warning: body:3: Underfull \hbox (badness 1968) in paragraph at lines 2--3
+warning: sections/outcome:51: Underfull \hbox (badness 1281) in paragraph at lines 48--51
+warning: sections/outcome:223: Underfull \hbox (badness 5147) in paragraph at lines 219--223
+warning: sections/outcome:223: Underfull \hbox (badness 1024) in paragraph at lines 219--223
+note: Rerunning TeX because "main.aux" changed ...
+warning: lineno.sty:296: Invalid UTF-8 byte or sequence at line 296 replaced by U+FFFD.
+warning: algorithm.sty:11: 
+Invalid UTF-8 byte or sequence at line 11 replaced by U+FFFD.
+warning: body:3: Underfull \hbox (badness 1968) in paragraph at lines 2--3
+warning: sections/outcome:51: Underfull \hbox (badness 1281) in paragraph at lines 48--51
+warning: sections/outcome:223: Underfull \hbox (badness 5147) in paragraph at lines 219--223
+warning: sections/outcome:223: Underfull \hbox (badness 1024) in paragraph at lines 219--223
+note: Rerunning TeX because "main.aux" changed ...
+warning: lineno.sty:296: Invalid UTF-8 byte or sequence at line 296 replaced by U+FFFD.
+warning: algorithm.sty:11: 
+Invalid UTF-8 byte or sequence at line 11 replaced by U+FFFD.
+warning: body:3: Underfull \hbox (badness 1968) in paragraph at lines 2--3
+warning: sections/outcome:51: Underfull \hbox (badness 1281) in paragraph at lines 48--51
+warning: sections/outcome:223: Underfull \hbox (badness 5147) in paragraph at lines 219--223
+warning: sections/outcome:223: Underfull \hbox (badness 1024) in paragraph at lines 219--223
+warning: warnings were issued by the TeX engine; use --print and/or --keep-logs for details.
+note: Running xdvipdfmx ...
+note: Writing `./main.blg` (188 B)
+note: Writing `./main.pdf` (328.787109375 KiB)
+note: Writing `./main.log` (33.3720703125 KiB)
+note: Skipped writing 3 intermediate files (use --keep-intermediates to keep them)

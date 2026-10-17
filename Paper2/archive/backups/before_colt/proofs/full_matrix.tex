@@ -1,0 +1,62 @@
+\subsection{Full-matrix plateau: proof of \texorpdfstring{\cref{thm:fullmatrix}}{the full-matrix theorem}}
+\label{app:fullmatrix}
+Throughout, $\|\cdot\|$ is the Euclidean norm for vectors and the operator norm for matrices, bounded by the Frobenius norm;
+$\|W-W_0\|_F\le\varepsilon$ bounds the deviation of every block, $\delta Q=Q-Q_0$ and so on. The state embeddings satisfy $\|s_j\|=\sqrt3$,
+the query embedding $h_b=b\bm e_2+\bm e_3$ satisfies $\|h_b\|=\sqrt2$, and $0<\varepsilon\le\tfrac{1}{10}$, $B\ge1$.
+Write $u=\tfrac{1}{N}\bm1$, $\bar s=\sum_j u_js_j$, $H_b=\sum_j\alpha_j(b)s_j$ and $M=OV$.
+
+\begin{proof}[Proof of \cref{thm:fullmatrix}]
+\proofstep{(a) Uniform attention carries no rule credit.}
+Let $z^{\mathrm{u}}_W$ be the logit with every attention weight replaced by $\tfrac1N$ and all matrices kept.
+It is a function of $b$ and of $\bar s=\tfrac{S}{N}\bm e_1+\bm e_3+\tfrac1N\bm e_4+\tfrac{N-1}{N}\bm e_5$, where $S$ is the sum of the displayed values,
+which is a function of their multiset. By \cref{lem:matched}, $x_N$ is uniform given $(b,\bar s)$ under $\Dlaw0$; since $\xi$ is independent of everything else,
+$\E[Yz^{\mathrm u}_W]=\gamma\,\E\bigl[b\,z^{\mathrm u}_W\,\E[x_N\mid b,\bar s]\bigr]=0$, and $\E[Yz_W]=\gamma\,\E[b\,x_N(z_W-z^{\mathrm u}_W)]$.
+\proofstep{(b) Attention stays almost uniform and almost instruction-blind.}
+The score of position $j$ is $\sigma_j(b)=(Qh_b)^\top Ks_j$. Since $K_0=0$, $Q_0h_b=\bm e_1$ and $Q_0\bm e_2=0$,
+\[
+ |\sigma_j(b)|\le(1+\sqrt2\varepsilon)\,\varepsilon\sqrt3\le2.1\varepsilon,\qquad
+ |\sigma_j(1)-\sigma_j(-1)|=2|(\delta Q\,\bm e_2)^\top Ks_j|\le2\sqrt3\varepsilon^2\le3.5\varepsilon^2 .
+\]
+If all scores lie in $[-m,m]$ with $m\le0.34$, every weight lies in $[\tfrac{e^{-2m}}{N},\tfrac{e^{2m}}{N}]$, so $\|\bm\alpha-u\|_1\le e^{2m}-1\le4m$;
+the softmax Jacobian $\operatorname{diag}(\bm\alpha)-\bm\alpha\bm\alpha^\top$ maps $\ell_\infty$ into $\ell_1$ with norm at most $2$. Hence
+\[
+ \|H_b-\bar s\|\le\sqrt3\cdot8.4\varepsilon\le15\varepsilon,\qquad
+ \|H_1-H_{-1}\|\le\sqrt3\cdot7\varepsilon^2\le12.2\varepsilon^2 .
+\]
+\proofstep{(c) Three small products.}
+At initialization $c_0^\top O_0=\bm e_7^\top\bm e_6=0$, $\|U_0O_0\|=\|U_0\bm e_6\|=2\varepsilon$, $\|c_0^\top D_0\|=2\varepsilon$, $\|U_0\|\le2B+0.2$ and $\|V\|\le1.1$.
+Expanding each product to first order in the deviations,
+\begin{align*}
+ \|c^\top M\|&\le1.1\bigl(\|c_0^\top\delta O\|+\|\delta c^\top O_0\|+\|\delta c^\top\delta O\|\bigr)\le2.4\varepsilon,\\
+ \|UM\|&\le1.1\bigl(\|U_0O_0\|+\|U_0\|\|\delta O\|+\|\delta U\|+\|\delta U\|\|\delta O\|\bigr)\le(2.2B+3.7)\varepsilon,\\
+ \|c^\top D\|&\le\|c_0^\top D_0\|+\|\delta D\|+\|\delta c\|\|D_0\|+\|\delta c\|\|\delta D\|\le3.3\varepsilon .
+\end{align*}
+\proofstep{(d) The credit bound.}
+With $g_b=h_b+MH_b$ and $\bar g_b=h_b+M\bar s$,
+\[
+ z_W-z^{\mathrm u}_W=c^\top M(H_b-\bar s)+c^\top D\bigl[\relu(Ug_b+a)-\relu(U\bar g_b+a)\bigr].
+\]
+The instruction $b$ is uniform and independent of the prefix, and $\bar s$ does not depend on $b$, so the first term contributes
+$\tfrac12\E[x_N\,c^\top M(H_1-H_{-1})]$, at most $\tfrac12\cdot2.4\varepsilon\cdot12.2\varepsilon^2\le14.7\varepsilon^3$ in absolute value.
+Since $\relu$ is $1$-Lipschitz coordinatewise, the second term is at most $\|c^\top D\|\,\|UM\|\,\|H_b-\bar s\|\le3.3\cdot15\,(2.2B+3.7)\,\varepsilon^3$.
+Together, $|\E[Yz_W]|\le\gamma(109B+198)\varepsilon^3\le\gamma C_B\varepsilon^3$, which is (i).
+For the loss, $\log(1+e^{-Yz})=\log2-\tfrac{Yz}{2}+\log\cosh\tfrac{z}{2}$ and $\log\cosh\ge0$ give $\mathcal L(W)\ge\log2-\tfrac12\E[Yz_W]$.
+\proofstep{(e) Initial loss.}
+At $W_0$ the network is the four-scalar network at $\bm\theta(0)$, so $z_{W_0}=\varepsilon^2bv$ with uniform attention and $|z_{W_0}|\le\varepsilon^2$.
+By part (a), $\E[Yz_{W_0}]=0$, and $\log\cosh x\le\tfrac{x^2}{2}$ gives $\mathcal L(W_0)\le\log2+\tfrac{\varepsilon^4}{8}$.
+\proofstep{(f) Energy and first exit.}
+The population loss is a finite sum of compositions of affine maps, $\exp$, $\log$ and $\relu$, so it is locally Lipschitz and definable in the o-minimal structure $\mathbb R_{\exp}$.
+Along any absolutely continuous solution of $\dot W\in-\partial\mathcal L(W)$ the chain rule for definable locally Lipschitz functions \citep{davis2020stochastic} gives
+$\tfrac{d}{dt}\mathcal L(W(t))=-\|\dot W(t)\|_F^2$ for almost every $t$, hence, by Cauchy--Schwarz,
+\[
+ \|W(t)-W(0)\|_F^2\le t\int_0^t\|\dot W\|_F^2=t\,\bigl[\mathcal L(W(0))-\mathcal L(W(t))\bigr].
+\]
+Let $\tau$ be the first time $\|W(t)-W_0\|_F=\varepsilon$. On $[0,\tau]$ part (d) applies, so $\mathcal L(W_0)-\mathcal L(W(t))\le\tfrac{\varepsilon^4}{8}+\tfrac{\gamma C_B\varepsilon^3}{2}\le C_B\varepsilon^3$.
+At $t=\tau$ this gives $\varepsilon^2\le\tau C_B\varepsilon^3$, that is $\tau\ge\tfrac{1}{C_B\varepsilon}$, which is (ii).
+\proofstep{(g) Small perturbations.}
+On the ball $\|W-W_0\|_F\le\varepsilon$ every factor in the network is bounded by a constant depending only on $B$, so $z_W$ is Lipschitz in $W$ there with a constant $L_B$.
+If $\|W(0)-W_0\|_F\le\varepsilon^{3/2}$, then $|z_{W(0)}|\le\varepsilon^2+L_B\varepsilon^{3/2}$ and, by part (d),
+$\mathcal L(W(0))\le\log2+\tfrac{\gamma C_B\varepsilon^3}{2}+\tfrac{(1+L_B)^2\varepsilon^3}{8}$.
+Since $\varepsilon^{3/2}\le\tfrac{\varepsilon}{2}$, the ball of radius $\tfrac{\varepsilon}{2}$ around $W(0)$ lies inside the ball of part (d), and the argument of part (f) gives exit time at least
+$\tfrac{(\varepsilon/2)^2}{C'_B\varepsilon^3}$ with $C'_B=C_B+(1+L_B)^2$, which is (iii).\qedhere
+\end{proof}
