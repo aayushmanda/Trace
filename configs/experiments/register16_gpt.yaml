@@ -1,0 +1,26 @@
+# Register machine ((x, y) in Z_17^2, five instructions, n = 16, answer x) on the character-token GPT.
+# The archived results/paper/other_substrates/register_machine_16.csv came from the retired `reliability`
+# command (outcome, and step as rho = 1.00); its training sets, batch order, initialization and update count
+# equal this config's.
+experiment: register16_gpt
+bf16: true
+tasks: [register_machine_16]
+modes: [outcome, process]
+seeds: [2001, 2002, 2003]
+steps: 8000
+train_size: 20000
+val_size: 500
+train_seed: 501
+val_seed: 101
+batch_seed: 12345
+batch_size: 128
+eval_batch_size: 128
+lr: 0.0003
+weight_decay: 0.0
+grad_clip: 1.0
+embedding: 128
+heads: 4
+layers: 2
+dropout: 0.0
+workers: 0
+output: results/paper/gpt/register16_gpt.csv

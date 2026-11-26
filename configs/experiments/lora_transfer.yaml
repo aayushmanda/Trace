@@ -1,0 +1,17 @@
+# Rank-8 LoRA on SmolLM2-135M, Boolean-8: outcome, answer-first and step, three seeds, 800 updates.
+# For Qwen2.5-0.5B pass --model Qwen/Qwen2.5-0.5B with its own --output and --run-dir; for the
+# 8x outcome budget pass --conditions outcome --steps 6400.
+experiment: lora_transfer
+model: HuggingFaceTB/SmolLM2-135M
+task: boolean_circuit_8
+conditions: [outcome, answer_first, process]
+lora_rank: 8
+seeds: [2001, 2002, 2003]
+train_size: 12000
+val_size: 300
+steps: 800
+batch_size: 16
+max_length: 384
+lr: 0.0003
+output: results/paper/smollm/smollm_trace.csv
+run_dir: results/paper/smollm/artifacts

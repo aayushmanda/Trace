@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Sync Python environment
+        run: uv sync --frozen
+
+      - name: Lint Python (ruff)
+        run: uv run ruff check src/ two_block/ cpp/analysis/
+
+      - name: Verify Proposition 1 exact executors
+        run: uv run python two_block/checks/check_executors.py
+
+      - name: Verify structured credit closed form
+        run: uv run python two_block/checks/check_credit.py structured
+
+      - name: Build C++20 suite & run float64 gradient check
+        run: make -C cpp all check

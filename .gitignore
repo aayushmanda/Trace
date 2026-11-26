@@ -1,0 +1,42 @@
+# --- environments and caches -------------------------------------------------
+.venv/
+animations/.venv/
+animations/media/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.pytest_cache/
+.ruff_cache/
+
+# --- run artifacts and local paper sources we do not ship --------------------
+/papers/
+/ckpt/
+/logs/
+/results/
+/run.log
+*.pt
+*.ckpt
+*.safetensors
+
+# --- compiled C++ binaries (built via `make -C cpp`) -------------------------
+/cpp/causal_interventions
+/cpp/grad_check
+/cpp/step_ode
+
+# --- paper build intermediates -----------------------------------------------
+/papers/*/build/
+/papers/*/*.aux
+/papers/*/*.bbl
+/papers/*/*.blg
+/papers/*/*.fdb_latexmk
+/papers/*/*.fls
+/papers/*/*.log
+/papers/*/*.out
+/papers/*/*.ptc
+/papers/*/*.synctex.gz
+/papers/*/*.toc
+
+# --- editor, OS, and local agent state ---------------------------------------
+.vscode/
+.DS_Store
+.claude/

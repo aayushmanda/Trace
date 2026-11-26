@@ -1,0 +1,31 @@
+[project]
+name = "trace"
+version = "0.1.0"
+description = "Process versus outcome supervision for state tracking."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "matplotlib>=3.11.1",
+    "numpy>=2.4.4",
+    "peft>=0.20.0",
+    "pyyaml>=6.0",
+    "scipy>=1.17.1",
+    "torch>=2.13.0",
+    "tqdm>=4.70.0",
+    "transformers>=5.16.1",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.11",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+src = ["src", "two_block"]
+extend-exclude = ["results", "papers", "animations", "cpp", ".venv", "*.ipynb"]
+
+[tool.ruff.lint]
+select = ["E", "F"]
+ignore = ["E501", "E402", "E701", "E702", "E731", "E741"]
