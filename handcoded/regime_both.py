@@ -271,7 +271,7 @@ def run_population_gd(
         grad_norm = _grad_norm(grads)
 
         if step_idx == 0:
-            initial_loss = float(loss_val)
+            initial_loss = loss_val.detach().item()
             record["grad0_over_sigma"] = grad_norm / sigma
 
         dt = step_len * scale_norm / grad_norm
