@@ -382,7 +382,11 @@ def generate(p, examples, mode):
 @torch.no_grad()
 def free_run(p, examples, mode):
     """Greedy generation; in the stream layout the letters are fed in, the model writes values."""
-    rows, gold = generate(p, examples, mode)
+    rows, gold = [], []
+    for i in range(0, len(examples), 64):   # chunks bound memory at large n; each prompt is decoded independently
+        r, g = generate(p, examples[i:i + 64], mode)
+        rows += r
+        gold += g
     exact = sum(r == g for r, g in zip(rows, gold)) / len(gold)
     answer = sum(COLON in r and r.index(COLON) + 1 < len(r) and r[r.index(COLON) + 1] == g[-2]
                  for r, g in zip(rows, gold)) / len(gold)

@@ -1,0 +1,50 @@
+% Conceptual figure: counting modulo 2 as a two-state chain, and what each supervision format sees.
+\begin{tikzpicture}[>=Stealth, font=\small,
+  state/.style={circle, draw=royalazure!80!black, fill=royalazure!12, minimum size=7mm, inner sep=0pt},
+  tok/.style={rectangle, rounded corners=2pt, draw=black!45, fill=black!4, minimum width=7mm, minimum height=5.5mm, inner sep=1pt},
+  sup/.style={rectangle, rounded corners=2pt, draw=royalazure!80!black, fill=royalazure!12, minimum width=7mm, minimum height=5.5mm, inner sep=1pt},
+  hid/.style={rectangle, rounded corners=2pt, draw=black!30, dashed, fill=white, text=black!45, minimum width=7mm, minimum height=5.5mm, inner sep=1pt}]
+
+% ---------------- (a) cyclic chain ----------------
+\begin{scope}[shift={(0,0)}]
+  \node[state] (c0) at (-0.9,0.3) {$0$};
+  \node[state] (c1) at (0.9,0.3) {$1$};
+  \draw[->, black!55] (c0) to[out=152, in=208, looseness=6] node[pos=0.5, font=\scriptsize, fill=white, inner sep=0.5pt] {$1{-}p$} (c0);
+  \draw[->, black!55] (c1) to[out=28, in=-28, looseness=6] node[pos=0.5, font=\scriptsize, fill=white, inner sep=0.5pt] {$1{-}p$} (c1);
+  \draw[->, thick, royalazure] (c0) to[bend left=35] node[font=\scriptsize, above] {$p$} (c1);
+  \draw[->, thick, royalazure] (c1) to[bend left=35] node[font=\scriptsize, below] {$p$} (c0);
+  \node[align=center, font=\footnotesize] at (0,-1.5)
+    {$s_t=s_{t-1}+b_t\ (\mathrm{mod}\ 2)$\\[2pt] $T=(1-p)\,I+p\,R$};
+  \node[font=\small\bfseries] at (-2.3,1.75) {(a)};
+\end{scope}
+
+% ---------------- (b) what each format supervises ----------------
+\begin{scope}[shift={(3.4,0.95)}]
+  \node[font=\small\bfseries] at (-0.35,0.8) {(b)};
+  % outcome row
+  \node[anchor=west, font=\footnotesize] at (0,0.8) {Outcome: supervise $s_n$ only};
+  \node[tok] (o0) at (0.45,0) {$s_0$};
+  \node[tok] (ow1) at (1.35,0) {$w_1$};
+  \node[hid] (os1) at (2.25,0) {$s_1$};
+  \node[tok] (ow2) at (3.15,0) {$w_2$};
+  \node[hid] (os2) at (4.05,0) {$s_2$};
+  \node at (4.85,0) {$\cdots$};
+  \node[tok] (own) at (5.65,0) {$w_n$};
+  \node[sup] (osn) at (6.55,0) {$s_n$};
+  \draw[decorate, decoration={brace, amplitude=4pt, mirror}, black!60] (1.0,-0.42) -- (6.0,-0.42)
+    node[midway, below=4pt, font=\footnotesize, align=center] {$n$ unread letters: conditional parity mean contracts by $\mixrate$ per step};
+  % step row
+  \node[anchor=west, font=\footnotesize] at (0,-1.75) {Step: supervise every $s_t$ from the displayed $s_{t-1}$};
+  \node[tok] (p0) at (0.45,-2.55) {$s_0$};
+  \node[tok] (pw1) at (1.35,-2.55) {$w_1$};
+  \node[sup] (ps1) at (2.25,-2.55) {$s_1$};
+  \node[tok] (pw2) at (3.15,-2.55) {$w_2$};
+  \node[sup] (ps2) at (4.05,-2.55) {$s_2$};
+  \node at (4.85,-2.55) {$\cdots$};
+  \node[tok] (pwn) at (5.65,-2.55) {$w_n$};
+  \node[sup] (psn) at (6.55,-2.55) {$s_n$};
+  \draw[rounded corners=3pt, thick, lightmauve!80!black] (1.83,-2.95) rectangle (3.55,-2.15);
+  \draw[->, thick, lightmauve!80!black] (3.55,-2.55) -- (ps2.west);
+  \node[font=\footnotesize, align=center] at (3.5,-3.45) {one local transition $(s_{t-1},w_t)\mapsto s_t$: rule variance $(1-\mixrate^2)/2$};
+\end{scope}
+\end{tikzpicture}

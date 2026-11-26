@@ -1,0 +1,253 @@
+%%%%%%%% ICML submission %%%%%%%%
+\documentclass{article}
+
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\let\savedaddcontentsline\addcontentsline
+\usepackage[T1]{fontenc}
+\usepackage{url}
+\usepackage{amsfonts}
+\usepackage{nicefrac}
+\usepackage{xcolor}
+
+% Initial blind submission.
+\usepackage{icml2026}
+\hypersetup{pdfsubject={Proceedings of the International Conference on Machine Learning}}
+
+\usepackage{amsmath,amssymb,amsthm,mathtools,bm}
+% Full-size fractions in displays; compact fractions inline and in scripts.
+\let\originaltfrac\tfrac
+\renewcommand{\tfrac}[2]{\mathchoice{\dfrac{#1}{#2}}{\originaltfrac{#1}{#2}}{\originaltfrac{#1}{#2}}{\originaltfrac{#1}{#2}}}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,decorations.pathreplacing,calc}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage{array,colortbl}
+\usepackage{xspace}
+\usepackage{needspace}
+\usepackage{titletoc}
+\usepackage{thm-restate}
+\usepackage[capitalize,noabbrev,nameinlink]{cleveref}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Independent per-type theorem counters and cleveref formatting
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\newtheorem{assumption}{Assumption}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+
+\crefname{theorem}{Theorem}{Theorems}
+\Crefname{theorem}{Theorem}{Theorems}
+\crefname{lemma}{Lemma}{Lemmas}
+\Crefname{lemma}{Lemma}{Lemmas}
+\crefname{proposition}{Proposition}{Propositions}
+\Crefname{proposition}{Proposition}{Propositions}
+\crefname{corollary}{Corollary}{Corollaries}
+\Crefname{corollary}{Corollary}{Corollaries}
+\crefname{definition}{Definition}{Definitions}
+\Crefname{definition}{Definition}{Definitions}
+\crefname{assumption}{Assumption}{Assumptions}
+\Crefname{assumption}{Assumption}{Assumptions}
+\crefname{remark}{Remark}{Remarks}
+\Crefname{remark}{Remark}{Remarks}
+\crefname{algorithm}{Algorithm}{Algorithms}
+\Crefname{algorithm}{Algorithm}{Algorithms}
+\crefname{appendix}{Appendix}{Appendices}
+\Crefname{appendix}{Appendix}{Appendices}
+\crefname{subappendix}{Appendix}{Appendices}
+\Crefname{subappendix}{Appendix}{Appendices}
+\crefformat{equation}{(#2#1#3)}
+\Crefformat{equation}{Equation~(#2#1#3)}
+\crefrangeformat{equation}{(#3#1#4)--(#5#2#6)}
+\Crefrangeformat{equation}{Equations~(#3#1#4)--(#5#2#6)}
+\crefmultiformat{equation}{(#2#1#3)}{ and~(#2#1#3)}{, (#2#1#3)}{, and~(#2#1#3)}
+\Crefmultiformat{equation}{Equations~(#2#1#3)}{ and~(#2#1#3)}{, (#2#1#3)}{, and~(#2#1#3)}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Core mathematical macros
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\E}{\mathbb E}
+\newcommand{\R}{\mathbb R}
+\newcommand{\one}{\mathbf 1}
+\newcommand{\rmd}{\mathrm{d}}
+\newcommand{\frob}{\mathrm{F}}
+\newcommand{\op}{\mathrm{op}}
+\newcommand{\KL}{\mathrm{D}_{\mathrm{KL}}}
+\newcommand{\cS}{\operatorname{softmax}}
+\newcommand{\cJ}{\mathcal J}
+\newcommand{\softmax}{\operatorname{softmax}}
+\newcommand{\TF}{\operatorname{TF}}
+\newcommand{\attn}{\operatorname{attn}}
+\newcommand{\relu}{\operatorname{ReLU}}
+\newcommand{\ip}[2]{\left\langle #1,#2\right\rangle}
+\newcommand{\ipD}[2]{\bigl\langle #1,#2\bigr\rangle_{\mathcal D}}
+\newcommand{\norm}[2][2]{\left\lVert #2\right\rVert_{#1}}
+\newcommand{\pd}[2]{\mathchoice{\frac{\partial #1}{\partial #2}}{\tfrac{\partial #1}{\partial #2}}{\partial #1/\partial #2}{\partial #1/\partial #2}}
+\newcommand{\dpd}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\ddt}[1]{\mathchoice{\frac{\rmd #1}{\rmd t}}{\tfrac{\rmd #1}{\rmd t}}{\rmd #1/\rmd t}{\rmd #1/\rmd t}}
+\newcommand{\ddtau}[1]{\mathchoice{\frac{\rmd #1}{\rmd\tau}}{\tfrac{\rmd #1}{\rmd\tau}}{\rmd #1/\rmd\tau}{\rmd #1/\rmd\tau}}
+
+% Shared problem, architecture, and dynamical notation
+\newcommand{\dmodel}{d_{\mathrm{model}}}
+\newcommand{\dmlp}{d_{\mathrm{mlp}}}
+\newcommand{\bary}{\bar y}
+\newcommand{\Lout}{\mathcal L_{\mathrm{out}}}
+\newcommand{\Lstep}{\mathcal L_{\mathrm{step}}}
+\newcommand{\cred}{C}
+\newcommand{\outcredit}{\cred_{\mathrm{out}}}
+\newcommand{\rulecredit}{\cred_{\mathrm{step}}}
+\newcommand{\thout}{\theta^\star_{\mathrm{out}}}
+\newcommand{\thstep}{\theta^\star_{\mathrm{step}}}
+\newcommand{\initscale}{\varepsilon}
+\newcommand{\ballradius}{r_0}
+\newcommand{\stepsize}{\eta}
+\newcommand{\mixrate}{\lambda}
+\newcommand{\initball}{\mathcal B_{\initscale}}
+\newcommand{\cnt}{c}
+\newcommand{\brel}{\beta}
+\newcommand{\embconst}{c_e}
+\newcommand{\attconst}{C_0}
+\newcommand{\Jz}{J_\theta}
+\newcommand{\term}{\mathsf t}
+\providecommand{\reg}[1]{\ensuremath{\mathsf{#1}}}
+\newcommand{\stepode}{\hyperref[eq:reduced-transition]{(\textsf{Step-ODE})}}
+\newcommand{\gateode}{\stepode}
+\newcommand{\gategf}{\hyperref[eq:J-flow]{(\textsf{Step-GF})}}
+\newcommand{\XX}[1]{\textcolor{red}{[#1]}}  % drafting marker; must be absent from the submitted text
+\newcommand{\proofstep}[1]{\par\smallskip\noindent\textbf{#1}\enspace}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Figure and table helpers
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\paperfig}[2][]{%
+  \IfFileExists{#2}{\includegraphics[#1]{#2}}{%
+    \fbox{\parbox[c][2.6cm][c]{0.86\linewidth}{\centering Figure placeholder: \texttt{\detokenize{#2}}}}}}
+
+\definecolor{lightmauve}{rgb}{0.7,0.7,.9}
+\definecolor{royalazure}{rgb}{0.0,0.22,0.66}
+\newcommand{\tabemph}[1]{\cellcolor{lightmauve!30}\textcolor{black!50!royalazure}{#1}}
+\newsavebox{\fitbox}
+\newcommand{\fitwidth}[1]{\sbox{\fitbox}{#1}\ifdim\wd\fitbox>\linewidth\resizebox{\linewidth}{!}{\usebox{\fitbox}}\else\usebox{\fitbox}\fi}
+
+\icmltitlerunning{Silent Routing: How Step Supervision Trains Transformers Where Outcome Supervision Stalls}
+
+\begin{document}
+
+\twocolumn[
+  \icmltitle{Silent Routing: How Step Supervision Trains Transformers\texorpdfstring{\\}{ }Where Outcome Supervision Stalls}
+
+  % Author information is removed automatically unless [accepted] is passed to icml2026.
+  \begin{icmlauthorlist}
+    \icmlauthor{Anonymous Author}{anon}
+  \end{icmlauthorlist}
+  \icmlaffiliation{anon}{Anonymous Institution}
+  \icmlcorrespondingauthor{Anonymous Author}{anon.email@domain.com}
+  \icmlkeywords{state tracking, attention routing, process supervision, loss plateaus, saddle dynamics, chain of thought}
+
+  \vskip 0.3in
+]
+\printAffiliationsAndNotice{}
+
+\input{body}
+
+\clearpage
+\setcounter{topnumber}{3}
+\setcounter{dbltopnumber}{2}
+\raggedbottom
+\section*{Impact Statement}
+This paper presents work whose goal is to advance the field of Machine Learning. There are many potential societal
+consequences of our work, none of which we feel must be specifically highlighted here.
+
+\section*{AI Disclosure Statement}
+Large language model and coding tools were used while preparing this manuscript in four capacities: (1)~editing prose clarity, section organization, and LaTeX formatting (including notation tables and \texttt{TikZ}/\texttt{PGFPlots} diagrams); (2)~checking proof dependencies, notation consistency, and explicit constants across \Cref{app:architectures,app:damping-proof,app:joint,app:adaptive}; (3)~writing and refactoring PyTorch scripts, the multithreaded C++20/BLAS projection and finite-difference gradient checker, and RK4 ODE solvers (\Cref{app:experiments,app:exp-other}); and (4)~checking bibliography entries. Every problem formulation, theorem statement, proof step, experimental protocol, numerical result, and citation was checked and verified by the authors, who take full responsibility for the work.
+
+\bibliography{main}
+\bibliographystyle{icml2026}
+
+\newpage
+\appendix
+\let\addcontentsline\savedaddcontentsline
+\crefalias{section}{appendix}
+\crefalias{subsection}{appendix}
+\crefalias{subsubsection}{appendix}
+\numberwithin{equation}{section}
+\numberwithin{lemma}{section}
+\numberwithin{proposition}{section}
+\numberwithin{corollary}{section}
+\numberwithin{definition}{section}
+\numberwithin{assumption}{section}
+\numberwithin{remark}{section}
+\renewcommand{\theHequation}{\theHsection.\arabic{equation}}
+\renewcommand{\theHlemma}{\theHsection.\arabic{lemma}}
+\renewcommand{\theHproposition}{\theHsection.\arabic{proposition}}
+\renewcommand{\theHcorollary}{\theHsection.\arabic{corollary}}
+\renewcommand{\theHdefinition}{\theHsection.\arabic{definition}}
+\renewcommand{\theHassumption}{\theHsection.\arabic{assumption}}
+\renewcommand{\theHremark}{\theHsection.\arabic{remark}}
+\onecolumn
+% Spacious single-column appendix layout so proofs breathe on the page.
+\linespread{1.12}\selectfont
+\setlength{\parskip}{6.5pt plus 2pt minus 1pt}
+\setlength{\abovedisplayskip}{11pt plus 3pt minus 2pt}
+\setlength{\belowdisplayskip}{11pt plus 3pt minus 2pt}
+\setlength{\abovedisplayshortskip}{7pt plus 2pt minus 1pt}
+\setlength{\belowdisplayshortskip}{9pt plus 2pt minus 2pt}
+\setlength{\jot}{6pt}
+\renewcommand{\proofstep}[1]{\par\medskip\noindent\textbf{#1}\enspace}
+\setlist[itemize]{itemsep=4.5pt,topsep=6pt}
+\setlist[enumerate]{itemsep=5pt,topsep=6pt}
+\allowdisplaybreaks
+
+\titlecontents{section}[1.6em]
+  {\addvspace{0.55em}\normalsize\bfseries}
+  {\contentslabel{1.6em}}
+  {\hspace*{-1.6em}}
+  {\hfill\bfseries\contentspage}
+\titlecontents{subsection}[3.6em]
+  {\vspace{1pt}\small}
+  {\contentslabel{2.0em}}
+  {\hspace*{-2.0em}}
+  {\enspace\titlerule*[0.6pc]{.}\hspace{0.3em}\contentspage}
+
+\startcontents[appendix]
+{\parskip=0pt\linespread{1.05}\selectfont
+\section*{Appendix Contents}
+\vspace{0.35em}
+\hrule height 0.5pt
+\vspace{0.35em}
+\printcontents[appendix]{l}{1}{\setcounter{tocdepth}{2}}
+\vspace{0.55em}
+\hrule height 0.5pt}
+\vspace{1.2em}
+% Generous ICML appendix spacing (applied after the single-page TOC) so every lemma, display, and proof step breathes cleanly.
+\linespread{1.15}\selectfont
+\setlength{\parskip}{8pt plus 2pt minus 1pt}
+\setlength{\abovedisplayskip}{13pt plus 3pt minus 2pt}
+\setlength{\belowdisplayskip}{13pt plus 3pt minus 2pt}
+\setlength{\abovedisplayshortskip}{9pt plus 2pt minus 1pt}
+\setlength{\belowdisplayshortskip}{11pt plus 2pt minus 2pt}
+\setlength{\jot}{8pt}
+\makeatletter
+\setlength{\thm@preskip}{14pt plus 3pt minus 2pt}
+\setlength{\thm@postskip}{10pt plus 2pt minus 1pt}
+\makeatother
+\renewcommand{\proofstep}[1]{\par\medskip\noindent\textbf{#1}\enspace}
+\setlist[itemize]{itemsep=5.5pt,topsep=7pt}
+\setlist[enumerate]{itemsep=6pt,topsep=7pt}
+
+\input{appendix}
+\stopcontents[appendix]
+
+\end{document}

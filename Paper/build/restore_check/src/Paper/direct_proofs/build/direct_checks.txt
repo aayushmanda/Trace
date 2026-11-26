@@ -1,4 +1,0 @@
-PASS conditional contraction, tower identity, and target spectrum: 5080 support/distribution cases
-PASS explicit step-rule monomial coefficient and lower bound: 48 cases (head scale factored out)
-PASS corrected tanh bound and all downstream Phase III constants
-PASS all internal proof references resolve, with no duplicate labels

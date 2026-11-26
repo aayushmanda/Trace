@@ -1,0 +1,356 @@
+% !TEX root = main.tex
+% Main text: ICML 2026 8-page edition — unified around one North Star thesis, 1 top float per page (Pages 2–8).
+\setcounter{dbltopnumber}{1}
+\setcounter{topnumber}{1}
+
+\begin{abstract}
+Why does step-by-step supervision train Transformers on state tracking where outcome-only supervision stalls, even when a single two-block Transformer can express exact circuits for both? Studying modulo-$2$ counting, we show that unread state transitions damp outcome gradients exponentially in sequence length $n$, trapping full-model gradient flow near uniform predictions for $\Omega(\mixrate^{-n})$ time on one fixed rule ($\mixrate = |1-2p|$). Under step supervision, the linear readout quickly fits a state-only baseline at binary entropy $H(p)$. Rather than starving feature learning, this baseline cancels residual correlation with all $n-1$ wrong prefix letters while preserving signal from the target letter, allowing Block-$2$ attention to lock onto the true lookback lag while the loss stays flat (\emph{silent routing}). Blockwise RMS gradient normalization then removes a $\Theta(\initscale^{-5})$ query--key scale bottleneck without storing optimizer state, yielding polynomial-time rollout. Causal baseline-projection interventions and matched stateless Block-RMS runs in full Transformers verify each stage end-to-end.
+\end{abstract}
+
+% ===================================================================
+\section{Introduction}
+\label{sec:intro}
+
+When a Transformer is trained on step-by-step reasoning traces, its loss curve rarely falls at a steady rate. It drops within a few dozen updates to a trivial baseline, stays flat for hundreds or thousands of steps, and then plunges to zero (\cref{fig:overview}b). Under outcome-only supervision on the same task and architecture, the loss stays near chance indefinitely (\cref{fig:overview}a). Why does intermediate supervision succeed here, and what is changing inside the network across that flat plateau before accuracy moves?
+
+We answer both questions through a single mechanistic analysis of modulo-$2$ state tracking over $n$ context letters $w_1, \ldots, w_n \in \Sigma$. Given an initial state $s_0 \in \{0,1\}$ and a target letter $w^\star \in \Sigma$, the state flips whenever $w_t$ matches $w^\star$:
+\[
+  s_t = s_{t-1} + \one[w_t = w^\star] \pmod 2 \qquad (t = 1, \ldots, n).
+\]
+Each transition computes a local XOR between $s_{t-1}$ and the match indicator $\one[w_t = w^\star]$, whereas $s_n$ records the parity of all $n$ matches. \emph{Step supervision} reveals $s_1, \ldots, s_n$ during training; \emph{outcome supervision} reveals only $s_n$.
+
+\begin{figure*}[t]
+\centering
+\resizebox{\linewidth}{!}{\input{figures/overview.tex}}
+\caption{\textbf{One task, one two-block Transformer, one dynamical separation.} (a)~At $n=16, p=1/4$ ($10$ paired seeds), step supervision reaches $100\%$ rollout ($6/10$ seeds solved at $8$k, median and min--max band plotted; $12/12$ within $14$k in \cref{tab:gap}), while outcome greedy accuracy stays near the $s_0$-only baseline $(1+\mixrate^n)/2 \approx 50.0\%$ ($0/10$ solved). (b)~Across the flat step-loss plateau at $H(p)$ ($n=8$), fitting the state-only baseline denoises prefix gradients before rollout rises. (c)~How to read the lag map: each column is a training snapshot (not evenly spaced in time), each row is a lag $\delta - n$ back from the current position, and shading is the attention weight on that lag. Row $0$ (outlined, numbers in \%) is the true lag $\delta^\star = n$, where the matching letter sits. Attention starts spread across lags and concentrates on row $0$ (from $17\%$ to $99\%$) while the loss in (b) stays flat.}
+\label{fig:overview}
+\end{figure*}
+
+Representational capacity does not separate the two protocols. In \cref{prop:represent}, we construct explicit weights inside one two-block causal Transformer of linear width $\Theta(n + |\Sigma|)$ for both an exact direct-answer executor $\thout$ and an exact step-by-step executor $\thstep$. Both protocols start from the same random initialization $\theta_0$ in that shared parameter space, leaving optimization dynamics as the source of the gap.
+
+\par\smallskip
+\noindent\fbox{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}{%
+\textbf{Motivating Question.} \emph{In one two-block Transformer that can express both the direct and the step-by-step circuit, why do intermediate labels let training succeed in polynomial time while outcome-only supervision stays stuck for $\Omega(\mixrate^{-n})$ time, and what happens inside the network, at flat loss $H(p)$, before accuracy moves?}}}\par\smallskip
+
+\paragraph{Outcome barrier vs.\ step baseline cancellation.}
+Under outcome-only supervision, any pathway that reads fewer than all $n$ context letters leaves the remaining transitions unread. At match rate $p \in (0,1)$, each unread transition contracts parity correlation with $s_n$ by $\mixrate = |1 - 2p| < 1$, while small initialization scale $\initscale$ damps multi-letter interactions geometrically. Outcome gradients stay exponentially small in $n$, keeping projected gradient flow across the full two-block network near uniform predictions for $\Omega(\mixrate^{-n})$ time on \emph{one fixed rule} (\cref{thm:outcome-end}) and on contracting invertible automata (\cref{cor:reversible}).
+
+Step supervision removes this multi-step contraction in $O(1)$ time: at step $t$, predicting $s_t$ requires only $s_{t-1}$ and the current letter $w_t$, which sits at constant lookback lag $\delta^\star = n$ among $n - 1$ distractor letters (\cref{fig:gate-head}). On skewed data ($p \ne 1/2$), fast linear shortcuts typically starve feature learning \citep{labonte2026shortcut,glasgow2024sgd}. Here the opposite happens. Early readout updates fit a scalar \emph{state-only baseline} $\cnt \in \R$ from $s_{t-1}$ alone, dropping the loss to binary entropy $H(p) := -p\log p - (1-p)\log(1-p)$. Writing $\sigma(u) := (1 + e^{-u})^{-1}$, the residual correlation pulling Block-$2$ attention toward any wrong letter $w_r$ ($r \ne t$) satisfies
+\begin{equation}
+  E_{\mathrm{dist}}(\cnt) = (1-2p)\bigl(\sigma(-\cnt) - p\bigr).
+  \label{eq:Edist-intro}
+\end{equation}
+At the Bayes-optimal log-odds $c^\star = \log\frac{1-p}{p}$, we have $\sigma(-c^\star) = p$ and hence $E_{\mathrm{dist}}(c^\star) = 0$ across every distractor, while the true-letter signal remains positive ($2p(1-p) > 0$). Fitting the shortcut therefore denoises prefix gradients, letting relative lag biases lock onto $\delta^\star = n$ while the loss stays flat (\emph{silent routing}; \cref{thm:joint}).
+
+\begin{figure*}[t]
+\centering
+\fitwidth{\input{figures/gate_head.tex}}
+\caption{\textbf{Supervision geometry and silent prefix routing.} (a)~Under outcome supervision, $n$ unread transitions contract terminal credit by $\mixrate^n$, stalling training for $\Omega(\mixrate^{-n})$ time. (b)~Under step supervision at $p \ne \frac{1}{2}$, an uncalibrated baseline ($c=0$, top) leaves wrong-lag pull $E_{\mathrm{dist}}(0) > 0$ across all $n-1$ distractors, whereas fitting $c = c^\star$ (bottom) cancels every distractor ($E_{\mathrm{dist}}(c^\star) = 0$). (c)~With distractors cancelled, relative lag biases lock silently onto constant lag $\delta^\star = n$ at flat loss $H(p)$, and opening the query--key gate evaluates the step XOR ($M_t > 0$; $\Theta(\initscale^{-2})$ under Block-RMS).}
+\label{fig:gate-head}
+\end{figure*}
+
+\paragraph{Post-routing scale and causal verification.}
+Once attention locks onto $\delta^\star = n$, plain Euclidean gradient flow still spends $\Theta(\initscale^{-5})$ time opening tiny query--key scores (\cref{thm:joint}(iv)). Normalizing each parameter block by its scalar RMS gradient norm (\cref{alg:block-rms}) equalizes update speeds across layers without optimizer memory, cutting this post-routing warm-up to $\Theta(\initscale^{-2})$ and removing Hypothesis~(F) (\cref{thm:block-rms}).
+
+We test each mechanism directly in full two-block Transformers (\cref{sec:experiments,tab:clamp-main}; see \cref{app:faq} for a reader FAQ). Projecting out the state-only baseline ($\Pi_0$) during step training leaves the predicted $\frac{1}{2}(1-2p)^2$ distractor correlation intact and cuts solved seeds from $18/20$ to $11/20$ at $p = 1/4$. Releasing $\Pi_0$ restores solving ($19/20$), whereas symmetric XOR ($p = 1/2$, where $c^\star = 0$) is unaffected. Supplying the baseline externally cancels distractors without growing the readout weights $V$, revealing a second role in full networks: fitting $c^\star$ inside $V$ also carries gradients back into Block~$1$ (\cref{fig:feature-learning}). Under matched stateless Block-RMS SGD, step supervision matches AdamW while outcome training stays at chance, and the supervision gap transfers to non-abelian automata, register machines, and LoRA-tuned language models.
+
+% ===================================================================
+\section{Problem Setup and Architecture}
+\label{sec:setup}
+\label{sec:setting}
+\label{sec:notation}
+
+\subsection{Sequential State Tracking}
+\label{sec:data}
+\label{ass:task}
+\label{def:lambda}
+\label{def:losses}
+
+Each prompt $(s_0, w^\star, w_1, \ldots, w_n) \sim \mathcal D$ draws $s_0 \sim \mathrm{Unif}(\{0,1\})$, query $w^\star \in \Sigma$, and $n$ conditionally independent context letters $w_1, \ldots, w_n \in \Sigma$ with $\Pr(w_t = w^\star \mid s_0, w^\star) = p \in (0,1)$ (\cref{def:task}). With match bit $b_t := \one[w_t = w^\star] \in \{0,1\}$ and $\pm 1$ parity signs $x_t := (-1)^{s_t}$, $\chi_t := (-1)^{b_t}$, each step applies a signed XOR:
+\begin{equation}
+  s_t = s_{t-1} + b_t \pmod 2 \quad\Longleftrightarrow\quad x_t = x_{t-1}\chi_t.
+  \label{eq:tracking}
+\end{equation}
+An unread step contracts $\E[x_t \mid x_{t-1}] = (1 - 2p)x_{t-1}$ by
+\begin{equation}
+  \mixrate := \bigl\lvert\E[\chi_t]\bigr\rvert = \lvert 1 - 2p\rvert \in [0, 1).
+  \label{eq:lambda}
+\end{equation}
+Prompts serialize as $(s_0, w^\star, w_1, \ldots, w_n, \mathrm{SEP})$, followed by $s_1, \ldots, s_n$, delimiter $\mathtt{ANS}$, and $s_n$ under step supervision, or directly by $\mathtt{ANS}$ and $s_n$ under outcome supervision (\cref{app:subspace-construction}). For example, at $n = 4$ with $s_0 = 1$, $w^\star = \mathtt{a}$, and context $\mathtt{b\,a\,c\,a}$, the step sequence is
+\[
+  \fitwidth{$\setlength{\arraycolsep}{2.8pt}\begin{array}{@{}ccccccccccccc@{}}
+  \bigl[\,1 & \mathtt{a} & \mathtt{b} & \mathtt{a} & \mathtt{c} & \mathtt{a} & \mathtt{SEP} & 1 & 0 & 0 & 1 & \mathtt{ANS} & 1\,\bigr]\\[-1.5pt]
+  \textcolor{black!55}{\scriptstyle 0} & \textcolor{black!55}{\scriptstyle 1} & \textcolor{black!55}{\scriptstyle 2} & \textcolor{black!55}{\scriptstyle 3} & \textcolor{black!55}{\scriptstyle 4} & \textcolor{black!55}{\scriptstyle 5} & \textcolor{black!55}{\scriptstyle 6} & \textcolor{black!55}{\scriptstyle 7} & \textcolor{black!55}{\scriptstyle 8} & \textcolor{black!55}{\scriptstyle 9} & \textcolor{black!55}{\scriptstyle 10} & \textcolor{black!55}{\scriptstyle 11} & \textcolor{black!55}{\scriptstyle 12}
+  \end{array}$}
+\]
+For every step $t \ge 2$, the query token $s_{t-1}$ at index $n + 1 + t$ sits at constant lookback lag $\delta^\star = n$ from its matching letter $w_t$ at index $1 + t$ (here $7 - 3 = 8 - 4 = 9 - 5 = 4$). Writing $p_\theta(s_t \mid s_{<t})$ for predicted true-state probability, training minimizes (\cref{tab:notation-all})
+\begin{equation}
+  \begin{aligned}
+  \Lout(\theta) &:= \E\bigl[-\log p_\theta(s_n)\bigr],\\
+  \Lstep(\theta) &:= \frac{1}{n-1}\sum_{t=2}^n \E\bigl[-\log p_\theta(s_t \mid s_{<t})\bigr].
+  \end{aligned}
+  \label{eq:losses}
+\end{equation}
+Step training uses teacher forcing on $s_{<t}$, whereas test evaluation uses \emph{free-running greedy rollout}, feeding back predicted states autoregressively. \Cref{thm:joint,thm:block-rms} analyze $\Lstep$ over $t \ge 2$ and rollout from $s_1$ (at $t = 1$, query position $n+2$ holds $\mathtt{SEP}$ rather than $s_0$; \cref{rem:first-state}), while all end-to-end runs supervise $t = 1, \ldots, n$ and roll out from $s_0$.
+
+\begin{figure*}[t]
+\centering
+\fitwidth{\input{figures/feature_learning.tex}}
+\caption{\textbf{Layerwise feature learning across the full two-block Transformer} ($n=8$, $p=1/4$, paired seeds). (a)~On the step-loss plateau, Block-$2$ full-prefix attention separates target lag $\delta^\star = n$ from nearest distractor $\delta = 1$; pre-calibrating $V(0) = c^\star$ removes initial distractor pull, whereas an external offset with $V(0)=0$ delays separation. (b)~Block-$2$ query--key scores $QK^\top/\sqrt{d_k}$ stay near zero while $\|V\|$ is small under the external offset, then jump once the offset is removed at $0.3$k updates. (c)~Block-$1$ linear-probe accuracy on the match bit $\one[w_t = w^\star]$ rises from the $75\%$ majority baseline to $93$--$96\%$ right behind readout and Block-$2$ gate growth.}
+\label{fig:feature-learning}
+\end{figure*}
+
+\subsection{Shared Architecture and Expressivity}
+\label{sec:exact-programs}
+\label{tab:scope}
+
+Both objectives train the same two-block, normalization-free causal Transformer with residual width $\dmodel$, query--key head dimension $d_k$, and ReLU MLP width $\dmlp$ (\cref{ass:arch}). Token and positional embeddings sum to form the initial residual vectors $h_i^{(0)} \in \R^{\dmodel}$.
+
+Each block applies three causal attention heads followed by a two-layer ReLU MLP. Suppressing the block and head indices $(\ell, h)$ for readability, a head with query, key, and value matrices $W_Q, W_K \in \R^{d_k \times \dmodel}$, $W_V \in \R^{\dmodel \times \dmodel}$ and trainable relative lag biases $\brel_\delta \in \R$ at lookback distance $\delta = i - j \ge 0$ ($\brel_0 = 0$) maps block inputs $u_0, \ldots, u_i \in \R^{\dmodel}$ to attention weights $\alpha_{ij}$ over the full causal prefix:
+\begin{equation}
+  \begin{aligned}
+  s_{ij} &= \frac{\langle W_Q u_i,\, W_K u_j\rangle}{\sqrt{d_k}} + \brel_{i-j},\\
+  \alpha_{ij} &= \frac{\exp(s_{ij})}{\sum_{r=0}^i \exp(s_{ir})} \qquad (0 \le j \le i),
+  \end{aligned}
+  \label{eq:causal-attn}
+\end{equation}
+with no oracle lag mask. Summing the three heads $y_i = u_i + \sum_{h=1}^3 \sum_{j=0}^i \alpha_{ij}^{(h)} W_V^{(h)} u_j$, the block MLP outputs $u_i' = y_i + W_2\relu(W_1 y_i + b_1)$, and a linear readout $V \in \R^{2 \times \dmodel}$ maps the second block's output $h_i^{(2)}$ to binary logits $z_i(\theta) = V h_i^{(2)} \in \R^2$. Non-bias weights initialize at scale $\initscale > 0$ (e.g.\ fan-in scale $\initscale \asymp \dmodel^{-1/2}$) with MLP bias margin $|b_{1,m}(0)| \ge \initscale$, $\brel(0) = 0$, and $V(0) = 0$ (\cref{ass:init}).
+
+Within this single architecture, Block~$1$ detects matches $b_t = \one[w_t = w^\star]$, while Block~$2$ either sums all $n$ bits through a periodic ReLU spline ($\thout$) or routes step $t$ to lag $\delta^\star = n$ and computes $s_{t-1} + b_t \bmod 2$ ($\thstep$):
+
+\begin{proposition}[Shared expressivity; formal statement in \cref{app:exact}]
+\label{prop:represent}
+For every alphabet $\Sigma$ and horizon $n \ge 2$, a single two-block causal Transformer with linear widths $\dmodel, d_k, \dmlp = \Theta(n + |\Sigma|)$ admits parameter vectors $\thout$ and $\thstep$ that execute direct outcome prediction and free-running step-by-step rollout \emph{exactly} on every prompt with uniform $\Omega(1)$ logit margin.
+\end{proposition}
+
+Because both circuits inhabit the same linear-width parameter space (\cref{app:architectures}), the supervision gap is determined entirely by gradient flow from $\theta_0$. Concretely, $\thout$ and $\thstep$ share an identical Block~$1$: Head~$1$ copies the query token $w^\star$ to every context position $1+t$, and the Block-$1$ ReLU MLP compares $w_t$ against $w^\star$ to write the match bit $b_t \in \{0,1\}$. Only Block~$2$ differs: $\thout$ averages all $n$ match bits at the answer position and evaluates parity via $O(n)$ periodic hat splines, whereas $\thstep$ routes step $t$ to lookback lag $\delta^\star = n$ and applies a four-unit XOR MLP to $(s_{t-1}, b_t)$. Neither circuit requires depth scaling with $n$, layer normalization, or oracle attention masks.
+
+% ===================================================================
+\section{Outcome Supervision Lower Bound}
+\label{sec:credit}
+\label{sec:reach}
+\label{sec:credit-results}
+
+We first track $\Lout$ from $\theta_0$. Even though $\thout$ exists inside the network, projected gradient flow takes exponential time in $n$ to leave an $O(\initscale)$ ball around initialization:
+
+\begin{theorem}[Exponential plateau under outcome supervision; formal statement in \cref{app:end}]
+\label{thm:outcome-end}
+Under balanced scale-$\initscale$ initialization (\cref{ass:init}), evolve $\theta(\tau)$ by projected gradient flow $\dot\theta(\tau) = -P(\tau)\nabla_\theta\Lout(\theta(\tau))$ (or small-step projected gradient descent) updating \emph{any} subset of weights, embeddings, and lag biases $\brel$. For width-independent constants $c, C > 0$, all $n \ge 2$, $\mixrate \in (0,1)$, $\initscale \le c\min\{\mixrate, \dmlp^{-1/2}\}$, and all $0 \le \tau \le c\,\mixrate^{-n}$:
+\begin{align*}
+  \|\theta(\tau) - \theta_0\|_2 &\le \ballradius\initscale, \qquad
+  \Lout(\theta(\tau)) \ge \log 2 - C\initscale^2\mixrate^n,\\
+  \E\bigl[p_{\theta(\tau)}(s_n)\bigr] &\le \frac{1}{2} + C\initscale\,\mixrate^{n/2}.
+\end{align*}
+\end{theorem}
+
+\begin{algorithm*}[t]
+\caption{\textsc{Stateless Block-RMS SGD} (Zero-State Block-Scale Normalization)}
+\label{alg:block-rms}
+\begin{algorithmic}[1]
+\REQUIRE Parameter block partition $\theta = \{\theta_B\}_{B \in \mathcal B}$ (weights, embeddings, readout, and lag biases $\brel$), learning rate $\stepsize > 0$, numerical ridge $\iota > 0$ (default $10^{-8}$), update budget $K$, step objective $\Lstep$
+\ENSURE Trained parameters $\theta^{(K)}$ using zero momentum or second-moment memory buffers
+\FOR{$k = 0, 1, \ldots, K - 1$}
+  \STATE Sample $\mathcal M_k$ and compute $G_B \leftarrow \nabla_{\theta_B}\Lstep(\theta^{(k)}; \mathcal M_k)$ for all $B \in \mathcal B$ \hfill\textcolor{black!60}{$\triangleright$ \textit{Minibatch backpropagation}}
+  \FORALL{parameter blocks $B \in \mathcal B$ with entry count $d_B = \dim(\theta_B)$}
+    \STATE $\mathrm{RMS}(G_B) \leftarrow \|G_B\|_{\frob} / \sqrt{d_B}$ \hfill\textcolor{black!60}{$\triangleright$ \textit{Scalar per-tensor root-mean-square gradient norm}}
+    \STATE $\theta_B^{(k+1)} \leftarrow \theta_B^{(k)} - \stepsize \cdot \dfrac{G_B}{\mathrm{RMS}(G_B) + \iota}$ \hfill\textcolor{black!60}{$\triangleright$ \textit{Equalizes cross-block update speeds ($0$ state)}}
+  \ENDFOR
+\ENDFOR
+\end{algorithmic}
+\end{algorithm*}
+
+\paragraph{Why the direct circuit $\thout$ is unreachable from $\theta_0$.}
+In \cref{prop:represent}, $\thout$ computes $s_n$ directly by averaging all $n$ match bits in Block-$2$ attention and passing the sum through a periodic ReLU spline. Reaching $\thout$ from small initialization, however, requires attention and MLP weights to move in a direction correlated with $s_n$. Writing $y_n \in \{e_0, e_1\}$ for the one-hot terminal label, $u := (\frac{1}{2}, \frac{1}{2})^\top$ for the uniform distribution, $p_\theta := \cS(z_\theta)$ for the predicted distribution, and $\outcredit(\theta) := \E[\langle z_\theta, y_n - u\rangle]$ for outcome credit, cross-entropy splits into (\cref{app:damping-proof})
+\[
+  \Lout(\theta) = \log 2 + \E\bigl[\KL(u \,\|\, p_\theta)\bigr] - \outcredit(\theta).
+\]
+Since $\Lout(\theta_0) = \log 2$ and $\KL \ge 0$, the loss on $\|\theta - \theta_0\|_2 \le R$ drops by at most $\Delta := \sup_{\|\theta - \theta_0\|_2 \le R}|\outcredit(\theta)|$. Along projected gradient flow, $\ddtau{\Lout} = -\|\dot\theta\|_2^2$, so Cauchy--Schwarz gives $\|\theta(\tau) - \theta_0\|_2^2 \le \tau\Delta$ and exit time $T_{\mathrm{exit}} \ge R^2/\Delta$ (\cref{lem:energy-barrier}).
+
+Expanding the bilinear attention scores in \cref{eq:causal-attn} by content interaction order $m \ge 0$ (\cref{prop:network}), an order-$m$ pathway inspects at most $2m + 1$ context letters with weight $O(\initscale^2(C_0\initscale^4)^m)$. Low-order pathways ($2m + 1 < n$) leave $n - (2m + 1)$ Markov steps unread, and each unread step contracts parity correlation with $y_n - u$ by $\mixrate$ (\cref{lem:target-contraction}); full-$n$ pathways ($2m + 1 \ge n$) carry $O(\initscale^{2n})$ initialization damping. When $\initscale \lesssim \mixrate$, summing over $m \ge 0$ bounds $\Delta \le C_2\initscale^2\mixrate^n$ uniformly over $\brel$ (\cref{thm:main}). Taking $R = \ballradius\initscale$ cancels $\initscale^2$ between numerator and denominator (\cref{tab:exit-times}):
+\begin{equation}
+  T_{\mathrm{exit}} \;\ge\;
+  \frac{\overbrace{R^2}^{\Theta(\initscale^2)\text{ escape radius}^2}}{\underbrace{\Delta}_{O(\initscale^2\mixrate^n)\text{ max credit}}}
+  \;=\; \Omega(\mixrate^{-n}).
+  \label{eq:energy-ratio}
+\end{equation}
+
+\paragraph{Expected probability vs.\ greedy accuracy and automata.}
+\Cref{thm:outcome-end} bounds cross-entropy $\Lout$ and expected true-label probability $\E[p_\theta(s_n)]$ rather than hard argmax accuracy (a model assigning $0.5001$ everywhere would achieve $100\%$ greedy accuracy; \cref{rem:outcome-scale}). Separately, tiny $O(\initscale^2)$ logits aligned with $s_0$ achieve the memoryless $s_0$-only greedy accuracy $(1 + \mixrate^n)/2 \to 50\%$, matching finite-budget outcome runs empirically (\cref{sec:experiments}). Replacing scalar sign flips by isometric permutations on $\one_K^\perp \subset \R^K$ extends \cref{thm:outcome-end} to any invertible $K$-state automaton with $\mixrate := \sigma_2(\E_w[P_w]) < 1$, keeping $\E[p_\theta(s_n)]$ near $1/K$ for $\Omega(\mixrate^{-n})$ time (\cref{cor:reversible}).
+
+% ===================================================================
+\section{Step Supervision and Silent Routing}
+\label{sec:trajectory-results}
+\label{sec:step}
+
+Revealing intermediate states $s_1, \ldots, s_n$ removes the $n$-step Markov product of \cref{sec:credit}: at step $t \in \{2,\ldots,n\}$, predicting $x_t = x_{t-1}\chi_t$ depends on a single context letter $w_t$, so the trajectory exits $\initball$ in $O(1)$ time (\cref{tab:exit-times}). Learning to roll out the chain now reduces to finding $w_t$ inside the unmasked causal prefix and opening the bilinear query--key gate.
+
+\subsection{Block-2 Routing Reduction}
+
+At step $t \in \{2,\ldots,n\}$, query token $s_{t-1}$ sits at index $i_t = n + 1 + t$ and context letter $w_r$ ($r \in [n]$) sits at $1 + r$. Target letter $w_t$ therefore lies at \emph{constant lookback lag} $\delta^\star = i_t - (1 + t) = n$, competing with $n - 1$ distractor letters and $t + 2$ non-letter prefix tokens (\cref{fig:gate-head}).
+
+Prior CoT convergence proofs use position-only attention with frozen features and two-stage training \citep{kim2024parity}, pre-masked prefixes, or layerwise curriculum freezing \citep{wen2024sparse,huang2025cotgd}. Removing those restrictions, we evolve $(W_Q, W_K, W_V, \brel, V)$ \emph{simultaneously} under cross-entropy over the \emph{unmasked} causal prefix in the two-head Block-$2$ routing circuit given upstream match signs $\chi_r$ (\cref{def:gate}; \cref{sec:experiments} trains both blocks end-to-end). Under the full causal mask, parity and head-swap symmetry reduces population gradient flow on $\Lstep = \frac{1}{n-1}\sum_{t=2}^n \E[\log(1 + e^{-M_t})]$ \emph{without approximation} to four variables governing the signed margin $M_t$ on the true state $s_t$ (\cref{prop:reduced-transition}):
+\[
+  M_t \;=\; \chi_t\Bigl(\underbrace{\cnt}_{\text{state-only baseline}} \;+\; \underbrace{g\,D_t}_{\text{query--key gate}}\cdot\underbrace{\rho_t}_{\text{routed letter}}\Bigr).
+\]
+Each variable maps directly onto a term in \cref{eq:causal-attn}:
+\begin{itemize}[leftmargin=*,itemsep=1.5pt,topsep=2pt]
+\item \textbf{State-only baseline $\cnt \in \R$:} direct readout logit from $x_{t-1}$ alone, with Bayes-optimal log-odds $c^\star = \log\frac{1-p}{p}$.
+\item \textbf{Lag biases $\brel \in \R^{2n+2}$:} set within-letter softmax weights $\pi_{t,r} \propto e^{\brel_{n+t-r}}$, target-lag weight $\pi_t^\star := \pi_{t,t}$ at $\delta^\star = n$, and routed letter signal $\rho_t := \sum_{r=1}^n \pi_{t,r}\chi_r$.
+\item \textbf{Query--key score $a = \frac{\initscale^2\langle q, k\rangle}{\sqrt{2d_k}}$:} sets the letter-versus-prefix gate $D_t = \sigma(u_t + a) - \sigma(u_t - a) \in [0, 1)$, where $u_t$ is the log-ratio of letter to non-letter prefix sums.
+\item \textbf{Readout gain $g \in \R$:} scalar value-readout weight multiplying $D_t\rho_t$.
+\end{itemize}
+
+\begin{figure*}[t]
+\centering
+\fitwidth{\input{figures/causal_intervention.tex}}
+\caption{\textbf{Blocking the state-only baseline in full two-block Transformers} ($n=8$, paired seeds). Here ``Baseline blocked'' projects out the state-aligned logit component ($\Pi_0$) at each step. (a)~Blocking the baseline holds wrong-lag distractor noise at $\frac{1}{2}(1-2p)^2 = 0.125$; releasing the block at $0.6$k updates drops noise $8.5\times$ to the finite-sample floor. (b,c)~At $p=1/4$, blocking slows target-lag routing and lowers rollout accuracy ($18/20 \to 11/20$ solved in \cref{tab:clamp-main}), whereas at symmetric XOR $p=1/2$ ($c^\star=0$, no shortcut needed) blocking has zero effect ($19/20$ solved).}
+\label{fig:causal-intervention}
+\end{figure*}
+
+\subsection{Baseline Cancellation}
+\label{sec:what-calibration-buys}
+
+At initialization, $g(0) = 0$ and $|a(0)| = O(\initscale^4/\sqrt{d_k})$ keep the context gate closed ($g D_t \approx 0$). Direct readout updates act first at rate $\dot\cnt = \Theta(\initscale^2)$, carrying $\cnt \to c^\star$ in $\widetilde O(\initscale^{-2})$ time and settling $\Lstep$ onto the flat plateau $H(p)$.
+
+\paragraph{Connection to XOR plateaus and shortcut competition.}
+Each step $x_t = x_{t-1}\chi_t$ is a two-bit XOR whose second input $\chi_t$ sits hidden among $n$ prefix letters. At the symmetric XOR point $p = 1/2$, $\E[\chi_r] = 0$, $c^\star = 0$, and no linear state-only shortcut exists; much like two-layer XOR learning \citep{glasgow2024sgd}, the loss sits at $\log 2$ while quadratic features align underneath. When $p \ne 1/2$, $x_{t-1}$ correlates with $x_t$ ($\mixrate = |1-2p| > 0$) and creates an immediate linear shortcut. In standard shortcut competition \citep{labonte2026shortcut}, fitting an easy shortcut starves the true feature. Here an \emph{uncalibrated} model ($\cnt = 0$) suffers wrong-lag pull $E_{\mathrm{dist}}(0) = \frac{1}{2}(1-2p)^2 > 0$ from all $n-1$ distractors because $\E[\chi_r] = 1 - 2p \ne 0$, whereas once $\cnt = c^\star$, \cref{eq:Edist-intro} gives (\cref{lem:U-corr})
+\[
+  E_{\mathrm{dist}}(c^\star) = 0 \;\; (r \ne t),
+  \qquad
+  E_{\mathrm{true}}(c^\star) = 2p(1-p) > 0.
+\]
+Fitting the state-only shortcut centers the step residual and converts skewed prefix search back into zero-mean XOR routing, so $\brel_\delta$ concentrates $\pi_t^\star$ onto $\delta^\star = n$ at flat loss $H(p)$ (\cref{fig:overview}b,c).
+
+\paragraph{Isolated routing head vs.\ full two-block network.}
+One structural difference separates our reduced Block-$2$ ODE (where upstream match signs $\chi_r$ are fixed) from an end-to-end two-block Transformer. In the isolated ODE, clamping $\cnt \equiv 0$ leaves larger raw residual scale $\sigma(0)=1/2$ than calibrated scale $p(1-p)$ despite early wrong-lag drift (\cref{rem:shortcut-paradox}). In the full Transformer, however, Block~$1$ must learn the match indicators $w_t = w^\star$ at the same time, and the readout $V$ both stores the state-only baseline and transmits backpropagated gradients $V^\top(p_{\theta,t} - y_t)$ into Block~$1$. Suppressing the baseline in a full network keeps $\|V\|$ small while leaving $\Omega(\mixrate^2)$ distractor noise active during upstream feature formation (\cref{fig:feature-learning,sec:causal-shortcut}).
+
+\begin{table*}[t]
+\caption{\textbf{Projecting out the state-only baseline in full two-block Transformers} ($n = 8$, $|\Sigma| = 4$, $20$ paired seeds per arm on $1{,}000$ held-out rollouts; \emph{Solved} $\ge 99.9\%$ exact rollout from $s_0$; \textbf{Med.\ (solved)} is median first-solve step among solved seeds, with right-censored paired comparisons retaining unsolved runs in \cref{sec:causal-shortcut}; full $p$-sweep in \cref{tab:causal-shortcut}).}
+\label{tab:clamp-main}
+\centering\footnotesize
+\setlength{\tabcolsep}{4.8pt}
+\begin{tabular}{@{}llccccc@{}}
+\toprule
+\textbf{Match $p$ ($c^\star$)} & \textbf{Intervention condition} & \textbf{Solved} & \textbf{Wilson $95\%$ CI} & \textbf{Med.\ (solved)} & $E_{\mathrm{dist}}$ ($0.1$k) & \textbf{Fisher $p$}\\
+\midrule
+$0.25$ ($+1.10$) & Natural step training (AdamW) & $18/20$ & $[0.70, 0.97]$ & $1.2$k & $0.012$ & ---\\
+ & Baseline suppressed ($\Pi_0$ projection) & $11/20$ & $[0.34, 0.74]$ & $2.0$k & $0.125$ & $0.031$\\
+ & Suppressed, released at $0.6$k steps & $19/20$ & $[0.76, 0.99]$ & $1.6$k & $0.125$ & $1.00$\\
+ & Suppressed, released at $1.0$k steps & $15/20$ & $[0.53, 0.89]$ & $1.6$k & $0.125$ & $0.41$\\
+ & Weight-calibrated init $V(0) = c^\star$ & $16/20$ & $[0.58, 0.92]$ & $0.8$k & $0.011$ & $0.66$\\
+ & External logit offset $+c^\star x_{t-1}$ ($V(0){=}0$) & $13/20$ & $[0.43, 0.82]$ & $1.6$k & $0.011$ & $0.13$\\
+ & \quad External offset removed at $0.3$k steps & $19/20$ & $[0.76, 0.99]$ & $1.2$k & $0.011$ & $1.00$\\
+\cmidrule(lr){2-7}
+ & \tabemph{\textsc{Stateless Block-RMS SGD} (\cref{alg:block-rms})} & \tabemph{$18/20$} & \tabemph{$[0.70, 0.97]$} & \tabemph{$1.6$k} & \tabemph{$0.022$} & \tabemph{$1.00$}\\
+\midrule
+$0.50$ ($0.00$) & Natural step training (symmetric XOR) & $19/20$ & $[0.76, 0.99]$ & $1.2$k & $0.013$ & ---\\
+ & Baseline suppressed ($\Pi_0$ symmetric XOR) & $19/20$ & $[0.76, 0.99]$ & $1.2$k & $0.013$ & $1.00$\\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\begin{theorem}[Silent routing and the $\initscale^{-5}$ saddle; formal statement with explicit constants in \cref{app:J-silent-obstruction}]
+\label{thm:joint}
+\label{thm:routing}
+\label{cor:aligned}
+\label{cor:free-running}
+\label{thm:adaptive}
+In the Block-$2$ routing circuit given upstream match signs $\chi_r$ (\cref{def:gate}) at linear head width $d_k = \Theta(n)$ and small initialization $\initscale \le \initscale^\star(p, n)$ with nonzero initial query--key alignment $r_{\mathrm{align}} \in (0,1]$, population gradient flow on $\Lstep$ ($t \in \{2,\ldots,n\}$) satisfies:
+\begin{enumerate}[label=(\roman*),leftmargin=*,itemsep=1.2pt,topsep=2pt]
+\item \emph{Baseline calibration:} by $T_0 = \widetilde O(\initscale^{-2})$, $|\cnt(T_0) - c^\star| \le \initscale^2\mixrate$ and $\Lstep(T_0) = H(p) + O(\initscale^4)$.
+\item \emph{Distractor cancellation:} across the plateau, every distractor $r \ne t$ satisfies $|\E[\sigma(-M_t)\chi_t\chi_r]| = O(p(1-p)/n)$, while the target letter $r = t$ maintains $\E[\sigma(-M_t)\chi_t^2] \ge \frac{3}{2}p(1-p)$.
+\item \emph{Silent routing:} at $\tau_1 > T_0$, target-lag weight reaches $\min_t \pi_t^\star(\tau_1) \ge \frac{7}{8}$ (from $\approx \frac{1}{n}$) while $\Lstep$ changes by at most $\widetilde O(n\initscale^4)$; whenever $\mixrate > \mixrate_{\min} = \widetilde O(n\initscale^4)$, prompt-wise argmax predictions continue to match the state-only baseline on $[T_0, \tau_1]$.
+\item \emph{Post-routing gate escape:} by $T_{\mathrm{step}} = \widetilde O(n^{3/2}\initscale^{-5})$ ($\widetilde O(n^4)$ at fan-in scale $\initscale = \widetilde\Theta(n^{-1/2})$; \cref{cor:matched}), greedy rollout from $s_1$ is exact on every prompt, with $\Lstep \to 0$ and $\pi_t^\star \to 1$.
+\item \emph{Clamped-baseline drift:} fixing $\cnt \equiv 0$ ($p \ne 1/2$) leaves $\Omega(\mixrate^2)$ distractor correlation, enlarges non-letter lag-$1$ drift by $\Theta(n)$ for $n \ge 6$, and reverses initial routing ($\dot\brel_1 > \dot\brel_n$) for $n \ge n_0(\mixrate)$ whenever $\mixrate^2 > 2\log 2 - 1$ (at finite $n$, whenever $\mixrate^2 + \frac{1-\mixrate^2}{n} > \frac{A_n}{B_n+C_n}$, i.e.\ $p \lesssim 0.055$ at $n = 8$; \cref{lem:clamped-shortcut}).
+\end{enumerate}
+Parts~(i), (ii), and~(v) hold unconditionally; parts~(iii)--(iv) use a distractor floor Hypothesis~(F) proved unconditionally for all visible lags $\delta \le n+1$ and verified numerically up to $n = 2{,}000$ (\cref{lem:U-floor-vis,app:hypF}).
+\end{theorem}
+
+\subsection{Block-RMS Preconditioning}
+\label{sec:saddle-escape}
+
+Once $\pi_t^\star$ concentrates onto $\delta^\star = n$, Euclidean gradient flow still spends $\Theta(n\sqrt{d_k}\,\initscale^{-5})$ time on the $H(p)$ plateau (\cref{tab:J-ode}). Because \cref{eq:causal-attn} divides $\langle q, k\rangle$ by $\sqrt{d_k}$, initial query--key gradients ($2.1\times 10^{-6}$ at $\initscale = 0.02$) are three orders of magnitude smaller than readout gradients ($5.0\times 10^{-3}$), producing slow $\dot a \propto \frac{\initscale^5}{n d_k^{1/4}} a^{3/2}$ gate growth.
+
+Why does AdamW escape in $1.5$k updates where tuned SGD stalls past $10$k (\cref{tab:transfer-main}a)? In the zero-memory limit $(\beta_1 = 0, \beta_2 \to 0)$, coordinatewise Adam reduces to $\operatorname{sign}(G_B)$ \citep{bernstein2018signsgd}, which breaks orthogonal $(q,k)$ invariance. Replacing coordinatewise squares $g_{B,i}^2$ by their block average $\mathrm{RMS}(G_B)^2 = d_B^{-1}\|G_B\|_{\frob}^2$, as in block-factored Adam \citep{zhang2024adammini}, gives \textsc{Stateless Block-RMS SGD} (\cref{alg:block-rms}). This equalizes cross-block step sizes while preserving intra-block geometry, cutting rollout from $s_1$ to $\Theta(\initscale^{-2})$ time and removing Hypothesis~(F):
+
+\begin{theorem}[Unconditional rollout via stateless \mbox{Block-RMS}; formal statement in \cref{app:rms-routing-sub}]
+\label{thm:block-rms}
+In the Block-$2$ circuit \emph{without Hypothesis~(F)}, for $n \ge 2$, $p \in (0,1)$, $d_k \ge 2n + 6$, $\langle q(0), k(0)\rangle \ne 0$, and $\initscale \le \initscale_{\mathrm{RMS}}(p, n) := c_0[p(1-p)]^{3/2}n^{-3}(\log(8n))^{-1/2}$, stateless Block-RMS flow on $(Q_h, k_h, w_h)$ with Euclidean flow on $(U, \brel^{(h)})$ routes by $\tau_{\mathrm{rt}} \le C n^{3/2}[p(1-p)]^{-1/2}\initscale^{-1}$ and achieves exact rollout from $s_1$ ($\min_t\pi_t^\star(\tau) \ge 7/8$, $\min_{t,w} M_t(\tau) \ge 1/2$, $\Lstep(\tau) \to 0$) for all
+\begin{equation}
+  \tau \;\ge\; T_{\mathrm{RMS}}, \qquad T_{\mathrm{RMS}} \;\le\; \frac{7\bigl(1 + \lvert c^\star\rvert\bigr)}{\initscale^2},
+  \label{eq:rms-time}
+\end{equation}
+giving an unconditional $\widetilde O(n^6)$ rollout bound at $\initscale = \widetilde\Theta(n^{-3})$ (\cref{cor:matched}).
+\end{theorem}
+
+Unit-RMS updates align $(q,k)$ rapidly and grow $a$ quadratically in normalized time, closing $D_t \to 1$ before distractor weights decay (\cref{lem:rms-align,lem:rms-contrast}).
+
+\begin{table*}[t]
+\caption{\textbf{Matched Block-RMS comparison and task transfer.} \emph{Left:} End-to-end optimizer and supervision comparison on modulo-$2$ counting ($n=8, p=1/4$, $5$ paired seeds $42$--$46$; at $\initscale = 0.02$ and $10$k updates, matched outcome \textsc{Block-RMS} reaches $1.001$ bits loss, $\E[p_\theta(s_n)] = 0.500$, and $49.1\%$ greedy accuracy vs.\ $0.000$ bits and $100.0\%$ rollout in $1.20$k under step \textsc{Block-RMS}; \cref{app:experiments}). \emph{Right:} Greedy rollout accuracy across automata, controls, and LoRA LLMs (\cref{tab:main}).}
+\label{tab:transfer-main}
+\centering\footnotesize
+\fitwidth{\setlength{\tabcolsep}{3.2pt}\begin{tabular}{@{}llccc@{\hspace{1.1em}}llcccc@{}}
+\toprule
+\multicolumn{5}{@{}l}{\textbf{(a) Block-Scale \& Matched Supervision ($n = 8, p = 1/4$)}} & \multicolumn{6}{@{}l}{\textbf{(b) Automata, Controls \& LoRA LLM Transfer}}\\
+\cmidrule(r){1-5}\cmidrule(l){6-11}
+\textbf{Scale} & \textbf{Optimizer} & \textbf{State} & \textbf{Solved} & \textbf{Med.\ steps} & \textbf{Task} & \textbf{Model} & $n$ & \textbf{Outcome} & \textbf{Step} & \textbf{Chance}\\
+\midrule
+$\initscale{=}0.05$ & Tuned SGD (Step) & $0$ & $4/5$ & $11.9$k & Mod-$2$ ($p{=}\frac{1}{4}$) & $2$-block TF & $16$ & $49.8\%$ & $93.1\%$ & $50.0\%$\\
+ & \texttt{QKV-RMS} + SGD (Step) & $0$ & $5/5$ & $6.25$k & Mod-$2$ ($p{=}\frac{1}{2}$) & $2$-block TF & $16$ & $50.7\%$ & $95.2\%$ & $50.0\%$\\
+ & \textsc{Block-RMS} (Step) & $0$ & $5/5$ & $1.25$k & Boolean-$8$ ($A_{16}$) & GPT-2-2L & $8$ & $7.7\%$ & $82.0\%$ & $6.3\%$\\
+ & AdamW (Step) & $2|\theta|$ & $5/5$ & $1.00$k & Register mod $17$ & GPT-2-2L & $16$ & $6.3\%$ & $99.9\%$ & $5.9\%$\\
+\cmidrule(r){1-5}\cmidrule(l){6-11}
+$\initscale{=}0.02$ & Tuned SGD (Step, $10$k) & $0$ & $0/5$ & $>10$k & Boolean-$8$ ($A_{16}$) & SmolLM2-135M & $8$ & $9.9\%$ & $89.7\%$ & $6.3\%$\\
+ & \textsc{Block-RMS} (Outcome, $10$k) & $0$ & $0/5$ & $>10$k & Boolean-$8$ ($A_{16}$) & Qwen2.5-0.5B & $8$ & $11.1\%$ & $98.3\%$ & $6.3\%$\\
+ & \tabemph{\textsc{Block-RMS} (Step)} & \tabemph{$0$} & \tabemph{$5/5$} & \tabemph{$1.20$k} & First-occur.\ ctrl. & $2$-block TF & $24$ & $91.4\%$ & $96.8\%$ & $26.2\%$\\
+ & AdamW (Step) & $2|\theta|$ & $5/5$ & $1.50$k &  &  &  &  &  & \\
+\bottomrule
+\end{tabular}}
+\end{table*}
+
+% ===================================================================
+\section{Experiments}
+\label{sec:experiments}
+\label{sec:validation}
+
+All end-to-end runs train weights, embeddings, and lag biases jointly from $s_0$ (\cref{app:experiments} gives full protocols and one-command reproduction). Separately, float64 population flows over all $2^n$ match strings verify the $\Omega(\mixrate^{-n})$ outcome bound, the $\Theta(\initscale^{-5})$ Euclidean gate law, and $< 10^{-12}$ agreement with our reduced ODE (\cref{tab:exit-times,tab:J-ode,app:J-check}).
+
+\subsection{Outcome Plateau and Task Transfer}
+
+Across all $20$ $(n, |\Sigma|)$ tasks (\cref{tab:gap}), outcome supervision solves $0/120$ AdamW runs within $8$k updates. Its accuracy stays within $0.6$ points of the $s_0$-only baseline $(1 + \mixrate^n)/2$, tracking $\mixrate^n$ closely ($r_{\mathrm S} = 0.91$). Step supervision solves $40/120$ runs within $8$k updates ($60/120$ above $90\%$ rollout)—and solves $12/12$ within $14$k on extended $32$k sweeps up to $n = 24$, where outcome training still solves $0/12$. On a matched \emph{first-occurrence} control with $\Omega(1)$ single-letter correlation, outcome training reaches $91.4\%$ at $n = 24$ (\cref{tab:transfer-main}b, \cref{tab:controls}), ruling out context length alone as the bottleneck.
+
+The same dynamical gap appears on non-abelian automata (\cref{cor:reversible}) and pretrained language models (\cref{tab:transfer-main}b, \cref{app:exp-other,tab:main}). On $8$-step $A_{16}$ Boolean circuits ($16$ states, $\sigma_2(\E[P_w]) \approx 0.84$) and a $16$-step modulo-$17$ register machine (\texttt{CMOV}), two-layer GPT-2 trained from scratch reaches $82.0\%$ and $99.9\%$ rollout under step supervision while outcome runs stay near chance ($7.7\%$ and $6.3\%$). Rank-$8$ LoRA on SmolLM2-135M and Qwen2.5-0.5B \citep{allal2025smollm2,qwen2025qwen25} likewise reaches $89.7\%$ and $98.3\%$ on Boolean-$8$ under step supervision versus $9.9\%$ and $11.1\%$ under outcome supervision, even at $8\times$ outcome budgets and under answer-first trace order.
+
+\subsection{Baseline Projection Interventions}
+\label{sec:causal-shortcut}
+
+To test baseline cancellation directly, we project out only the minibatch state-aligned logit $\E[x_{t-1}\Delta z_t] = 0$ via $\Pi_0$, which leaves exact XOR expressivity untouched (\cref{app:causal-protocol}). Paired-seed runs (\cref{fig:causal-intervention,tab:clamp-main}) show three effects:
+\begin{itemize}[leftmargin=*,itemsep=1.2pt,topsep=1.5pt]
+\item \textbf{Distractor cancellation and stage ordering.} Under $\Pi_0$ at $p = 1/4$, wrong-lag correlation $E_{\mathrm{dist}}$ stays at $0.125$ versus $0.012$ in natural training (\cref{fig:causal-intervention}a), matching $\frac{1}{2}(1-2p)^2$ within $0.004$ across five skewed priors (\cref{tab:causal-shortcut}). Across fine-logged paired seeds $42$--$51$, every solved natural run ($9/9$) follows the predicted order $t_{\mathrm{cal}} < t_{\mathrm{route}} < t_{\mathrm{solve}}$: baseline calibration by step $50$, target-lag routing by median step $600$, and $\ge 99.9\%$ rollout by median step $1{,}600$ (the sole unsolved seed never routes).
+\item \textbf{Reversible impairment, symmetric XOR, and extreme skew.} Holding $\Pi_0$ at $p = 1/4$ lowers solve rate from $18/20$ to $11/20$ (Fisher $p = 0.031$). Releasing $\Pi_0$ at $0.6$k updates restores solving to $19/20$ ($7/7$ non-tied paired wins, sign $p = 0.016$), while at symmetric XOR ($p = 1/2$, $c^\star = 0$) $\Pi_0$ has zero effect ($19/20$ vs.\ $19/20$). At extreme skew $p \le 0.10$ (\cref{tab:causal-shortcut}), calibrating $c^\star$ still cancels distractors, but shrinks the true-lag residual scale $2p(1-p)$ enough that gate escape exceeds the fixed $2.4$k budget ($0/20$ natural). Under $\Pi_0$, retaining the larger uncalibrated scale $\sigma(0) = 1/2$ lets $3/20$ and $1/20$ seeds cross the gate within $2.4$k despite distractor noise (\cref{rem:shortcut-paradox}).
+\item \textbf{Readout coupling into Block~$1$.} Adding $+c^\star x_{t-1}$ externally with $V(0) = 0$ cancels distractors ($0.011$) without growing $\|V\|$, which delays upstream Block-$1$ match features (\cref{fig:feature-learning}b,c) and solves $13/20$ seeds ($13/20$ also when $V(0) \perp v_{\mathrm{state}}$). Removing the external offset at $0.3$k updates restores $19/20$ ($9/10$ paired wins, sign $p = 0.021$).
+\end{itemize}
+
+\subsection{Matched Block-RMS Comparison}
+
+\Cref{tab:transfer-main}a evaluates \textsc{Stateless Block-RMS SGD} (\cref{alg:block-rms}; $\eta = 2\times 10^{-3}$, zero optimizer state) on both protocols from identical initializations and batch streams. At $\initscale = 0.02$, step \textsc{Block-RMS} solves $5/5$ seeds in $1.20$k median steps ($100.0\%$ rollout and Block-$1$ probe; $18/20$ in \cref{tab:clamp-main}), whereas tuned SGD solves $0/5$ within $10$k. Matched outcome \textsc{Block-RMS} still solves $0/5$ seeds through $10$k updates ($1.001$ bits loss, $\E[p_\theta(s_n)] = 0.500$, $49.1\%$ greedy accuracy, $75.4\%$ probe). At batch size $B = 256$, minibatch noise ($B^{-1/2} \approx 0.063$) dominates the contracted parity signal ($\mixrate^8 \approx 0.004$), so unit-RMS normalization rescales noise rather than outcome credit.
+
+% ===================================================================
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{Expressivity vs.\ credit assignment in Chain-of-Thought.}
+Scratchpads and process supervision improve multi-step reasoning \citep{nye2021scratchpads,wei2022cot,lightman2023verify,prystawski2023think,jia2025verify}. Prior theory explains this gain via circuit depth and serial width \citep{feng2023towards,liu2023automata,merrill2024expressive,magen2026neuron} or autoregressive sample complexity \citep{wies2023subtask,malach2023autoregressive,abbe2024globality,pmlr-v291-joshi25a,pmlr-v267-li25r,hanneke2026samplecomplexityautoregressivereasoning}. Placing $\thout$ and $\thstep$ in one linear-width two-block Transformer (\cref{prop:represent}) isolates optimization dynamics (\cref{tab:related}).
+
+\paragraph{Single-rule contraction vs.\ sparse and randomized parities.}
+Statistical-query bounds average over large parity families \citep{kearns1998efficient,shalevshwartz2017failures,reyzin2020statistical,abbe2025parities,pmlr-v336-giapitzakis26a}, while SGD learns sparse $k$-parities in $n^{O(k)}$ steps via hidden progress \citep{barak2022hidden,abbe2021staircase,abbe2022mergedstaircase,abbe2023sgd,damian2022representations,ba2022onestep,hahn2024sensitive,wang2025compositional}. Outcome state tracking requires dense $k = n$ parity and stalls for $\Omega(\mixrate^{-n})$ time on \emph{one fixed rule} (\cref{thm:outcome-end}), whereas step labels reduce each transition to a $k = 2$ XOR once prefix routing locates $w_t$.
+
+\paragraph{Comparison with parity CoT and solvable state tracking.}
+Induction-head studies analyze Markov and $n$-gram copying \citep{olsson2022context,bietti2023birth,edelman2024evolution,nichani2024how,dangelo2026induction}, while CoT convergence proofs use position-only attention, pre-masked prefixes, or layer freezing \citep{cabannes2024iteration,wen2024sparse,huang2025cotgd,huang2025lengthgen}. Closest to our work, \citet{kim2024parity} prove a parity CoT separation for one-layer position-only attention under two-stage training at $p = 1/2$, and \citet{forner2026learning} analyze a solvable state-tracking Transformer where an early heuristic precedes fixed-lag attention locking. We advance beyond both via: (i)~a full-model single-rule $\Omega(\mixrate^{-n})$ outcome bound in a shared nonlinear architecture (\cref{prop:represent,thm:outcome-end}); (ii)~the skewed-prior cancellation law $E_{\mathrm{dist}}(c^\star) = 0$ in \cref{eq:Edist-intro}, tested by reversible $\Pi_0$ and external-offset readout interventions (\cref{tab:clamp-main}) unlike harmful shortcuts \citep{labonte2026shortcut,glasgow2024sgd,reddy2024mechanistic,panigrahi2025progressive,li2025noise,lai2026relu,zhou2026multiindex}; and (iii)~the $\Theta(\initscale^{-5}) \to \Theta(\initscale^{-2})$ stateless Block-RMS escape (\cref{thm:block-rms}).
+
+% ===================================================================
+\section{Conclusion}
+\label{sec:conclusion}
+\label{sec:discussion}
+
+In one two-block Transformer expressing both direct and step-by-step circuits, step labels replace $\Omega(\mixrate^{-n})$ multi-step credit contraction with baseline-calibrated silent prefix routing at flat loss $H(p)$ followed by blockwise RMS gate opening. Open directions include proving coupled Block-$1$ match discovery from $s_0$ (including $t = 1$ and readout-to-Block-$1$ gradient coupling in \cref{tab:clamp-main}), removing Hypothesis~(F) under plain Euclidean flow, and analyzing silent routing under on-policy reinforcement learning.

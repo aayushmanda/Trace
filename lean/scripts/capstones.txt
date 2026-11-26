@@ -1,3 +1,0 @@
-# The headlines of this development, one per line.
-# The axiom profile of each is read from Lean whenever the checks run.
-Trace.unseen_letters_erase_outcome_credit

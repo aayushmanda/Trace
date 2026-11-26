@@ -1,5 +1,7 @@
 # --- environments and caches -------------------------------------------------
 .venv/
+animations/.venv/
+animations/media/
 __pycache__/
 *.py[cod]
 .ipynb_checkpoints/
@@ -7,21 +9,41 @@ __pycache__/
 .ruff_cache/
 
 # --- run artifacts we do not ship --------------------------------------------
-/ckpt
+/ckpt/
 /logs/
-/results
+/results/
 /run.log
 *.pt
 *.ckpt
 *.safetensors
 
-# --- paper build output and local notes --------------------------------
+# --- compiled C++ binaries (built via `make -C cpp`) -------------------------
+/cpp/run_full_plan
+/cpp/run_causal_fast
+/cpp/run_causal_sweep
+/cpp/shortcut_intervention
+/cpp/step_ode_suite
+/cpp/aggregate_results
+/cpp/ode_extra
+/cpp/ode_fixed
 
-/Paper/*.log
-/handcoded/experiments/
-CHECKS.md
-docs/*.md
+# --- paper build intermediates (compiled main.pdf is kept) -------------------
+/papers/*/build/
+/papers/*/*.aux
+/papers/*/*.bbl
+/papers/*/*.blg
+/papers/*/*.fdb_latexmk
+/papers/*/*.fls
+/papers/*/*.log
+/papers/*/*.out
+/papers/*/*.ptc
+/papers/*/*.synctex.gz
+/papers/*/*.toc
 
-# --- editor ------------------------------------------------------------------
+# --- editor, OS, and local agent state ---------------------------------------
 .vscode/
 .DS_Store
+.claude/
+
+# --- reorganization holding area (review, then delete) -----------------------
+/_trash/

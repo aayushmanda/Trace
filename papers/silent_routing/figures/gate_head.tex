@@ -1,0 +1,197 @@
+%% Figure 2: Bhattamishra-style 3-panel conceptual illustration with pastel token tiles, check/cross badges, and semantic routing arcs.
+\definecolor{tileblue}{HTML}{B8D8F8}
+\definecolor{tilepale}{HTML}{E1EFFC}
+\definecolor{tilepeach}{HTML}{FAD7A0}
+\definecolor{tilerose}{HTML}{F5C2C7}
+\definecolor{tilemint}{HTML}{C3E8C8}
+\definecolor{tileneut}{HTML}{EAEEF2}
+\definecolor{badgenode}{HTML}{ECEFF1}
+\definecolor{purparc}{HTML}{6A3D9A}
+\definecolor{greenarc}{HTML}{1E7E4E}
+\definecolor{skyarc}{HTML}{4A90D9}
+\definecolor{redacc}{HTML}{D64541}
+
+\begin{tikzpicture}[
+  >=Stealth,
+  x=1cm, y=1cm,
+  line cap=round, line join=round,
+  tok/.style={
+    rectangle,
+    rounded corners=3.6pt,
+    draw=black!82,
+    fill=tileblue,
+    line width=0.68pt,
+    minimum width=0.48cm,
+    minimum height=0.48cm,
+    inner sep=0pt,
+    font=\scriptsize\sffamily
+  },
+  sepn/.style={
+    tok,
+    fill=tileneut,
+    minimum width=0.56cm,
+    font=\tiny\sffamily\bfseries,
+    text=black!72
+  },
+  outcirc/.style={
+    circle,
+    draw=black!82,
+    line width=0.72pt,
+    minimum size=0.52cm,
+    inner sep=0pt,
+    font=\scriptsize\sffamily
+  },
+  badge/.style={
+    circle,
+    fill=badgenode,
+    draw=black!16,
+    line width=0.45pt,
+    minimum size=0.44cm,
+    inner sep=0pt,
+    font=\scriptsize\sffamily\bfseries
+  },
+  idxcirc/.style={
+    circle,
+    draw=redacc,
+    fill=white,
+    line width=0.65pt,
+    minimum size=0.27cm,
+    inner sep=0pt,
+    font=\tiny\sffamily\bfseries,
+    text=redacc
+  }
+]
+
+  % =========================================================================
+  % (a) Outcome Supervision: n unread transitions contract credit by \lambda^n
+  % =========================================================================
+  \begin{scope}[shift={(0,0)}]
+    % Concrete n=4 prompt: [1] [a] [b] [a] [c] [a] [SEP] [ANS]
+    \node[tok, fill=tilepale]  (oa0) at (0.30, 0.56) {1};
+    \node[tok, fill=tilepale]  (oa1) at (0.86, 0.56) {a};
+    \node[tok]                 (oa2) at (1.48, 0.56) {b};
+    \node[tok]                 (oa3) at (2.04, 0.56) {a};
+    \node[tok]                 (oa4) at (2.60, 0.56) {c};
+    \node[tok]                 (oa5) at (3.16, 0.56) {a};
+    \node[sepn]                (oa6) at (3.78, 0.56) {SEP};
+    \node[tok, fill=tilepeach, minimum width=0.58cm, font=\tiny\sffamily\bfseries] (oa7) at (4.44, 0.56) {ANS};
+
+    % Subtle role labels underneath key tiles
+    \node[font=\tiny, text=black!62] at (0.30, 0.12) {$s_0$};
+    \node[font=\tiny, text=black!62] at (0.86, 0.12) {$w^\star$};
+    \draw[decorate, decoration={brace, amplitude=2.6pt, mirror}, black!50, line width=0.5pt]
+      (1.26, 0.24) -- (3.38, 0.24)
+      node[midway, below=2.5pt, font=\tiny, text=black!68] {$n$ unread context letters};
+    \node[font=\tiny, text=black!62] at (4.44, 0.12) {$s_n{=}?$};
+
+    % Predicted terminal node + fail badge (matching Bhattamishra panel a + b)
+    \node[outcirc, fill=tilerose] (oout) at (4.44, 1.72) {?};
+    \draw[->, line width=0.85pt, black!82] (oa7.north) -- (oout.south);
+    \node[badge, text=redacc] at (5.04, 1.72) {$\times$};
+
+    % Faint damped multi-step arcs from context letters to ANS
+    \draw[->, densely dotted, line width=0.65pt, redacc!75]
+      (oa2.north) .. controls (2.15, 1.44) and (3.65, 1.44) .. (oa7.north west);
+    \draw[->, densely dotted, line width=0.65pt, redacc!75]
+      (oa3.north) .. controls (2.55, 1.24) and (3.75, 1.24) .. (oa7.north west);
+    \draw[->, densely dotted, line width=0.65pt, redacc!75]
+      (oa5.north) .. controls (3.45, 1.04) and (4.00, 1.04) .. (oa7.north west);
+
+    \node[font=\scriptsize, text=redacc!88!black] at (2.35, 1.74)
+      {credit damped by $\mixrate^n$};
+
+    \node[font=\footnotesize, text=black!92] at (2.66, -0.58)
+      {(a) Outcome Supervision ($\Omega(\mixrate^{-n})$ stall)};
+  \end{scope}
+
+  % =========================================================================
+  % (b) Baseline Cancellation: stacked rows with X / checkmark badges
+  % =========================================================================
+  \begin{scope}[shift={(6.02,0)}]
+    % Top row: Baseline blocked (c = 0) -> wrong lags pull (rose tiles + X badge)
+    \node[font=\tiny, text=redacc!88!black, anchor=west] at (0.06, 2.02)
+      {$c{=}0$: wrong lags pull ($E_{\mathrm{dist}}(0) > 0$)};
+
+    \node[tok, fill=tilerose]  (bt1) at (0.32, 1.54) {b};
+    \node[tok, fill=tilerose]  (bt2) at (0.88, 1.54) {a};
+    \node[tok]                 (bt3) at (1.44, 1.54) {c};
+    \node[tok, fill=tilerose]  (bt4) at (2.00, 1.54) {a};
+    \node[sepn]                (bt5) at (2.62, 1.54) {SEP};
+    \node[tok, fill=tilepale]  (bt6) at (3.24, 1.54) {1};
+    \node[tok, fill=tilepeach] (bt7) at (3.80, 1.54) {0};
+    \node[badge, text=redacc]        at (4.42, 1.54) {$\times$};
+
+    % Bottom row: Baseline calibrated (c = c*) -> distractors cancelled (blue + check badge)
+    \node[font=\tiny, text=greenarc!92!black, anchor=west] at (0.06, 1.04)
+      {$c{=}c^\star$: distractors cancel ($E_{\mathrm{dist}}(c^\star) = 0$)};
+
+    \node[tok, fill=tilepale]  (bb1) at (0.32, 0.56) {b};
+    \node[tok, fill=tilepale]  (bb2) at (0.88, 0.56) {a};
+    \node[tok, line width=0.92pt] (bb3) at (1.44, 0.56) {\textbf{c}};
+    \node[tok, fill=tilepale]  (bb4) at (2.00, 0.56) {a};
+    \node[sepn]                (bb5) at (2.62, 0.56) {SEP};
+    \node[tok, fill=tilepale]  (bb6) at (3.24, 0.56) {1};
+    \node[tok, fill=tilepeach] (bb7) at (3.80, 0.56) {0};
+    \node[badge, text=greenarc]      at (4.42, 0.56) {$\checkmark$};
+
+    % Compact role labels beneath bottom row
+    \node[font=\tiny, text=black!62] at (0.32, 0.12) {$w_1$};
+    \node[font=\tiny, text=black!62] at (0.88, 0.12) {$w_2$};
+    \node[font=\tiny, text=purparc!95!black] at (1.44, 0.12) {$\bm{w_t}$};
+    \node[font=\tiny, text=black!62] at (2.00, 0.12) {$w_4$};
+    \node[font=\tiny, text=black!62] at (3.24, 0.12) {$s_1$};
+    \node[font=\tiny, text=black!72] at (3.80, 0.12) {$s_{t-1}$};
+
+    \node[font=\footnotesize, text=black!92] at (2.38, -0.58)
+      {(b) Baseline Cancellation ($p \ne \tfrac{1}{2}$)};
+  \end{scope}
+
+  % =========================================================================
+  % (c) Silent Prefix Routing & Gate Opening (Bhattamishra Panel-c arc style)
+  % =========================================================================
+  \begin{scope}[shift={(11.58,0)}]
+    % Top formula header (mirroring Bhattamishra's circled-index formula header)
+    \node[idxcirc] (cidx) at (1.26, 2.22) {$t$};
+    \node[font=\scriptsize, text=black!88, anchor=west, inner sep=1pt] at (1.44, 2.22)
+      {$=\; i_t - \delta^\star \quad (\text{constant lag }\delta^\star = n)$};
+
+    % Clean token sequence at step t
+    \node[font=\scriptsize\ttfamily, text=black!78] (cs0) at (0.22, 0.72) {$s_0$};
+    \node[font=\scriptsize\ttfamily, text=black!78] (cws) at (0.70, 0.72) {$w^\star$};
+    \node[font=\scriptsize\ttfamily, text=black!82] (cw1) at (1.26, 0.72) {$w_1$};
+    \node[font=\scriptsize\ttfamily, text=black!82] (cw2) at (1.84, 0.72) {$w_2$};
+
+    % Target w_t with red-circled subscript t
+    \node[font=\scriptsize\ttfamily\bfseries, text=black!92, inner sep=1pt] (cwt) at (2.46, 0.75) {$w$};
+    \node[idxcirc, minimum size=0.24cm] (cwtidx) at (2.68, 0.65) {$t$};
+
+    \node[font=\scriptsize\ttfamily, text=black!82] (cw4) at (3.22, 0.72) {$w_n$};
+    \node[font=\tiny\sffamily\bfseries, text=black!58] (csep) at (3.80, 0.72) {SEP};
+    \node[font=\scriptsize\ttfamily, text=black!82] (cs1) at (4.34, 0.72) {$s_1$};
+    \node[tok, fill=tilepeach, minimum width=0.56cm, minimum height=0.44cm, font=\scriptsize] (cstm) at (4.98, 0.72) {$s_{t-1}$};
+    \node[outcirc, fill=tilemint, minimum size=0.48cm, font=\scriptsize] (cst) at (5.70, 0.72) {$s_t$};
+
+    % High-arching faint sky-blue dotted arcs sweeping cleanly ABOVE the purple routing label
+    \draw[->, densely dotted, line width=0.72pt, skyarc]
+      (cstm.north west) .. controls (3.95, 2.02) and (2.05, 2.02) .. (cw1.north);
+    \draw[->, densely dotted, line width=0.72pt, skyarc]
+      (cstm.north west) .. controls (4.10, 1.82) and (2.52, 1.82) .. (cw2.north);
+
+    % Bold solid royal-purple arc locking onto target w_t at lag \delta^* = n
+    \draw[->, solid, line width=1.22pt, purparc]
+      (cstm.north) .. controls (4.30, 1.38) and (3.12, 1.38) ..
+      ([xshift=2pt,yshift=1pt]cwt.north);
+    \node[fill=white, fill opacity=0.9, text opacity=1, inner sep=1pt, font=\tiny\bfseries, text=purparc]
+      at (3.82, 1.15) {Silent routing ($\delta^\star{=}n$)};
+
+    % Solid forest-green prediction arc cleanly clearing the red-circled subscript
+    \draw[->, solid, line width=1.12pt, greenarc]
+      (2.60, 0.45) .. controls (3.42, -0.04) and (4.88, -0.04) ..
+      node[pos=0.52, below=1pt, font=\tiny, text=greenarc!95!black] {XOR gate ($\Theta(\initscale^{-2})$)}
+      (cst.south);
+
+    \node[font=\footnotesize, text=black!92] at (2.98, -0.58)
+      {(c) Silent Routing \& Gate Opening};
+  \end{scope}
+
+\end{tikzpicture}

@@ -1,6 +1,0 @@
-\begin{figure}[t]
-\centering\includegraphics[width=\linewidth]{figures/controlled.pdf}
-\caption{\textbf{Outcome displacement times grow with horizon.} Stored runs, seeds $0,1,2$; medians and full seed ranges. Left: exit from $r_0\varepsilon$; right: displacement $0.1\varepsilon\|\tilde\theta\|$, beyond the theorem ball. Dashed guides are $\lambda^{-n}$ with $\lambda=1/2$, anchored at $n=4$. Step exit mainly learns the prior.}\label{fig:controlled}
-\end{figure}
-Actual transition learning is tested separately by finite-step routing runs. With query--key matrices, relative bias and readout trained from fan-in random weights, step training solves $16/17$ runs within $300$k updates (the remaining run reaches $99.95\%$); outcome solves $0/17$. At $n=6,8,12,16$, step solves $5/5,5/5,4/5,2/2$, with median solve updates $44$k,$61$k,$77$k,$237$k. These runs fix values, embeddings and MLPs but depart from the structured seed and supervise the first state too. Separately, the ten-seed AdamW comparison at $n=16$ reports $95.45\%$ mean step answer accuracy ($93.11\%$ complete-continuation accuracy) and $49.82\%$ outcome answer accuracy. They are empirical evidence outside the theorem, not time-bound verification.
-
