@@ -44,6 +44,3 @@ __pycache__/
 .vscode/
 .DS_Store
 .claude/
-
-# --- reorganization holding area (review, then delete) -----------------------
-/_trash/

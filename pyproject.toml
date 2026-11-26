@@ -24,7 +24,7 @@ dev = [
 target-version = "py312"
 line-length = 120
 src = ["src", "handcoded"]
-extend-exclude = ["results", "papers", "animations", "cpp", "_trash", ".venv", "*.ipynb"]
+extend-exclude = ["results", "papers", "animations", "cpp", ".venv", "*.ipynb"]
 
 [tool.ruff.lint]
 select = ["E", "F"]

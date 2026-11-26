@@ -48,3 +48,16 @@ cd papers/silent_routing && tectonic -X compile main.tex                       #
 | `src/`, `configs/`, `data/` | GPT-2L and LoRA transfer experiments (Boolean-8, register machine, BBH) |
 
 Full reproduction commands are in [RUN.md](RUN.md).
+
+## Citation & License
+
+```bibtex
+@inproceedings{silentrouting2026,
+  title     = {Silent Routing: How Step Supervision Trains Transformers Where Outcome Supervision Stalls},
+  author    = {Anonymous Authors},
+  booktitle = {International Conference on Machine Learning (ICML)},
+  year      = {2026}
+}
+```
+
+Released under the [MIT License](LICENSE).
