@@ -1,8 +1,7 @@
-"""Check the counting-experiment claims that are read off lettertrace.py training logs (Section 5, Table 10(a), (d)):
-held-out exact accuracy at 8k updates, runs reaching 90% by 16k (step) or 32k (outcome) updates, the deeper-model counts,
-and counting modulo 3 at n = 8 after 32k updates.
+"""Check the counting-experiment claims read off lettertrace.py training logs (Tables 6-7: tab:gap, tab:controls):
+extended 32k horizon sweeps, deeper 4-6 block models, first-occurrence controls, and counting modulo 3.
 
-    python handcoded/checks/log_claims.py        # -> results/paper/log_claims.json
+    uv run python handcoded/checks/log_claims.py        # -> results/paper/log_claims.json
 
 Logs: logs/must_run/tab3_*.log (horizon sweep and first occurrence, two blocks), logs/remaining/depth_L{4,6}_*.log
 (deeper models), logs/must_run/out32k_K3_s*.log (modulo 3). Each line `MODE step N loss L test exact E answer A` is one

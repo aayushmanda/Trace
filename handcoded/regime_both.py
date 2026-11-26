@@ -1,3 +1,11 @@
+"""Exact float64 population GD exit times inside the outcome plateau (Theorem 1, Table 5 / tab:exit-times, Appendix G.1).
+
+Computes exit times from the initialization ball B_eps (eps = 0.002) and macroscopic radius r = 0.1 (eps = 0.02)
+on count mod 2 (p = 1/4, lambda = 1/2) over all 2^n words under both step and outcome objectives.
+
+    REGIME_ZERO_READOUT=1 REGIME_STOP=ball REGIME_STEP=1e-6 REGIME_SEED=0 uv run python handcoded/regime_both.py 0.002
+    REGIME_ZERO_READOUT=1 uv run python handcoded/regime_both.py 0.02
+"""
 import itertools
 import json
 import math

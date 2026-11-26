@@ -61,7 +61,7 @@ Manim source and build instructions live in [`animations/`](animations/README.md
 | Component | Path | What it covers |
 |---|---|---|
 | **C++20 Causal Intervention Suite** | [`cpp/`](cpp/README.md) | Cross-platform (macOS Accelerate / Linux CBLAS shim) 27-block Transformer engine for all baseline-projection ($\Pi_0$), external-offset, and Stateless Block-RMS experiments (Fig. 3–4, Table 1–2a), float64 gradient checker, and `(Step-ODE)` solver |
-| **Python Counting & Theory Checks** | [`handcoded/`](handcoded/) | Exact executors (Prop. 1), outcome plateau sweeps, reduced three-scalar ODE, theorem numerical checks, and paper figure scripts |
+| **Python Counting & Theory Checks** | [`handcoded/`](handcoded/README.md) | Two-block Transformer (`lettertrace.py`), exact executors (Prop. 1), float64 outcome-plateau exit times (Thm. 1 / Table 5), counting/spectrum sweeps (Fig. 1a, Tables 6–8), and verification scripts |
 | **Automata & LLM Transfer** | [`src/`](src/) | Character-token GPT-2L (Boolean-8 $A_{16}$, mod-17 register machine), rank-8 LoRA (SmolLM2-135M, Qwen2.5-0.5B), and BIG-Bench Hard tracking shuffled objects |
 
 ---
@@ -110,16 +110,12 @@ trace/
 │   ├── aggregate_results.cpp        Pure C++20 multi-seed CSV aggregator
 │   └── analysis/                    aggregate.py (Table 1 / Wilson CIs / Fisher tests), make_causal_fig.py, summary.json
 ├── handcoded/
+│   ├── README.md                    Paper-to-code map for all Python two-block scripts
 │   ├── lettertrace.py               Counting task, exact executors (Prop. 1), step/outcome training
-│   ├── regime_both.py               Outcome plateau exit times inside the theorem regime
-│   ├── reduced_ode.py               Reduced three-scalar gate flow
-│   ├── bbh_lora_spectrum.py         Degree spectrum of the BBH LoRA Jacobian
-│   ├── main_figures.py              Generates papers/silent_routing/figures/main_transfer.pdf
-│   ├── make_inline_figures.py       Verifies/syncs inline PGFPlots figure coordinates
-│   ├── experiments/                 measure.py, sweeps.py, seeded_sweep.py, shell sweep drivers
-│   ├── research/                    gate_network/ (full-network gate flow), lambda_collapse/ (scaling.tex)
-│   └── checks/                      theorem4_checks, credit_checks, executor_check, phalf_check,
-│                                    network_vs_reduced, full_readout_check, ode_table, direct_proofs/
+│   ├── regime_both.py               Float64 population GD outcome-plateau exit times (Thm. 1, Table 5)
+│   ├── experiments/                 sweeps.py (Fig. 1a, Table 6, lambda grid), measure.py (spectra, ANOVA, untied routing),
+│   │                                seeded_sweep.py, init_scale_sweep.sh (Table 7), plateau_spectra.sh
+│   └── checks/                      executor_check.py (Prop. 1), credit_checks.py (App. C & G.3), log_claims.py (Tables 6–7)
 ├── src/                             Character-token GPT-2L, LoRA (SmolLM2 / Qwen2.5), BIG-Bench Hard
 ├── configs/experiments/             YAML experiment configs for src/
 ├── data/bbh/                        Official BIG-Bench Hard tracking shuffled objects items (unchanged)

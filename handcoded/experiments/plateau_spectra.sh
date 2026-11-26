@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Table 9: outcome training at n = 8, init_std 0.02, seed 42, with checkpoints every 1000 updates, then the exact
-# Jacobian degree split at the answer position (16 Gaussian directions) at initialization and at 1k, 3k, 6k, 8k updates.
+# Appendix G.1: outcome training at n = 8, init_std = 0.02, seed 42, with checkpoints every 1000 updates, then the exact
+# Jacobian degree split at the answer position (16 Gaussian directions) at initialization and 1k, 3k, 6k, 8k updates.
 # Writes ckpt/n8_block_s42/, results/paper/exact_spectra/plateau_s42/{init,o1000,o3000,o6000,o8000}.txt and the
 # training log (held-out answer accuracy every 500 updates) to logs/plateau_s42/train.log.
 #   bash handcoded/experiments/plateau_spectra.sh            (set CUDA_VISIBLE_DEVICES to pick a GPU)

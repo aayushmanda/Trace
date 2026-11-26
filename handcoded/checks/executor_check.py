@@ -1,4 +1,4 @@
-"""Rebuild the two handcoded executors from the specification in the paper's executor appendix (app:architectures),
+"""Rebuild the two handcoded executors (Proposition 1) from Appendix B (app:architectures),
 without calling any construction helper of lettertrace.py, and check that every tensor
 equals handcoded_params() entry for entry.
 

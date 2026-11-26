@@ -23,5 +23,5 @@ tectonic -X compile main.tex
 
 Related code and artifacts at the repository root:
 - C++20 causal intervention & 27-block verification suite: [`../../cpp/`](../../cpp/README.md)
-- Python counting experiments, ODE checks & figure scripts: [`../../handcoded/`](../../handcoded/), [`../../src/`](../../src/)
+- Python counting experiments, expressivity & credit checks: [`../../handcoded/`](../../handcoded/README.md), [`../../src/`](../../src/)
 - 1080p60 Manim explainer animations: [`../../animations/`](../../animations/README.md)

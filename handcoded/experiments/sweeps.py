@@ -1,8 +1,8 @@
-"""Training sweeps behind the paper's counting experiments (all train handcoded/lettertrace.py models).
+"""Training sweeps behind Silent Routing's counting experiments (all train handcoded/lettertrace.py models).
 
-    python handcoded/experiments/sweeps.py zero_readout            # Fig. 1b: ten paired seeds, n = 16, K = 2, zero readout
-    python handcoded/experiments/sweeps.py basin success           # tab:gap(b): success over n, 20 seeds per n
-    python handcoded/experiments/sweeps.py lambda_grid --all       # Fig. 2b,c: horizon x contraction grid, 3 seeds per cell
+    uv run python handcoded/experiments/sweeps.py zero_readout        # Fig. 1a & Table 8: 10 paired seeds, n = 16, V(0) = 0
+    uv run python handcoded/experiments/sweeps.py basin success       # Table 6 (tab:gap): 20 seeds per horizon n in {6..16}
+    uv run python handcoded/experiments/sweeps.py lambda_grid --all   # Appendix G.1: 20-cell (n, |Sigma|) grid, Spearman r_S = 0.91
 
 zero_readout: matched counting rerun that changes only the final readout initialization to zero; spreads seeds 42-51 over
   GPUs 0, 2, 3, reuses completed seeds, then writes results/paper/zero_readout_n16_8k/{per_seed.csv,summary.json,accuracy.pdf}.

@@ -1,6 +1,6 @@
-"""Numerical checks of the credit theorems at initialization (tab:verify and tab:matched).
+"""Numerical checks of score-degree and credit bounds at initialization (Appendices C, G.1, G.3; prop:score-degree).
 
-Setting of regime_both.py ((A1)-(A4), exact over all words and both start states) unless stated.
+Setting of regime_both.py (exact float64 expectation over all words and both start states) unless stated.
 
     uv run python handcoded/checks/credit_checks.py rule          # prior / rule / outcome credit and sigma-exponents
     uv run python handcoded/checks/credit_checks.py interaction   # outcome credit by degree against rule credit

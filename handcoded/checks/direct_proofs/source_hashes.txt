@@ -1,4 +1,0 @@
-Frozen manuscript sources used for preserved statements and supporting proofs:
-3b1ecf58036417a6bbb09330d65dc283b99bac8841f69625db495c113c1745c9  Paper/main.tex
-719af6c30797029f348170b42b1150f49182bd9559e308cf2a347627d3b3df8d  Paper/body.tex
-ee214a3e7da6c3469638ba42d03ee70a2a91c00712b89b78635dbb1a62e0593a  Paper/appendix.tex

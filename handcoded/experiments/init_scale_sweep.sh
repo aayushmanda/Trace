@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Table 10(c): initialization-scale sweep, step and outcome from one seeded theta_0 (8k updates, seeds 42-44).
+# Table 7 (tab:controls, Appendix G.1): initialization-scale sweep (eps in {0.1, 0.5}, n in {8, 16}, seeds 42-44).
 # Writes results/seeded/rnd_n{N}_K2_e{EPS}_s{SEED}.json; existing files are skipped.
 #   bash handcoded/experiments/init_scale_sweep.sh            (set CUDA_VISIBLE_DEVICES to pick a GPU)
 set -euo pipefail

@@ -1,20 +1,16 @@
-"""Measurements behind the paper's spectra, the restricted joint-routing table and the BBH LoRA spectrum.
+"""Measurements behind Silent Routing's Jacobian/ANOVA spectra and single-head untied routing (Appendices G.1-G.3).
 
-    python handcoded/experiments/measure.py spectrum task=count word_len=8 mod=2   # tab:spectrum, Fig. 1 spectrum
-    python handcoded/experiments/measure.py answers                                # answer spectra of Boolean-8 / register
-    python handcoded/experiments/measure.py exact site=answer dirs=16 ckpt=ckpt/n8_block_s42/s42_outcome_step1000.pt
-    python handcoded/experiments/measure.py reach --n 6 8 --sigma 0.3 --seeds 0 1 --lr 2 --steps 150000 --out x.json
-    python handcoded/experiments/measure.py bbh contexts=10 seed=2001 out=results/paper/bbh_lora_spectrum/s2001.json
+    uv run python handcoded/experiments/measure.py spectrum task=count word_len=8 mod=2   # App. G.1 gradient decay
+    uv run python handcoded/experiments/measure.py answers                                # App. G.2 Boolean-8 / register ANOVA
+    uv run python handcoded/experiments/measure.py exact site=answer dirs=16 ckpt=ckpt/n8_block_s42/s42_outcome_step1000.pt
+    uv run python handcoded/experiments/measure.py reach --n 6 8 --sigma 0.3 --seeds 0 1 --lr 2 --steps 150000 --out x.json
 
 spectrum: interaction spectra of the logit Jacobian and the answer-dependent gradient against n, in the lettertrace.py
   architecture with the same theta_0 (key=value settings listed at the top of run_spectrum).
-answers: exact answer spectra A_r of the validation tasks by dynamic programming over second moments.
-exact: exact letter-order spectra W_r of logit Jacobians from forward-mode JVPs and the two terms of the plateau bound,
-  along outcome training (tab:main-evidence).
-reach: restricted step training of the two-block model from small initialization (tab:reach); --format outcome is the
-  outcome baseline under the same protocol.
-bbh: exact Efron-Stein degree split of the LoRA Jacobian of Qwen2.5-0.5B on three-object BIG-Bench Hard (216 prompts per
-  context).
+answers: exact answer spectra A_r of Boolean-8 (98.9% deg >= 2) and register mod 17 (99.9% deg >= 2) via DP.
+exact: exact letter-order spectra W_r of logit Jacobians from forward-mode JVPs along outcome training (App. G.1).
+reach: single-head untied routing from small initialization (App. G.3, 17/17 step vs 0/17 outcome); --format outcome
+  runs the outcome baseline under the same protocol.
 """
 import sys
 from pathlib import Path
