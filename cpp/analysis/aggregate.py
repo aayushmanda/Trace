@@ -5,7 +5,12 @@ Fisher exact tests and mechanism diagnostics. Writes summary.json and prints a t
 Solve rule (used everywhere in the paper): final free-running exact rollout >= 99.9% on the
 1,000 held-out prompts.
 """
-import csv, glob, json, math, os, re, sys
+import csv
+import glob
+import json
+import math
+import os
+import re
 from collections import defaultdict
 try:
     from scipy.stats import fisher_exact
@@ -13,7 +18,7 @@ except ImportError:
     def fisher_exact(table):
         a, b = table[0]
         c, d = table[1]
-        r1, r2, c1, n = a + b, c + d, a + c, a + b + c + d
+        r1, c1, n = a + b, a + c, a + b + c + d
         def pmf(x):
             return math.comb(c1, x) * math.comb(n - c1, r1 - x) / math.comb(n, r1)
         p_obs = pmf(a)
@@ -72,7 +77,7 @@ def main():
     for sub in ("main", "rel600", "rel1000"):
         for path in glob.glob(os.path.join(SWEEP_DIR, sub, "*.csv")):
             m = re.search(r"n(\d+)_p([\d.]+)_m(\d+)_s(\d+)\.csv", path)
-            n, p, mode, seed = int(m[1]), m[2], int(m[3]), int(m[4])
+            _, p, mode, seed = int(m[1]), m[2], int(m[3]), int(m[4])
             rows = load(path)
             if not rows or int(rows[-1]["step"]) < FINAL:
                 continue  # unfinished

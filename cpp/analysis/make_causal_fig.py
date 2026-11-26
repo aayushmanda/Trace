@@ -9,7 +9,10 @@
 By default, refuses to overwrite figures/causal_intervention.tex until all four p values
 (0.05, 0.25, 0.5, 0.75) have completed runs (pass --force to override).
 """
-import glob, os, re, sys
+import glob
+import os
+import re
+import sys
 from collections import defaultdict
 from aggregate import load, wilson, SOLVE, FINAL
 

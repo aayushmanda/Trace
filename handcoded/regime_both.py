@@ -1,171 +1,383 @@
-"""Exact float64 population GD exit times inside the outcome plateau (Theorem 1, Table 5 / tab:exit-times, Appendix G.1).
+"""Exact float64 population GD exit times inside the outcome plateau (Theorem 1, Table 5, Appendix G.1).
 
-Computes exit times from the initialization ball B_eps (eps = 0.002) and macroscopic radius r = 0.1 (eps = 0.02)
-on count mod 2 (p = 1/4, lambda = 1/2) over all 2^n words under both step and outcome objectives.
+Computes exit times from the certified initialization ball B_eps (eps = 0.002) and macroscopic radius
+r = 0.1 (eps = 0.02) on modulo-2 counting (p = 1/4, lambda = 1/2) over all 2^n words under both step
+and outcome cross-entropy objectives.
 
-    REGIME_ZERO_READOUT=1 REGIME_STOP=ball REGIME_STEP=1e-6 REGIME_SEED=0 uv run python handcoded/regime_both.py 0.002
-    REGIME_ZERO_READOUT=1 uv run python handcoded/regime_both.py 0.02
+Examples:
+    REGIME_ZERO_READOUT=1 REGIME_STOP=ball REGIME_STEP=1e-6 REGIME_SEED=0 \\
+        uv run python handcoded/regime_both.py 0.002
+    uv run python handcoded/regime_both.py 0.02 --zero-readout --n 4 6 8
 """
+
+from __future__ import annotations
+
+import argparse
 import itertools
 import json
 import math
 import os
-import sys
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
 
 import torch
+import torch.nn.functional as F
 
 torch.set_default_dtype(torch.float64)
-dev = "cuda" if torch.cuda.is_available() else "cpu"
-A, K, Wd, Hh, Dh, F, TMAX, PM = 2, 2, 16, 3, 8, 16, 40, 0.25
-SEP, COLON = A + K, A + K + 1
 
 
-def theta_tilde(seed=0):
-    g = torch.Generator().manual_seed(seed)
-    rn = lambda *s: torch.randn(*s, generator=g)
-    th = {"wte": rn(A + K + 3, Wd), "wpe": rn(TMAX, Wd), "R": rn(K, Wd)}
-    for b in range(2):
-        th[f"{b}.q"], th[f"{b}.k"], th[f"{b}.v"] = rn(Hh, Dh, Wd), rn(Hh, Dh, Wd), rn(Hh, Wd, Wd)
-        th[f"{b}.mi"], th[f"{b}.mo"] = rn(F, Wd), rn(Wd, F)
-        mb = rn(F)
-        th[f"{b}.mb"] = torch.sign(mb) * (1 + mb.abs())
-    return {k: v.to(dev) for k, v in th.items()}
+@dataclass(frozen=True)
+class RegimeConfig:
+    """Architecture and data law for exact float64 population gradient flow."""
+
+    alphabet_size: int = 2
+    num_states: int = 2
+    d_model: int = 16
+    num_heads: int = 3
+    head_dim: int = 8
+    d_mlp: int = 16
+    max_seq_len: int = 40
+    p_match: float = 0.25
+    device: str = "cuda" if torch.cuda.is_available() else "cpu"
+
+    @property
+    def sep_token(self) -> int:
+        return self.alphabet_size + self.num_states
+
+    @property
+    def colon_token(self) -> int:
+        return self.alphabet_size + self.num_states + 1
+
+    @property
+    def vocab_size(self) -> int:
+        return self.alphabet_size + self.num_states + 3
 
 
-def data(n):
-    """All 2^n words and both start states, with their probabilities; query letter 0."""
-    words = torch.tensor(list(itertools.product(range(A), repeat=n)))
-    match = (words == 0).long()
-    prob = (PM ** match.sum(1) * (1 - PM) ** (n - match.sum(1))).double() / K
-    words, match, prob = words.repeat(K, 1), match.repeat(K, 1), prob.repeat(K)
-    s0 = torch.arange(K).repeat_interleave(2 ** n)
-    states = (s0[:, None] + match.cumsum(1)) % K                       # s_1..s_n
-    head = torch.cat([(A + s0)[:, None], torch.zeros(len(words), 1, dtype=torch.long), words,
-                      torch.full((len(words), 1), SEP)], 1)            # positions 0..n+2
-    out_ids = torch.cat([head, torch.full((len(words), 1), COLON)], 1)  # ':' at n+3 predicts s_n
-    step_ids = torch.cat([head, A + states[:, : n - 1]], 1)            # s_t at n+2+t, t = 1..n-1
-    return dict(prob=prob.to(dev), out_ids=out_ids.to(dev), out_tgt=states[:, -1].to(dev),
-                step_ids=step_ids.to(dev), step_tgt=states[:, 1:].to(dev))
+DEFAULT_CONFIG = RegimeConfig()
 
 
-def residual(p, ids, want_signs=False, signs=None):
-    T = ids.shape[1]
-    x = p["wte"][ids] + p["wpe"][:T]
-    future = torch.ones(T, T, dtype=torch.bool, device=ids.device).triu(1)
-    switching = 0
-    for b in range(2):
-        q = torch.einsum("btw,hdw->bhtd", x, p[f"{b}.q"])
-        k = torch.einsum("btw,hdw->bhtd", x, p[f"{b}.k"])
-        v = torch.einsum("btw,hvw->bhtv", x, p[f"{b}.v"])
-        att = (q @ k.transpose(-1, -2) / math.sqrt(Dh)).masked_fill(future, -math.inf)
-        x = x + (att.softmax(-1) @ v).sum(1)
-        pre = x @ p[f"{b}.mi"].T + p[f"{b}.mb"]
-        if signs is not None:
-            signs.append(pre.detach() > 0)
-        if want_signs:
-            on = pre > 0
-            switching += int((on.flatten(0, 1).any(0) != on.flatten(0, 1).all(0)).sum())
-        x = x + torch.relu(pre) @ p[f"{b}.mo"].T
-    return (x, switching) if want_signs else x
+def sample_unit_params(seed: int = 0, cfg: RegimeConfig = DEFAULT_CONFIG) -> dict[str, torch.Tensor]:
+    """Sample balanced unit-scale parameter direction theta_tilde with |b_m| >= 1."""
+    gen = torch.Generator().manual_seed(seed)
+
+    def randn(*shape: int) -> torch.Tensor:
+        return torch.randn(*shape, generator=gen)
+
+    params: dict[str, torch.Tensor] = {
+        "wte": randn(cfg.vocab_size, cfg.d_model),
+        "wpe": randn(cfg.max_seq_len, cfg.d_model),
+        "R": randn(cfg.num_states, cfg.d_model),
+    }
+    for block in range(2):
+        params[f"{block}.q"] = randn(cfg.num_heads, cfg.head_dim, cfg.d_model)
+        params[f"{block}.k"] = randn(cfg.num_heads, cfg.head_dim, cfg.d_model)
+        params[f"{block}.v"] = randn(cfg.num_heads, cfg.d_model, cfg.d_model)
+        params[f"{block}.mi"] = randn(cfg.d_mlp, cfg.d_model)
+        params[f"{block}.mo"] = randn(cfg.d_model, cfg.d_mlp)
+        raw_bias = randn(cfg.d_mlp)
+        params[f"{block}.mb"] = torch.sign(raw_bias) * (1.0 + raw_bias.abs())
+
+    return {name: tensor.to(cfg.device) for name, tensor in params.items()}
 
 
-def loss(p, d, mode, n, chunk=1 << 15, ref=None):
-    """Weighted cross-entropy. With ref (a list), also compares every ReLU sign with ref: an empty list is filled with
-    the current signs, and the return value is then (loss, number of pre-activations whose sign differs from ref)."""
-    tot, flips, k = 0.0, 0, 0
-    for i in range(0, len(d["prob"]), chunk):
-        w = d["prob"][i:i + chunk]
-        signs = [] if ref is not None else None
+def build_exact_dataset(word_len: int, cfg: RegimeConfig = DEFAULT_CONFIG) -> dict[str, torch.Tensor]:
+    """Enumerate all A^n words and K initial states with exact probabilities (query letter = 0)."""
+    words = torch.tensor(list(itertools.product(range(cfg.alphabet_size), repeat=word_len)))
+    matches = (words == 0).long()
+    match_counts = matches.sum(dim=1)
+    probs = (cfg.p_match ** match_counts * (1.0 - cfg.p_match) ** (word_len - match_counts)).double()
+    probs = probs / cfg.num_states
+
+    n_words = len(words)
+    words = words.repeat(cfg.num_states, 1)
+    matches = matches.repeat(cfg.num_states, 1)
+    probs = probs.repeat(cfg.num_states)
+
+    s0 = torch.arange(cfg.num_states).repeat_interleave(n_words)
+    states = (s0[:, None] + matches.cumsum(dim=1)) % cfg.num_states
+
+    n_rows = len(words)
+    prefix = torch.cat(
+        [
+            (cfg.alphabet_size + s0)[:, None],
+            torch.zeros(n_rows, 1, dtype=torch.long),
+            words,
+            torch.full((n_rows, 1), cfg.sep_token, dtype=torch.long),
+        ],
+        dim=1,
+    )
+    out_ids = torch.cat([prefix, torch.full((n_rows, 1), cfg.colon_token, dtype=torch.long)], dim=1)
+    step_ids = torch.cat([prefix, cfg.alphabet_size + states[:, : word_len - 1]], dim=1)
+
+    return {
+        "prob": probs.to(cfg.device),
+        "out_ids": out_ids.to(cfg.device),
+        "out_tgt": states[:, -1].to(cfg.device),
+        "step_ids": step_ids.to(cfg.device),
+        "step_tgt": states[:, 1:].to(cfg.device),
+    }
+
+
+def forward_residual(
+    params: dict[str, torch.Tensor],
+    token_ids: torch.Tensor,
+    cfg: RegimeConfig = DEFAULT_CONFIG,
+    *,
+    count_switching: bool = False,
+    sign_log: list[torch.Tensor] | None = None,
+) -> torch.Tensor | tuple[torch.Tensor, int]:
+    """Run the two-block normalization-free causal Transformer up to the final residual stream."""
+    seq_len = token_ids.shape[1]
+    hidden = params["wte"][token_ids] + params["wpe"][:seq_len]
+    causal_mask = torch.ones(seq_len, seq_len, dtype=torch.bool, device=token_ids.device).triu(1)
+    scale = math.sqrt(cfg.head_dim)
+    switching_units = 0
+
+    for block in range(2):
+        q = torch.einsum("btw,hdw->bhtd", hidden, params[f"{block}.q"])
+        k = torch.einsum("btw,hdw->bhtd", hidden, params[f"{block}.k"])
+        v = torch.einsum("btw,hvw->bhtv", hidden, params[f"{block}.v"])
+        scores = (q @ k.transpose(-1, -2) / scale).masked_fill(causal_mask, -math.inf)
+        hidden = hidden + (scores.softmax(dim=-1) @ v).sum(dim=1)
+
+        pre_act = hidden @ params[f"{block}.mi"].T + params[f"{block}.mb"]
+        if sign_log is not None:
+            sign_log.append(pre_act.detach() > 0)
+        if count_switching:
+            active = pre_act > 0
+            flat = active.flatten(0, 1)
+            switching_units += int((flat.any(dim=0) != flat.all(dim=0)).sum())
+        hidden = hidden + F.relu(pre_act) @ params[f"{block}.mo"].T
+
+    return (hidden, switching_units) if count_switching else hidden
+
+
+def population_loss(
+    params: dict[str, torch.Tensor],
+    dataset: dict[str, torch.Tensor],
+    mode: str,
+    word_len: int,
+    cfg: RegimeConfig = DEFAULT_CONFIG,
+    *,
+    chunk_size: int = 1 << 15,
+    reference_signs: list[torch.Tensor] | None = None,
+) -> torch.Tensor | tuple[torch.Tensor, int]:
+    """Compute exact probability-weighted cross-entropy (optionally tracking ReLU sign flips)."""
+    total_loss: torch.Tensor | float = 0.0
+    sign_flips = 0
+    sign_idx = 0
+    num_rows = len(dataset["prob"])
+
+    for start in range(0, num_rows, chunk_size):
+        end = start + chunk_size
+        weights = dataset["prob"][start:end]
+        chunk_signs: list[torch.Tensor] | None = [] if reference_signs is not None else None
+
         if mode == "outcome":
-            z = residual(p, d["out_ids"][i:i + chunk], signs=signs)[:, -1] @ p["R"].T
-            ce = torch.nn.functional.cross_entropy(z, d["out_tgt"][i:i + chunk], reduction="none")
-        else:                                            # positions n+3..2n+1 hold s_1..s_{n-1}, predict s_2..s_n
-            z = residual(p, d["step_ids"][i:i + chunk], signs=signs)[:, n + 3:] @ p["R"].T
-            ce = torch.nn.functional.cross_entropy(z.flatten(0, 1), d["step_tgt"][i:i + chunk].flatten(),
-                                                   reduction="none").view(len(w), -1).mean(1)
-        tot = tot + (w * ce).sum()
-        if ref is not None:
-            for s_ in signs:
-                if len(ref) <= k:
-                    ref.append(s_)
+            resid = forward_residual(params, dataset["out_ids"][start:end], cfg, sign_log=chunk_signs)
+            assert isinstance(resid, torch.Tensor)
+            logits = resid[:, -1] @ params["R"].T
+            per_example_ce = F.cross_entropy(logits, dataset["out_tgt"][start:end], reduction="none")
+        else:
+            resid = forward_residual(params, dataset["step_ids"][start:end], cfg, sign_log=chunk_signs)
+            assert isinstance(resid, torch.Tensor)
+            logits = resid[:, word_len + 3 :] @ params["R"].T
+            targets = dataset["step_tgt"][start:end].flatten()
+            per_example_ce = F.cross_entropy(logits.flatten(0, 1), targets, reduction="none")
+            per_example_ce = per_example_ce.view(len(weights), -1).mean(dim=1)
+
+        total_loss = total_loss + (weights * per_example_ce).sum()
+        if reference_signs is not None and chunk_signs is not None:
+            for sign_tensor in chunk_signs:
+                if len(reference_signs) <= sign_idx:
+                    reference_signs.append(sign_tensor)
                 else:
-                    flips += int((s_ != ref[k]).sum())
-                k += 1
-    return (tot, flips) if ref is not None else tot
+                    sign_flips += int((sign_tensor != reference_signs[sign_idx]).sum())
+                sign_idx += 1
+
+    assert isinstance(total_loss, torch.Tensor)
+    return (total_loss, sign_flips) if reference_signs is not None else total_loss
 
 
-def switching(p, d, mode):
+def count_switching_units(
+    params: dict[str, torch.Tensor],
+    dataset: dict[str, torch.Tensor],
+    mode: str,
+    cfg: RegimeConfig = DEFAULT_CONFIG,
+) -> int:
+    """Count ReLU units that switch sign across the evaluated token positions."""
+    key = "out_ids" if mode == "outcome" else "step_ids"
     with torch.no_grad():
-        return residual(p, d["out_ids" if mode == "outcome" else "step_ids"][: 1 << 15], True)[1]
+        _, switching = forward_residual(params, dataset[key][: 1 << 15], cfg, count_switching=True)
+    return int(switching)
 
 
-def ball_radius(tilde):
-    """Theorem 3's ball radius r_0 = min(1/8, c_emb/4), in units of sigma * ||theta~||."""
-    c_emb = float(torch.linalg.svdvals(tilde["wte"][A:A + K]).min())
-    norm0 = math.sqrt(sum(float((v ** 2).sum()) for v in tilde.values()))
-    return min(1 / 8, c_emb / 4) / norm0
+def certified_ball_radius(unit_params: dict[str, torch.Tensor], cfg: RegimeConfig = DEFAULT_CONFIG) -> float:
+    """Return Theorem 1 ball radius r_0 = min(1/8, c_emb/4) in units of eps * ||theta_tilde||."""
+    state_embeddings = unit_params["wte"][cfg.alphabet_size : cfg.alphabet_size + cfg.num_states]
+    c_emb = float(torch.linalg.svdvals(state_embeddings).min())
+    unit_norm = _tensor_dict_norm(unit_params)
+    return min(0.125, c_emb / 4.0) / unit_norm
 
 
-def run(n, sigma, mode, tilde, eps=0.1, max_steps=20000, step_len=1e-3, radii=None):
-    d = data(n)
-    norm0 = math.sqrt(sum(float((v ** 2).sum()) for v in tilde.values()))
-    p = {k: (sigma * v).clone().requires_grad_() for k, v in tilde.items()}
-    theta0 = {k: v.detach().clone() for k, v in p.items()}
-    radii = sorted(set(radii or []) | {eps})
-    ref, max_flips = [], 0
-    L0, t, rec = None, 0.0, dict(n=n, sigma=sigma, mode=mode, switch_start=switching(p, d, mode), T_r={}, relu_flips={})
-    for step in range(max_steps):
-        L, flips = loss(p, d, mode, n, ref=ref)
+def _tensor_dict_norm(tensors: dict[str, torch.Tensor]) -> float:
+    return math.sqrt(sum(float((t ** 2).sum()) for t in tensors.values()))
+
+
+def _grad_norm(grads: tuple[torch.Tensor, ...]) -> float:
+    return math.sqrt(sum(float((g ** 2).sum()) for g in grads))
+
+
+def run_population_gd(
+    word_len: int,
+    sigma: float,
+    mode: str,
+    unit_params: dict[str, torch.Tensor],
+    *,
+    stop_radius: float = 0.1,
+    max_steps: int = 20_000,
+    step_len: float = 1e-3,
+    track_radii: list[float] | None = None,
+    cfg: RegimeConfig = DEFAULT_CONFIG,
+) -> dict[str, Any]:
+    """Integrate normalized population GD until ||theta - theta_0|| / (sigma ||theta_tilde||) >= stop_radius."""
+    dataset = build_exact_dataset(word_len, cfg)
+    unit_norm = _tensor_dict_norm(unit_params)
+    scale_norm = sigma * unit_norm
+
+    params = {name: (sigma * tensor).clone().requires_grad_() for name, tensor in unit_params.items()}
+    theta0 = {name: tensor.detach().clone() for name, tensor in params.items()}
+    radii = sorted(set(track_radii or []) | {stop_radius})
+
+    reference_signs: list[torch.Tensor] = []
+    max_flips = 0
+    initial_loss: float | None = None
+    elapsed_time = 0.0
+
+    record: dict[str, Any] = {
+        "n": word_len,
+        "sigma": sigma,
+        "mode": mode,
+        "switch_start": count_switching_units(params, dataset, mode, cfg),
+        "T_r": {},
+        "relu_flips": {},
+    }
+
+    for step_idx in range(max_steps):
+        loss_val, flips = population_loss(params, dataset, mode, word_len, cfg, reference_signs=reference_signs)
         max_flips = max(max_flips, flips)
-        grads = torch.autograd.grad(L, list(p.values()))
-        gn = math.sqrt(sum(float((g ** 2).sum()) for g in grads))
-        if step == 0:
-            L0, rec["grad0_over_sigma"] = float(L), gn / sigma
-        dt = step_len * sigma * norm0 / gn
+        grads = torch.autograd.grad(loss_val, list(params.values()))
+        grad_norm = _grad_norm(grads)
+
+        if step_idx == 0:
+            initial_loss = float(loss_val)
+            record["grad0_over_sigma"] = grad_norm / sigma
+
+        dt = step_len * scale_norm / grad_norm
         with torch.no_grad():
-            for v, g_ in zip(p.values(), grads):
-                v -= dt * g_
-        t += dt
-        dist = math.sqrt(sum(float(((p[k] - theta0[k]) ** 2).sum()) for k in p)) / (sigma * norm0)
-        for r in radii:
-            if dist >= r and r not in rec["T_r"]:
+            for param, grad in zip(params.values(), grads):
+                param -= dt * grad
+        elapsed_time += dt
+
+        rel_dist = math.sqrt(sum(float(((params[k] - theta0[k]) ** 2).sum()) for k in params)) / scale_norm
+        for radius in radii:
+            if rel_dist >= radius and radius not in record["T_r"]:
                 with torch.no_grad():
-                    max_flips = max(max_flips, loss(p, d, mode, n, ref=ref)[1])   # signs at the exit point itself
-                rec["T_r"][r], rec["relu_flips"][r] = t, max_flips
-        if dist >= eps:
+                    _, exit_flips = population_loss(
+                        params, dataset, mode, word_len, cfg, reference_signs=reference_signs
+                    )
+                    max_flips = max(max_flips, exit_flips)
+                record["T_r"][radius] = elapsed_time
+                record["relu_flips"][radius] = max_flips
+
+        if rel_dist >= stop_radius:
             with torch.no_grad():
-                L1 = float(loss(p, d, mode, n))
-            rec.update(T=t, steps=step + 1, drop_over_sigma2=(L0 - L1) / sigma ** 2,
-                       gap_over_sigma2=(math.log(K) - L1) / sigma ** 2, switch_end=switching(p, d, mode))
+                final_loss = float(population_loss(params, dataset, mode, word_len, cfg))
+            assert initial_loss is not None
+            record.update(
+                T=elapsed_time,
+                steps=step_idx + 1,
+                drop_over_sigma2=(initial_loss - final_loss) / (sigma ** 2),
+                gap_over_sigma2=(math.log(cfg.num_states) - final_loss) / (sigma ** 2),
+                switch_end=count_switching_units(params, dataset, mode, cfg),
+            )
             break
-    return rec
+
+    return record
+
+
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    env_n = [int(x) for x in os.environ.get("REGIME_N", "4,6,8,10,12,14,16").split(",")]
+    parser = argparse.ArgumentParser(description="Exact float64 population GD exit times (Theorem 1 / Table 5).")
+    parser.add_argument("sigmas", nargs="*", type=float, help="Initialization scales eps (default: 0.02 0.005 0.002).")
+    parser.add_argument("--n", nargs="+", type=int, default=env_n, help="Sequence lengths to evaluate.")
+    parser.add_argument("--seed", type=int, default=int(os.environ.get("REGIME_SEED", "0")))
+    parser.add_argument("--step-len", type=float, default=float(os.environ.get("REGIME_STEP", "1e-3")))
+    parser.add_argument(
+        "--zero-readout",
+        action="store_true",
+        default=os.environ.get("REGIME_ZERO_READOUT") == "1",
+        help="Zero the initial readout matrix V(0) = 0.",
+    )
+    parser.add_argument(
+        "--stop",
+        choices=("ball", "macro"),
+        default="ball" if os.environ.get("REGIME_STOP") == "ball" else "macro",
+        help="Stop at certified ball radius r_0 ('ball') or macroscopic radius 0.1 ('macro').",
+    )
+    parser.add_argument("--out", type=Path, default=Path(os.environ.get("REGIME_OUT", "results/theorem_regime/both.json")))
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> None:
+    args = parse_args(argv)
+    sigmas = args.sigmas or [0.02, 0.005, 0.002]
+    cfg = DEFAULT_CONFIG
+
+    unit_params = sample_unit_params(args.seed, cfg)
+    if args.zero_readout:
+        unit_params["R"].zero_()
+
+    r_ball = certified_ball_radius(unit_params, cfg)
+    stop_radius = r_ball if args.stop == "ball" else 0.1
+    max_steps = int(20_000 * 1e-3 / args.step_len)
+
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    results: list[dict[str, Any]] = []
+
+    for sigma in sigmas:
+        for word_len in args.n:
+            for mode in ("step", "outcome"):
+                rec = run_population_gd(
+                    word_len=word_len,
+                    sigma=sigma,
+                    mode=mode,
+                    unit_params=unit_params,
+                    stop_radius=stop_radius,
+                    max_steps=max_steps,
+                    step_len=args.step_len,
+                    track_radii=[r_ball],
+                    cfg=cfg,
+                )
+                rec.update(seed=args.seed, zero_readout=args.zero_readout, step_len=args.step_len)
+                results.append(rec)
+
+                delta = 0.5 ** word_len + sigma * 0.5 ** (word_len - 1)
+                t_exit = rec.get("T", float("nan"))
+                radii_str = ", ".join(f"{r:.2e}: {val:.3e}" for r, val in rec["T_r"].items())
+                print(
+                    f"sigma={sigma} n={word_len:2d} {mode:8s} "
+                    f"grad/sigma={rec['grad0_over_sigma']:.3e}  "
+                    f"T({stop_radius:.2g})={t_exit:.3e}  "
+                    f"grad/(sigma*(sigma^2+delta_n))={rec['grad0_over_sigma'] / (sigma ** 2 + delta):.3e}  "
+                    f"T*(sigma^2+delta_n)={t_exit * (sigma ** 2 + delta):.2f}  "
+                    f"switching {rec['switch_start']}->{rec.get('switch_end')}  "
+                    f"T(r) {{{radii_str}}}  relu flips {rec['relu_flips']}",
+                    flush=True,
+                )
+                args.out.write_text(json.dumps(results, indent=2))
 
 
 if __name__ == "__main__":
-    sigmas = [float(x) for x in sys.argv[1:]] or [0.02, 0.005, 0.002]
-    seed = int(os.environ.get("REGIME_SEED", "0"))
-    tilde, res = theta_tilde(seed), []
-    zero_readout = os.environ.get("REGIME_ZERO_READOUT") == "1"
-    step_len = float(os.environ.get("REGIME_STEP", "1e-3"))     # update length / (sigma ||theta~||)
-    if zero_readout:                                     # Theorem 3 start: readout of theta~ is zero
-        tilde["R"].zero_()
-    os.makedirs("results/theorem_regime", exist_ok=True)
-    for sigma in sigmas:
-        for n in [int(x) for x in os.environ.get("REGIME_N", "4,6,8,10,12,14,16").split(",")]:
-            for mode in ("step", "outcome"):
-                # REGIME_STOP=ball stops at the radius of B_eps instead of r = 0.1 (to refine the small-radius exit time).
-                stop = ball_radius(tilde) if os.environ.get("REGIME_STOP") == "ball" else 0.1
-                r = run(n, sigma, mode, tilde, eps=stop, step_len=step_len,
-                        max_steps=int(20000 * 1e-3 / step_len), radii=[ball_radius(tilde)])
-                r["seed"] = seed
-                r["zero_readout"] = zero_readout
-                r["step_len"] = step_len
-                res.append(r)
-                delta = 0.5 ** n + sigma * 0.5 ** (n - 1)
-                print(f"sigma={sigma} n={n:2d} {mode:8s} grad/sigma={r['grad0_over_sigma']:.3e}  T(0.1)={r.get('T', float('nan')):.3e}"
-                      f"  grad/(sigma(sigma^2+delta_n))={r['grad0_over_sigma'] / (sigma ** 2 + delta):.3e}"
-                      f"  T*(sigma^2+delta_n)={r.get('T', float('nan')) * (sigma ** 2 + delta):.2f}"
-                      f"  switching {r['switch_start']}->{r.get('switch_end')}"
-                      f"  T(r) {{{', '.join(f'{k:.2e}: {v:.3e}' for k, v in r['T_r'].items())}}}"
-                      f"  relu flips {r['relu_flips']}", flush=True)
-                json.dump(res, open(os.environ.get("REGIME_OUT", "results/theorem_regime/both.json"), "w"))
+    main()

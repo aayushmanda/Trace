@@ -21,6 +21,7 @@ PyTorch implementation of the two-block causal Transformer (`Assumption A.1`), e
 | [`checks/executor_check.py`](checks/executor_check.py) | Prop. 1, App. B (`app:architectures`) | Rebuilds $\theta^\star_{\mathrm{out}}$ and $\theta^\star_{\mathrm{step}}$ independently from Appendix B and verifies entry-for-entry tensor equality |
 | [`checks/credit_checks.py`](checks/credit_checks.py) | App. C, G.1, G.3 (`prop:score-degree`) | Checks score-degree $\varepsilon$-exponents ($2.0, 6.1, 7.0, 11.1, 12.0$), step rule credit ($\varepsilon^6 P(\tilde\theta)$, exponent $6.00$), and outcome interaction credit |
 | [`checks/log_claims.py`](checks/log_claims.py) | Tables 6–7 (`tab:gap`, `tab:controls`, App. G.1) | Audits extended 32k horizon sweeps, deeper 4–6 block models, and first-occurrence controls from `lettertrace.py` logs |
+| [`silent_routing_demo.ipynb`](silent_routing_demo.ipynb) | Prop. 1, Thm. 1, Fig. 1a | Clean interactive notebook walking through exact executors, float64 exit times, and paired training |
 
 ## Quick Commands
 

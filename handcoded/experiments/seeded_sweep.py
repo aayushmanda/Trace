@@ -1,44 +1,80 @@
-"""One cell of the seeded-initialization sweep: step and outcome training from one shared theta_0.
+"""Single cell of the initialization-scale sweep (Table 7 / tab:controls, Appendix G.1).
 
-    python handcoded/experiments/seeded_sweep.py out=results/seeded/x.json init=handcoded_dirs init_std=0.1 word_len=12 mod=2
+Trains step ('process') and outcome supervision from one shared initialization theta_0 and writes
+the held-out exact accuracy curves to a JSON file.
 
-Every other key=value is a lettertrace.py setting. Writes the held-out exact accuracy curve of both modes, the final
-exact and answer accuracy, and the first evaluated update with exact accuracy >= 0.9.
+    uv run python handcoded/experiments/seeded_sweep.py \\
+        out=results/seeded/rnd_n8_K2_e0.1_s42.json task=count word_len=8 mod=2 init=random init_std=0.1 seed=42
 """
-import ast
+
+from __future__ import annotations
+
 import json
 import sys
 import time
 from pathlib import Path
+from typing import Any
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-import lettertrace as L  # noqa: E402
+HANDCODED_DIR = Path(__file__).resolve().parents[1]
+if str(HANDCODED_DIR) not in sys.path:
+    sys.path.insert(0, str(HANDCODED_DIR))
 
-over, out = {}, None
-for arg in sys.argv[1:]:
-    key, value = arg.split("=", 1)
-    if key == "out":
-        out = Path(value)
-        continue
-    over[key] = value if key in L._STRING_KEYS else ast.literal_eval(value)
-assert out is not None, "pass out=path.json"
-if out.exists():
-    sys.exit(0)
-L.configure(**over)
-train, shown, test = L.make_corpus()
-theta_0 = L.init_theta()
-rec = dict(config={k: getattr(L, k) for k in L.DEFAULTS if k != "device"},
-           seeded_entries=sum(int((t != 0).sum()) for t in theta_0.values()),
-           total_entries=sum(t.numel() for t in theta_0.values()), modes={})
-t0 = time.time()
-for mode in ("process", "outcome"):
-    _, hist = L.train_mode(mode, theta_0, train, shown, test)
-    evals = [h for h in hist if "exact" in h]
-    rec["modes"][mode] = dict(final_exact=evals[-1]["exact"], final_answer=evals[-1]["answer"],
-                              solved_at=next((h["step"] for h in evals if h["exact"] >= 0.9), None),
-                              curve=[(h["step"], h["exact"]) for h in evals])
-rec["seconds"] = time.time() - t0
-out.parent.mkdir(parents=True, exist_ok=True)
-out.write_text(json.dumps(rec, indent=1))
-print(f"{out.name}: step {rec['modes']['process']['final_exact']:.3f} (solved {rec['modes']['process']['solved_at']}) "
-      f"outcome {rec['modes']['outcome']['final_exact']:.3f}", flush=True)
+import lettertrace as lt  # noqa: E402
+
+
+def run_seeded_cell(out_path: Path, overrides: dict[str, Any]) -> dict[str, Any] | None:
+    """Run one paired step/outcome cell and save metrics to out_path (skips if already present)."""
+    if out_path.exists():
+        return None
+
+    cfg = lt.configure(**overrides)
+    train, shown, test = lt.make_corpus(cfg)
+    theta_0 = lt.init_theta(cfg)
+
+    record: dict[str, Any] = {
+        "config": cfg.to_dict(exclude_device=True),
+        "seeded_entries": sum(int((t != 0).sum()) for t in theta_0.values()),
+        "total_entries": sum(t.numel() for t in theta_0.values()),
+        "modes": {},
+    }
+
+    t0 = time.monotonic()
+    for mode in ("process", "outcome"):
+        _, history = lt.train_mode(mode, theta_0, train, shown, test, cfg=cfg)
+        evals = [row for row in history if "exact" in row]
+        record["modes"][mode] = {
+            "final_exact": evals[-1]["exact"],
+            "final_answer": evals[-1]["answer"],
+            "solved_at": next((row["step"] for row in evals if row["exact"] >= 0.9), None),
+            "curve": [(row["step"], row["exact"]) for row in evals],
+        }
+    record["seconds"] = time.monotonic() - t0
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(record, indent=2))
+    print(
+        f"{out_path.name}: step {record['modes']['process']['final_exact']:.3f} "
+        f"(solved {record['modes']['process']['solved_at']})  "
+        f"outcome {record['modes']['outcome']['final_exact']:.3f}",
+        flush=True,
+    )
+    return record
+
+
+def main(argv: list[str] | None = None) -> None:
+    args = sys.argv[1:] if argv is None else argv
+    out_path: Path | None = None
+    filtered: list[str] = []
+    for arg in args:
+        if arg.startswith("out="):
+            out_path = Path(arg.split("=", 1)[1])
+        else:
+            filtered.append(arg)
+    if out_path is None:
+        raise SystemExit("Usage: seeded_sweep.py out=path.json [key=value ...]")
+    overrides = lt.parse_cli_overrides(filtered)
+    run_seeded_cell(out_path, overrides)
+
+
+if __name__ == "__main__":
+    main()
